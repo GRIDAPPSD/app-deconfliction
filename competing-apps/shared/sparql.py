@@ -46,9 +46,6 @@ class SPARQLManager:
         }
 
         results = self.gad.get_response(topics.REQUEST_POWERGRID_DATA, message, timeout=1200)
-        print('before der_params results for: ' + objectType)
-        print(results)
-        print('after der_params results')
         return results['data']
 
 

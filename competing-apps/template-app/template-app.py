@@ -506,14 +506,33 @@ class DynamicYbus(GridAPPSD):
     SPARQLManager = getattr(importlib.import_module('shared.sparql'), 'SPARQLManager')
     sparql_mgr = SPARQLManager(gapps, feeder_mrid, simulation_id)
 
-    results = sparql_mgr.der_params('EnergyConsumer.p')
-    results = sparql_mgr.der_params('PowerElectronicsConnection.p')
-    results = sparql_mgr.der_params('SynchronousMachine.p')
+    # Competing Apps Start
+
+    results = sparql_mgr.der_params('EnergyConsumer')
+    for item in results:
+      name = item['IdentifiedObject.name']
+      value = item['EnergyConsumer.p']
+      print('EnergyConsumer name: ' + name + ', value: ' + str(value))
+
+    results = sparql_mgr.der_params('PowerElectronicsConnection')
+    for item in results:
+      #print(item)
+      name = item['IdentifiedObject.name']
+      value = item['PowerElectronicsConnection.p']
+      print('PowerElectronicsConnection name: ' + name + ', value: ' + str(value))
+
+    results = sparql_mgr.der_params('SynchronousMachine')
+    for item in results:
+      name = item['IdentifiedObject.name']
+      value = item['SynchronousMachine.p']
+      print('SynchronousMachine name: ' + name + ', value: ' + str(value))
 
     bindings = sparql_mgr.battery_configs()
     print('before battery_configs results')
     print(bindings)
     print('after battery_configs results')
+
+    # Competing Apps Finish
 
     SwitchMridToNodes,TransformerMridToNodes,TransformerLastPos,CapacitorMridToNode,CapacitorMridToYbusContrib,CapacitorLastValue = nodes_to_update(sparql_mgr)
 
