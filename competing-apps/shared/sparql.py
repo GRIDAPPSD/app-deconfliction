@@ -37,7 +37,7 @@ class SPARQLManager:
 
 # Start of Common Competing Apps queries
 
-    def der_params(self, objectType):
+    def der_export(self, objectType):
         message = {
           "requestType": "QUERY_OBJECT_DICT",
           "modelId": self.feeder_mrid,

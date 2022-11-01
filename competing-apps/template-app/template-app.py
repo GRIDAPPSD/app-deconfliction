@@ -508,29 +508,37 @@ class DynamicYbus(GridAPPSD):
 
     # Competing Apps Start
 
-    results = sparql_mgr.der_params('EnergyConsumer')
-    for item in results:
+    ders = sparql_mgr.der_export('EnergyConsumer')
+    print('Count of EnergyConsumers: ' + str(len(ders)))
+    for item in ders:
       name = item['IdentifiedObject.name']
       value = item['EnergyConsumer.p']
       print('EnergyConsumer name: ' + name + ', value: ' + str(value))
 
-    results = sparql_mgr.der_params('PowerElectronicsConnection')
-    for item in results:
+    ders = sparql_mgr.der_export('PowerElectronicsConnection')
+    print('Count of PowerElectronicsConnections: ' + str(len(ders)))
+    for item in ders:
       #print(item)
       name = item['IdentifiedObject.name']
       value = item['PowerElectronicsConnection.p']
       print('PowerElectronicsConnection name: ' + name + ', value: ' + str(value))
 
-    results = sparql_mgr.der_params('SynchronousMachine')
-    for item in results:
+    ders = sparql_mgr.der_export('SynchronousMachine')
+    print('Count of SynchronousMachines: ' + str(len(ders)))
+    for item in ders:
       name = item['IdentifiedObject.name']
       value = item['SynchronousMachine.p']
       print('SynchronousMachine name: ' + name + ', value: ' + str(value))
 
     bindings = sparql_mgr.battery_configs()
-    print('before battery_configs results')
-    print(bindings)
-    print('after battery_configs results')
+    print('Count of Batteries: ' + str(len(bindings)))
+    for obj in bindings:
+      name = obj['name']['value']
+      bus = obj['bus']['value'].upper()
+      storedE = float(obj['storedE']['value'])
+      ratedE = float(obj['ratedE']['value'])
+      SOC = storedE/ratedE
+      print('Battery name: ' + name + ', bus: ' + bus + ', storedE: ' + str(storedE) + ', ratedE: ' + str(ratedE) + ', SOC: ' + str(SOC))
 
     # Competing Apps Finish
 
