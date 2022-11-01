@@ -34,6 +34,64 @@ class SPARQLManager:
 
         #self.topic = "goss.gridappsd.process.request.data.powergridmodel"
 
+
+# Start of Common Competing Apps queries
+
+    def der_params(self, objectType):
+        message = {
+          "requestType": "QUERY_OBJECT_DICT",
+          "modelId": self.feeder_mrid,
+          "objectType": objectType,
+          "resultFormat": "JSON",
+        }
+
+        results = self.gad.get_response(topics.REQUEST_POWERGRID_DATA, message, timeout=1200)
+        print('before der_params results for: ' + objectType)
+        print(results)
+        print('after der_params results')
+        return results['data']
+
+
+    def battery_configs(self):
+        VALUES_QUERY = """
+        PREFIX r:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+        PREFIX c:  <http://iec.ch/TC57/CIM100#>
+        SELECT ?name ?bus ?ratedS ?ratedU ?ipu ?ratedE ?storedE ?state ?p ?q ?id ?fdrid (group_concat(distinct ?phs;separator="\\n") as ?phases) WHERE {
+         ?s r:type c:BatteryUnit.
+         ?s c:IdentifiedObject.name ?name.
+         ?pec c:PowerElectronicsConnection.PowerElectronicsUnit ?s.
+        VALUES ?fdrid {"%s"}
+         ?pec c:Equipment.EquipmentContainer ?fdr.
+         ?fdr c:IdentifiedObject.mRID ?fdrid.
+         ?pec c:PowerElectronicsConnection.ratedS ?ratedS.
+         ?pec c:PowerElectronicsConnection.ratedU ?ratedU.
+         ?pec c:PowerElectronicsConnection.maxIFault ?ipu.
+         ?s c:BatteryUnit.ratedE ?ratedE.
+         ?s c:BatteryUnit.storedE ?storedE.
+         ?s c:BatteryUnit.batteryState ?stateraw.
+           bind(strafter(str(?stateraw),"BatteryState.") as ?state)
+         ?pec c:PowerElectronicsConnection.p ?p.
+         ?pec c:PowerElectronicsConnection.q ?q.
+         OPTIONAL {?pecp c:PowerElectronicsConnectionPhase.PowerElectronicsConnection ?pec.
+         ?pecp c:PowerElectronicsConnectionPhase.phase ?phsraw.
+           bind(strafter(str(?phsraw),"SinglePhaseKind.") as ?phs) }
+         bind(strafter(str(?s),"#_") as ?id).
+         ?t c:Terminal.ConductingEquipment ?pec.
+         ?t c:Terminal.ConnectivityNode ?cn. 
+         ?cn c:IdentifiedObject.name ?bus
+        }
+        GROUP by ?name ?bus ?ratedS ?ratedU ?ipu ?ratedE ?storedE ?state ?p ?q ?id ?fdrid
+        ORDER by ?name
+        """% self.feeder_mrid
+
+        results = self.gad.query_data(VALUES_QUERY)
+        bindings = results['data']['results']['bindings']
+        return bindings
+
+
+# End of Common Competing Apps queries
+
+
 # Start of Power Flow queries
 
     def nomv_query(self):

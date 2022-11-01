@@ -506,6 +506,15 @@ class DynamicYbus(GridAPPSD):
     SPARQLManager = getattr(importlib.import_module('shared.sparql'), 'SPARQLManager')
     sparql_mgr = SPARQLManager(gapps, feeder_mrid, simulation_id)
 
+    results = sparql_mgr.der_params('EnergyConsumer.p')
+    results = sparql_mgr.der_params('PowerElectronicsConnection.p')
+    results = sparql_mgr.der_params('SynchronousMachine.p')
+
+    bindings = sparql_mgr.battery_configs()
+    print('before battery_configs results')
+    print(bindings)
+    print('after battery_configs results')
+
     SwitchMridToNodes,TransformerMridToNodes,TransformerLastPos,CapacitorMridToNode,CapacitorMridToYbusContrib,CapacitorLastValue = nodes_to_update(sparql_mgr)
 
     # Hold here for demo
