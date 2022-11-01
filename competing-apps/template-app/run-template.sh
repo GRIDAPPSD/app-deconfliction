@@ -11,12 +11,12 @@
 if [[ -z "$SIMREQ" ]]; then
     # requires at least a reference to the type of simulation to use
     if [ "$#" -eq 0 ]; then
-        echo "Usage: ./run-dybus.sh #nodes"
+        echo "Usage: ./run-template.sh #nodes"
         echo
         exit
     fi
 
-    read -d "\n" SIMID SIMREQ <<< $(../sim_starter/sim_starter.py $1)
+    read -d "\n" SIMID SIMREQ <<< $(../sim-starter/sim-starter.py $1)
 else
 #   invocation when simulation is already started from platform viz
     SIMID=$1

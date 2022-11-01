@@ -546,15 +546,15 @@ class DynamicYbus(GridAPPSD):
 
 
 def _main():
-  # for loading modules (this works for finding static-ybus too)
+  # for loading modules
   if (os.path.isdir('shared')):
     sys.path.append('.')
   elif (os.path.isdir('../shared')):
     sys.path.append('..')
-  elif (os.path.isdir('gridappsd-toolbox/shared')):
-    sys.path.append('gridappsd-toolbox')
+  elif (os.path.isdir('app-deconfliction/competing-apps/shared')):
+    sys.path.append('app-deconfliction/competing-apps')
   else:
-    sys.path.append('/gridappsd/services/gridappsd-toolbox')
+    sys.path.append('/gridappsd/services/app-deconfliction/competing-apps')
    
   parser = argparse.ArgumentParser()
   parser.add_argument("simulation_id", help="Simulation ID")
