@@ -542,16 +542,6 @@ class DynamicYbus(GridAPPSD):
     for item in ders:
       print('SynchronousMachine: ' + str(item))
 
-    ders = sparql_mgr.der_dict_export('RatioTapChanger')
-    print('Count of RatioTapChangers Dict: ' + str(len(ders)))
-    for item in ders:
-      print('RatioTapChanger: ' + str(item))
-
-    ders = sparql_mgr.der_meas_export('RatioTapChanger')
-    print('Count of RatioTapChangers Meas: ' + str(len(ders)))
-    for item in ders:
-      print('RatioTapChanger: ' + str(item))
-
     bindings = sparql_mgr.battery_query()
     print('Count of Batteries: ' + str(len(bindings)))
     for obj in bindings:
