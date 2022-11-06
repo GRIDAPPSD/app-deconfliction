@@ -530,7 +530,7 @@ class DynamicYbus(GridAPPSD):
       value = item['SynchronousMachine.p']
       print('SynchronousMachine name: ' + name + ', value: ' + str(value))
 
-    bindings = sparql_mgr.battery_configs()
+    bindings = sparql_mgr.battery_query()
     print('Count of Batteries: ' + str(len(bindings)))
     for obj in bindings:
       name = obj['name']['value']
@@ -539,6 +539,15 @@ class DynamicYbus(GridAPPSD):
       ratedE = float(obj['ratedE']['value'])
       SOC = storedE/ratedE
       print('Battery name: ' + name + ', bus: ' + bus + ', storedE: ' + str(storedE) + ', ratedE: ' + str(ratedE) + ', SOC: ' + str(SOC))
+
+    bindings = sparql_mgr.pv_query()
+    print('Count of PV: ' + str(len(bindings)))
+    for obj in bindings:
+      name = obj['name']['value']
+      bus = obj['bus']['value'].upper()
+      ratedS = float(obj['ratedS']['value'])
+      ratedU = float(obj['ratedU']['value'])
+      print('PV name: ' + name + ', bus: ' + bus + ', ratedS: ' + str(ratedS) + ', ratedU: ' + str(ratedU))
 
     # Competing Apps Finish
 

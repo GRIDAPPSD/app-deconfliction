@@ -49,7 +49,7 @@ class SPARQLManager:
         return results['data']
 
 
-    def battery_configs(self):
+    def battery_query(self):
         VALUES_QUERY = """
         PREFIX r:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
         PREFIX c:  <http://iec.ch/TC57/CIM100#>
@@ -78,6 +78,39 @@ class SPARQLManager:
          ?cn c:IdentifiedObject.name ?bus
         }
         GROUP by ?name ?bus ?ratedS ?ratedU ?ipu ?ratedE ?storedE ?state ?p ?q ?id ?fdrid
+        ORDER by ?name
+        """% self.feeder_mrid
+
+        results = self.gad.query_data(VALUES_QUERY)
+        bindings = results['data']['results']['bindings']
+        return bindings
+
+
+    def pv_query(self):
+        VALUES_QUERY = """
+        PREFIX r:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+        PREFIX c:  <http://iec.ch/TC57/CIM100#>
+        SELECT ?name ?bus ?ratedS ?ratedU ?ipu ?p ?q ?id ?fdrid (group_concat(distinct ?phs;separator="\\n") as ?phases) WHERE {
+         ?s r:type c:PhotovoltaicUnit.
+         ?s c:IdentifiedObject.name ?name.
+         ?s c:IdentifiedObject.mRID ?id.
+         ?pec c:PowerElectronicsConnection.PowerElectronicsUnit ?s.
+        VALUES ?fdrid {"%s"}
+         ?pec c:Equipment.EquipmentContainer ?fdr.
+         ?fdr c:IdentifiedObject.mRID ?fdrid.
+         ?pec c:PowerElectronicsConnection.ratedS ?ratedS.
+         ?pec c:PowerElectronicsConnection.ratedU ?ratedU.
+         ?pec c:PowerElectronicsConnection.maxIFault ?ipu.
+         ?pec c:PowerElectronicsConnection.p ?p.
+         ?pec c:PowerElectronicsConnection.q ?q.
+         OPTIONAL {?pecp c:PowerElectronicsConnectionPhase.PowerElectronicsConnection ?pec.
+         ?pecp c:PowerElectronicsConnectionPhase.phase ?phsraw.
+         bind(strafter(str(?phsraw),"SinglePhaseKind.") as ?phs) }
+         ?t c:Terminal.ConductingEquipment ?pec.
+         ?t c:Terminal.ConnectivityNode ?cn. 
+         ?cn c:IdentifiedObject.name ?bus
+        }
+        GROUP by ?name ?bus ?ratedS ?ratedU ?ipu ?p ?q ?id ?fdrid
         ORDER by ?name
         """% self.feeder_mrid
 
