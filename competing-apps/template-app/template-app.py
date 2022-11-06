@@ -520,6 +520,11 @@ class DynamicYbus(GridAPPSD):
     for item in ders:
       print('EnergyConsumer: ' + str(item))
 
+    ders = sparql_mgr.der_meas_export('PowerElectronicsConnection')
+    print('Count of PowerElectronicsConnections Meas: ' + str(len(ders)))
+    for item in ders:
+      print('PowerElectronicsConnection: ' + str(item))
+
     ders = sparql_mgr.der_dict_export('LinearShuntCompensator')
     print('Count of LinearShuntCompensators Dict: ' + str(len(ders)))
     for item in ders:
