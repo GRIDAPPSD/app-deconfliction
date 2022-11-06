@@ -508,27 +508,49 @@ class DynamicYbus(GridAPPSD):
 
     # Competing Apps Start
 
-    ders = sparql_mgr.der_export('EnergyConsumer')
-    print('Count of EnergyConsumers: ' + str(len(ders)))
+    ders = sparql_mgr.der_dict_export('EnergyConsumer')
+    print('Count of EnergyConsumers Dict: ' + str(len(ders)))
     for item in ders:
       name = item['IdentifiedObject.name']
       value = item['EnergyConsumer.p']
       print('EnergyConsumer name: ' + name + ', value: ' + str(value))
 
-    ders = sparql_mgr.der_export('PowerElectronicsConnection')
-    print('Count of PowerElectronicsConnections: ' + str(len(ders)))
+    ders = sparql_mgr.der_meas_export('EnergyConsumer')
+    print('Count of EnergyConsumers Meas: ' + str(len(ders)))
     for item in ders:
-      #print(item)
-      name = item['IdentifiedObject.name']
-      value = item['PowerElectronicsConnection.p']
-      print('PowerElectronicsConnection name: ' + name + ', value: ' + str(value))
+      print('EnergyConsumer: ' + str(item))
 
-    ders = sparql_mgr.der_export('SynchronousMachine')
-    print('Count of SynchronousMachines: ' + str(len(ders)))
+    ders = sparql_mgr.der_dict_export('LinearShuntCompensator')
+    print('Count of LinearShuntCompensators Dict: ' + str(len(ders)))
+    for item in ders:
+      print('LinearShuntCompensator: ' + str(item))
+
+    ders = sparql_mgr.der_meas_export('LinearShuntCompensator')
+    print('Count of LinearShuntCompensators Meas: ' + str(len(ders)))
+    for item in ders:
+      print('LinearShuntCompensator: ' + str(item))
+
+    ders = sparql_mgr.der_dict_export('SynchronousMachine')
+    print('Count of SynchronousMachines Dict: ' + str(len(ders)))
     for item in ders:
       name = item['IdentifiedObject.name']
       value = item['SynchronousMachine.p']
       print('SynchronousMachine name: ' + name + ', value: ' + str(value))
+
+    ders = sparql_mgr.der_meas_export('SynchronousMachine')
+    print('Count of SynchronousMachines Meas: ' + str(len(ders)))
+    for item in ders:
+      print('SynchronousMachine: ' + str(item))
+
+    ders = sparql_mgr.der_dict_export('RatioTapChanger')
+    print('Count of RatioTapChangers Dict: ' + str(len(ders)))
+    for item in ders:
+      print('RatioTapChanger: ' + str(item))
+
+    ders = sparql_mgr.der_meas_export('RatioTapChanger')
+    print('Count of RatioTapChangers Meas: ' + str(len(ders)))
+    for item in ders:
+      print('RatioTapChanger: ' + str(item))
 
     bindings = sparql_mgr.battery_query()
     print('Count of Batteries: ' + str(len(bindings)))

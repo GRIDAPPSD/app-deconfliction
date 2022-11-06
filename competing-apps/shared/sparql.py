@@ -37,9 +37,21 @@ class SPARQLManager:
 
 # Start of Common Competing Apps queries
 
-    def der_export(self, objectType):
+    def der_dict_export(self, objectType):
         message = {
           "requestType": "QUERY_OBJECT_DICT",
+          "modelId": self.feeder_mrid,
+          "objectType": objectType,
+          "resultFormat": "JSON",
+        }
+
+        results = self.gad.get_response(topics.REQUEST_POWERGRID_DATA, message, timeout=1200)
+        return results['data']
+
+
+    def der_meas_export(self, objectType):
+        message = {
+          "requestType": "QUERY_OBJECT_MEASUREMENTS",
           "modelId": self.feeder_mrid,
           "objectType": objectType,
           "resultFormat": "JSON",
