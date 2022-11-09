@@ -52,6 +52,7 @@ import importlib
 import math
 import pprint
 import numpy as np
+import csv
 
 from gridappsd import GridAPPSD
 from gridappsd.topics import simulation_output_topic, simulation_log_topic, service_output_topic, service_input_topic
@@ -508,43 +509,43 @@ class DynamicYbus(GridAPPSD):
 
     # Competing Apps Start
 
-    ders = sparql_mgr.der_dict_export('EnergyConsumer')
-    print('Count of EnergyConsumers Dict: ' + str(len(ders)))
-    for item in ders:
+    objs = sparql_mgr.obj_dict_export('EnergyConsumer')
+    print('Count of EnergyConsumers Dict: ' + str(len(objs)))
+    for item in objs:
       name = item['IdentifiedObject.name']
       value = item['EnergyConsumer.p']
       print('EnergyConsumer name: ' + name + ', value: ' + str(value))
 
-    ders = sparql_mgr.der_meas_export('EnergyConsumer')
-    print('Count of EnergyConsumers Meas: ' + str(len(ders)))
-    for item in ders:
+    objs = sparql_mgr.obj_meas_export('EnergyConsumer')
+    print('Count of EnergyConsumers Meas: ' + str(len(objs)))
+    for item in objs:
       print('EnergyConsumer: ' + str(item))
 
-    ders = sparql_mgr.der_meas_export('PowerElectronicsConnection')
-    print('Count of PowerElectronicsConnections Meas: ' + str(len(ders)))
-    for item in ders:
+    objs = sparql_mgr.obj_meas_export('PowerElectronicsConnection')
+    print('Count of PowerElectronicsConnections Meas: ' + str(len(objs)))
+    for item in objs:
       print('PowerElectronicsConnection: ' + str(item))
 
-    ders = sparql_mgr.der_dict_export('LinearShuntCompensator')
-    print('Count of LinearShuntCompensators Dict: ' + str(len(ders)))
-    for item in ders:
+    objs = sparql_mgr.obj_dict_export('LinearShuntCompensator')
+    print('Count of LinearShuntCompensators Dict: ' + str(len(objs)))
+    for item in objs:
       print('LinearShuntCompensator: ' + str(item))
 
-    ders = sparql_mgr.der_meas_export('LinearShuntCompensator')
-    print('Count of LinearShuntCompensators Meas: ' + str(len(ders)))
-    for item in ders:
+    objs = sparql_mgr.obj_meas_export('LinearShuntCompensator')
+    print('Count of LinearShuntCompensators Meas: ' + str(len(objs)))
+    for item in objs:
       print('LinearShuntCompensator: ' + str(item))
 
-    ders = sparql_mgr.der_dict_export('SynchronousMachine')
-    print('Count of SynchronousMachines Dict: ' + str(len(ders)))
-    for item in ders:
+    objs = sparql_mgr.obj_dict_export('SynchronousMachine')
+    print('Count of SynchronousMachines Dict: ' + str(len(objs)))
+    for item in objs:
       name = item['IdentifiedObject.name']
       value = item['SynchronousMachine.p']
       print('SynchronousMachine name: ' + name + ', value: ' + str(value))
 
-    ders = sparql_mgr.der_meas_export('SynchronousMachine')
-    print('Count of SynchronousMachines Meas: ' + str(len(ders)))
-    for item in ders:
+    objs = sparql_mgr.obj_meas_export('SynchronousMachine')
+    print('Count of SynchronousMachines Meas: ' + str(len(objs)))
+    for item in objs:
       print('SynchronousMachine: ' + str(item))
 
     bindings = sparql_mgr.battery_query()
@@ -565,6 +566,40 @@ class DynamicYbus(GridAPPSD):
       ratedS = float(obj['ratedS']['value'])
       ratedU = float(obj['ratedU']['value'])
       print('PV name: ' + name + ', bus: ' + bus + ', ratedS: ' + str(ratedS) + ', ratedU: ' + str(ratedU))
+
+    bindings = sparql_mgr.regulator_query()
+    print('Count of Regulators: ' + str(len(bindings)))
+    for obj in bindings:
+      rname = obj['rname']['value']
+      pname = obj['pname']['value']
+      if 'phs' in obj:
+        phs = obj['phs']['value']
+      else:
+        phs = 'ABC'
+      step = int(obj['step']['value'])
+      print('Regulator rname: ' + rname + ', pname: ' + pname + ', phs: ' + phs + ', step: ' + str(step))
+
+    objs = sparql_mgr.obj_meas_export('PowerTransformer')
+    print('Count of PowerTransformer Meas: ' + str(len(objs)))
+    for item in objs:
+      if item['type'] == 'Pos':
+        print('PowerTransformer: ' + str(item))
+
+    Loadshape = {}
+    Solar = {}
+    Price = {}
+
+    with open('time-series-data.csv', 'r') as f:
+      reader = csv.reader(f)
+      next(reader) # skip header
+
+      for row in reader:
+        time = int(row[0])
+        Loadshape[time] = float(row[1])
+        Solar[time] = float(row[2])
+        Price[time] = float(row[3])
+        print('time series time: ' + str(time) + ', Loadshape: ' + str(Loadshape[time]) + ', Solar: ' + str(Solar[time]) + ', Price: ' + str(Price[time]))
+
 
     # Competing Apps Finish
 
