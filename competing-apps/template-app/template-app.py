@@ -609,6 +609,7 @@ class DynamicYbus(GridAPPSD):
         print('time series time: ' + str(time) + ', Loadshape: ' + str(Loadshape[time]) + ', Solar: ' + str(Solar[time]) + ', Price: ' + str(Price[time]))
 
 
+    sys.exit(0)
     # Competing Apps Finish
 
     SwitchMridToNodes,TransformerMridToNodes,TransformerLastPos,CapacitorMridToNode,CapacitorMridToYbusContrib,CapacitorLastValue = nodes_to_update(sparql_mgr)
