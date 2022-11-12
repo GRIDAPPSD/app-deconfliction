@@ -509,44 +509,48 @@ class DynamicYbus(GridAPPSD):
 
     # Competing Apps Start
 
+    EnergyConsumers = {}
     objs = sparql_mgr.obj_dict_export('EnergyConsumer')
     print('Count of EnergyConsumers Dict: ' + str(len(objs)))
     for item in objs:
       name = item['IdentifiedObject.name']
-      value = item['EnergyConsumer.p']
-      print('EnergyConsumer name: ' + name + ', value: ' + str(value))
+      EnergyConsumers[name + '.kW'] = item['EnergyConsumer.p']
+      EnergyConsumers[name + '.kVar'] = item['EnergyConsumer.q']
+      print('EnergyConsumer name: ' + name + ', kW: ' + str(EnergyConsumers[name + '.kW']) + ', kVar: ' + str(EnergyConsumers[name + '.kVar']))
 
     objs = sparql_mgr.obj_meas_export('EnergyConsumer')
     print('Count of EnergyConsumers Meas: ' + str(len(objs)))
-    for item in objs:
-      print('EnergyConsumer: ' + str(item))
+    #for item in objs:
+    #  print('EnergyConsumer: ' + str(item))
 
     objs = sparql_mgr.obj_meas_export('PowerElectronicsConnection')
     print('Count of PowerElectronicsConnections Meas: ' + str(len(objs)))
-    for item in objs:
-      print('PowerElectronicsConnection: ' + str(item))
+    #for item in objs:
+    #  print('PowerElectronicsConnection: ' + str(item))
 
     objs = sparql_mgr.obj_dict_export('LinearShuntCompensator')
     print('Count of LinearShuntCompensators Dict: ' + str(len(objs)))
-    for item in objs:
-      print('LinearShuntCompensator: ' + str(item))
+    #for item in objs:
+    #  print('LinearShuntCompensator: ' + str(item))
 
     objs = sparql_mgr.obj_meas_export('LinearShuntCompensator')
     print('Count of LinearShuntCompensators Meas: ' + str(len(objs)))
-    for item in objs:
-      print('LinearShuntCompensator: ' + str(item))
+    #for item in objs:
+    #  print('LinearShuntCompensator: ' + str(item))
 
+    SychronousMachines = {}
     objs = sparql_mgr.obj_dict_export('SynchronousMachine')
     print('Count of SynchronousMachines Dict: ' + str(len(objs)))
     for item in objs:
       name = item['IdentifiedObject.name']
-      value = item['SynchronousMachine.p']
-      print('SynchronousMachine name: ' + name + ', value: ' + str(value))
+      SychronousMachines[name + '.kW'] = item['SynchronousMachine.p']
+      SychronousMachines[name + '.kVar'] = item['SynchronousMachine.q']
+      print('SychronousMachine name: ' + name + ', kW: ' + str(SychronousMachines[name + '.kW']) + ', kVar: ' + str(SychronousMachines[name + '.kVar']))
 
     objs = sparql_mgr.obj_meas_export('SynchronousMachine')
     print('Count of SynchronousMachines Meas: ' + str(len(objs)))
-    for item in objs:
-      print('SynchronousMachine: ' + str(item))
+    #for item in objs:
+    #  print('SynchronousMachine: ' + str(item))
 
     bindings = sparql_mgr.battery_query()
     print('Count of Batteries: ' + str(len(bindings)))
@@ -558,14 +562,18 @@ class DynamicYbus(GridAPPSD):
       SOC = storedE/ratedE
       print('Battery name: ' + name + ', bus: ' + bus + ', storedE: ' + str(storedE) + ', ratedE: ' + str(ratedE) + ', SOC: ' + str(SOC))
 
+    SolarPVs = {}
     bindings = sparql_mgr.pv_query()
-    print('Count of PV: ' + str(len(bindings)))
+    print('Count of SolarPV: ' + str(len(bindings)))
     for obj in bindings:
       name = obj['name']['value']
       bus = obj['bus']['value'].upper()
       ratedS = float(obj['ratedS']['value'])
       ratedU = float(obj['ratedU']['value'])
-      print('PV name: ' + name + ', bus: ' + bus + ', ratedS: ' + str(ratedS) + ', ratedU: ' + str(ratedU))
+      SolarPVs[name + '.kW'] = float(obj['p']['value'])
+      SolarPVs[name + '.kVar'] = float(obj['q']['value'])
+      #print('PV name: ' + name + ', bus: ' + bus + ', ratedS: ' + str(ratedS) + ', ratedU: ' + str(ratedU))
+      print('SolarPV name: ' + name + ', kW: ' + str(SolarPVs[name + '.kW']) + ', kVar: ' + str(SolarPVs[name + '.kVar']))
 
     bindings = sparql_mgr.regulator_query()
     print('Count of Regulators: ' + str(len(bindings)))
@@ -577,13 +585,13 @@ class DynamicYbus(GridAPPSD):
       else:
         phs = 'ABC'
       step = int(obj['step']['value'])
-      print('Regulator rname: ' + rname + ', pname: ' + pname + ', phs: ' + phs + ', step: ' + str(step))
+      #print('Regulator rname: ' + rname + ', pname: ' + pname + ', phs: ' + phs + ', step: ' + str(step))
 
     objs = sparql_mgr.obj_meas_export('PowerTransformer')
     print('Count of PowerTransformer Meas: ' + str(len(objs)))
-    for item in objs:
-      if item['type'] == 'Pos':
-        print('PowerTransformer: ' + str(item))
+    #for item in objs:
+    #  if item['type'] == 'Pos':
+    #    print('PowerTransformer: ' + str(item))
 
     Loadshape = {}
     Solar = {}

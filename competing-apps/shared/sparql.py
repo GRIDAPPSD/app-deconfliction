@@ -169,7 +169,6 @@ class SPARQLManager:
         """% self.feeder_mrid
 
         results = self.gad.query_data(VALUES_QUERY)
-        print(results)
         bindings = results['data']['results']['bindings']
         return bindings
 
