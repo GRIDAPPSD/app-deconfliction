@@ -37,7 +37,7 @@ class SPARQLManager:
 
 # Start of Common Competing Apps queries
 
-    def der_dict_export(self, objectType):
+    def obj_dict_export(self, objectType):
         message = {
           "requestType": "QUERY_OBJECT_DICT",
           "modelId": self.feeder_mrid,
@@ -49,7 +49,7 @@ class SPARQLManager:
         return results['data']
 
 
-    def der_meas_export(self, objectType):
+    def obj_meas_export(self, objectType):
         message = {
           "requestType": "QUERY_OBJECT_MEASUREMENTS",
           "modelId": self.feeder_mrid,
@@ -127,6 +127,49 @@ class SPARQLManager:
         """% self.feeder_mrid
 
         results = self.gad.query_data(VALUES_QUERY)
+        bindings = results['data']['results']['bindings']
+        return bindings
+
+
+    def regulator_query(self):
+        VALUES_QUERY = """
+        PREFIX r:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+        PREFIX c:  <http://iec.ch/TC57/CIM100#>
+        SELECT ?rname ?pname ?tname ?wnum ?phs ?step
+        WHERE {
+        VALUES ?fdrid {"%s"}
+         ?pxf c:Equipment.EquipmentContainer ?fdr.
+         ?fdr c:IdentifiedObject.mRID ?fdrid.
+         ?rtc r:type c:RatioTapChanger.
+         ?rtc c:IdentifiedObject.name ?rname.
+         ?rtc c:RatioTapChanger.TransformerEnd ?end.
+         ?end c:TransformerEnd.endNumber ?wnum.
+        {?end c:PowerTransformerEnd.PowerTransformer ?pxf.}
+          UNION
+        {?end c:TransformerTankEnd.TransformerTank ?tank.
+         ?tank c:IdentifiedObject.name ?tname.
+         OPTIONAL {?end c:TransformerTankEnd.phases ?phsraw.
+          bind(strafter(str(?phsraw),"PhaseCode.") as ?phs)}
+         ?tank c:TransformerTank.PowerTransformer ?pxf.}
+         ?pxf c:IdentifiedObject.name ?pname.
+         ?rtc c:RatioTapChanger.stepVoltageIncrement ?incr.
+         ?rtc c:RatioTapChanger.tculControlMode ?moderaw.
+          bind(strafter(str(?moderaw),"TransformerControlMode.") as ?mode)
+         ?rtc c:TapChanger.controlEnabled ?enabled.
+         ?rtc c:TapChanger.highStep ?highStep.
+         ?rtc c:TapChanger.initialDelay ?initDelay.
+         ?rtc c:TapChanger.lowStep ?lowStep.
+         ?rtc c:TapChanger.ltcFlag ?ltc.
+         ?rtc c:TapChanger.neutralStep ?neutralStep.
+         ?rtc c:TapChanger.neutralU ?neutralU.
+         ?rtc c:TapChanger.normalStep ?normalStep.
+         ?rtc c:TapChanger.step ?step.
+        }
+        ORDER BY ?pname ?tname ?rname ?wnum
+        """% self.feeder_mrid
+
+        results = self.gad.query_data(VALUES_QUERY)
+        print(results)
         bindings = results['data']['results']['bindings']
         return bindings
 
