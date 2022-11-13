@@ -514,9 +514,10 @@ class DynamicYbus(GridAPPSD):
     print('Count of EnergyConsumers Dict: ' + str(len(objs)))
     for item in objs:
       name = item['IdentifiedObject.name']
-      EnergyConsumers[name + '.kW'] = item['EnergyConsumer.p']
-      EnergyConsumers[name + '.kVar'] = item['EnergyConsumer.q']
-      print('EnergyConsumer name: ' + name + ', kW: ' + str(EnergyConsumers[name + '.kW']) + ', kVar: ' + str(EnergyConsumers[name + '.kVar']))
+      EnergyConsumers[name] = {}
+      EnergyConsumers[name]['kW'] = float(item['EnergyConsumer.p'])/1000.0
+      EnergyConsumers[name]['kVar'] = float(item['EnergyConsumer.q'])/1000.0
+      print('EnergyConsumer name: ' + name + ', kW: ' + str(EnergyConsumers[name]['kW']) + ', kVar: ' + str(EnergyConsumers[name]['kVar']))
 
     objs = sparql_mgr.obj_meas_export('EnergyConsumer')
     print('Count of EnergyConsumers Meas: ' + str(len(objs)))
@@ -543,38 +544,44 @@ class DynamicYbus(GridAPPSD):
     print('Count of SynchronousMachines Dict: ' + str(len(objs)))
     for item in objs:
       name = item['IdentifiedObject.name']
-      SychronousMachines[name + '.kW'] = item['SynchronousMachine.p']
-      SychronousMachines[name + '.kVar'] = item['SynchronousMachine.q']
-      print('SychronousMachine name: ' + name + ', kW: ' + str(SychronousMachines[name + '.kW']) + ', kVar: ' + str(SychronousMachines[name + '.kVar']))
+      SychronousMachines[name] = {}
+      SychronousMachines[name]['kW'] = float(item['SynchronousMachine.p'])/1000.0
+      SychronousMachines[name]['kVar'] = float(item['SynchronousMachine.q'])/1000.0
+      print('SychronousMachine name: ' + name + ', kW: ' + str(SychronousMachines[name]['kW']) + ', kVar: ' + str(SychronousMachines[name]['kVar']))
 
     objs = sparql_mgr.obj_meas_export('SynchronousMachine')
     print('Count of SynchronousMachines Meas: ' + str(len(objs)))
     #for item in objs:
     #  print('SynchronousMachine: ' + str(item))
 
+    Batteries = {}
     bindings = sparql_mgr.battery_query()
     print('Count of Batteries: ' + str(len(bindings)))
     for obj in bindings:
       name = obj['name']['value']
-      bus = obj['bus']['value'].upper()
-      storedE = float(obj['storedE']['value'])
-      ratedE = float(obj['ratedE']['value'])
-      SOC = storedE/ratedE
-      print('Battery name: ' + name + ', bus: ' + bus + ', storedE: ' + str(storedE) + ', ratedE: ' + str(ratedE) + ', SOC: ' + str(SOC))
+      #bus = obj['bus']['value'].upper()
+      Batteries[name] = {}
+      Batteries[name]['ratedkW'] = float(obj['ratedS']['value'])/1000.0
+      Batteries[name]['ratedE'] = float(obj['ratedE']['value'])/1000.0
+      Batteries[name]['storedE'] = float(obj['storedE']['value'])/1000.0
+      SOC = Batteries[name]['storedE']/Batteries[name]['ratedE']
+      print('Battery name: ' + name + ', storedE: ' + str(Batteries[name]['storedE']) + ', ratedE: ' + str(Batteries[name]['ratedE']) + ', SOC: ' + str(SOC))
 
     SolarPVs = {}
     bindings = sparql_mgr.pv_query()
     print('Count of SolarPV: ' + str(len(bindings)))
     for obj in bindings:
       name = obj['name']['value']
-      bus = obj['bus']['value'].upper()
-      ratedS = float(obj['ratedS']['value'])
-      ratedU = float(obj['ratedU']['value'])
-      SolarPVs[name + '.kW'] = float(obj['p']['value'])
-      SolarPVs[name + '.kVar'] = float(obj['q']['value'])
+      #bus = obj['bus']['value'].upper()
+      #ratedS = float(obj['ratedS']['value'])
+      #ratedU = float(obj['ratedU']['value'])
+      SolarPVs[name] = {}
+      SolarPVs[name]['kW'] = float(obj['p']['value'])/1000.0
+      SolarPVs[name]['kVar'] = float(obj['q']['value'])/1000.0
       #print('PV name: ' + name + ', bus: ' + bus + ', ratedS: ' + str(ratedS) + ', ratedU: ' + str(ratedU))
-      print('SolarPV name: ' + name + ', kW: ' + str(SolarPVs[name + '.kW']) + ', kVar: ' + str(SolarPVs[name + '.kVar']))
+      print('SolarPV name: ' + name + ', kW: ' + str(SolarPVs[name]['kW']) + ', kVar: ' + str(SolarPVs[name]['kVar']))
 
+    '''
     bindings = sparql_mgr.regulator_query()
     print('Count of Regulators: ' + str(len(bindings)))
     for obj in bindings:
@@ -592,6 +599,7 @@ class DynamicYbus(GridAPPSD):
     #for item in objs:
     #  if item['type'] == 'Pos':
     #    print('PowerTransformer: ' + str(item))
+    '''
 
     Loadshape = {}
     Solar = {}
