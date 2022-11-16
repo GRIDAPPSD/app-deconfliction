@@ -503,6 +503,37 @@ class DynamicYbus(GridAPPSD):
       self.simRap.gapps.send(reply_to, message)
 
 
+  def resiliency(self, EnergyConsumers, SychronousMachines, Batteries, SolarPVs,
+                 emergencyState=False):
+
+    P_load = 0.0
+    for name in EnergyConsumers:
+      P_load += EnergyConsumers[name]['kW']
+
+    P_ren = 0.0
+    for name in SolarPVs:
+      P_ren += SolarPVs[name]['kW']
+
+    P_batt_total = 0.0
+    eff_c = 0.9
+    T = 0.5
+    for name in Batteries:
+      if Batteries[name]['SoC'] < 0.9:
+        P_batt_c = (0.9 - Batteries[name]['SoC'])*Batteries[name]['ratedE'] / (eff_c * T)
+        Batteries[name]['P_batt_c'] = P_batt_c = min(P_batt_c, Batteries[name]['ratedkW'])
+        P_batt_total += P_batt_c
+
+    if P_ren - P_load >= P_batt_total:
+      for name in Batteries:
+        if 'P_batt_c' in Batteries[name]:
+          Batteries[name]['SoC'] += eff_c*Batteries[name]['P_batt_c']*T/Batteries[name]['ratedE']
+
+    for name in Batteries:
+      print('Updated SoC for Battery: ' + name + ', SoC: ' + str(Batteries[name]['SoC']))
+
+    return
+
+
   def __init__(self, gapps, feeder_mrid, simulation_id):
     SPARQLManager = getattr(importlib.import_module('shared.sparql'), 'SPARQLManager')
     sparql_mgr = SPARQLManager(gapps, feeder_mrid, simulation_id)
@@ -515,7 +546,9 @@ class DynamicYbus(GridAPPSD):
     for item in objs:
       name = item['IdentifiedObject.name']
       EnergyConsumers[name] = {}
-      EnergyConsumers[name]['kW'] = float(item['EnergyConsumer.p'])/1000.0
+      #EnergyConsumers[name]['kW'] = float(item['EnergyConsumer.p'])/1000.0
+      # Shiva HACK to force battery charging...
+      EnergyConsumers[name]['kW'] = 0.01*float(item['EnergyConsumer.p'])/1000.0
       EnergyConsumers[name]['kVar'] = float(item['EnergyConsumer.q'])/1000.0
       print('EnergyConsumer name: ' + name + ', kW: ' + str(EnergyConsumers[name]['kW']) + ', kVar: ' + str(EnergyConsumers[name]['kVar']))
 
@@ -563,9 +596,8 @@ class DynamicYbus(GridAPPSD):
       Batteries[name] = {}
       Batteries[name]['ratedkW'] = float(obj['ratedS']['value'])/1000.0
       Batteries[name]['ratedE'] = float(obj['ratedE']['value'])/1000.0
-      Batteries[name]['storedE'] = float(obj['storedE']['value'])/1000.0
-      SOC = Batteries[name]['storedE']/Batteries[name]['ratedE']
-      print('Battery name: ' + name + ', storedE: ' + str(Batteries[name]['storedE']) + ', ratedE: ' + str(Batteries[name]['ratedE']) + ', SOC: ' + str(SOC))
+      Batteries[name]['SoC'] = float(obj['storedE']['value'])/float(obj['ratedE']['value'])
+      print('Battery name: ' + name + ', ratedE: ' + str(Batteries[name]['ratedE']) + ', SoC: ' + str(Batteries[name]['SoC']))
 
     SolarPVs = {}
     bindings = sparql_mgr.pv_query()
@@ -580,6 +612,12 @@ class DynamicYbus(GridAPPSD):
       SolarPVs[name]['kVar'] = float(obj['q']['value'])/1000.0
       #print('PV name: ' + name + ', bus: ' + bus + ', ratedS: ' + str(ratedS) + ', ratedU: ' + str(ratedU))
       print('SolarPV name: ' + name + ', kW: ' + str(SolarPVs[name]['kW']) + ', kVar: ' + str(SolarPVs[name]['kVar']))
+
+    print('before resiliency')
+    self.resiliency(EnergyConsumers, SychronousMachines, Batteries, SolarPVs)
+    print('after resiliency')
+
+    sys.exit(0)
 
     '''
     bindings = sparql_mgr.regulator_query()
