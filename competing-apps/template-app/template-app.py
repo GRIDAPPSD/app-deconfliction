@@ -503,6 +503,12 @@ class DynamicYbus(GridAPPSD):
       self.simRap.gapps.send(reply_to, message)
 
 
+  def charge_batteries(self, Batteries, eff_c, T):
+    for name in Batteries:
+      if 'P_batt_c' in Batteries[name]:
+        Batteries[name]['SoC'] += eff_c*Batteries[name]['P_batt_c']*T/Batteries[name]['ratedE']
+
+
   def resiliency(self, EnergyConsumers, SychronousMachines, Batteries, SolarPVs,
                  emergencyState=False):
 
@@ -514,19 +520,45 @@ class DynamicYbus(GridAPPSD):
     for name in SolarPVs:
       P_ren += SolarPVs[name]['kW']
 
-    P_batt_total = 0.0
     eff_c = 0.9
-    T = 0.5
-    for name in Batteries:
-      if Batteries[name]['SoC'] < 0.9:
-        P_batt_c = (0.9 - Batteries[name]['SoC'])*Batteries[name]['ratedE'] / (eff_c * T)
-        Batteries[name]['P_batt_c'] = P_batt_c = min(P_batt_c, Batteries[name]['ratedkW'])
-        P_batt_total += P_batt_c
+    T = 0.25
+    P_sub = 2.0*P_load
 
-    if P_ren - P_load >= P_batt_total:
+    if not emergencyState: # alert state
+      P_batt_total = 0.0
       for name in Batteries:
-        if 'P_batt_c' in Batteries[name]:
-          Batteries[name]['SoC'] += eff_c*Batteries[name]['P_batt_c']*T/Batteries[name]['ratedE']
+        if Batteries[name]['SoC'] < 0.9:
+          P_batt_c = (0.9 - Batteries[name]['SoC'])*Batteries[name]['ratedE'] / (eff_c * T)
+          Batteries[name]['P_batt_c'] = P_batt_c = min(P_batt_c, Batteries[name]['ratedkW'])
+          P_batt_total += P_batt_c
+
+      if P_batt_total > 0.0:
+        if P_ren > P_load:
+          if P_ren - P_load >= P_batt_total:
+            print('Charging from renewable')
+            # YES, Charge ESS
+            self.charge_batteries(Batteries, eff_c, T)
+
+          else:
+            # NO, Check P_sub
+            if P_ren + P_sub > P_load:
+              print('P_ren>P_load Charging from renewable + substation')
+              self.charge_batteries(Batteries, eff_c, T)
+
+        else:
+          # Check P_sub
+          if P_ren + P_sub > P_load:
+            print('P_ren+P_sub>P_load Charging from renewable + substation')
+            self.charge_batteries(Batteries, eff_c, T)
+
+    else: # emergency state
+      P_batt_total = 0.0
+      for name in Batteries:
+        if Batteries[name]['SoC'] < 0.9:
+          # START HERE on Dec 1...
+          P_batt_c = (0.9 - Batteries[name]['SoC'])*Batteries[name]['ratedE'] / (eff_c * T)
+          Batteries[name]['P_batt_c'] = P_batt_c = min(P_batt_c, Batteries[name]['ratedkW'])
+          P_batt_total += P_batt_c
 
     for name in Batteries:
       print('Updated SoC for Battery: ' + name + ', SoC: ' + str(Batteries[name]['SoC']))
@@ -546,9 +578,9 @@ class DynamicYbus(GridAPPSD):
     for item in objs:
       name = item['IdentifiedObject.name']
       EnergyConsumers[name] = {}
-      #EnergyConsumers[name]['kW'] = float(item['EnergyConsumer.p'])/1000.0
+      EnergyConsumers[name]['kW'] = float(item['EnergyConsumer.p'])/1000.0
       # Shiva HACK to force battery charging...
-      EnergyConsumers[name]['kW'] = 0.01*float(item['EnergyConsumer.p'])/1000.0
+      #EnergyConsumers[name]['kW'] = 0.01*float(item['EnergyConsumer.p'])/1000.0
       EnergyConsumers[name]['kVar'] = float(item['EnergyConsumer.q'])/1000.0
       print('EnergyConsumer name: ' + name + ', kW: ' + str(EnergyConsumers[name]['kW']) + ', kVar: ' + str(EnergyConsumers[name]['kVar']))
 
@@ -613,9 +645,7 @@ class DynamicYbus(GridAPPSD):
       #print('PV name: ' + name + ', bus: ' + bus + ', ratedS: ' + str(ratedS) + ', ratedU: ' + str(ratedU))
       print('SolarPV name: ' + name + ', kW: ' + str(SolarPVs[name]['kW']) + ', kVar: ' + str(SolarPVs[name]['kVar']))
 
-    print('before resiliency')
     self.resiliency(EnergyConsumers, SychronousMachines, Batteries, SolarPVs)
-    print('after resiliency')
 
     sys.exit(0)
 
