@@ -509,18 +509,27 @@ class DynamicYbus(GridAPPSD):
         Batteries[name]['SoC'] += eff_c*Batteries[name]['P_batt_c']*T/Batteries[name]['ratedE']
 
 
+  def discharge_batteries(self, Batteries, eff_d, T):
+    for name in Batteries:
+      if 'P_batt_d' in Batteries[name]:
+        Batteries[name]['SoC'] -= eff_d*Batteries[name]['P_batt_d']*T/Batteries[name]['ratedE']
+
+
   def resiliency(self, EnergyConsumers, SychronousMachines, Batteries, SolarPVs,
                  emergencyState=False):
 
     P_load = 0.0
     for name in EnergyConsumers:
       P_load += EnergyConsumers[name]['kW']
+    print('Total EnergyConsumers P_load: ' + str(P_load))
 
     P_ren = 0.0
     for name in SolarPVs:
       P_ren += SolarPVs[name]['kW']
+    print('Total SolarPVs P_ren: ' + str(P_ren))
 
     eff_c = 0.9
+    eff_d = 0.9
     T = 0.25
     P_sub = 2.0*P_load
 
@@ -554,11 +563,14 @@ class DynamicYbus(GridAPPSD):
     else: # emergency state
       P_batt_total = 0.0
       for name in Batteries:
-        if Batteries[name]['SoC'] < 0.9:
-          # START HERE on Dec 1...
-          P_batt_c = (0.9 - Batteries[name]['SoC'])*Batteries[name]['ratedE'] / (eff_c * T)
-          Batteries[name]['P_batt_c'] = P_batt_c = min(P_batt_c, Batteries[name]['ratedkW'])
-          P_batt_total += P_batt_c
+        if Batteries[name]['SoC'] > 0.2:
+          P_batt_d = (Batteries[name]['SoC'] - 0.2)*Batteries[name]['ratedE'] / (eff_d * T)
+          Batteries[name]['P_batt_d'] = P_batt_d = min(P_batt_d, Batteries[name]['ratedkW'])
+          print('Battery name: ' + name + ', P_batt_d: ' + str(P_batt_d) + ', ratedkW: ' + str(Batteries[name]['ratedkW']))
+          P_batt_total += P_batt_d
+
+      if P_batt_total > 0.0:
+        self.discharge_batteries(Batteries, eff_d, T)
 
     for name in Batteries:
       print('Updated SoC for Battery: ' + name + ', SoC: ' + str(Batteries[name]['SoC']))
@@ -582,15 +594,15 @@ class DynamicYbus(GridAPPSD):
       # Shiva HACK to force battery charging...
       #EnergyConsumers[name]['kW'] = 0.01*float(item['EnergyConsumer.p'])/1000.0
       EnergyConsumers[name]['kVar'] = float(item['EnergyConsumer.q'])/1000.0
-      print('EnergyConsumer name: ' + name + ', kW: ' + str(EnergyConsumers[name]['kW']) + ', kVar: ' + str(EnergyConsumers[name]['kVar']))
+      #print('EnergyConsumer name: ' + name + ', kW: ' + str(EnergyConsumers[name]['kW']) + ', kVar: ' + str(EnergyConsumers[name]['kVar']))
 
     objs = sparql_mgr.obj_meas_export('EnergyConsumer')
-    print('Count of EnergyConsumers Meas: ' + str(len(objs)))
+    #print('Count of EnergyConsumers Meas: ' + str(len(objs)))
     #for item in objs:
     #  print('EnergyConsumer: ' + str(item))
 
     objs = sparql_mgr.obj_meas_export('PowerElectronicsConnection')
-    print('Count of PowerElectronicsConnections Meas: ' + str(len(objs)))
+    #print('Count of PowerElectronicsConnections Meas: ' + str(len(objs)))
     #for item in objs:
     #  print('PowerElectronicsConnection: ' + str(item))
 
@@ -600,7 +612,7 @@ class DynamicYbus(GridAPPSD):
     #  print('LinearShuntCompensator: ' + str(item))
 
     objs = sparql_mgr.obj_meas_export('LinearShuntCompensator')
-    print('Count of LinearShuntCompensators Meas: ' + str(len(objs)))
+    #print('Count of LinearShuntCompensators Meas: ' + str(len(objs)))
     #for item in objs:
     #  print('LinearShuntCompensator: ' + str(item))
 
@@ -615,7 +627,7 @@ class DynamicYbus(GridAPPSD):
       print('SychronousMachine name: ' + name + ', kW: ' + str(SychronousMachines[name]['kW']) + ', kVar: ' + str(SychronousMachines[name]['kVar']))
 
     objs = sparql_mgr.obj_meas_export('SynchronousMachine')
-    print('Count of SynchronousMachines Meas: ' + str(len(objs)))
+    #print('Count of SynchronousMachines Meas: ' + str(len(objs)))
     #for item in objs:
     #  print('SynchronousMachine: ' + str(item))
 
@@ -628,6 +640,8 @@ class DynamicYbus(GridAPPSD):
       Batteries[name] = {}
       Batteries[name]['ratedkW'] = float(obj['ratedS']['value'])/1000.0
       Batteries[name]['ratedE'] = float(obj['ratedE']['value'])/1000.0
+      # Shiva HACK
+      #Batteries[name]['SoC'] = 0.25
       Batteries[name]['SoC'] = float(obj['storedE']['value'])/float(obj['ratedE']['value'])
       print('Battery name: ' + name + ', ratedE: ' + str(Batteries[name]['ratedE']) + ', SoC: ' + str(Batteries[name]['SoC']))
 
@@ -642,10 +656,10 @@ class DynamicYbus(GridAPPSD):
       SolarPVs[name] = {}
       SolarPVs[name]['kW'] = float(obj['p']['value'])/1000.0
       SolarPVs[name]['kVar'] = float(obj['q']['value'])/1000.0
-      #print('PV name: ' + name + ', bus: ' + bus + ', ratedS: ' + str(ratedS) + ', ratedU: ' + str(ratedU))
-      print('SolarPV name: ' + name + ', kW: ' + str(SolarPVs[name]['kW']) + ', kVar: ' + str(SolarPVs[name]['kVar']))
+      #print('SolarPV name: ' + name + ', kW: ' + str(SolarPVs[name]['kW']) + ', kVar: ' + str(SolarPVs[name]['kVar']))
 
-    self.resiliency(EnergyConsumers, SychronousMachines, Batteries, SolarPVs)
+    #self.resiliency(EnergyConsumers, SychronousMachines, Batteries, SolarPVs)
+    self.resiliency(EnergyConsumers, SychronousMachines, Batteries, SolarPVs, emergencyState=True)
 
     sys.exit(0)
 
