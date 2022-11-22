@@ -515,7 +515,7 @@ class DynamicYbus(GridAPPSD):
         Batteries[name]['SoC'] -= eff_d*Batteries[name]['P_batt_d']*T/Batteries[name]['ratedE']
 
 
-  def resiliency(self, EnergyConsumers, SychronousMachines, Batteries, SolarPVs,
+  def resiliency(self, EnergyConsumers, SynchronousMachines, Batteries, SolarPVs,
                  emergencyState=False):
 
     P_load = 0.0
@@ -527,6 +527,9 @@ class DynamicYbus(GridAPPSD):
     for name in SolarPVs:
       P_ren += SolarPVs[name]['kW']
     print('Total SolarPVs P_ren: ' + str(P_ren))
+    print('\n\nRESILIENCY APP OUTPUT\n---------------------')
+    msg = 'Emergency' if emergencyState else 'Alert'
+    print('\nSTATE: ' + msg + '\n')
 
     eff_c = 0.9
     eff_d = 0.9
@@ -562,6 +565,8 @@ class DynamicYbus(GridAPPSD):
 
     else: # emergency state
       P_batt_total = 0.0
+      # Shiva HACK
+      P_sub = 0.0
       for name in Batteries:
         if Batteries[name]['SoC'] > 0.2:
           P_batt_d = (Batteries[name]['SoC'] - 0.2)*Batteries[name]['ratedE'] / (eff_d * T)
@@ -572,17 +577,39 @@ class DynamicYbus(GridAPPSD):
       if P_batt_total > 0.0:
         self.discharge_batteries(Batteries, eff_d, T)
 
+      if P_batt_total + P_ren + P_sub <= P_load:
+        P_def = P_load - (P_batt_total + P_ren + P_sub)
+        print('Power deficiency: ' + str(P_def))
+
+        P_sync_available = 0.0
+        for name, sync in SynchronousMachines.items():
+          #avail = math.sqrt(sync['ratedS']**2 - (sync['kW']**2 + sync['kVar']**2))
+          sync['P_available'] = math.sqrt(sync['ratedS']**2 - sync['kVar']**2)
+          P_sync_available += sync['P_available']
+        print('SynchronousMachines available power: ' + str(P_sync_available))
+
+        if P_sync_available > P_def:
+          for name, sync in SynchronousMachines.items():
+            P_dis = P_def*sync['P_available']/P_sync_available
+            print('SynchronousMachine name: ' + name + ', P_dis: ' + str(P_dis))
+        else:
+          for name, sync in SynchronousMachines.items():
+            P_dis = sync['P_available']
+            print('SynchronousMachine name: ' + name + ', P_dis: ' + str(P_dis))
+
     for name in Batteries:
       print('Updated SoC for Battery: ' + name + ', SoC: ' + str(Batteries[name]['SoC']))
 
     return
 
 
-  def __init__(self, gapps, feeder_mrid, simulation_id):
+  def __init__(self, gapps, feeder_mrid, simulation_id, state):
     SPARQLManager = getattr(importlib.import_module('shared.sparql'), 'SPARQLManager')
     sparql_mgr = SPARQLManager(gapps, feeder_mrid, simulation_id)
 
     # Competing Apps Start
+
+    emergencyState = state.startswith('e') or state.startswith('E')
 
     Loadshape = {}
     Solar = {}
@@ -617,35 +644,36 @@ class DynamicYbus(GridAPPSD):
       EnergyConsumers[name]['kVar'] = load_mult*float(item['EnergyConsumer.q'])/1000.0
       #print('EnergyConsumer name: ' + name + ', kW: ' + str(EnergyConsumers[name]['kW']) + ', kVar: ' + str(EnergyConsumers[name]['kVar']))
 
-    objs = sparql_mgr.obj_meas_export('EnergyConsumer')
+    #objs = sparql_mgr.obj_meas_export('EnergyConsumer')
     #print('Count of EnergyConsumers Meas: ' + str(len(objs)))
     #for item in objs:
     #  print('EnergyConsumer: ' + str(item))
 
-    objs = sparql_mgr.obj_meas_export('PowerElectronicsConnection')
+    #objs = sparql_mgr.obj_meas_export('PowerElectronicsConnection')
     #print('Count of PowerElectronicsConnections Meas: ' + str(len(objs)))
     #for item in objs:
     #  print('PowerElectronicsConnection: ' + str(item))
 
-    objs = sparql_mgr.obj_dict_export('LinearShuntCompensator')
-    print('Count of LinearShuntCompensators Dict: ' + str(len(objs)))
+    #objs = sparql_mgr.obj_dict_export('LinearShuntCompensator')
+    #print('Count of LinearShuntCompensators Dict: ' + str(len(objs)))
     #for item in objs:
     #  print('LinearShuntCompensator: ' + str(item))
 
-    objs = sparql_mgr.obj_meas_export('LinearShuntCompensator')
+    #objs = sparql_mgr.obj_meas_export('LinearShuntCompensator')
     #print('Count of LinearShuntCompensators Meas: ' + str(len(objs)))
     #for item in objs:
     #  print('LinearShuntCompensator: ' + str(item))
 
-    SychronousMachines = {}
+    SynchronousMachines = {}
     objs = sparql_mgr.obj_dict_export('SynchronousMachine')
     print('Count of SynchronousMachines Dict: ' + str(len(objs)))
     for item in objs:
       name = item['IdentifiedObject.name']
-      SychronousMachines[name] = {}
-      SychronousMachines[name]['kW'] = float(item['SynchronousMachine.p'])/1000.0
-      SychronousMachines[name]['kVar'] = float(item['SynchronousMachine.q'])/1000.0
-      print('SychronousMachine name: ' + name + ', kW: ' + str(SychronousMachines[name]['kW']) + ', kVar: ' + str(SychronousMachines[name]['kVar']))
+      SynchronousMachines[name] = {}
+      SynchronousMachines[name]['kW'] = float(item['SynchronousMachine.p'])/1000.0
+      SynchronousMachines[name]['kVar'] = float(item['SynchronousMachine.q'])/1000.0
+      SynchronousMachines[name]['ratedS'] = float(item['SynchronousMachine.ratedS'])/1000.0
+      print('SynchronousMachine name: ' + name + ', kW: ' + str(SynchronousMachines[name]['kW']) + ', kVar: ' + str(SynchronousMachines[name]['kVar']))
 
     objs = sparql_mgr.obj_meas_export('SynchronousMachine')
     #print('Count of SynchronousMachines Meas: ' + str(len(objs)))
@@ -679,8 +707,7 @@ class DynamicYbus(GridAPPSD):
       SolarPVs[name]['kVar'] = float(obj['q']['value'])/1000.0
       #print('SolarPV name: ' + name + ', kW: ' + str(SolarPVs[name]['kW']) + ', kVar: ' + str(SolarPVs[name]['kVar']))
 
-    #self.resiliency(EnergyConsumers, SychronousMachines, Batteries, SolarPVs)
-    self.resiliency(EnergyConsumers, SychronousMachines, Batteries, SolarPVs, emergencyState=True)
+    self.resiliency(EnergyConsumers, SynchronousMachines, Batteries, SolarPVs, emergencyState)
 
     sys.exit(0)
 
@@ -760,12 +787,14 @@ def _main():
   parser = argparse.ArgumentParser()
   parser.add_argument("simulation_id", help="Simulation ID")
   parser.add_argument("request", help="Simulation Request")
+  parser.add_argument("state", nargs="?", default="Alert", help="Alert or Emergency State")
   parser.add_argument("--api", action="store_true", help="Invoke static ybus as an API call rather than as a service")
   opts = parser.parse_args()
 
   sim_request = json.loads(opts.request.replace("\'",""))
   feeder_mrid = sim_request["power_system_config"]["Line_name"]
   simulation_id = opts.simulation_id
+  state = opts.state
 
   # authenticate with GridAPPS-D Platform
   os.environ['GRIDAPPSD_APPLICATION_ID'] = 'gridappsd-dynamic-ybus-service'
@@ -776,7 +805,7 @@ def _main():
   gapps = GridAPPSD(simulation_id)
   assert gapps.connected
 
-  dynamic_ybus = DynamicYbus(gapps, feeder_mrid, simulation_id)
+  dynamic_ybus = DynamicYbus(gapps, feeder_mrid, simulation_id, state)
 
 
 if __name__ == "__main__":

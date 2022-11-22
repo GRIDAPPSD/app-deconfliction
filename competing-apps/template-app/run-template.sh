@@ -19,11 +19,12 @@ if [[ -z "$SIMREQ" ]]; then
     #read -d "\n" SIMID SIMREQ <<< $(../sim-starter/sim-starter.py $1)
     read -d "\n" SIMREQ <<< $(../sim-starter/sim-starter.py $1 nosim)
     SIMID=0
+    STATE=$2
 else
 #   invocation when simulation is already started from platform viz
     SIMID=$1
 fi
 
 # this version invokes static ybus as an API call
-python3 template-app.py $SIMID "$SIMREQ" --api 2>&1 | tee template-app.log
+python3 template-app.py $SIMID "$SIMREQ" $STATE --api 2>&1 | tee template-app.log
 
