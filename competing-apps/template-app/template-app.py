@@ -584,16 +584,37 @@ class DynamicYbus(GridAPPSD):
 
     # Competing Apps Start
 
+    Loadshape = {}
+    Solar = {}
+    Price = {}
+
+    with open('time-series-data.csv', 'r') as f:
+      reader = csv.reader(f)
+      next(reader) # skip header
+
+      for row in reader:
+        time = int(row[0])
+        Loadshape[time] = float(row[1])
+        Solar[time] = float(row[2])
+        Price[time] = float(row[3])
+        #print('time series time: ' + str(time) + ', Loadshape: ' + str(Loadshape[time]) + ', Solar: ' + str(Solar[time]) + ', Price: ' + str(Price[time]))
+
+    # select random time between 40-60
+    # for now, just take time=50
+    t = 50 # 50,0.4159,0.814572,0.28
+    pv_mult = Solar[t]
+    load_mult = Loadshape[t]
+
     EnergyConsumers = {}
     objs = sparql_mgr.obj_dict_export('EnergyConsumer')
     print('Count of EnergyConsumers Dict: ' + str(len(objs)))
     for item in objs:
       name = item['IdentifiedObject.name']
       EnergyConsumers[name] = {}
-      EnergyConsumers[name]['kW'] = float(item['EnergyConsumer.p'])/1000.0
+      EnergyConsumers[name]['kW'] = load_mult*float(item['EnergyConsumer.p'])/1000.0
       # Shiva HACK to force battery charging...
       #EnergyConsumers[name]['kW'] = 0.01*float(item['EnergyConsumer.p'])/1000.0
-      EnergyConsumers[name]['kVar'] = float(item['EnergyConsumer.q'])/1000.0
+      EnergyConsumers[name]['kVar'] = load_mult*float(item['EnergyConsumer.q'])/1000.0
       #print('EnergyConsumer name: ' + name + ', kW: ' + str(EnergyConsumers[name]['kW']) + ', kVar: ' + str(EnergyConsumers[name]['kVar']))
 
     objs = sparql_mgr.obj_meas_export('EnergyConsumer')
@@ -654,7 +675,7 @@ class DynamicYbus(GridAPPSD):
       #ratedS = float(obj['ratedS']['value'])
       #ratedU = float(obj['ratedU']['value'])
       SolarPVs[name] = {}
-      SolarPVs[name]['kW'] = float(obj['p']['value'])/1000.0
+      SolarPVs[name]['kW'] = pv_mult*float(obj['p']['value'])/1000.0
       SolarPVs[name]['kVar'] = float(obj['q']['value'])/1000.0
       #print('SolarPV name: ' + name + ', kW: ' + str(SolarPVs[name]['kW']) + ', kVar: ' + str(SolarPVs[name]['kVar']))
 
@@ -682,22 +703,6 @@ class DynamicYbus(GridAPPSD):
     #  if item['type'] == 'Pos':
     #    print('PowerTransformer: ' + str(item))
     '''
-
-    Loadshape = {}
-    Solar = {}
-    Price = {}
-
-    with open('time-series-data.csv', 'r') as f:
-      reader = csv.reader(f)
-      next(reader) # skip header
-
-      for row in reader:
-        time = int(row[0])
-        Loadshape[time] = float(row[1])
-        Solar[time] = float(row[2])
-        Price[time] = float(row[3])
-        print('time series time: ' + str(time) + ', Loadshape: ' + str(Loadshape[time]) + ', Solar: ' + str(Solar[time]) + ', Price: ' + str(Price[time]))
-
 
     sys.exit(0)
     # Competing Apps Finish
