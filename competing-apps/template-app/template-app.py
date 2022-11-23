@@ -710,8 +710,6 @@ class DynamicYbus(GridAPPSD):
 
     self.resiliency(EnergyConsumers, SynchronousMachines, Batteries, SolarPVs, emergencyState)
 
-    sys.exit(0)
-
     '''
     bindings = sparql_mgr.regulator_query()
     print('Count of Regulators: ' + str(len(bindings)))
