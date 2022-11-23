@@ -521,15 +521,15 @@ class DynamicYbus(GridAPPSD):
     P_load = 0.0
     for name in EnergyConsumers:
       P_load += EnergyConsumers[name]['kW']
-    print('Total EnergyConsumers P_load: ' + str(P_load))
+    print('Total EnergyConsumers P_load: ' + str(P_load), flush=True)
 
     P_ren = 0.0
     for name in SolarPVs:
       P_ren += SolarPVs[name]['kW']
-    print('Total SolarPVs P_ren: ' + str(P_ren))
-    print('\n\nRESILIENCY APP OUTPUT\n---------------------')
+    print('Total SolarPVs P_ren: ' + str(P_ren), flush=True)
+    print('\n\nRESILIENCY APP OUTPUT\n---------------------', flush=True)
     msg = 'Emergency' if emergencyState else 'Alert'
-    print('\nSTATE: ' + msg + '\n')
+    print('\nSTATE: ' + msg + '\n', flush=True)
 
     eff_c = 0.9
     eff_d = 0.9
@@ -543,25 +543,25 @@ class DynamicYbus(GridAPPSD):
           P_batt_c = (0.9 - Batteries[name]['SoC'])*Batteries[name]['ratedE'] / (eff_c * T)
           Batteries[name]['P_batt_c'] = P_batt_c = min(P_batt_c, Batteries[name]['ratedkW'])
           P_batt_total += P_batt_c
-          print('Battery name: ' + name + ', P_batt_c: ' + str(P_batt_c) + ', ratedkW: ' + str(Batteries[name]['ratedkW']))
+          print('Battery name: ' + name + ', P_batt_c: ' + str(P_batt_c) + ', ratedkW: ' + str(Batteries[name]['ratedkW']), flush=True)
 
       if P_batt_total > 0.0:
         if P_ren > P_load:
           if P_ren - P_load >= P_batt_total:
-            # print('Charging from renewables')
+            # print('Charging from renewables', flush=True)
             # YES, Charge ESS
             self.charge_batteries(Batteries, eff_c, T)
 
           else:
             # NO, Check P_sub
             if P_ren + P_sub > P_load:
-              # print('P_ren<P_load Charging from renewable + substation')
+              # print('P_ren<P_load Charging from renewable + substation', flush=True)
               self.charge_batteries(Batteries, eff_c, T)
 
         else:
           # Check P_sub
           if P_ren + P_sub > P_load:
-            # print('P_ren+P_sub>P_load Charging from renewable + substation')
+            # print('P_ren+P_sub>P_load Charging from renewable + substation', flush=True)
             self.charge_batteries(Batteries, eff_c, T)
 
     else: # emergency state
@@ -572,7 +572,7 @@ class DynamicYbus(GridAPPSD):
         if Batteries[name]['SoC'] > 0.2:
           P_batt_d = (Batteries[name]['SoC'] - 0.2)*Batteries[name]['ratedE'] / (eff_d * T)
           Batteries[name]['P_batt_d'] = P_batt_d = min(P_batt_d, Batteries[name]['ratedkW'])
-          print('Battery name: ' + name + ', P_batt_d: ' + str(P_batt_d) + ', ratedkW: ' + str(Batteries[name]['ratedkW']))
+          print('Battery name: ' + name + ', P_batt_d: ' + str(P_batt_d) + ', ratedkW: ' + str(Batteries[name]['ratedkW']), flush=True)
           P_batt_total += P_batt_d
 
       if P_batt_total > 0.0:
@@ -580,26 +580,26 @@ class DynamicYbus(GridAPPSD):
 
       if P_batt_total + P_ren + P_sub <= P_load:
         P_def = P_load - (P_batt_total + P_ren + P_sub)
-        print('Power deficiency: ' + str(P_def))
+        print('Power deficiency: ' + str(P_def), flush=True)
 
         P_sync_available = 0.0
         for name, sync in SynchronousMachines.items():
           #avail = math.sqrt(sync['ratedS']**2 - (sync['kW']**2 + sync['kVar']**2))
           sync['P_available'] = math.sqrt(sync['ratedS']**2 - sync['kVar']**2)
           P_sync_available += sync['P_available']
-        print('SynchronousMachines available power: ' + str(P_sync_available))
+        print('SynchronousMachines available power: ' + str(P_sync_available), flush=True)
 
         if P_sync_available > P_def:
           for name, sync in SynchronousMachines.items():
             P_dis = P_def*sync['P_available']/P_sync_available
-            print('SynchronousMachine name: ' + name + ', P_dis: ' + str(P_dis))
+            print('SynchronousMachine name: ' + name + ', P_dis: ' + str(P_dis), flush=True)
         else:
           for name, sync in SynchronousMachines.items():
             P_dis = sync['P_available']
-            print('SynchronousMachine name: ' + name + ', P_dis: ' + str(P_dis))
+            print('SynchronousMachine name: ' + name + ', P_dis: ' + str(P_dis), flush=True)
 
     for name in Batteries:
-      print('Updated SoC for Battery: ' + name + ', SoC: ' + str(Batteries[name]['SoC']))
+      print('Updated SoC for Battery: ' + name + ', SoC: ' + str(Batteries[name]['SoC']), flush=True)
 
     return
 
@@ -625,7 +625,7 @@ class DynamicYbus(GridAPPSD):
         Loadshape[time] = float(row[1])
         Solar[time] = float(row[2])
         Price[time] = float(row[3])
-        #print('time series time: ' + str(time) + ', Loadshape: ' + str(Loadshape[time]) + ', Solar: ' + str(Solar[time]) + ', Price: ' + str(Price[time]))
+        #print('time series time: ' + str(time) + ', Loadshape: ' + str(Loadshape[time]) + ', Solar: ' + str(Solar[time]) + ', Price: ' + str(Price[time]), flush=True)
 
     # select random time between 40-60
     # for now, just take time=50
@@ -635,7 +635,7 @@ class DynamicYbus(GridAPPSD):
 
     EnergyConsumers = {}
     objs = sparql_mgr.obj_dict_export('EnergyConsumer')
-    print('Count of EnergyConsumers Dict: ' + str(len(objs)))
+    print('Count of EnergyConsumers Dict: ' + str(len(objs)), flush=True)
     for item in objs:
       name = item['IdentifiedObject.name']
       EnergyConsumers[name] = {}
@@ -643,47 +643,47 @@ class DynamicYbus(GridAPPSD):
       # Shiva HACK to force battery charging...
       #EnergyConsumers[name]['kW'] = 0.01*float(item['EnergyConsumer.p'])/1000.0
       EnergyConsumers[name]['kVar'] = load_mult*float(item['EnergyConsumer.q'])/1000.0
-      #print('EnergyConsumer name: ' + name + ', kW: ' + str(EnergyConsumers[name]['kW']) + ', kVar: ' + str(EnergyConsumers[name]['kVar']))
+      #print('EnergyConsumer name: ' + name + ', kW: ' + str(EnergyConsumers[name]['kW']) + ', kVar: ' + str(EnergyConsumers[name]['kVar']), flush=True)
 
     #objs = sparql_mgr.obj_meas_export('EnergyConsumer')
-    #print('Count of EnergyConsumers Meas: ' + str(len(objs)))
+    #print('Count of EnergyConsumers Meas: ' + str(len(objs)), flush=True)
     #for item in objs:
-    #  print('EnergyConsumer: ' + str(item))
+    #  print('EnergyConsumer: ' + str(item), flush=True)
 
     #objs = sparql_mgr.obj_meas_export('PowerElectronicsConnection')
-    #print('Count of PowerElectronicsConnections Meas: ' + str(len(objs)))
+    #print('Count of PowerElectronicsConnections Meas: ' + str(len(objs)), flush=True)
     #for item in objs:
-    #  print('PowerElectronicsConnection: ' + str(item))
+    #  print('PowerElectronicsConnection: ' + str(item), flush=True)
 
     #objs = sparql_mgr.obj_dict_export('LinearShuntCompensator')
-    #print('Count of LinearShuntCompensators Dict: ' + str(len(objs)))
+    #print('Count of LinearShuntCompensators Dict: ' + str(len(objs)), flush=True)
     #for item in objs:
-    #  print('LinearShuntCompensator: ' + str(item))
+    #  print('LinearShuntCompensator: ' + str(item), flush=True)
 
     #objs = sparql_mgr.obj_meas_export('LinearShuntCompensator')
-    #print('Count of LinearShuntCompensators Meas: ' + str(len(objs)))
+    #print('Count of LinearShuntCompensators Meas: ' + str(len(objs)), flush=True)
     #for item in objs:
-    #  print('LinearShuntCompensator: ' + str(item))
+    #  print('LinearShuntCompensator: ' + str(item), flush=True)
 
     SynchronousMachines = {}
     objs = sparql_mgr.obj_dict_export('SynchronousMachine')
-    print('Count of SynchronousMachines Dict: ' + str(len(objs)))
+    print('Count of SynchronousMachines Dict: ' + str(len(objs)), flush=True)
     for item in objs:
       name = item['IdentifiedObject.name']
       SynchronousMachines[name] = {}
       SynchronousMachines[name]['kW'] = float(item['SynchronousMachine.p'])/1000.0
       SynchronousMachines[name]['kVar'] = float(item['SynchronousMachine.q'])/1000.0
       SynchronousMachines[name]['ratedS'] = float(item['SynchronousMachine.ratedS'])/1000.0
-      print('SynchronousMachine name: ' + name + ', kW: ' + str(SynchronousMachines[name]['kW']) + ', kVar: ' + str(SynchronousMachines[name]['kVar']))
+      print('SynchronousMachine name: ' + name + ', kW: ' + str(SynchronousMachines[name]['kW']) + ', kVar: ' + str(SynchronousMachines[name]['kVar']), flush=True)
 
     objs = sparql_mgr.obj_meas_export('SynchronousMachine')
-    #print('Count of SynchronousMachines Meas: ' + str(len(objs)))
+    #print('Count of SynchronousMachines Meas: ' + str(len(objs)), flush=True)
     #for item in objs:
-    #  print('SynchronousMachine: ' + str(item))
+    #  print('SynchronousMachine: ' + str(item), flush=True)
 
     Batteries = {}
     bindings = sparql_mgr.battery_query()
-    print('Count of Batteries: ' + str(len(bindings)))
+    print('Count of Batteries: ' + str(len(bindings)), flush=True)
     for obj in bindings:
       name = obj['name']['value']
       #bus = obj['bus']['value'].upper()
@@ -693,11 +693,11 @@ class DynamicYbus(GridAPPSD):
       # Shiva HACK
       #Batteries[name]['SoC'] = 0.25
       Batteries[name]['SoC'] = float(obj['storedE']['value'])/float(obj['ratedE']['value'])
-      print('Battery name: ' + name + ', ratedE: ' + str(Batteries[name]['ratedE']) + ', SoC: ' + str(Batteries[name]['SoC']))
+      print('Battery name: ' + name + ', ratedE: ' + str(Batteries[name]['ratedE']) + ', SoC: ' + str(Batteries[name]['SoC']), flush=True)
 
     SolarPVs = {}
     bindings = sparql_mgr.pv_query()
-    print('Count of SolarPV: ' + str(len(bindings)))
+    print('Count of SolarPV: ' + str(len(bindings)), flush=True)
     for obj in bindings:
       name = obj['name']['value']
       #bus = obj['bus']['value'].upper()
@@ -706,13 +706,13 @@ class DynamicYbus(GridAPPSD):
       SolarPVs[name] = {}
       SolarPVs[name]['kW'] = pv_mult*float(obj['p']['value'])/1000.0
       SolarPVs[name]['kVar'] = float(obj['q']['value'])/1000.0
-      #print('SolarPV name: ' + name + ', kW: ' + str(SolarPVs[name]['kW']) + ', kVar: ' + str(SolarPVs[name]['kVar']))
+      #print('SolarPV name: ' + name + ', kW: ' + str(SolarPVs[name]['kW']) + ', kVar: ' + str(SolarPVs[name]['kVar']), flush=True)
 
     self.resiliency(EnergyConsumers, SynchronousMachines, Batteries, SolarPVs, emergencyState)
 
     '''
     bindings = sparql_mgr.regulator_query()
-    print('Count of Regulators: ' + str(len(bindings)))
+    print('Count of Regulators: ' + str(len(bindings)), flush=True)
     for obj in bindings:
       rname = obj['rname']['value']
       pname = obj['pname']['value']
@@ -721,13 +721,13 @@ class DynamicYbus(GridAPPSD):
       else:
         phs = 'ABC'
       step = int(obj['step']['value'])
-      #print('Regulator rname: ' + rname + ', pname: ' + pname + ', phs: ' + phs + ', step: ' + str(step))
+      #print('Regulator rname: ' + rname + ', pname: ' + pname + ', phs: ' + phs + ', step: ' + str(step), flush=True)
 
     objs = sparql_mgr.obj_meas_export('PowerTransformer')
-    print('Count of PowerTransformer Meas: ' + str(len(objs)))
+    print('Count of PowerTransformer Meas: ' + str(len(objs)), flush=True)
     #for item in objs:
     #  if item['type'] == 'Pos':
-    #    print('PowerTransformer: ' + str(item))
+    #    print('PowerTransformer: ' + str(item), flush=True)
     '''
 
     sys.exit(0)
@@ -773,6 +773,8 @@ class DynamicYbus(GridAPPSD):
 
 
 def _main():
+  print('Starting app code...', flush=True)
+
   # for loading modules
   if (os.path.isdir('shared')):
     sys.path.append('.')
