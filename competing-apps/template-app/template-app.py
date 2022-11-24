@@ -449,35 +449,7 @@ def nodes_to_update(sparql_mgr):
     return SwitchMridToNodes,TransformerMridToNodes,TransformerLastPos,CapacitorMridToNode,CapacitorMridToYbusContrib,CapacitorLastValue
 
 
-class DynamicYbus(GridAPPSD):
-
-  def opendss_ybus(self, sparql_mgr):
-    yParse,nodeList = sparql_mgr.ybus_export()
-
-    idx = 1
-    Nodes = {}
-    NodeIndex = {}
-    for obj in nodeList:
-      Nodes[idx] = obj.strip('\"')
-      NodeIndex[obj.strip('\"')] = idx
-      idx += 1
-    #pprint.pprint(Nodes)
-    #pprint.pprint(NodeIndex)
-
-    Ybus = {}
-    for obj in yParse:
-      items = obj.split(',')
-      if items[0] == 'Row':
-        continue
-      if Nodes[int(items[0])] not in Ybus:
-        Ybus[Nodes[int(items[0])]] = {}
-      if Nodes[int(items[1])] not in Ybus:
-        Ybus[Nodes[int(items[1])]] = {}
-      Ybus[Nodes[int(items[0])]][Nodes[int(items[1])]] = Ybus[Nodes[int(items[1])]][Nodes[int(items[0])]] = complex(float(items[2]), float(items[3]))
-    #pprint.pprint(Ybus)
-
-    return NodeIndex, Ybus
-
+class CompetingApp(GridAPPSD):
 
   def on_message(self, headers, message):
     reply_to = headers['reply-to']
@@ -515,8 +487,8 @@ class DynamicYbus(GridAPPSD):
         Batteries[name]['SoC'] -= eff_d*Batteries[name]['P_batt_d']*T/Batteries[name]['ratedE']
 
 
-  def resiliency(self, EnergyConsumers, SynchronousMachines, Batteries, SolarPVs,
-                 emergencyState=False):
+  def resiliency(self, EnergyConsumers, SynchronousMachines, Batteries,
+                 SolarPVs, emergencyState=False):
 
     P_load = 0.0
     for name in EnergyConsumers:
@@ -733,16 +705,7 @@ class DynamicYbus(GridAPPSD):
     sys.exit(0)
     # Competing Apps Finish
 
-    SwitchMridToNodes,TransformerMridToNodes,TransformerLastPos,CapacitorMridToNode,CapacitorMridToYbusContrib,CapacitorLastValue = nodes_to_update(sparql_mgr)
-
-    # Hold here for demo
-    #text = input('\nWait here...')
-
-    # Get node to index mapping from OpenDSS
-    NodeIndex, Ybus = self.opendss_ybus(sparql_mgr)
-
-    gapps_sim = GridAPPSD()
-
+    '''
     self.simRap = SimWrapper(gapps_sim, feeder_mrid, simulation_id, Ybus, NodeIndex, SwitchMridToNodes, TransformerMridToNodes, TransformerLastPos, CapacitorMridToNode, CapacitorMridToYbusContrib, CapacitorLastValue)
 
     # don't subscribe to handle snapshot requests until we have an initial
@@ -768,6 +731,7 @@ class DynamicYbus(GridAPPSD):
     gapps.unsubscribe(req_id)
     gapps_sim.unsubscribe(out_id)
     gapps_sim.unsubscribe(log_id)
+    '''
 
     return
 
@@ -806,7 +770,7 @@ def _main():
   gapps = GridAPPSD(simulation_id)
   assert gapps.connected
 
-  dynamic_ybus = DynamicYbus(gapps, feeder_mrid, simulation_id, state)
+  competing_app = CompetingApp(gapps, feeder_mrid, simulation_id, state)
 
 
 if __name__ == "__main__":
