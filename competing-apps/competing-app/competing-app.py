@@ -499,9 +499,11 @@ class CompetingApp(GridAPPSD):
     for name in SolarPVs:
       P_ren += SolarPVs[name]['kW']
     print('Total SolarPVs P_ren: ' + str(P_ren), flush=True)
-    print('\n\nRESILIENCY APP OUTPUT\n---------------------', flush=True)
-    msg = 'Emergency' if emergencyState else 'Alert'
-    print('\nSTATE: ' + msg + '\n', flush=True)
+
+    if emergencyState:
+      print('\nRESILIENCY APP OUTPUT: Emergency state\n--------------------------------------', flush=True)
+    else:
+      print('\nRESILIENCY APP OUTPUT: Alert state\n----------------------------------', flush=True)
 
     eff_c = 0.9
     eff_d = 0.9
