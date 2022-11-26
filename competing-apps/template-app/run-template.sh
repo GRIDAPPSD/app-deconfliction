@@ -11,7 +11,7 @@
 if [[ -z "$SIMREQ" ]]; then
     # requires at least a reference to the type of simulation to use
     if [ "$#" -eq 0 ]; then
-        echo "Usage: ./run-template.sh #nodes"
+        echo "Usage: ./run-competing.sh #nodes"
         echo
         exit
     fi
@@ -26,5 +26,5 @@ else
 fi
 
 # this version invokes static ybus as an API call
-python3 template-app.py $SIMID "$SIMREQ" $STATE --api 2>&1 | tee template-app.log
+python3 competing-app.py $SIMID "$SIMREQ" $STATE --api 2>&1 | tee competing-app.log
 
