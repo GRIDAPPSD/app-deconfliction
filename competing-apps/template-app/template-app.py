@@ -1,5 +1,5 @@
 
-# Copyright (c) 2021, Battelle Memorial Institute All rights reserved.
+# Copyright (c) 2022, Battelle Memorial Institute All rights reserved.
 # Battelle Memorial Institute (hereinafter Battelle) hereby grants permission to any person or entity
 # lawfully obtaining a copy of this software and associated documentation files (hereinafter the
 # Software) to redistribute and use the Software in source and binary forms, with or without modification.
@@ -753,7 +753,6 @@ def _main():
   parser.add_argument("simulation_id", help="Simulation ID")
   parser.add_argument("request", help="Simulation Request")
   parser.add_argument("state", nargs="?", default="Alert", help="Alert or Emergency State")
-  parser.add_argument("--api", action="store_true", help="Invoke static ybus as an API call rather than as a service")
   opts = parser.parse_args()
 
   sim_request = json.loads(opts.request.replace("\'",""))
@@ -762,7 +761,7 @@ def _main():
   state = opts.state
 
   # authenticate with GridAPPS-D Platform
-  os.environ['GRIDAPPSD_APPLICATION_ID'] = 'gridappsd-dynamic-ybus-service'
+  os.environ['GRIDAPPSD_APPLICATION_ID'] = 'gridappsd-competing-app'
   os.environ['GRIDAPPSD_APPLICATION_STATUS'] = 'STARTED'
   os.environ['GRIDAPPSD_USER'] = 'app_user'
   os.environ['GRIDAPPSD_PASSWORD'] = '1234App'
