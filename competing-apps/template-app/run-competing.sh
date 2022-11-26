@@ -26,5 +26,5 @@ else
 fi
 
 # this version invokes static ybus as an API call
-python3 competing-app.py $SIMID "$SIMREQ" $STATE --api 2>&1 | tee competing-app.log
+python3 competing-app.py $SIMID "$SIMREQ" $STATE 2>&1 | tee competing-app.log
 
