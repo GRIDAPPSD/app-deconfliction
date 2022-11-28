@@ -574,6 +574,10 @@ class CompetingApp(GridAPPSD):
 
     for name in Batteries:
       print('Battery name: ' + name + ', updated SoC: ' + str(Batteries[name]['SoC']), flush=True)
+      #if 'P_batt_c' in Batteries[name]:
+      #  print('Battery name: ' + name + ', P_batt_c: ' + str(Batteries[name]['P_batt_c']) + ', updated SoC: ' + str(Batteries[name]['SoC']), flush=True)
+      #if 'P_batt_d' in Batteries[name]:
+      #  print('Battery name: ' + name + ', P_batt_d: ' + str(Batteries[name]['P_batt_d']) + ', updated SoC: ' + str(Batteries[name]['SoC']), flush=True)
 
     return
 
@@ -611,32 +615,20 @@ class CompetingApp(GridAPPSD):
         Batteries[name]['P_batt_c'] = P_batt_c = min(P_batt_c, Batteries[name]['ratedkW'])
         P_batt_total += P_batt_c
 
-    if P_batt_total > 0.0:
-      if P_ren > P_load:
-        P_surplus = P_ren - P_load
-        print('P_surplus: ' + str(P_surplus) + ', P_batt_total: ' + str(P_batt_total), flush=True)
-        # print('Charging from renewables', flush=True)
-        if P_surplus < P_batt_total:
-          for name in Batteries:
-            if 'P_batt_c' in Batteries[name]:
-              Batteries[name]['P_batt_c'] = Batteries[name]['P_batt_c']*P_surplus/P_batt_total
+    if P_ren > P_load:
+      P_surplus = P_ren - P_load
+      print('P_surplus: ' + str(P_surplus) + ', P_batt_total: ' + str(P_batt_total), flush=True)
 
-        self.charge_batteries(Batteries, eff_c, T)
+      # print('Charging from renewables', flush=True)
+      if P_surplus < P_batt_total:
+        for name in Batteries:
+          if 'P_batt_c' in Batteries[name]:
+            Batteries[name]['P_batt_c'] *= P_surplus/P_batt_total
 
-      else:
-        pass
-        '''
-        # Check P_sub
-        if P_ren + P_sub > P_load:
-          # print('P_ren+P_sub>P_load Charging from renewable + substation', flush=True)
-          self.charge_batteries(Batteries, eff_c, T)
-        '''
+      self.charge_batteries(Batteries, eff_c, T)
 
-    '''
-    else: # emergency state
+    else:
       P_batt_total = 0.0
-      # Shiva HACK
-      P_sub = 0.0
       for name in Batteries:
         if Batteries[name]['SoC'] > 0.2:
           P_batt_d = (Batteries[name]['SoC'] - 0.2)*Batteries[name]['ratedE'] / (eff_d * T)
@@ -666,10 +658,13 @@ class CompetingApp(GridAPPSD):
           for name, sync in SynchronousMachines.items():
             P_dis = sync['P_available']
             print('SynchronousMachine name: ' + name + ', P_dis: ' + str(P_dis), flush=True)
-    '''
 
     for name in Batteries:
-      print('Battery name: ' + name + ', P_batt_c: ' + str(Batteries[name]['P_batt_c']) + ', updated SoC: ' + str(Batteries[name]['SoC']), flush=True)
+      print('Battery name: ' + name + ', updated SoC: ' + str(Batteries[name]['SoC']), flush=True)
+      #if 'P_batt_c' in Batteries[name]:
+      #  print('Battery name: ' + name + ', P_batt_c: ' + str(Batteries[name]['P_batt_c']) + ', updated SoC: ' + str(Batteries[name]['SoC']), flush=True)
+      #if 'P_batt_d' in Batteries[name]:
+      #  print('Battery name: ' + name + ', P_batt_d: ' + str(Batteries[name]['P_batt_d']) + ', updated SoC: ' + str(Batteries[name]['SoC']), flush=True)
 
     return
 
@@ -709,9 +704,9 @@ class CompetingApp(GridAPPSD):
     for item in objs:
       name = item['IdentifiedObject.name']
       EnergyConsumers[name] = {}
-      #EnergyConsumers[name]['kW'] = load_mult*float(item['EnergyConsumer.p'])/1000.0
       # Shiva HACK to force battery charging...
       EnergyConsumers[name]['kW'] = 0.01*float(item['EnergyConsumer.p'])/1000.0
+      #EnergyConsumers[name]['kW'] = load_mult*float(item['EnergyConsumer.p'])/1000.0
       EnergyConsumers[name]['kVar'] = load_mult*float(item['EnergyConsumer.q'])/1000.0
       #print('EnergyConsumer name: ' + name + ', kW: ' + str(EnergyConsumers[name]['kW']) + ', kVar: ' + str(EnergyConsumers[name]['kVar']), flush=True)
 
@@ -761,7 +756,7 @@ class CompetingApp(GridAPPSD):
       Batteries[name]['ratedkW'] = float(obj['ratedS']['value'])/1000.0
       Batteries[name]['ratedE'] = float(obj['ratedE']['value'])/1000.0
       # Shiva HACK
-      #Batteries[name]['SoC'] = 0.25
+      #Batteries[name]['SoC'] = 0.7
       Batteries[name]['SoC'] = float(obj['storedE']['value'])/float(obj['ratedE']['value'])
       print('Battery name: ' + name + ', ratedE: ' + str(Batteries[name]['ratedE']) + ', SoC: ' + str(Batteries[name]['SoC']), flush=True)
 
