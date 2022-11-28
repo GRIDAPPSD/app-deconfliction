@@ -475,6 +475,39 @@ class CompetingApp(GridAPPSD):
       self.simRap.gapps.send(reply_to, message)
 
 
+  def dispatch_DGSs(Batteries, SynchronousMachines, eff_d, T, P_load, P_ren, P_sub):
+    P_batt_total = 0.0
+    for name in Batteries:
+      if Batteries[name]['SoC'] > 0.2:
+        P_batt_d = (Batteries[name]['SoC'] - 0.2)*Batteries[name]['ratedE'] / (eff_d * T)
+        Batteries[name]['P_batt_d'] = P_batt_d = min(P_batt_d, Batteries[name]['ratedkW'])
+        print('Battery name: ' + name + ', P_batt_d: ' + str(P_batt_d) + ', ratedkW: ' + str(Batteries[name]['ratedkW']), flush=True)
+        P_batt_total += P_batt_d
+
+    if P_batt_total > 0.0:
+      self.discharge_batteries(Batteries, eff_d, T)
+
+    if P_batt_total + P_ren + P_sub <= P_load:
+      P_def = P_load - (P_batt_total + P_ren + P_sub)
+      print('Power deficiency: ' + str(P_def), flush=True)
+
+      P_sync_available = 0.0
+      for name, sync in SynchronousMachines.items():
+        #avail = math.sqrt(sync['ratedS']**2 - (sync['kW']**2 + sync['kVar']**2))
+        sync['P_available'] = math.sqrt(sync['ratedS']**2 - sync['kVar']**2)
+        P_sync_available += sync['P_available']
+      print('SynchronousMachines available power: ' + str(P_sync_available), flush=True)
+
+      if P_sync_available > P_def:
+        for name, sync in SynchronousMachines.items():
+          P_dis = P_def*sync['P_available']/P_sync_available
+          print('SynchronousMachine name: ' + name + ', P_dis: ' + str(P_dis), flush=True)
+      else:
+        for name, sync in SynchronousMachines.items():
+          P_dis = sync['P_available']
+          print('SynchronousMachine name: ' + name + ', P_dis: ' + str(P_dis), flush=True)
+
+
   def charge_batteries(self, Batteries, eff_c, T):
     for name in Batteries:
       if 'P_batt_c' in Batteries[name]:
@@ -539,39 +572,9 @@ class CompetingApp(GridAPPSD):
             self.charge_batteries(Batteries, eff_c, T)
 
     else: # emergency state
-      P_batt_total = 0.0
       # Shiva HACK
       P_sub = 0.0
-      for name in Batteries:
-        if Batteries[name]['SoC'] > 0.2:
-          P_batt_d = (Batteries[name]['SoC'] - 0.2)*Batteries[name]['ratedE'] / (eff_d * T)
-          Batteries[name]['P_batt_d'] = P_batt_d = min(P_batt_d, Batteries[name]['ratedkW'])
-          print('Battery name: ' + name + ', P_batt_d: ' + str(P_batt_d) + ', ratedkW: ' + str(Batteries[name]['ratedkW']), flush=True)
-          P_batt_total += P_batt_d
-
-      if P_batt_total > 0.0:
-        self.discharge_batteries(Batteries, eff_d, T)
-
-      if P_batt_total + P_ren + P_sub <= P_load:
-        P_def = P_load - (P_batt_total + P_ren + P_sub)
-        print('Power deficiency: ' + str(P_def), flush=True)
-
-        P_sync_available = 0.0
-        for name, sync in SynchronousMachines.items():
-          #avail = math.sqrt(sync['ratedS']**2 - (sync['kW']**2 + sync['kVar']**2))
-          sync['P_available'] = math.sqrt(sync['ratedS']**2 - sync['kVar']**2)
-          P_sync_available += sync['P_available']
-        print('SynchronousMachines available power: ' + str(P_sync_available), flush=True)
-
-        if P_sync_available > P_def:
-          for name, sync in SynchronousMachines.items():
-            P_dis = P_def*sync['P_available']/P_sync_available
-            print('SynchronousMachine name: ' + name + ', P_dis: ' + str(P_dis), flush=True)
-        else:
-          for name, sync in SynchronousMachines.items():
-            P_dis = sync['P_available']
-            print('SynchronousMachine name: ' + name + ', P_dis: ' + str(P_dis), flush=True)
-
+      dispatch_DGSs(Batteries, SynchronousMachines, eff_d, T, P_load, P_ren, P_sub)
     for name in Batteries:
       print('Battery name: ' + name + ', updated SoC: ' + str(Batteries[name]['SoC']), flush=True)
       #if 'P_batt_c' in Batteries[name]:
@@ -628,36 +631,7 @@ class CompetingApp(GridAPPSD):
       self.charge_batteries(Batteries, eff_c, T)
 
     else:
-      P_batt_total = 0.0
-      for name in Batteries:
-        if Batteries[name]['SoC'] > 0.2:
-          P_batt_d = (Batteries[name]['SoC'] - 0.2)*Batteries[name]['ratedE'] / (eff_d * T)
-          Batteries[name]['P_batt_d'] = P_batt_d = min(P_batt_d, Batteries[name]['ratedkW'])
-          print('Battery name: ' + name + ', P_batt_d: ' + str(P_batt_d) + ', ratedkW: ' + str(Batteries[name]['ratedkW']), flush=True)
-          P_batt_total += P_batt_d
-
-      if P_batt_total > 0.0:
-        self.discharge_batteries(Batteries, eff_d, T)
-
-      if P_batt_total + P_ren + P_sub <= P_load:
-        P_def = P_load - (P_batt_total + P_ren + P_sub)
-        print('Power deficiency: ' + str(P_def), flush=True)
-
-        P_sync_available = 0.0
-        for name, sync in SynchronousMachines.items():
-          #avail = math.sqrt(sync['ratedS']**2 - (sync['kW']**2 + sync['kVar']**2))
-          sync['P_available'] = math.sqrt(sync['ratedS']**2 - sync['kVar']**2)
-          P_sync_available += sync['P_available']
-        print('SynchronousMachines available power: ' + str(P_sync_available), flush=True)
-
-        if P_sync_available > P_def:
-          for name, sync in SynchronousMachines.items():
-            P_dis = P_def*sync['P_available']/P_sync_available
-            print('SynchronousMachine name: ' + name + ', P_dis: ' + str(P_dis), flush=True)
-        else:
-          for name, sync in SynchronousMachines.items():
-            P_dis = sync['P_available']
-            print('SynchronousMachine name: ' + name + ', P_dis: ' + str(P_dis), flush=True)
+      dispatch_DGSs(Batteries, SynchronousMachines, eff_d, T, P_load, P_ren, P_sub)
 
     for name in Batteries:
       print('Battery name: ' + name + ', updated SoC: ' + str(Batteries[name]['SoC']), flush=True)
@@ -774,6 +748,7 @@ class CompetingApp(GridAPPSD):
       #print('SolarPV name: ' + name + ', kW: ' + str(SolarPVs[name]['kW']) + ', kVar: ' + str(SolarPVs[name]['kVar']), flush=True)
 
     #self.resiliency(EnergyConsumers, SynchronousMachines, Batteries, SolarPVs, emergencyState)
+
     self.decarbonization(EnergyConsumers, SynchronousMachines, Batteries, SolarPVs)
 
     '''
