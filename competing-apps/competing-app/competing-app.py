@@ -521,7 +521,7 @@ class CompetingApp(GridAPPSD):
 
 
   def resiliency(self, EnergyConsumers, SynchronousMachines, Batteries,
-                 SolarPVs, emergencyState=False):
+                 SolarPVs, t, emergencyState=False):
 
     P_load = 0.0
     for name in EnergyConsumers:
@@ -537,6 +537,8 @@ class CompetingApp(GridAPPSD):
       print('\nRESILIENCY APP OUTPUT: Emergency state\n--------------------------------------', flush=True)
     else:
       print('\nRESILIENCY APP OUTPUT: Alert state\n----------------------------------', flush=True)
+
+    print('t: ' + str(t), flush=True)
 
     eff_c = 0.9
     eff_d = 0.9
@@ -592,7 +594,7 @@ class CompetingApp(GridAPPSD):
 
 
   def decarbonization(self, EnergyConsumers, SynchronousMachines, Batteries,
-                      SolarPVs):
+                      SolarPVs, t):
 
     P_load = 0.0
     for name in EnergyConsumers:
@@ -605,6 +607,8 @@ class CompetingApp(GridAPPSD):
     print('Total SolarPVs P_ren: ' + str(P_ren), flush=True)
 
     print('\nDECARBONIZATION APP OUTPUT\n--------------------------', flush=True)
+
+    print('t: ' + str(t), flush=True)
 
     eff_c = 0.9
     eff_d = 0.9
@@ -749,9 +753,9 @@ class CompetingApp(GridAPPSD):
       #print('SolarPV name: ' + name + ', kW: ' + str(SolarPVs[name]['kW']) + ', kVar: ' + str(SolarPVs[name]['kVar']), flush=True)
 
     if app.startswith('r') or app.startswith('R'):
-      self.resiliency(EnergyConsumers, SynchronousMachines, Batteries, SolarPVs, emergencyState)
+      self.resiliency(EnergyConsumers, SynchronousMachines, Batteries, SolarPVs, t, emergencyState)
     elif app.startswith('d') or app.startswith('D'):
-      self.decarbonization(EnergyConsumers, SynchronousMachines, Batteries, SolarPVs)
+      self.decarbonization(EnergyConsumers, SynchronousMachines, Batteries, SolarPVs, t)
 
     '''
     bindings = sparql_mgr.regulator_query()
