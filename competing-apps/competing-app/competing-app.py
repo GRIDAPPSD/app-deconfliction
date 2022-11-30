@@ -475,7 +475,7 @@ class CompetingApp(GridAPPSD):
       self.simRap.gapps.send(reply_to, message)
 
 
-  def dispatch_DGSs(Batteries, SynchronousMachines, eff_d, T, P_load, P_ren, P_sub):
+  def dispatch_DGSs(self, Batteries, SynchronousMachines, eff_d, T, P_load, P_ren, P_sub):
     P_batt_total = 0.0
     for name in Batteries:
       if Batteries[name]['SoC'] > 0.2:
@@ -574,7 +574,7 @@ class CompetingApp(GridAPPSD):
     else: # emergency state
       # Shiva HACK
       P_sub = 0.0
-      dispatch_DGSs(Batteries, SynchronousMachines, eff_d, T, P_load, P_ren, P_sub)
+      self.dispatch_DGSs(Batteries, SynchronousMachines, eff_d, T, P_load, P_ren, P_sub)
     for name in Batteries:
       print('Battery name: ' + name + ', updated SoC: ' + str(Batteries[name]['SoC']), flush=True)
       #if 'P_batt_c' in Batteries[name]:
@@ -631,7 +631,7 @@ class CompetingApp(GridAPPSD):
       self.charge_batteries(Batteries, eff_c, T)
 
     else:
-      dispatch_DGSs(Batteries, SynchronousMachines, eff_d, T, P_load, P_ren, P_sub)
+      self.dispatch_DGSs(Batteries, SynchronousMachines, eff_d, T, P_load, P_ren, P_sub)
 
     for name in Batteries:
       print('Battery name: ' + name + ', updated SoC: ' + str(Batteries[name]['SoC']), flush=True)
@@ -643,7 +643,7 @@ class CompetingApp(GridAPPSD):
     return
 
 
-  def __init__(self, gapps, feeder_mrid, simulation_id, state):
+  def __init__(self, gapps, feeder_mrid, simulation_id, app, state):
     SPARQLManager = getattr(importlib.import_module('shared.sparql'), 'SPARQLManager')
     sparql_mgr = SPARQLManager(gapps, feeder_mrid, simulation_id)
 
@@ -747,9 +747,10 @@ class CompetingApp(GridAPPSD):
       SolarPVs[name]['kVar'] = float(obj['q']['value'])/1000.0
       #print('SolarPV name: ' + name + ', kW: ' + str(SolarPVs[name]['kW']) + ', kVar: ' + str(SolarPVs[name]['kVar']), flush=True)
 
-    #self.resiliency(EnergyConsumers, SynchronousMachines, Batteries, SolarPVs, emergencyState)
-
-    self.decarbonization(EnergyConsumers, SynchronousMachines, Batteries, SolarPVs)
+    if app.startswith('r') or app.startswith('R'):
+      self.resiliency(EnergyConsumers, SynchronousMachines, Batteries, SolarPVs, emergencyState)
+    elif app.startswith('d') or app.startswith('D'):
+      self.decarbonization(EnergyConsumers, SynchronousMachines, Batteries, SolarPVs)
 
     '''
     bindings = sparql_mgr.regulator_query()
@@ -821,12 +822,14 @@ def _main():
   parser = argparse.ArgumentParser()
   parser.add_argument("simulation_id", help="Simulation ID")
   parser.add_argument("request", help="Simulation Request")
+  parser.add_argument("app", nargs="?", default="Resiliency", help="Resiliency or Decarbonization or Profit")
   parser.add_argument("state", nargs="?", default="Alert", help="Alert or Emergency State")
   opts = parser.parse_args()
 
   sim_request = json.loads(opts.request.replace("\'",""))
   feeder_mrid = sim_request["power_system_config"]["Line_name"]
   simulation_id = opts.simulation_id
+  app = opts.app
   state = opts.state
 
   # authenticate with GridAPPS-D Platform
@@ -838,7 +841,7 @@ def _main():
   gapps = GridAPPSD(simulation_id)
   assert gapps.connected
 
-  competing_app = CompetingApp(gapps, feeder_mrid, simulation_id, state)
+  competing_app = CompetingApp(gapps, feeder_mrid, simulation_id, app, state)
 
 
 if __name__ == "__main__":
