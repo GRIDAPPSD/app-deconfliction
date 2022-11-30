@@ -628,7 +628,8 @@ class CompetingApp(GridAPPSD):
           if 'P_batt_c' in Batteries[name]:
             Batteries[name]['P_batt_c'] *= P_surplus/P_batt_total
 
-      self.charge_batteries(Batteries, eff_c, T)
+      if P_batt_total > 0.0:
+        self.charge_batteries(Batteries, eff_c, T)
 
     else:
       self.dispatch_DGSs(Batteries, SynchronousMachines, eff_d, T, P_load, P_ren, P_sub)
@@ -730,8 +731,8 @@ class CompetingApp(GridAPPSD):
       Batteries[name]['ratedkW'] = float(obj['ratedS']['value'])/1000.0
       Batteries[name]['ratedE'] = float(obj['ratedE']['value'])/1000.0
       # Shiva HACK
-      #Batteries[name]['SoC'] = 0.7
-      Batteries[name]['SoC'] = float(obj['storedE']['value'])/float(obj['ratedE']['value'])
+      Batteries[name]['SoC'] = 0.5
+      #Batteries[name]['SoC'] = float(obj['storedE']['value'])/float(obj['ratedE']['value'])
       print('Battery name: ' + name + ', ratedE: ' + str(Batteries[name]['ratedE']) + ', SoC: ' + str(Batteries[name]['SoC']), flush=True)
 
     SolarPVs = {}
