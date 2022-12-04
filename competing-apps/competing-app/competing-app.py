@@ -481,7 +481,6 @@ class CompetingApp(GridAPPSD):
       if Batteries[name]['SoC'] > 0.2:
         P_batt_d = (Batteries[name]['SoC'] - 0.2)*Batteries[name]['ratedE'] / (eff_d * T)
         Batteries[name]['P_batt_d'] = P_batt_d = min(P_batt_d, Batteries[name]['ratedkW'])
-        print('Battery name: ' + name + ', P_batt_d: ' + str(P_batt_d) + ', ratedkW: ' + str(Batteries[name]['ratedkW']), flush=True)
         P_batt_total += P_batt_d
 
     if P_batt_total > 0.0:
@@ -489,49 +488,51 @@ class CompetingApp(GridAPPSD):
 
     if P_batt_total + P_ren + P_sub <= P_load:
       P_def = P_load - (P_batt_total + P_ren + P_sub)
-      print('Power deficiency: ' + str(P_def), flush=True)
+      print('Power deficiency: ' + str(round(P_def,4)), flush=True)
 
       P_sync_available = 0.0
       for name, sync in SynchronousMachines.items():
         #avail = math.sqrt(sync['ratedS']**2 - (sync['kW']**2 + sync['kVar']**2))
         sync['P_available'] = math.sqrt(sync['ratedS']**2 - sync['kVar']**2)
         P_sync_available += sync['P_available']
-      print('SynchronousMachines available power: ' + str(P_sync_available), flush=True)
+      print('SynchronousMachines available power: ' + str(round(P_sync_available,4)), flush=True)
 
       if P_sync_available > P_def:
         for name, sync in SynchronousMachines.items():
           P_dis = P_def*sync['P_available']/P_sync_available
-          print('SynchronousMachine name: ' + name + ', P_dis: ' + str(P_dis), flush=True)
+          print('SynchronousMachine name: ' + name + ', P_dis: ' + str(round(P_dis,4)), flush=True)
       else:
         for name, sync in SynchronousMachines.items():
           P_dis = sync['P_available']
-          print('SynchronousMachine name: ' + name + ', P_dis: ' + str(P_dis), flush=True)
+          print('SynchronousMachine name: ' + name + ', P_dis: ' + str(round(P_dis,4)), flush=True)
 
 
   def charge_batteries(self, Batteries, eff_c, T):
     for name in Batteries:
+      Batteries[name]['state'] = 'charging'
       if 'P_batt_c' in Batteries[name]:
         Batteries[name]['SoC'] += eff_c*Batteries[name]['P_batt_c']*T/Batteries[name]['ratedE']
 
 
   def discharge_batteries(self, Batteries, eff_d, T):
     for name in Batteries:
+      Batteries[name]['state'] = 'discharging'
       if 'P_batt_d' in Batteries[name]:
         Batteries[name]['SoC'] -= eff_d*Batteries[name]['P_batt_d']*T/Batteries[name]['ratedE']
 
 
   def resiliency(self, EnergyConsumers, SynchronousMachines, Batteries,
-                 SolarPVs, t, emergencyState=False):
+                 SolarPVs, t, load_mult, pv_mult, emergencyState=False):
 
     P_load = 0.0
     for name in EnergyConsumers:
-      P_load += EnergyConsumers[name]['kW']
-    print('Total EnergyConsumers P_load: ' + str(P_load), flush=True)
+      P_load += load_mult*EnergyConsumers[name]['kW']
+    print('Total EnergyConsumers P_load: ' + str(round(P_load,4)), flush=True)
 
     P_ren = 0.0
     for name in SolarPVs:
-      P_ren += SolarPVs[name]['kW']
-    print('Total SolarPVs P_ren: ' + str(P_ren), flush=True)
+      P_ren += pv_mult*SolarPVs[name]['kW']
+    print('Total SolarPVs P_ren: ' + str(round(P_ren,4)), flush=True)
 
     if emergencyState:
       print('\nRESILIENCY APP OUTPUT: Emergency state\n--------------------------------------', flush=True)
@@ -548,11 +549,11 @@ class CompetingApp(GridAPPSD):
     if not emergencyState: # alert state
       P_batt_total = 0.0
       for name in Batteries:
+        Batteries[name]['state'] = 'idling'
         if Batteries[name]['SoC'] < 0.9:
           P_batt_c = (0.9 - Batteries[name]['SoC'])*Batteries[name]['ratedE'] / (eff_c * T)
           Batteries[name]['P_batt_c'] = P_batt_c = min(P_batt_c, Batteries[name]['ratedkW'])
           P_batt_total += P_batt_c
-          print('Battery name: ' + name + ', P_batt_c: ' + str(P_batt_c) + ', ratedkW: ' + str(Batteries[name]['ratedkW']), flush=True)
 
       if P_batt_total > 0.0:
         if P_ren > P_load:
@@ -578,33 +579,28 @@ class CompetingApp(GridAPPSD):
       P_sub = 0.0
       self.dispatch_DGSs(Batteries, SynchronousMachines, eff_d, T, P_load, P_ren, P_sub)
     for name in Batteries:
-      print('Battery name: ' + name + ', updated SoC: ' + str(Batteries[name]['SoC']), flush=True)
-      #if 'P_batt_c' in Batteries[name]:
-      #  print('Battery name: ' + name + ', P_batt_c: ' + str(Batteries[name]['P_batt_c']) + ', updated SoC: ' + str(Batteries[name]['SoC']), flush=True)
-      #if 'P_batt_d' in Batteries[name]:
-      #  print('Battery name: ' + name + ', P_batt_d: ' + str(Batteries[name]['P_batt_d']) + ', updated SoC: ' + str(Batteries[name]['SoC']), flush=True)
+      if Batteries[name]['state'] == 'charging':
+        print('Battery name: ' + name + ', ratedkW: ' + str(round(Batteries[name]['ratedkW'],4)) + ', P_batt_c: ' + str(round(Batteries[name]['P_batt_c'],4)) + ', updated SoC: ' + str(round(Batteries[name]['SoC'],4)), flush=True)
+      elif Batteries[name]['state'] == 'discharging':
+        print('Battery name: ' + name + ', ratedkW: ' + str(round(Batteries[name]['ratedkW'],4)) + ', P_batt_d: ' + str(round(Batteries[name]['P_batt_d'],4)) + ', updated SoC: ' + str(round(Batteries[name]['SoC'],4)), flush=True)
+      else:
+        print('Battery name: ' + name + ', P_batt_c = P_batt_d = 0.0, updated SoC: ' + str(round(Batteries[name]['SoC'],4)), flush=True)
 
     return
 
 
-  def charge_batteries_decarb(self, Batteries, eff_c, T, P_surplus):
-    for name in Batteries:
-      if 'P_batt_c' in Batteries[name]:
-        Batteries[name]['SoC'] += eff_c*Batteries[name]['P_batt_c']*T/Batteries[name]['ratedE']
-
-
   def decarbonization(self, EnergyConsumers, SynchronousMachines, Batteries,
-                      SolarPVs, t):
+                      SolarPVs, t, load_mult, pv_mult):
 
     P_load = 0.0
     for name in EnergyConsumers:
-      P_load += EnergyConsumers[name]['kW']
-    print('Total EnergyConsumers P_load: ' + str(P_load), flush=True)
+      P_load += load_mult*EnergyConsumers[name]['kW']
+    print('Total EnergyConsumers P_load: ' + str(round(P_load,4)), flush=True)
 
     P_ren = 0.0
     for name in SolarPVs:
-      P_ren += SolarPVs[name]['kW']
-    print('Total SolarPVs P_ren: ' + str(P_ren), flush=True)
+      P_ren += pv_mult*SolarPVs[name]['kW']
+    print('Total SolarPVs P_ren: ' + str(round(P_ren,4)), flush=True)
 
     print('\nDECARBONIZATION APP OUTPUT\n--------------------------', flush=True)
 
@@ -617,6 +613,7 @@ class CompetingApp(GridAPPSD):
 
     P_batt_total = 0.0
     for name in Batteries:
+      Batteries[name]['state'] = 'idling'
       if Batteries[name]['SoC'] < 0.9:
         P_batt_c = (0.9 - Batteries[name]['SoC'])*Batteries[name]['ratedE'] / (eff_c * T)
         Batteries[name]['P_batt_c'] = P_batt_c = min(P_batt_c, Batteries[name]['ratedkW'])
@@ -624,7 +621,7 @@ class CompetingApp(GridAPPSD):
 
     if P_ren > P_load:
       P_surplus = P_ren - P_load
-      print('P_surplus: ' + str(P_surplus) + ', P_batt_total: ' + str(P_batt_total), flush=True)
+      print('P_surplus: ' + str(round(P_surplus,4)) + ', P_batt_total: ' + str(round(P_batt_total,4)), flush=True)
 
       # print('Charging from renewables', flush=True)
       if P_surplus < P_batt_total:
@@ -639,11 +636,12 @@ class CompetingApp(GridAPPSD):
       self.dispatch_DGSs(Batteries, SynchronousMachines, eff_d, T, P_load, P_ren, P_sub)
 
     for name in Batteries:
-      print('Battery name: ' + name + ', updated SoC: ' + str(Batteries[name]['SoC']), flush=True)
-      #if 'P_batt_c' in Batteries[name]:
-      #  print('Battery name: ' + name + ', P_batt_c: ' + str(Batteries[name]['P_batt_c']) + ', updated SoC: ' + str(Batteries[name]['SoC']), flush=True)
-      #if 'P_batt_d' in Batteries[name]:
-      #  print('Battery name: ' + name + ', P_batt_d: ' + str(Batteries[name]['P_batt_d']) + ', updated SoC: ' + str(Batteries[name]['SoC']), flush=True)
+      if Batteries[name]['state'] == 'charging':
+        print('Battery name: ' + name + ', ratedkW: ' + str(round(Batteries[name]['ratedkW'],4)) + ', P_batt_c: ' + str(round(Batteries[name]['P_batt_c'],4)) + ', updated SoC: ' + str(round(Batteries[name]['SoC'],4)), flush=True)
+      elif Batteries[name]['state'] == 'discharging':
+        print('Battery name: ' + name + ', ratedkW: ' + str(round(Batteries[name]['ratedkW'],4)) + ', P_batt_d: ' + str(round(Batteries[name]['P_batt_d'],4)) + ', updated SoC: ' + str(round(Batteries[name]['SoC'],4)), flush=True)
+      else:
+        print('Battery name: ' + name + ', P_batt_c = P_batt_d = 0.0, updated SoC: ' + str(round(Batteries[name]['SoC'],4)), flush=True)
 
     return
 
@@ -671,12 +669,6 @@ class CompetingApp(GridAPPSD):
         Price[time] = float(row[3])
         #print('time series time: ' + str(time) + ', Loadshape: ' + str(Loadshape[time]) + ', Solar: ' + str(Solar[time]) + ', Price: ' + str(Price[time]), flush=True)
 
-    # select random time between 40-60
-    # for now, just take time=50
-    t = 50 # 50,0.4159,0.814572,0.28
-    pv_mult = Solar[t]
-    load_mult = Loadshape[t]
-
     EnergyConsumers = {}
     objs = sparql_mgr.obj_dict_export('EnergyConsumer')
     print('Count of EnergyConsumers Dict: ' + str(len(objs)), flush=True)
@@ -684,9 +676,9 @@ class CompetingApp(GridAPPSD):
       name = item['IdentifiedObject.name']
       EnergyConsumers[name] = {}
       # Shiva HACK to force battery charging...
-      EnergyConsumers[name]['kW'] = 0.01*float(item['EnergyConsumer.p'])/1000.0
-      #EnergyConsumers[name]['kW'] = load_mult*float(item['EnergyConsumer.p'])/1000.0
-      EnergyConsumers[name]['kVar'] = load_mult*float(item['EnergyConsumer.q'])/1000.0
+      #EnergyConsumers[name]['kW'] = 0.01*float(item['EnergyConsumer.p'])/1000.0
+      EnergyConsumers[name]['kW'] = float(item['EnergyConsumer.p'])/1000.0
+      EnergyConsumers[name]['kVar'] = float(item['EnergyConsumer.q'])/1000.0
       #print('EnergyConsumer name: ' + name + ', kW: ' + str(EnergyConsumers[name]['kW']) + ', kVar: ' + str(EnergyConsumers[name]['kVar']), flush=True)
 
     #objs = sparql_mgr.obj_meas_export('EnergyConsumer')
@@ -718,7 +710,7 @@ class CompetingApp(GridAPPSD):
       SynchronousMachines[name]['kW'] = float(item['SynchronousMachine.p'])/1000.0
       SynchronousMachines[name]['kVar'] = float(item['SynchronousMachine.q'])/1000.0
       SynchronousMachines[name]['ratedS'] = float(item['SynchronousMachine.ratedS'])/1000.0
-      print('SynchronousMachine name: ' + name + ', kW: ' + str(SynchronousMachines[name]['kW']) + ', kVar: ' + str(SynchronousMachines[name]['kVar']), flush=True)
+      print('SynchronousMachine name: ' + name + ', kW: ' + str(round(SynchronousMachines[name]['kW'],4)) + ', kVar: ' + str(round(SynchronousMachines[name]['kVar'],4)), flush=True)
 
     objs = sparql_mgr.obj_meas_export('SynchronousMachine')
     #print('Count of SynchronousMachines Meas: ' + str(len(objs)), flush=True)
@@ -737,7 +729,7 @@ class CompetingApp(GridAPPSD):
       # Shiva HACK
       Batteries[name]['SoC'] = 0.5
       #Batteries[name]['SoC'] = float(obj['storedE']['value'])/float(obj['ratedE']['value'])
-      print('Battery name: ' + name + ', ratedE: ' + str(Batteries[name]['ratedE']) + ', SoC: ' + str(Batteries[name]['SoC']), flush=True)
+      print('Battery name: ' + name + ', ratedE: ' + str(round(Batteries[name]['ratedE'],4)) + ', SoC: ' + str(round(Batteries[name]['SoC'],4)), flush=True)
 
     SolarPVs = {}
     bindings = sparql_mgr.pv_query()
@@ -748,14 +740,16 @@ class CompetingApp(GridAPPSD):
       #ratedS = float(obj['ratedS']['value'])
       #ratedU = float(obj['ratedU']['value'])
       SolarPVs[name] = {}
-      SolarPVs[name]['kW'] = pv_mult*float(obj['p']['value'])/1000.0
+      SolarPVs[name]['kW'] = float(obj['p']['value'])/1000.0
       SolarPVs[name]['kVar'] = float(obj['q']['value'])/1000.0
       #print('SolarPV name: ' + name + ', kW: ' + str(SolarPVs[name]['kW']) + ', kVar: ' + str(SolarPVs[name]['kVar']), flush=True)
 
     if app.startswith('r') or app.startswith('R'):
-      self.resiliency(EnergyConsumers, SynchronousMachines, Batteries, SolarPVs, t, emergencyState)
+      for t in range(1, 97):
+        self.resiliency(EnergyConsumers, SynchronousMachines, Batteries, SolarPVs, t, Loadshape[t], Solar[t], emergencyState)
     elif app.startswith('d') or app.startswith('D'):
-      self.decarbonization(EnergyConsumers, SynchronousMachines, Batteries, SolarPVs, t)
+      for t in range(1, 97):
+        self.decarbonization(EnergyConsumers, SynchronousMachines, Batteries, SolarPVs, t, Loadshape[t], Solar[t])
 
     '''
     bindings = sparql_mgr.regulator_query()
