@@ -543,24 +543,25 @@ class DynamicYbus(GridAPPSD):
           P_batt_c = (0.9 - Batteries[name]['SoC'])*Batteries[name]['ratedE'] / (eff_c * T)
           Batteries[name]['P_batt_c'] = P_batt_c = min(P_batt_c, Batteries[name]['ratedkW'])
           P_batt_total += P_batt_c
+          print('Battery name: ' + name + ', P_batt_c: ' + str(P_batt_c) + ', ratedkW: ' + str(Batteries[name]['ratedkW']))
 
       if P_batt_total > 0.0:
         if P_ren > P_load:
           if P_ren - P_load >= P_batt_total:
-            print('Charging from renewable')
+            # print('Charging from renewables')
             # YES, Charge ESS
             self.charge_batteries(Batteries, eff_c, T)
 
           else:
             # NO, Check P_sub
             if P_ren + P_sub > P_load:
-              print('P_ren>P_load Charging from renewable + substation')
+              # print('P_ren<P_load Charging from renewable + substation')
               self.charge_batteries(Batteries, eff_c, T)
 
         else:
           # Check P_sub
           if P_ren + P_sub > P_load:
-            print('P_ren+P_sub>P_load Charging from renewable + substation')
+            # print('P_ren+P_sub>P_load Charging from renewable + substation')
             self.charge_batteries(Batteries, eff_c, T)
 
     else: # emergency state
