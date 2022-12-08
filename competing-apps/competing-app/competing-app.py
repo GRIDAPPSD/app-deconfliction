@@ -904,10 +904,8 @@ class CompetingApp(GridAPPSD):
     # 4. Compromise
     elif app.startswith('c') or app.startswith('C'):
       # Save original state of batteries
-      initial_state = {}
       for name in Batteries:
-        initial_state[name] = {}
-        initial_state[name]['SoC'] = Batteries[name]['SoC']
+        Batteries[name]['initial_SoC'] = Batteries[name]['SoC']
 
       compromise_solution = {}
       for t in range(1, 97):
@@ -924,7 +922,7 @@ class CompetingApp(GridAPPSD):
           else:
             resilience_solution[name]['P_batt'] = 0.0
           resilience_solution[name]['SoC'] = Batteries[name]['SoC']
-          Batteries[name]['SoC'] = initial_state[name]['SoC']
+          Batteries[name]['SoC'] = Batteries[name]['initial_SoC']
 
         self.decarbonization(EnergyConsumers, SynchronousMachines, Batteries, SolarPVs, t, Loadshape[t], Solar[t])
         for name in Batteries:
@@ -941,8 +939,7 @@ class CompetingApp(GridAPPSD):
           compromise_solution[t][name] = {}
           compromise_solution[t][name]['P_batt'] = (resilience_solution[name]['P_batt'] + decarbonization_solution[name]['P_batt']) / 2
           compromise_solution[t][name]['SoC'] = (decarbonization_solution[name]['SoC'] + resilience_solution[name]['SoC']) / 2
-          Batteries[name]['SoC'] = compromise_solution[t][name]['SoC']
-          initial_state[name]['SoC'] = compromise_solution[t][name]['SoC']
+          Batteries[name]['SoC'] = Batteries[name]['initial_SoC'] = compromise_solution[t][name]['SoC']
 
       json_fp = open('compromise_solution.json', 'w')
       json.dump(compromise_solution, json_fp, indent=2)
