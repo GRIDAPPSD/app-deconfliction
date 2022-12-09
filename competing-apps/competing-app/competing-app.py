@@ -475,7 +475,7 @@ class CompetingApp(GridAPPSD):
       self.simRap.gapps.send(reply_to, message)
 
 
-  def dispatch_DGSs(self, Batteries, SynchronousMachines, eff_d, T, P_load, P_ren, P_sub):
+  def dispatch_DGSs(self, Batteries, SynchronousMachines, eff_d, T, P_load, P_ren, P_sub, price=None):
     P_batt_total = 0.0
     for name in Batteries:
       if Batteries[name]['SoC'] > 0.2:
@@ -487,6 +487,11 @@ class CompetingApp(GridAPPSD):
 
     if P_batt_total > 0.0:
       self.discharge_batteries(Batteries, eff_d, T)
+
+    # only the profit app passes in price
+    if price:
+      if price > 0.5:
+        P_sub = 0.25*P_load
 
     if P_batt_total + P_ren + P_sub <= P_load:
       P_def = P_load - (P_batt_total + P_ren + P_sub)
@@ -684,7 +689,7 @@ class CompetingApp(GridAPPSD):
 
 
   def profit(self, EnergyConsumers, SynchronousMachines, Batteries,
-             SolarPVs, t, load_mult, pv_mult):
+             SolarPVs, t, load_mult, pv_mult, price):
 
     P_load = 0.0
     for name in EnergyConsumers:
@@ -732,7 +737,7 @@ class CompetingApp(GridAPPSD):
         self.charge_batteries(Batteries, eff_c, T)
 
     else:
-      self.dispatch_DGSs(Batteries, SynchronousMachines, eff_d, T, P_load, P_ren, P_sub)
+      self.dispatch_DGSs(Batteries, SynchronousMachines, eff_d, T, P_load, P_ren, P_sub, price)
 
     for name in Batteries:
       if Batteries[name]['state'] == 'charging':
@@ -887,7 +892,7 @@ class CompetingApp(GridAPPSD):
       app_solution = {}
       for t in range(1, 97):
         app_solution[t] = {}
-        self.profit(EnergyConsumers, SynchronousMachines, Batteries, SolarPVs, t, Loadshape[t], Solar[t])
+        self.profit(EnergyConsumers, SynchronousMachines, Batteries, SolarPVs, t, Loadshape[t], Solar[t], Price[t])
         for name in Batteries:
           app_solution[t][name] = {}
           if Batteries[name]['state'] == 'charging':
