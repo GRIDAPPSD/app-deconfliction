@@ -58,6 +58,7 @@ from gridappsd import GridAPPSD
 from gridappsd.topics import simulation_output_topic, simulation_log_topic, service_output_topic, service_input_topic
 
 from matplotlib import pyplot as plt
+from datetime import time
 
 
 class SimWrapper(object):
@@ -752,6 +753,10 @@ class CompetingApp(GridAPPSD):
     return
 
 
+  def to_time(self, t):
+    return time((t-1)//4, 15*((t-1) % 4), 0)
+
+
   def __init__(self, gapps, feeder_mrid, simulation_id, app, state):
     SPARQLManager = getattr(importlib.import_module('shared.sparql'), 'SPARQLManager')
     sparql_mgr = SPARQLManager(gapps, feeder_mrid, simulation_id)
@@ -863,7 +868,7 @@ class CompetingApp(GridAPPSD):
 
       solution = {}
       for t in range(1, 97):
-        t_plot.append(t) # plotting
+        t_plot.append(self.to_time(t)) # plotting
         solution[t] = {}
         self.resiliency(EnergyConsumers, SynchronousMachines, Batteries, SolarPVs, t, Loadshape[t], Solar[t], emergencyState)
         for name in Batteries:
@@ -905,7 +910,7 @@ class CompetingApp(GridAPPSD):
 
       solution = {}
       for t in range(1, 97):
-        t_plot.append(t) # plotting
+        t_plot.append(self.to_time(t)) # plotting
         solution[t] = {}
         self.decarbonization(EnergyConsumers, SynchronousMachines, Batteries, SolarPVs, t, Loadshape[t], Solar[t])
         for name in Batteries:
@@ -947,7 +952,7 @@ class CompetingApp(GridAPPSD):
 
       solution = {}
       for t in range(1, 97):
-        t_plot.append(t) # plotting
+        t_plot.append(self.to_time(t)) # plotting
         solution[t] = {}
         self.profit(EnergyConsumers, SynchronousMachines, Batteries, SolarPVs, t, Loadshape[t], Solar[t], Price[t])
         for name in Batteries:
@@ -991,7 +996,7 @@ class CompetingApp(GridAPPSD):
 
       solution = {}
       for t in range(1, 97):
-        t_plot.append(t) # plotting
+        t_plot.append(self.to_time(t)) # plotting
         resilience_solution = {}
         decarbonization_solution = {}
         solution[t] = {}
