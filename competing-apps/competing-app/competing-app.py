@@ -884,9 +884,11 @@ class CompetingApp(GridAPPSD):
 
       # plotting
       for name in Batteries:
+        plt.figure()
         plt.plot(t_plot, p_batt_plot[name])
         plt.savefig('resilience_solution_p_batt_' + name + '.png')
         #plot.show()
+        plt.figure()
         plt.plot(t_plot, soc_plot[name])
         plt.savefig('resilience_solution_soc_' + name + '.png')
         #plot.show()
@@ -924,9 +926,11 @@ class CompetingApp(GridAPPSD):
 
       # plotting
       for name in Batteries:
+        plt.figure()
         plt.plot(t_plot, p_batt_plot[name])
         plt.savefig('decarbonization_solution_p_batt_' + name + '.png')
         #plot.show()
+        plt.figure()
         plt.plot(t_plot, soc_plot[name])
         plt.savefig('decarbonization_solution_soc_' + name + '.png')
         #plot.show()
@@ -964,9 +968,11 @@ class CompetingApp(GridAPPSD):
 
       # plotting
       for name in Batteries:
+        plt.figure()
         plt.plot(t_plot, p_batt_plot[name])
         plt.savefig('profit_solution_p_batt_' + name + '.png')
         #plot.show()
+        plt.figure()
         plt.plot(t_plot, soc_plot[name])
         plt.savefig('profit_solution_soc_' + name + '.png')
         #plot.show()
@@ -1026,9 +1032,11 @@ class CompetingApp(GridAPPSD):
 
       # plotting
       for name in Batteries:
+        plt.figure()
         plt.plot(t_plot, p_batt_plot[name])
         plt.savefig('compromise_solution_p_batt_' + name + '.png')
         #plot.show()
+        plt.figure()
         plt.plot(t_plot, soc_plot[name])
         plt.savefig('compromise_solution_soc_' + name + '.png')
         #plot.show()
