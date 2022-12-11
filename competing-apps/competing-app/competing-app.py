@@ -757,6 +757,27 @@ class CompetingApp(GridAPPSD):
     return time((t-1)//4, 15*((t-1) % 4), 0)
 
 
+  def make_plots(self, prefix, Batteries, t_plot, p_batt_plot, soc_plot):
+    for name in Batteries:
+      plt.figure()
+      plt.plot(t_plot, p_batt_plot[name])
+      plt.xlim([self.to_time(1), self.to_time(96)])
+      plt.xticks([self.to_time(1), self.to_time(25), self.to_time(49), self.to_time(73), self.to_time(96)])
+      plt.xlabel('Time')
+      plt.ylabel('Pc_batt                     Pd_batt   (kW)')
+      plt.savefig(prefix + '_solution_p_batt_' + name + '.png')
+      #plot.show()
+
+      plt.figure()
+      plt.plot(t_plot, soc_plot[name])
+      plt.xlim([self.to_time(1), self.to_time(96)])
+      plt.xticks([self.to_time(1), self.to_time(25), self.to_time(49), self.to_time(73), self.to_time(96)])
+      plt.xlabel('Time')
+      plt.ylabel('Battery SoC')
+      plt.savefig(prefix + '_solution_soc_' + name + '.png')
+      #plot.show()
+
+
   def __init__(self, gapps, feeder_mrid, simulation_id, app, state):
     SPARQLManager = getattr(importlib.import_module('shared.sparql'), 'SPARQLManager')
     sparql_mgr = SPARQLManager(gapps, feeder_mrid, simulation_id)
@@ -856,9 +877,10 @@ class CompetingApp(GridAPPSD):
       #print('SolarPV name: ' + name + ', kW: ' + str(SolarPVs[name]['kW']) + ', kVar: ' + str(SolarPVs[name]['kVar']), flush=True)
 
     # Deconfliction methods
+
     # 1. Resilience Exclusivity
     if app.startswith('r') or app.startswith('R'):
-      # plotting
+      # for plotting
       t_plot = []
       soc_plot = {}
       p_batt_plot = {}
@@ -868,7 +890,7 @@ class CompetingApp(GridAPPSD):
 
       solution = {}
       for t in range(1, 97):
-        t_plot.append(self.to_time(t)) # plotting
+        t_plot.append(self.to_time(t)) # for plotting
         solution[t] = {}
         self.resiliency(EnergyConsumers, SynchronousMachines, Batteries, SolarPVs, t, Loadshape[t], Solar[t], emergencyState)
         for name in Batteries:
@@ -879,34 +901,20 @@ class CompetingApp(GridAPPSD):
             solution[t][name]['P_batt'] = -Batteries[name]['P_batt_d']
           else:
             solution[t][name]['P_batt'] = 0.0
+
           solution[t][name]['SoC'] = Batteries[name]['SoC']
-          p_batt_plot[name].append(solution[t][name]['P_batt']) # plotting
-          soc_plot[name].append(Batteries[name]['SoC']) # plotting
+          p_batt_plot[name].append(solution[t][name]['P_batt']) # for plotting
+          soc_plot[name].append(Batteries[name]['SoC']) # for plotting
 
       json_fp = open('resilience_solution.json', 'w')
       json.dump(solution, json_fp, indent=2)
       json_fp.close()
 
-      # plotting
-      for name in Batteries:
-        plt.figure()
-        plt.plot(t_plot, p_batt_plot[name])
-        plt.xticks([self.to_time(1), self.to_time(25), self.to_time(49), self.to_time(73), self.to_time(96)])
-        plt.xlabel('Time')
-        plt.ylabel('Pc_batt                   Pd_batt   (kW)')
-        plt.savefig('resilience_solution_p_batt_' + name + '.png')
-        #plot.show()
-        plt.figure()
-        plt.plot(t_plot, soc_plot[name])
-        plt.xticks([self.to_time(1), self.to_time(25), self.to_time(49), self.to_time(73), self.to_time(96)])
-        plt.xlabel('Time')
-        plt.ylabel('Battery SoC')
-        plt.savefig('resilience_solution_soc_' + name + '.png')
-        #plot.show()
+      self.make_plots('resilience', Batteries, t_plot, p_batt_plot, soc_plot)
 
     # 2. Decarbonization Exclusivity
     elif app.startswith('d') or app.startswith('D'):
-      # plotting
+      # for plotting
       t_plot = []
       soc_plot = {}
       p_batt_plot = {}
@@ -916,7 +924,7 @@ class CompetingApp(GridAPPSD):
 
       solution = {}
       for t in range(1, 97):
-        t_plot.append(self.to_time(t)) # plotting
+        t_plot.append(self.to_time(t)) # for plotting
         solution[t] = {}
         self.decarbonization(EnergyConsumers, SynchronousMachines, Batteries, SolarPVs, t, Loadshape[t], Solar[t])
         for name in Batteries:
@@ -927,34 +935,20 @@ class CompetingApp(GridAPPSD):
             solution[t][name]['P_batt'] = -Batteries[name]['P_batt_d']
           else:
             solution[t][name]['P_batt'] = 0.0
+
           solution[t][name]['SoC'] = Batteries[name]['SoC']
-          p_batt_plot[name].append(solution[t][name]['P_batt']) # plotting
-          soc_plot[name].append(Batteries[name]['SoC']) # plotting
+          p_batt_plot[name].append(solution[t][name]['P_batt']) # for plotting
+          soc_plot[name].append(Batteries[name]['SoC']) # for plotting
 
       json_fp = open('decarbonization_solution.json', 'w')
       json.dump(solution, json_fp, indent=2)
       json_fp.close()
 
-      # plotting
-      for name in Batteries:
-        plt.figure()
-        plt.plot(t_plot, p_batt_plot[name])
-        plt.xticks([self.to_time(1), self.to_time(25), self.to_time(49), self.to_time(73), self.to_time(96)])
-        plt.xlabel('Time')
-        plt.ylabel('Pc_batt                   Pd_batt   (kW)')
-        plt.savefig('decarbonization_solution_p_batt_' + name + '.png')
-        #plot.show()
-        plt.figure()
-        plt.plot(t_plot, soc_plot[name])
-        plt.xticks([self.to_time(1), self.to_time(25), self.to_time(49), self.to_time(73), self.to_time(96)])
-        plt.xlabel('Time')
-        plt.ylabel('Battery SoC')
-        plt.savefig('decarbonization_solution_soc_' + name + '.png')
-        #plot.show()
+      self.make_plots('decarbonization', Batteries, t_plot, p_batt_plot, soc_plot)
 
     # 3. Profit Exclusivity
     elif app.startswith('p') or app.startswith('P'):
-      # plotting
+      # for plotting
       t_plot = []
       soc_plot = {}
       p_batt_plot = {}
@@ -964,7 +958,7 @@ class CompetingApp(GridAPPSD):
 
       solution = {}
       for t in range(1, 97):
-        t_plot.append(self.to_time(t)) # plotting
+        t_plot.append(self.to_time(t)) # for plotting
         solution[t] = {}
         self.profit(EnergyConsumers, SynchronousMachines, Batteries, SolarPVs, t, Loadshape[t], Solar[t], Price[t])
         for name in Batteries:
@@ -975,34 +969,20 @@ class CompetingApp(GridAPPSD):
             solution[t][name]['P_batt'] = -Batteries[name]['P_batt_d']
           else:
             solution[t][name]['P_batt'] = 0.0
+
           solution[t][name]['SoC'] = Batteries[name]['SoC']
-          p_batt_plot[name].append(solution[t][name]['P_batt']) # plotting
-          soc_plot[name].append(Batteries[name]['SoC']) # plotting
+          p_batt_plot[name].append(solution[t][name]['P_batt']) # for plotting
+          soc_plot[name].append(Batteries[name]['SoC']) # for plotting
 
       json_fp = open('profit_solution.json', 'w')
       json.dump(solution, json_fp, indent=2)
       json_fp.close()
 
-      # plotting
-      for name in Batteries:
-        plt.figure()
-        plt.plot(t_plot, p_batt_plot[name])
-        plt.xticks([self.to_time(1), self.to_time(25), self.to_time(49), self.to_time(73), self.to_time(96)])
-        plt.xlabel('Time')
-        plt.ylabel('Pc_batt                   Pd_batt   (kW)')
-        plt.savefig('profit_solution_p_batt_' + name + '.png')
-        #plot.show()
-        plt.figure()
-        plt.plot(t_plot, soc_plot[name])
-        plt.xticks([self.to_time(1), self.to_time(25), self.to_time(49), self.to_time(73), self.to_time(96)])
-        plt.xlabel('Time')
-        plt.ylabel('Battery SoC')
-        plt.savefig('profit_solution_soc_' + name + '.png')
-        #plot.show()
+      self.make_plots('profit', Batteries, t_plot, p_batt_plot, soc_plot)
 
-    # 4. Compromise
+    # 4. Compromise (between resilience and decarbonization)
     elif app.startswith('c') or app.startswith('C'):
-      # plotting
+      # for plotting
       t_plot = []
       soc_plot = {}
       p_batt_plot = {}
@@ -1014,7 +994,7 @@ class CompetingApp(GridAPPSD):
 
       solution = {}
       for t in range(1, 97):
-        t_plot.append(self.to_time(t)) # plotting
+        t_plot.append(self.to_time(t)) # for plotting
         resilience_solution = {}
         decarbonization_solution = {}
         solution[t] = {}
@@ -1027,6 +1007,7 @@ class CompetingApp(GridAPPSD):
             resilience_solution[name]['P_batt'] = -Batteries[name]['P_batt_d']
           else:
             resilience_solution[name]['P_batt'] = 0.0
+
           resilience_solution[name]['SoC'] = Batteries[name]['SoC']
           Batteries[name]['SoC'] = Batteries[name]['initial_SoC']
 
@@ -1039,6 +1020,7 @@ class CompetingApp(GridAPPSD):
             decarbonization_solution[name]['P_batt'] = -Batteries[name]['P_batt_d']
           else:
             decarbonization_solution[name]['P_batt'] = 0.0
+
           decarbonization_solution[name]['SoC'] = Batteries[name]['SoC']
 
         for name in Batteries:
@@ -1046,29 +1028,14 @@ class CompetingApp(GridAPPSD):
           solution[t][name]['P_batt'] = (resilience_solution[name]['P_batt'] + decarbonization_solution[name]['P_batt']) / 2
           solution[t][name]['SoC'] = (decarbonization_solution[name]['SoC'] + resilience_solution[name]['SoC']) / 2
           Batteries[name]['SoC'] = Batteries[name]['initial_SoC'] = solution[t][name]['SoC']
-          p_batt_plot[name].append(solution[t][name]['P_batt']) # plotting
-          soc_plot[name].append(solution[t][name]['SoC']) # plotting
+          p_batt_plot[name].append(solution[t][name]['P_batt']) # for plotting
+          soc_plot[name].append(solution[t][name]['SoC']) # for plotting
 
       json_fp = open('compromise_solution.json', 'w')
       json.dump(solution, json_fp, indent=2)
       json_fp.close()
 
-      # plotting
-      for name in Batteries:
-        plt.figure()
-        plt.plot(t_plot, p_batt_plot[name])
-        plt.xticks([self.to_time(1), self.to_time(25), self.to_time(49), self.to_time(73), self.to_time(96)])
-        plt.xlabel('Time')
-        plt.ylabel('Pc_batt                   Pd_batt   (kW)')
-        plt.savefig('compromise_solution_p_batt_' + name + '.png')
-        #plot.show()
-        plt.figure()
-        plt.plot(t_plot, soc_plot[name])
-        plt.xticks([self.to_time(1), self.to_time(25), self.to_time(49), self.to_time(73), self.to_time(96)])
-        plt.xlabel('Time')
-        plt.ylabel('Battery SoC')
-        plt.savefig('compromise_solution_soc_' + name + '.png')
-        #plot.show()
+      self.make_plots('compromise', Batteries, t_plot, p_batt_plot, soc_plot)
 
     '''
     bindings = sparql_mgr.regulator_query()
