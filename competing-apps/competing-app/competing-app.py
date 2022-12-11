@@ -916,6 +916,10 @@ class CompetingApp(GridAPPSD):
       SolarPVs[name]['kVar'] = float(obj['q']['value'])/1000.0
       #print('SolarPV name: ' + name + ', kW: ' + str(SolarPVs[name]['kW']) + ', kVar: ' + str(SolarPVs[name]['kVar']), flush=True)
 
+    # make sure output directory exists since that's where results go
+    if not os.path.isdir('output'):
+      os.makedirs('output')
+
     # Deconfliction methods
 
     # 1. Resilience Exclusivity
