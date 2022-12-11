@@ -757,9 +757,10 @@ class CompetingApp(GridAPPSD):
     return time((t-1)//4, 15*((t-1) % 4), 0)
 
 
-  def make_plots(self, prefix, Batteries, t_plot, p_batt_plot, soc_plot):
+  def make_plots(self, title, prefix, Batteries, t_plot, p_batt_plot, soc_plot):
     for name in Batteries:
       plt.figure()
+      plt.title(title + ' P_batt:  ' + name, pad=15.0)
       plt.plot(t_plot, p_batt_plot[name])
       plt.xlim([self.to_time(1), self.to_time(96)])
       plt.xticks([self.to_time(1), self.to_time(25), self.to_time(49), self.to_time(73), self.to_time(96)])
@@ -769,6 +770,7 @@ class CompetingApp(GridAPPSD):
       #plot.show()
 
       plt.figure()
+      plt.title(title + ' SoC:  ' + name, pad=15.0)
       plt.plot(t_plot, soc_plot[name])
       plt.xlim([self.to_time(1), self.to_time(96)])
       plt.xticks([self.to_time(1), self.to_time(25), self.to_time(49), self.to_time(73), self.to_time(96)])
@@ -910,7 +912,7 @@ class CompetingApp(GridAPPSD):
       json.dump(solution, json_fp, indent=2)
       json_fp.close()
 
-      self.make_plots('resilience', Batteries, t_plot, p_batt_plot, soc_plot)
+      self.make_plots('Resiliency Exclusivity', 'resilience', Batteries, t_plot, p_batt_plot, soc_plot)
 
     # 2. Decarbonization Exclusivity
     elif app.startswith('d') or app.startswith('D'):
@@ -944,7 +946,7 @@ class CompetingApp(GridAPPSD):
       json.dump(solution, json_fp, indent=2)
       json_fp.close()
 
-      self.make_plots('decarbonization', Batteries, t_plot, p_batt_plot, soc_plot)
+      self.make_plots('Decarbonization Exclusivity', 'decarbonization', Batteries, t_plot, p_batt_plot, soc_plot)
 
     # 3. Profit Exclusivity
     elif app.startswith('p') or app.startswith('P'):
@@ -978,7 +980,7 @@ class CompetingApp(GridAPPSD):
       json.dump(solution, json_fp, indent=2)
       json_fp.close()
 
-      self.make_plots('profit', Batteries, t_plot, p_batt_plot, soc_plot)
+      self.make_plots('Profit Exclusivity', 'profit', Batteries, t_plot, p_batt_plot, soc_plot)
 
     # 4. Compromise (between resilience and decarbonization)
     elif app.startswith('c') or app.startswith('C'):
@@ -1035,7 +1037,7 @@ class CompetingApp(GridAPPSD):
       json.dump(solution, json_fp, indent=2)
       json_fp.close()
 
-      self.make_plots('compromise', Batteries, t_plot, p_batt_plot, soc_plot)
+      self.make_plots('Resilience-Decarbonization Compromise', 'compromise', Batteries, t_plot, p_batt_plot, soc_plot)
 
     '''
     bindings = sparql_mgr.regulator_query()
