@@ -765,8 +765,8 @@ class CompetingApp(GridAPPSD):
       plt.xlim([self.to_time(1), self.to_time(96)])
       plt.xticks([self.to_time(1), self.to_time(25), self.to_time(49), self.to_time(73), self.to_time(96)])
       plt.xlabel('Time')
-      plt.ylabel('Pc_batt                     Pd_batt   (kW)')
-      plt.savefig(prefix + '_solution_p_batt_' + name + '.png')
+      plt.ylabel('P_batt  (kW)')
+      plt.savefig('output/' + prefix + '_p_batt_' + name + '.png')
       #plot.show()
 
       plt.figure()
@@ -776,7 +776,7 @@ class CompetingApp(GridAPPSD):
       plt.xticks([self.to_time(1), self.to_time(25), self.to_time(49), self.to_time(73), self.to_time(96)])
       plt.xlabel('Time')
       plt.ylabel('Battery SoC')
-      plt.savefig(prefix + '_solution_soc_' + name + '.png')
+      plt.savefig('output/' + prefix + '_soc_' + name + '.png')
       #plot.show()
 
 
@@ -908,7 +908,7 @@ class CompetingApp(GridAPPSD):
           p_batt_plot[name].append(solution[t][name]['P_batt']) # for plotting
           soc_plot[name].append(Batteries[name]['SoC']) # for plotting
 
-      json_fp = open('resilience_solution.json', 'w')
+      json_fp = open('output/resilience_solution.json', 'w')
       json.dump(solution, json_fp, indent=2)
       json_fp.close()
 
@@ -942,7 +942,7 @@ class CompetingApp(GridAPPSD):
           p_batt_plot[name].append(solution[t][name]['P_batt']) # for plotting
           soc_plot[name].append(Batteries[name]['SoC']) # for plotting
 
-      json_fp = open('decarbonization_solution.json', 'w')
+      json_fp = open('output/decarbonization_solution.json', 'w')
       json.dump(solution, json_fp, indent=2)
       json_fp.close()
 
@@ -976,7 +976,7 @@ class CompetingApp(GridAPPSD):
           p_batt_plot[name].append(solution[t][name]['P_batt']) # for plotting
           soc_plot[name].append(Batteries[name]['SoC']) # for plotting
 
-      json_fp = open('profit_solution.json', 'w')
+      json_fp = open('output/profit_solution.json', 'w')
       json.dump(solution, json_fp, indent=2)
       json_fp.close()
 
@@ -1033,11 +1033,11 @@ class CompetingApp(GridAPPSD):
           p_batt_plot[name].append(solution[t][name]['P_batt']) # for plotting
           soc_plot[name].append(solution[t][name]['SoC']) # for plotting
 
-      json_fp = open('compromise_solution.json', 'w')
+      json_fp = open('output/compromise_solution.json', 'w')
       json.dump(solution, json_fp, indent=2)
       json_fp.close()
 
-      self.make_plots('Resilience-Decarbonization Compromise', 'compromise', Batteries, t_plot, p_batt_plot, soc_plot)
+      self.make_plots('Compromise', 'compromise', Batteries, t_plot, p_batt_plot, soc_plot)
 
     '''
     bindings = sparql_mgr.regulator_query()
