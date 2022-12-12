@@ -58,7 +58,8 @@ from gridappsd import GridAPPSD
 from gridappsd.topics import simulation_output_topic, simulation_log_topic, service_output_topic, service_input_topic
 
 from matplotlib import pyplot as plt
-from datetime import time
+from matplotlib import dates as md
+from datetime import datetime
 
 
 class SimWrapper(object):
@@ -791,27 +792,31 @@ class CompetingApp(GridAPPSD):
     return
 
 
-  def to_time(self, t):
-    return time((t-1)//4, 15*((t-1) % 4), 0)
+  def to_datetime(self, t):
+    return datetime(1966, 8, 1, (t-1)//4, 15*((t-1) % 4), 0)
 
 
   def make_plots(self, title, prefix, Batteries, t_plot, p_batt_plot, soc_plot):
     for name in Batteries:
       plt.figure()
+      fig, ax = plt.subplots()
       plt.title(title + ' P_batt:  ' + name, pad=15.0)
       plt.plot(t_plot, p_batt_plot[name])
-      plt.xlim([self.to_time(1), self.to_time(96)])
-      plt.xticks([self.to_time(1), self.to_time(25), self.to_time(49), self.to_time(73), self.to_time(96)])
+      ax.xaxis.set_major_formatter(md.DateFormatter('%H:%M'))
+      plt.xlim([self.to_datetime(1), self.to_datetime(96)])
+      plt.xticks([self.to_datetime(1), self.to_datetime(25), self.to_datetime(49), self.to_datetime(73), self.to_datetime(96)])
       plt.xlabel('Time')
       plt.ylabel('P_batt  (kW)')
       plt.savefig('output/' + prefix + '_p_batt_' + name + '.png')
       #plot.show()
 
       plt.figure()
+      fig, ax = plt.subplots()
       plt.title(title + ' SoC:  ' + name, pad=15.0)
       plt.plot(t_plot, soc_plot[name])
-      plt.xlim([self.to_time(1), self.to_time(96)])
-      plt.xticks([self.to_time(1), self.to_time(25), self.to_time(49), self.to_time(73), self.to_time(96)])
+      ax.xaxis.set_major_formatter(md.DateFormatter('%H:%M'))
+      plt.xlim([self.to_datetime(1), self.to_datetime(96)])
+      plt.xticks([self.to_datetime(1), self.to_datetime(25), self.to_datetime(49), self.to_datetime(73), self.to_datetime(96)])
       plt.xlabel('Time')
       plt.ylabel('Battery SoC')
       plt.savefig('output/' + prefix + '_soc_' + name + '.png')
@@ -934,7 +939,7 @@ class CompetingApp(GridAPPSD):
 
       solution = {}
       for t in range(1, 97):
-        t_plot.append(self.to_time(t)) # for plotting
+        t_plot.append(self.to_datetime(t)) # for plotting
         solution[t] = {}
         self.resiliency(EnergyConsumers, SynchronousMachines, Batteries, SolarPVs, t, Loadshape[t], Solar[t], emergencyState)
         for name in Batteries:
@@ -968,7 +973,7 @@ class CompetingApp(GridAPPSD):
 
       solution = {}
       for t in range(1, 97):
-        t_plot.append(self.to_time(t)) # for plotting
+        t_plot.append(self.to_datetime(t)) # for plotting
         solution[t] = {}
         self.decarbonization(EnergyConsumers, SynchronousMachines, Batteries, SolarPVs, t, Loadshape[t], Solar[t])
         for name in Batteries:
@@ -1002,7 +1007,7 @@ class CompetingApp(GridAPPSD):
 
       solution = {}
       for t in range(1, 97):
-        t_plot.append(self.to_time(t)) # for plotting
+        t_plot.append(self.to_datetime(t)) # for plotting
         solution[t] = {}
         self.profit(EnergyConsumers, SynchronousMachines, Batteries, SolarPVs, t, Loadshape[t], Solar[t], Price[t])
         for name in Batteries:
@@ -1038,7 +1043,7 @@ class CompetingApp(GridAPPSD):
 
       solution = {}
       for t in range(1, 97):
-        t_plot.append(self.to_time(t)) # for plotting
+        t_plot.append(self.to_datetime(t)) # for plotting
         resilience_solution = {}
         decarbonization_solution = {}
         solution[t] = {}
