@@ -527,12 +527,10 @@ class CompetingApp(GridAPPSD):
     P_load = 0.0
     for name in EnergyConsumers:
       P_load += load_mult*EnergyConsumers[name]['kW']
-    print('Total EnergyConsumers P_load: ' + str(round(P_load,4)), flush=True)
 
     P_ren = 0.0
     for name in SolarPVs:
       P_ren += pv_mult*SolarPVs[name]['kW']
-    print('Total SolarPVs P_ren: ' + str(round(P_ren,4)), flush=True)
 
     if emergencyState:
       print('\nRESILIENCY APP OUTPUT: Emergency state\n--------------------------------------', flush=True)
@@ -540,11 +538,18 @@ class CompetingApp(GridAPPSD):
       print('\nRESILIENCY APP OUTPUT: Alert state\n----------------------------------', flush=True)
 
     print('t: ' + str(t), flush=True)
+    print('Total EnergyConsumers P_load: ' + str(round(P_load,4)), flush=True)
+    print('Total SolarPVs P_ren: ' + str(round(P_ren,4)), flush=True)
 
-    eff_c = 0.9
-    eff_d = 0.9
+    eff_c = 0.975 * 0.86
+    eff_d = 0.975 * 0.86
     T = 0.25
     P_sub = 2.0*P_load
+
+    if t > 56 and t < 68:
+    # if t > 72 and t < 84:
+      P_sub = 0.0
+      emergencyState = True
 
     if not emergencyState: # alert state
       P_batt_total = 0.0
@@ -577,7 +582,28 @@ class CompetingApp(GridAPPSD):
     else: # emergency state
       # Shiva HACK
       P_sub = 0.0
-      self.dispatch_DGSs(Batteries, SynchronousMachines, eff_d, T, P_load, P_ren, P_sub)
+      if P_ren > P_load:
+        P_batt_total = 0.0
+        for name in Batteries:
+          Batteries[name]['state'] = 'idling'
+          if Batteries[name]['SoC'] < 0.9:
+            P_batt_c = (0.9 - Batteries[name]['SoC']) * Batteries[name]['ratedE'] / (eff_c * T)
+            Batteries[name]['P_batt_c'] = P_batt_c = min(P_batt_c, Batteries[name]['ratedkW'])
+            P_batt_total += P_batt_c
+
+        P_surplus = P_ren - P_load
+        print('P_surplus: ' + str(P_surplus) + ', P_batt_total: ' + str(P_batt_total), flush=True)
+
+        # print('Charging from renewables', flush=True)
+        if P_surplus < P_batt_total:
+          for name in Batteries:
+            if 'P_batt_c' in Batteries[name]:
+              Batteries[name]['P_batt_c'] *= P_surplus / P_batt_total
+
+        if P_batt_total > 0.0:
+          self.charge_batteries(Batteries, eff_c, T)
+      else:
+        self.dispatch_DGSs(Batteries, SynchronousMachines, eff_d, T, P_load, P_ren, P_sub)
     for name in Batteries:
       if Batteries[name]['state'] == 'charging':
         print('Battery name: ' + name + ', ratedkW: ' + str(round(Batteries[name]['ratedkW'],4)) + ', P_batt_c: ' + str(round(Batteries[name]['P_batt_c'],4)) + ', updated SoC: ' + str(round(Batteries[name]['SoC'],4)), flush=True)
@@ -595,21 +621,26 @@ class CompetingApp(GridAPPSD):
     P_load = 0.0
     for name in EnergyConsumers:
       P_load += load_mult*EnergyConsumers[name]['kW']
-    print('Total EnergyConsumers P_load: ' + str(round(P_load,4)), flush=True)
 
     P_ren = 0.0
     for name in SolarPVs:
       P_ren += pv_mult*SolarPVs[name]['kW']
-    print('Total SolarPVs P_ren: ' + str(round(P_ren,4)), flush=True)
 
     print('\nDECARBONIZATION APP OUTPUT\n--------------------------', flush=True)
 
     print('t: ' + str(t), flush=True)
+    print('Total EnergyConsumers P_load: ' + str(round(P_load,4)), flush=True)
+    print('Total SolarPVs P_ren: ' + str(round(P_ren,4)), flush=True)
 
-    eff_c = 0.9
-    eff_d = 0.9
+
+    eff_c = 0.975 * 0.86
+    eff_d = 0.975 * 0.86
     T = 0.25
     P_sub = 2.0*P_load
+
+    if t > 56 and t < 68:
+    # if t > 72 and t < 84:
+      P_sub = 0.0
 
     P_batt_total = 0.0
     for name in Batteries:

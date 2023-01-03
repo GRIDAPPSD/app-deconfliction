@@ -1,0 +1,832 @@
+Starting app code...
+Count of EnergyConsumers Dict: 1275
+Count of SynchronousMachines Dict: 9
+SynchronousMachine name: lngengine1800, kW: 0.0, kVar: 0.0
+SynchronousMachine name: lngengine100, kW: 0.0, kVar: 0.0
+SynchronousMachine name: microturb-3, kW: 0.0, kVar: 0.0
+SynchronousMachine name: microturb-2, kW: 0.0, kVar: 0.0
+SynchronousMachine name: microturb-1, kW: 50.0, kVar: 24.2161
+SynchronousMachine name: microturb-4, kW: 100.0, kVar: 48.4322
+SynchronousMachine name: diesel590, kW: 0.0, kVar: 0.0
+SynchronousMachine name: steamgen1, kW: 1000.0, kVar: -1079.4856
+SynchronousMachine name: diesel620, kW: 0.0, kVar: 0.0
+Count of Batteries: 2
+Battery name: battery1, ratedE: 500.0, SoC: 0.5
+Battery name: battery2, ratedE: 500.0, SoC: 0.5
+Count of SolarPV: 178
+
+RESILIENCY APP OUTPUT: Alert state
+----------------------------------
+t: 1
+Total EnergyConsumers P_load: 4733.3291
+Total SolarPVs P_ren: 0.0
+Battery name: battery1, ratedkW: 250.0, P_batt_c: 250.0, updated SoC: 0.6048
+Battery name: battery2, ratedkW: 250.0, P_batt_c: 250.0, updated SoC: 0.6048
+
+RESILIENCY APP OUTPUT: Alert state
+----------------------------------
+t: 2
+Total EnergyConsumers P_load: 4633.68
+Total SolarPVs P_ren: 0.0
+Battery name: battery1, ratedkW: 250.0, P_batt_c: 250.0, updated SoC: 0.7096
+Battery name: battery2, ratedkW: 250.0, P_batt_c: 250.0, updated SoC: 0.7096
+
+RESILIENCY APP OUTPUT: Alert state
+----------------------------------
+t: 3
+Total EnergyConsumers P_load: 4534.031
+Total SolarPVs P_ren: 0.0
+Battery name: battery1, ratedkW: 250.0, P_batt_c: 250.0, updated SoC: 0.8144
+Battery name: battery2, ratedkW: 250.0, P_batt_c: 250.0, updated SoC: 0.8144
+
+RESILIENCY APP OUTPUT: Alert state
+----------------------------------
+t: 4
+Total EnergyConsumers P_load: 4583.8555
+Total SolarPVs P_ren: 0.0
+Battery name: battery1, ratedkW: 250.0, P_batt_c: 204.0847, updated SoC: 0.9
+Battery name: battery2, ratedkW: 250.0, P_batt_c: 204.0847, updated SoC: 0.9
+
+RESILIENCY APP OUTPUT: Alert state
+----------------------------------
+t: 5
+Total EnergyConsumers P_load: 4982.4517
+Total SolarPVs P_ren: 0.0
+Battery name: battery1, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+Battery name: battery2, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+
+RESILIENCY APP OUTPUT: Alert state
+----------------------------------
+t: 6
+Total EnergyConsumers P_load: 4683.5046
+Total SolarPVs P_ren: 0.0
+Battery name: battery1, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+Battery name: battery2, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+
+RESILIENCY APP OUTPUT: Alert state
+----------------------------------
+t: 7
+Total EnergyConsumers P_load: 4484.2065
+Total SolarPVs P_ren: 0.0
+Battery name: battery1, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+Battery name: battery2, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+
+RESILIENCY APP OUTPUT: Alert state
+----------------------------------
+t: 8
+Total EnergyConsumers P_load: 4633.68
+Total SolarPVs P_ren: 0.0
+Battery name: battery1, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+Battery name: battery2, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+
+RESILIENCY APP OUTPUT: Alert state
+----------------------------------
+t: 9
+Total EnergyConsumers P_load: 4334.7329
+Total SolarPVs P_ren: 0.0
+Battery name: battery1, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+Battery name: battery2, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+
+RESILIENCY APP OUTPUT: Alert state
+----------------------------------
+t: 10
+Total EnergyConsumers P_load: 4185.2594
+Total SolarPVs P_ren: 0.0
+Battery name: battery1, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+Battery name: battery2, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+
+RESILIENCY APP OUTPUT: Alert state
+----------------------------------
+t: 11
+Total EnergyConsumers P_load: 4085.6104
+Total SolarPVs P_ren: 0.0
+Battery name: battery1, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+Battery name: battery2, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+
+RESILIENCY APP OUTPUT: Alert state
+----------------------------------
+t: 12
+Total EnergyConsumers P_load: 4135.4349
+Total SolarPVs P_ren: 0.0
+Battery name: battery1, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+Battery name: battery2, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+
+RESILIENCY APP OUTPUT: Alert state
+----------------------------------
+t: 13
+Total EnergyConsumers P_load: 4035.7858
+Total SolarPVs P_ren: 0.0
+Battery name: battery1, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+Battery name: battery2, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+
+RESILIENCY APP OUTPUT: Alert state
+----------------------------------
+t: 14
+Total EnergyConsumers P_load: 4135.4349
+Total SolarPVs P_ren: 0.0
+Battery name: battery1, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+Battery name: battery2, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+
+RESILIENCY APP OUTPUT: Alert state
+----------------------------------
+t: 15
+Total EnergyConsumers P_load: 4185.2594
+Total SolarPVs P_ren: 0.0
+Battery name: battery1, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+Battery name: battery2, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+
+RESILIENCY APP OUTPUT: Alert state
+----------------------------------
+t: 16
+Total EnergyConsumers P_load: 4035.7858
+Total SolarPVs P_ren: 0.0
+Battery name: battery1, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+Battery name: battery2, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+
+RESILIENCY APP OUTPUT: Alert state
+----------------------------------
+t: 17
+Total EnergyConsumers P_load: 3925.0647
+Total SolarPVs P_ren: 0.0
+Battery name: battery1, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+Battery name: battery2, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+
+RESILIENCY APP OUTPUT: Alert state
+----------------------------------
+t: 18
+Total EnergyConsumers P_load: 3808.8075
+Total SolarPVs P_ren: 0.0
+Battery name: battery1, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+Battery name: battery2, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+
+RESILIENCY APP OUTPUT: Alert state
+----------------------------------
+t: 19
+Total EnergyConsumers P_load: 3747.9109
+Total SolarPVs P_ren: 0.0
+Battery name: battery1, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+Battery name: battery2, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+
+RESILIENCY APP OUTPUT: Alert state
+----------------------------------
+t: 20
+Total EnergyConsumers P_load: 3659.3339
+Total SolarPVs P_ren: 0.0
+Battery name: battery1, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+Battery name: battery2, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+
+RESILIENCY APP OUTPUT: Alert state
+----------------------------------
+t: 21
+Total EnergyConsumers P_load: 3603.9734
+Total SolarPVs P_ren: 0.0
+Battery name: battery1, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+Battery name: battery2, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+
+RESILIENCY APP OUTPUT: Alert state
+----------------------------------
+t: 22
+Total EnergyConsumers P_load: 3570.757
+Total SolarPVs P_ren: 0.0
+Battery name: battery1, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+Battery name: battery2, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+
+RESILIENCY APP OUTPUT: Alert state
+----------------------------------
+t: 23
+Total EnergyConsumers P_load: 3388.0671
+Total SolarPVs P_ren: 0.0
+Battery name: battery1, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+Battery name: battery2, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+
+RESILIENCY APP OUTPUT: Alert state
+----------------------------------
+t: 24
+Total EnergyConsumers P_load: 3268.4883
+Total SolarPVs P_ren: 0.0
+Battery name: battery1, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+Battery name: battery2, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+
+RESILIENCY APP OUTPUT: Alert state
+----------------------------------
+t: 25
+Total EnergyConsumers P_load: 3188.7691
+Total SolarPVs P_ren: 0.0
+Battery name: battery1, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+Battery name: battery2, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+
+RESILIENCY APP OUTPUT: Alert state
+----------------------------------
+t: 26
+Total EnergyConsumers P_load: 3109.0498
+Total SolarPVs P_ren: 0.0
+Battery name: battery1, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+Battery name: battery2, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+
+RESILIENCY APP OUTPUT: Alert state
+----------------------------------
+t: 27
+Total EnergyConsumers P_load: 3029.3306
+Total SolarPVs P_ren: 0.0
+Battery name: battery1, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+Battery name: battery2, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+
+RESILIENCY APP OUTPUT: Alert state
+----------------------------------
+t: 28
+Total EnergyConsumers P_load: 3188.7691
+Total SolarPVs P_ren: 0.0
+Battery name: battery1, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+Battery name: battery2, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+
+RESILIENCY APP OUTPUT: Alert state
+----------------------------------
+t: 29
+Total EnergyConsumers P_load: 3029.3306
+Total SolarPVs P_ren: 0.0
+Battery name: battery1, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+Battery name: battery2, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+
+RESILIENCY APP OUTPUT: Alert state
+----------------------------------
+t: 30
+Total EnergyConsumers P_load: 3109.0498
+Total SolarPVs P_ren: 0.0
+Battery name: battery1, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+Battery name: battery2, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+
+RESILIENCY APP OUTPUT: Alert state
+----------------------------------
+t: 31
+Total EnergyConsumers P_load: 2989.471
+Total SolarPVs P_ren: 0.0
+Battery name: battery1, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+Battery name: battery2, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+
+RESILIENCY APP OUTPUT: Alert state
+----------------------------------
+t: 32
+Total EnergyConsumers P_load: 3029.3306
+Total SolarPVs P_ren: 62.0759
+Battery name: battery1, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+Battery name: battery2, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+
+RESILIENCY APP OUTPUT: Alert state
+----------------------------------
+t: 33
+Total EnergyConsumers P_load: 2949.6114
+Total SolarPVs P_ren: 156.8233
+Battery name: battery1, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+Battery name: battery2, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+
+RESILIENCY APP OUTPUT: Alert state
+----------------------------------
+t: 34
+Total EnergyConsumers P_load: 2949.6114
+Total SolarPVs P_ren: 254.8379
+Battery name: battery1, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+Battery name: battery2, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+
+RESILIENCY APP OUTPUT: Alert state
+----------------------------------
+t: 35
+Total EnergyConsumers P_load: 2909.7518
+Total SolarPVs P_ren: 369.1882
+Battery name: battery1, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+Battery name: battery2, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+
+RESILIENCY APP OUTPUT: Alert state
+----------------------------------
+t: 36
+Total EnergyConsumers P_load: 2909.7518
+Total SolarPVs P_ren: 486.8057
+Battery name: battery1, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+Battery name: battery2, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+
+RESILIENCY APP OUTPUT: Alert state
+----------------------------------
+t: 37
+Total EnergyConsumers P_load: 2909.7518
+Total SolarPVs P_ren: 604.4232
+Battery name: battery1, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+Battery name: battery2, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+
+RESILIENCY APP OUTPUT: Alert state
+----------------------------------
+t: 38
+Total EnergyConsumers P_load: 2869.8922
+Total SolarPVs P_ren: 735.1093
+Battery name: battery1, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+Battery name: battery2, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+
+RESILIENCY APP OUTPUT: Alert state
+----------------------------------
+t: 39
+Total EnergyConsumers P_load: 2750.3133
+Total SolarPVs P_ren: 859.2611
+Battery name: battery1, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+Battery name: battery2, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+
+RESILIENCY APP OUTPUT: Alert state
+----------------------------------
+t: 40
+Total EnergyConsumers P_load: 2830.0325
+Total SolarPVs P_ren: 983.4129
+Battery name: battery1, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+Battery name: battery2, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+
+RESILIENCY APP OUTPUT: Alert state
+----------------------------------
+t: 41
+Total EnergyConsumers P_load: 2790.1729
+Total SolarPVs P_ren: 1110.8318
+Battery name: battery1, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+Battery name: battery2, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+
+RESILIENCY APP OUTPUT: Alert state
+----------------------------------
+t: 42
+Total EnergyConsumers P_load: 2790.1729
+Total SolarPVs P_ren: 1225.1822
+Battery name: battery1, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+Battery name: battery2, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+
+RESILIENCY APP OUTPUT: Alert state
+----------------------------------
+t: 43
+Total EnergyConsumers P_load: 2790.1729
+Total SolarPVs P_ren: 1346.0668
+Battery name: battery1, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+Battery name: battery2, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+
+RESILIENCY APP OUTPUT: Alert state
+----------------------------------
+t: 44
+Total EnergyConsumers P_load: 2750.3133
+Total SolarPVs P_ren: 1457.15
+Battery name: battery1, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+Battery name: battery2, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+
+RESILIENCY APP OUTPUT: Alert state
+----------------------------------
+t: 45
+Total EnergyConsumers P_load: 2670.5941
+Total SolarPVs P_ren: 1561.6989
+Battery name: battery1, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+Battery name: battery2, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+
+RESILIENCY APP OUTPUT: Alert state
+----------------------------------
+t: 46
+Total EnergyConsumers P_load: 2590.8749
+Total SolarPVs P_ren: 1659.7134
+Battery name: battery1, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+Battery name: battery2, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+
+RESILIENCY APP OUTPUT: Alert state
+----------------------------------
+t: 47
+Total EnergyConsumers P_load: 2563.1946
+Total SolarPVs P_ren: 1757.728
+Battery name: battery1, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+Battery name: battery2, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+
+RESILIENCY APP OUTPUT: Alert state
+----------------------------------
+t: 48
+Total EnergyConsumers P_load: 2502.2979
+Total SolarPVs P_ren: 1845.9411
+Battery name: battery1, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+Battery name: battery2, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+
+RESILIENCY APP OUTPUT: Alert state
+----------------------------------
+t: 49
+Total EnergyConsumers P_load: 2391.5768
+Total SolarPVs P_ren: 1930.8871
+Battery name: battery1, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+Battery name: battery2, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+
+RESILIENCY APP OUTPUT: Alert state
+----------------------------------
+t: 50
+Total EnergyConsumers P_load: 2302.4463
+Total SolarPVs P_ren: 1999.4973
+Battery name: battery1, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+Battery name: battery2, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+
+RESILIENCY APP OUTPUT: Alert state
+----------------------------------
+t: 51
+Total EnergyConsumers P_load: 2170.1345
+Total SolarPVs P_ren: 2068.1075
+Battery name: battery1, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+Battery name: battery2, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+
+RESILIENCY APP OUTPUT: Alert state
+----------------------------------
+t: 52
+Total EnergyConsumers P_load: 2103.7018
+Total SolarPVs P_ren: 2123.6491
+Battery name: battery1, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+Battery name: battery2, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+
+RESILIENCY APP OUTPUT: Alert state
+----------------------------------
+t: 53
+Total EnergyConsumers P_load: 2048.3412
+Total SolarPVs P_ren: 2182.4578
+Battery name: battery1, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+Battery name: battery2, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+
+RESILIENCY APP OUTPUT: Alert state
+----------------------------------
+t: 54
+Total EnergyConsumers P_load: 2026.197
+Total SolarPVs P_ren: 2228.198
+Battery name: battery1, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+Battery name: battery2, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+
+RESILIENCY APP OUTPUT: Alert state
+----------------------------------
+t: 55
+Total EnergyConsumers P_load: 1954.2283
+Total SolarPVs P_ren: 2267.4038
+Battery name: battery1, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+Battery name: battery2, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+
+RESILIENCY APP OUTPUT: Alert state
+----------------------------------
+t: 56
+Total EnergyConsumers P_load: 2004.0528
+Total SolarPVs P_ren: 2290.2739
+Battery name: battery1, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+Battery name: battery2, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+
+RESILIENCY APP OUTPUT: Alert state
+----------------------------------
+t: 57
+Total EnergyConsumers P_load: 2087.0936
+Total SolarPVs P_ren: 2316.4111
+P_surplus: 229.31745294509574, P_batt_total: 0.0
+Battery name: battery1, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+Battery name: battery2, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+
+RESILIENCY APP OUTPUT: Alert state
+----------------------------------
+t: 58
+Total EnergyConsumers P_load: 2076.0215
+Total SolarPVs P_ren: 2332.7469
+P_surplus: 256.72533005248306, P_batt_total: 0.0
+Battery name: battery1, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+Battery name: battery2, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+
+RESILIENCY APP OUTPUT: Alert state
+----------------------------------
+t: 59
+Total EnergyConsumers P_load: 2125.846
+Total SolarPVs P_ren: 2336.014
+P_surplus: 210.16796587917543, P_batt_total: 0.0
+Battery name: battery1, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+Battery name: battery2, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+
+RESILIENCY APP OUTPUT: Alert state
+----------------------------------
+t: 60
+Total EnergyConsumers P_load: 2280.8557
+Total SolarPVs P_ren: 2322.9454
+P_surplus: 42.08974873558327, P_batt_total: 0.0
+Battery name: battery1, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+Battery name: battery2, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+
+RESILIENCY APP OUTPUT: Alert state
+----------------------------------
+t: 61
+Total EnergyConsumers P_load: 2380.5047
+Total SolarPVs P_ren: 2313.1439
+Battery name: battery1, ratedkW: 250.0, P_batt_d: 250.0, updated SoC: 0.7952
+Battery name: battery2, ratedkW: 250.0, P_batt_d: 250.0, updated SoC: 0.7952
+
+RESILIENCY APP OUTPUT: Alert state
+----------------------------------
+t: 62
+Total EnergyConsumers P_load: 2546.5864
+Total SolarPVs P_ren: 2290.2739
+Battery name: battery1, ratedkW: 250.0, P_batt_d: 250.0, updated SoC: 0.6904
+Battery name: battery2, ratedkW: 250.0, P_batt_d: 250.0, updated SoC: 0.6904
+
+RESILIENCY APP OUTPUT: Alert state
+----------------------------------
+t: 63
+Total EnergyConsumers P_load: 2601.947
+Total SolarPVs P_ren: 2260.8695
+Battery name: battery1, ratedkW: 250.0, P_batt_d: 250.0, updated SoC: 0.5856
+Battery name: battery2, ratedkW: 250.0, P_batt_d: 250.0, updated SoC: 0.5856
+
+RESILIENCY APP OUTPUT: Alert state
+----------------------------------
+t: 64
+Total EnergyConsumers P_load: 2740.3484
+Total SolarPVs P_ren: 2224.9308
+Power deficiency: 15.4176
+SynchronousMachines available power: 8732.6737
+SynchronousMachine name: lngengine1800, P_dis: 3.9724
+SynchronousMachine name: lngengine100, P_dis: 0.2207
+SynchronousMachine name: microturb-3, P_dis: 0.4414
+SynchronousMachine name: microturb-2, P_dis: 0.4414
+SynchronousMachine name: microturb-1, P_dis: 0.4393
+SynchronousMachine name: microturb-4, P_dis: 0.433
+SynchronousMachine name: diesel590, P_dis: 1.3012
+SynchronousMachine name: steamgen1, P_dis: 6.8
+SynchronousMachine name: diesel620, P_dis: 1.3683
+Battery name: battery1, ratedkW: 250.0, P_batt_d: 250.0, updated SoC: 0.4808
+Battery name: battery2, ratedkW: 250.0, P_batt_d: 250.0, updated SoC: 0.4808
+
+RESILIENCY APP OUTPUT: Alert state
+----------------------------------
+t: 65
+Total EnergyConsumers P_load: 2906.4301
+Total SolarPVs P_ren: 2182.4578
+Power deficiency: 223.9723
+SynchronousMachines available power: 8732.6737
+SynchronousMachine name: lngengine1800, P_dis: 57.7071
+SynchronousMachine name: lngengine100, P_dis: 3.206
+SynchronousMachine name: microturb-3, P_dis: 6.4119
+SynchronousMachine name: microturb-2, P_dis: 6.4119
+SynchronousMachine name: microturb-1, P_dis: 6.3818
+SynchronousMachine name: microturb-4, P_dis: 6.2904
+SynchronousMachine name: diesel590, P_dis: 18.9023
+SynchronousMachine name: steamgen1, P_dis: 98.784
+SynchronousMachine name: diesel620, P_dis: 19.8769
+Battery name: battery1, ratedkW: 250.0, P_batt_d: 250.0, updated SoC: 0.3759
+Battery name: battery2, ratedkW: 250.0, P_batt_d: 250.0, updated SoC: 0.3759
+
+RESILIENCY APP OUTPUT: Alert state
+----------------------------------
+t: 66
+Total EnergyConsumers P_load: 3000.5431
+Total SolarPVs P_ren: 2123.6491
+Power deficiency: 376.894
+SynchronousMachines available power: 8732.6737
+SynchronousMachine name: lngengine1800, P_dis: 97.1079
+SynchronousMachine name: lngengine100, P_dis: 5.3949
+SynchronousMachine name: microturb-3, P_dis: 10.7898
+SynchronousMachine name: microturb-2, P_dis: 10.7898
+SynchronousMachine name: microturb-1, P_dis: 10.739
+SynchronousMachine name: microturb-4, P_dis: 10.5854
+SynchronousMachine name: diesel590, P_dis: 31.8082
+SynchronousMachine name: steamgen1, P_dis: 166.2308
+SynchronousMachine name: diesel620, P_dis: 33.4483
+Battery name: battery1, ratedkW: 250.0, P_batt_d: 250.0, updated SoC: 0.2711
+Battery name: battery2, ratedkW: 250.0, P_batt_d: 250.0, updated SoC: 0.2711
+
+RESILIENCY APP OUTPUT: Alert state
+----------------------------------
+t: 67
+Total EnergyConsumers P_load: 3155.5527
+Total SolarPVs P_ren: 2058.306
+Power deficiency: 757.9503
+SynchronousMachines available power: 8732.6737
+SynchronousMachine name: lngengine1800, P_dis: 195.2882
+SynchronousMachine name: lngengine100, P_dis: 10.8493
+SynchronousMachine name: microturb-3, P_dis: 21.6987
+SynchronousMachine name: microturb-2, P_dis: 21.6987
+SynchronousMachine name: microturb-1, P_dis: 21.5967
+SynchronousMachine name: microturb-4, P_dis: 21.2876
+SynchronousMachine name: diesel590, P_dis: 63.9677
+SynchronousMachine name: steamgen1, P_dis: 334.2974
+SynchronousMachine name: diesel620, P_dis: 67.2659
+Battery name: battery1, ratedkW: 250.0, P_batt_d: 169.6482, updated SoC: 0.2
+Battery name: battery2, ratedkW: 250.0, P_batt_d: 169.6482, updated SoC: 0.2
+
+RESILIENCY APP OUTPUT: Alert state
+----------------------------------
+t: 68
+Total EnergyConsumers P_load: 3266.2739
+Total SolarPVs P_ren: 1979.8944
+Battery name: battery1, ratedkW: 250.0, P_batt_c: 250.0, updated SoC: 0.3048
+Battery name: battery2, ratedkW: 250.0, P_batt_c: 250.0, updated SoC: 0.3048
+
+RESILIENCY APP OUTPUT: Alert state
+----------------------------------
+t: 69
+Total EnergyConsumers P_load: 3376.995
+Total SolarPVs P_ren: 1908.017
+Battery name: battery1, ratedkW: 250.0, P_batt_c: 250.0, updated SoC: 0.4096
+Battery name: battery2, ratedkW: 250.0, P_batt_c: 250.0, updated SoC: 0.4096
+
+RESILIENCY APP OUTPUT: Alert state
+----------------------------------
+t: 70
+Total EnergyConsumers P_load: 3487.7162
+Total SolarPVs P_ren: 1823.0711
+Battery name: battery1, ratedkW: 250.0, P_batt_c: 250.0, updated SoC: 0.5144
+Battery name: battery2, ratedkW: 250.0, P_batt_c: 250.0, updated SoC: 0.5144
+
+RESILIENCY APP OUTPUT: Alert state
+----------------------------------
+t: 71
+Total EnergyConsumers P_load: 3653.7979
+Total SolarPVs P_ren: 1734.858
+Battery name: battery1, ratedkW: 250.0, P_batt_c: 250.0, updated SoC: 0.6192
+Battery name: battery2, ratedkW: 250.0, P_batt_c: 250.0, updated SoC: 0.6192
+
+RESILIENCY APP OUTPUT: Alert state
+----------------------------------
+t: 72
+Total EnergyConsumers P_load: 3764.519
+Total SolarPVs P_ren: 1643.3777
+Battery name: battery1, ratedkW: 250.0, P_batt_c: 250.0, updated SoC: 0.7241
+Battery name: battery2, ratedkW: 250.0, P_batt_c: 250.0, updated SoC: 0.7241
+
+RESILIENCY APP OUTPUT: Alert state
+----------------------------------
+t: 73
+Total EnergyConsumers P_load: 3830.9517
+Total SolarPVs P_ren: 1545.3631
+Battery name: battery1, ratedkW: 250.0, P_batt_c: 250.0, updated SoC: 0.8289
+Battery name: battery2, ratedkW: 250.0, P_batt_c: 250.0, updated SoC: 0.8289
+
+RESILIENCY APP OUTPUT: Alert state
+----------------------------------
+t: 74
+Total EnergyConsumers P_load: 3969.3532
+Total SolarPVs P_ren: 1434.2799
+Battery name: battery1, ratedkW: 250.0, P_batt_c: 169.6482, updated SoC: 0.9
+Battery name: battery2, ratedkW: 250.0, P_batt_c: 169.6482, updated SoC: 0.9
+
+RESILIENCY APP OUTPUT: Alert state
+----------------------------------
+t: 75
+Total EnergyConsumers P_load: 4085.6104
+Total SolarPVs P_ren: 1319.9296
+Battery name: battery1, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+Battery name: battery2, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+
+RESILIENCY APP OUTPUT: Alert state
+----------------------------------
+t: 76
+Total EnergyConsumers P_load: 4135.4349
+Total SolarPVs P_ren: 1202.3121
+Battery name: battery1, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+Battery name: battery2, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+
+RESILIENCY APP OUTPUT: Alert state
+----------------------------------
+t: 77
+Total EnergyConsumers P_load: 4334.7329
+Total SolarPVs P_ren: 1081.4275
+Battery name: battery1, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+Battery name: battery2, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+
+RESILIENCY APP OUTPUT: Alert state
+----------------------------------
+t: 78
+Total EnergyConsumers P_load: 4534.031
+Total SolarPVs P_ren: 957.2757
+Battery name: battery1, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+Battery name: battery2, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+
+RESILIENCY APP OUTPUT: Alert state
+----------------------------------
+t: 79
+Total EnergyConsumers P_load: 4534.031
+Total SolarPVs P_ren: 826.5896
+Battery name: battery1, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+Battery name: battery2, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+
+RESILIENCY APP OUTPUT: Alert state
+----------------------------------
+t: 80
+Total EnergyConsumers P_load: 4384.5575
+Total SolarPVs P_ren: 692.6363
+Battery name: battery1, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+Battery name: battery2, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+
+RESILIENCY APP OUTPUT: Alert state
+----------------------------------
+t: 81
+Total EnergyConsumers P_load: 4484.2065
+Total SolarPVs P_ren: 581.5531
+Battery name: battery1, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+Battery name: battery2, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+
+RESILIENCY APP OUTPUT: Alert state
+----------------------------------
+t: 82
+Total EnergyConsumers P_load: 4434.382
+Total SolarPVs P_ren: 447.5999
+Battery name: battery1, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+Battery name: battery2, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+
+RESILIENCY APP OUTPUT: Alert state
+----------------------------------
+t: 83
+Total EnergyConsumers P_load: 4534.031
+Total SolarPVs P_ren: 329.9824
+Battery name: battery1, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+Battery name: battery2, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+
+RESILIENCY APP OUTPUT: Alert state
+----------------------------------
+t: 84
+Total EnergyConsumers P_load: 4633.68
+Total SolarPVs P_ren: 13.0686
+Battery name: battery1, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+Battery name: battery2, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+
+RESILIENCY APP OUTPUT: Alert state
+----------------------------------
+t: 85
+Total EnergyConsumers P_load: 4484.2065
+Total SolarPVs P_ren: 0.0
+Battery name: battery1, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+Battery name: battery2, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+
+RESILIENCY APP OUTPUT: Alert state
+----------------------------------
+t: 86
+Total EnergyConsumers P_load: 4683.5046
+Total SolarPVs P_ren: 0.0
+Battery name: battery1, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+Battery name: battery2, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+
+RESILIENCY APP OUTPUT: Alert state
+----------------------------------
+t: 87
+Total EnergyConsumers P_load: 4633.68
+Total SolarPVs P_ren: 0.0
+Battery name: battery1, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+Battery name: battery2, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+
+RESILIENCY APP OUTPUT: Alert state
+----------------------------------
+t: 88
+Total EnergyConsumers P_load: 4832.9781
+Total SolarPVs P_ren: 0.0
+Battery name: battery1, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+Battery name: battery2, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+
+RESILIENCY APP OUTPUT: Alert state
+----------------------------------
+t: 89
+Total EnergyConsumers P_load: 4583.8555
+Total SolarPVs P_ren: 0.0
+Battery name: battery1, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+Battery name: battery2, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+
+RESILIENCY APP OUTPUT: Alert state
+----------------------------------
+t: 90
+Total EnergyConsumers P_load: 4783.1536
+Total SolarPVs P_ren: 0.0
+Battery name: battery1, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+Battery name: battery2, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+
+RESILIENCY APP OUTPUT: Alert state
+----------------------------------
+t: 91
+Total EnergyConsumers P_load: 4583.8555
+Total SolarPVs P_ren: 0.0
+Battery name: battery1, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+Battery name: battery2, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+
+RESILIENCY APP OUTPUT: Alert state
+----------------------------------
+t: 92
+Total EnergyConsumers P_load: 4633.68
+Total SolarPVs P_ren: 0.0
+Battery name: battery1, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+Battery name: battery2, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+
+RESILIENCY APP OUTPUT: Alert state
+----------------------------------
+t: 93
+Total EnergyConsumers P_load: 4733.3291
+Total SolarPVs P_ren: 0.0
+Battery name: battery1, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+Battery name: battery2, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+
+RESILIENCY APP OUTPUT: Alert state
+----------------------------------
+t: 94
+Total EnergyConsumers P_load: 4683.5046
+Total SolarPVs P_ren: 0.0
+Battery name: battery1, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+Battery name: battery2, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+
+RESILIENCY APP OUTPUT: Alert state
+----------------------------------
+t: 95
+Total EnergyConsumers P_load: 4733.3291
+Total SolarPVs P_ren: 0.0
+Battery name: battery1, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+Battery name: battery2, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+
+RESILIENCY APP OUTPUT: Alert state
+----------------------------------
+t: 96
+Total EnergyConsumers P_load: 4832.9781
+Total SolarPVs P_ren: 0.0
+Battery name: battery1, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
+Battery name: battery2, P_batt_c = P_batt_d = 0.0, updated SoC: 0.9
