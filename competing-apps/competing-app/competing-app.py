@@ -482,6 +482,8 @@ class CompetingApp(GridAPPSD):
         P_batt_d = (Batteries[name]['SoC'] - 0.2)*Batteries[name]['ratedE'] / (eff_d * T)
         Batteries[name]['P_batt_d'] = P_batt_d = min(P_batt_d, Batteries[name]['ratedkW'])
         P_batt_total += P_batt_d
+      else:
+        Batteries[name]['P_batt_d'] = P_batt_d = 0.0
 
     if P_batt_total > 0.0:
       self.discharge_batteries(Batteries, eff_d, T)
@@ -559,7 +561,9 @@ class CompetingApp(GridAPPSD):
           P_batt_c = (0.9 - Batteries[name]['SoC'])*Batteries[name]['ratedE'] / (eff_c * T)
           Batteries[name]['P_batt_c'] = P_batt_c = min(P_batt_c, Batteries[name]['ratedkW'])
           P_batt_total += P_batt_c
-
+        else:
+          Batteries[name]['P_batt_c'] = P_batt_c = 0.0
+          
       if P_batt_total > 0.0:
         if P_ren > P_load:
           if P_ren - P_load >= P_batt_total:
@@ -590,6 +594,8 @@ class CompetingApp(GridAPPSD):
             P_batt_c = (0.9 - Batteries[name]['SoC']) * Batteries[name]['ratedE'] / (eff_c * T)
             Batteries[name]['P_batt_c'] = P_batt_c = min(P_batt_c, Batteries[name]['ratedkW'])
             P_batt_total += P_batt_c
+          else:
+            Batteries[name]['P_batt_c'] = P_batt_c = 0.0
 
         P_surplus = P_ren - P_load
         print('P_surplus: ' + str(P_surplus) + ', P_batt_total: ' + str(P_batt_total), flush=True)
