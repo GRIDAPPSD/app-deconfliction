@@ -563,7 +563,7 @@ class CompetingApp(GridAPPSD):
           P_batt_total += P_batt_c
         else:
           Batteries[name]['P_batt_c'] = P_batt_c = 0.0
-          
+
       if P_batt_total > 0.0:
         if P_ren > P_load:
           if P_ren - P_load >= P_batt_total:
@@ -781,12 +781,99 @@ class CompetingApp(GridAPPSD):
       SolarPVs[name]['kVar'] = float(obj['q']['value'])/1000.0
       #print('SolarPV name: ' + name + ', kW: ' + str(SolarPVs[name]['kW']) + ', kVar: ' + str(SolarPVs[name]['kVar']), flush=True)
 
+    # Competing applets
+    # if app.startswith('r') or app.startswith('R'):
+    #   for t in range(1, 97):
+    #     self.resiliency(EnergyConsumers, SynchronousMachines, Batteries, SolarPVs, t, Loadshape[t], Solar[t], emergencyState)
+    # elif app.startswith('d') or app.startswith('D'):
+    #   for t in range(1, 97):
+    #     self.decarbonization(EnergyConsumers, SynchronousMachines, Batteries, SolarPVs, t, Loadshape[t], Solar[t])
+
+    # Deconfliction methods
+    # 1. Resilience Exclusivity
     if app.startswith('r') or app.startswith('R'):
+      app_solution = {}
       for t in range(1, 97):
+        app_solution[t] = {}
         self.resiliency(EnergyConsumers, SynchronousMachines, Batteries, SolarPVs, t, Loadshape[t], Solar[t], emergencyState)
+        for name in Batteries:
+          app_solution[t][name] = {}
+          if Batteries[name]['state'] == 'charging':
+            app_solution[t][name]['P_batt'] = Batteries[name]['P_batt_c']
+          elif Batteries[name]['state'] == 'discharging':
+            app_solution[t][name]['P_batt'] = -Batteries[name]['P_batt_d']
+          else:
+            app_solution[t][name]['P_batt'] = 0.0
+          app_solution[t][name]['SoC'] = Batteries[name]['SoC']
+      json_fp = open('resilience_solution.json', 'w')
+      json.dump(app_solution, json_fp, indent=2)
+      json_fp.close()
+
+    # 2. Decarbonization Exclusivity
     elif app.startswith('d') or app.startswith('D'):
+      app_solution = {}
       for t in range(1, 97):
+        app_solution[t] = {}
         self.decarbonization(EnergyConsumers, SynchronousMachines, Batteries, SolarPVs, t, Loadshape[t], Solar[t])
+        for name in Batteries:
+          app_solution[t][name] = {}
+          if Batteries[name]['state'] == 'charging':
+            app_solution[t][name]['P_batt'] = Batteries[name]['P_batt_c']
+          elif Batteries[name]['state'] == 'discharging':
+            app_solution[t][name]['P_batt'] = -Batteries[name]['P_batt_d']
+          else:
+            app_solution[t][name]['P_batt'] = 0.0
+          app_solution[t][name]['SoC'] = Batteries[name]['SoC']
+      json_fp = open('decarbonization_solution.json', 'w')
+      json.dump(app_solution, json_fp, indent=2)
+      json_fp.close()
+
+
+    # 3. Compromise
+    # Save original state of batteries
+    initial_state = {}
+    for name in Batteries:
+      initial_state[name] = {}
+      initial_state[name]['SoC'] = Batteries[name]['SoC']
+
+    compromise_solution = {}
+    for t in range(1, 97):
+      resilience_solution = {}
+      decarbonization_solution = {}
+      compromise_solution[t] = {}
+      self.resiliency(EnergyConsumers, SynchronousMachines, Batteries, SolarPVs, t, Loadshape[t], Solar[t], emergencyState)
+      for name in Batteries:
+        resilience_solution[name] = {}
+        if Batteries[name]['state'] == 'charging':
+          resilience_solution[name]['P_batt'] = Batteries[name]['P_batt_c']
+        elif Batteries[name]['state'] == 'discharging':
+          resilience_solution[name]['P_batt'] = -Batteries[name]['P_batt_d']
+        else:
+          resilience_solution[name]['P_batt'] = 0.0
+        resilience_solution[name]['SoC'] = Batteries[name]['SoC']
+        Batteries[name]['SoC'] = initial_state[name]['SoC']
+
+      self.decarbonization(EnergyConsumers, SynchronousMachines, Batteries, SolarPVs, t, Loadshape[t], Solar[t])
+      for name in Batteries:
+        decarbonization_solution[name] = {}
+        if Batteries[name]['state'] == 'charging':
+          decarbonization_solution[name]['P_batt'] = Batteries[name]['P_batt_c']
+        elif Batteries[name]['state'] == 'discharging':
+          decarbonization_solution[name]['P_batt'] = -Batteries[name]['P_batt_d']
+        else:
+          decarbonization_solution[name]['P_batt'] = 0.0
+        decarbonization_solution[name]['SoC'] = Batteries[name]['SoC']
+
+      for name in Batteries:
+        compromise_solution[t][name] = {}
+        compromise_solution[t][name]['P_batt'] = (resilience_solution[name]['P_batt'] + decarbonization_solution[name]['P_batt']) / 2
+        compromise_solution[t][name]['SoC'] = (decarbonization_solution[name]['SoC'] + resilience_solution[name]['SoC']) / 2
+        Batteries[name]['SoC'] = compromise_solution[t][name]['SoC']
+        initial_state[name]['SoC'] = compromise_solution[t][name]['SoC']
+
+    json_fp = open('compromise_solution.json', 'w')
+    json.dump(compromise_solution, json_fp, indent=2)
+    json_fp.close()
 
     '''
     bindings = sparql_mgr.regulator_query()
@@ -854,7 +941,7 @@ def _main():
     sys.path.append('app-deconfliction/competing-apps')
   else:
     sys.path.append('/gridappsd/services/app-deconfliction/competing-apps')
-   
+
   parser = argparse.ArgumentParser()
   parser.add_argument("simulation_id", help="Simulation ID")
   parser.add_argument("request", help="Simulation Request")
