@@ -513,7 +513,7 @@ class CompetingApp(GridAPPSD):
     P_batt_total = 0.0
     for name in Batteries:
       if Batteries[name]['SoC'] > 0.2:
-        P_batt_d = (Batteries[name]['SoC'] - 0.2)*Batteries[name]['ratedE'] / (eff_d * T)
+        P_batt_d = (Batteries[name]['SoC'] - 0.2)*Batteries[name]['ratedE'] / (1/eff_d * T)
         Batteries[name]['P_batt_d'] = P_batt_d = min(P_batt_d, Batteries[name]['ratedkW'])
         P_batt_total += P_batt_d
       else:
@@ -567,7 +567,7 @@ class CompetingApp(GridAPPSD):
     for name in Batteries:
       Batteries[name]['state'] = 'discharging'
       if 'P_batt_d' in Batteries[name]:
-        Batteries[name]['SoC'] -= eff_d*Batteries[name]['P_batt_d']*T/Batteries[name]['ratedE']
+        Batteries[name]['SoC'] -= 1/eff_d*Batteries[name]['P_batt_d']*T/Batteries[name]['ratedE']
 
 
   def resiliency(self, EnergyConsumers, SynchronousMachines, Batteries,
@@ -1071,14 +1071,32 @@ class CompetingApp(GridAPPSD):
             decarbonization_solution[name]['P_batt'] = 0.0
 
           decarbonization_solution[name]['SoC'] = Batteries[name]['SoC']
+          Batteries[name]['SoC'] = Batteries[name]['initial_SoC']
 
         for name in Batteries:
           solution[t][name] = {}
-          solution[t][name]['P_batt'] = (resilience_solution[name]['P_batt'] + decarbonization_solution[name]['P_batt']) / 2
-          solution[t][name]['SoC'] = (decarbonization_solution[name]['SoC'] + resilience_solution[name]['SoC']) / 2
-          Batteries[name]['SoC'] = Batteries[name]['initial_SoC'] = solution[t][name]['SoC']
-          p_batt_plot[name].append(solution[t][name]['P_batt']) # for plotting
-          soc_plot[name].append(solution[t][name]['SoC']) # for plotting
+          solution[t][name]['P_batt'] = (resilience_solution[name]['P_batt'] + decarbonization_solution[name][
+            'P_batt']) / 2
+          if solution[t][name]['P_batt'] > 0:
+            Batteries[name]['state'] = 'charging'
+            Batteries[name]['P_batt_c'] = solution[t][name]['P_batt']
+            Batteries[name]['P_batt_d'] = 0.0
+          elif solution[t][name]['P_batt'] < 0:
+            Batteries[name]['state'] = 'discharging'
+            Batteries[name]['P_batt_d'] = -solution[t][name]['P_batt']
+            Batteries[name]['P_batt_c'] = 0.0
+          else:
+            Batteries[name]['P_batt_c'] = Batteries[name]['P_batt_d'] = 0.0
+        self.charge_batteries(Batteries, 0.975 * 0.86, 0.25)
+        self.discharge_batteries(Batteries, 0.975 * 0.86, 0.25)
+        for name in Batteries:
+          # solution[t][name]['SoC'] = (decarbonization_solution[name]['SoC'] + resilience_solution[name]['SoC']) / 2
+          solution[t][name]['SoC'] = Batteries[name]['SoC']
+          Batteries[name]['initial_SoC'] = Batteries[name]['SoC']
+          print(Batteries[name]['SoC'])
+          # Batteries[name]['SoC'] = Batteries[name]['initial_SoC'] = solution[t][name]['SoC']
+          p_batt_plot[name].append(solution[t][name]['P_batt'])  # plotting
+          soc_plot[name].append(solution[t][name]['SoC'])  # plotting
 
       json_fp = open('output/compromise_solution.json', 'w')
       json.dump(solution, json_fp, indent=2)
