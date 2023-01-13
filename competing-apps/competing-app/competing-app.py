@@ -509,11 +509,11 @@ class CompetingApp(GridAPPSD):
         print('SynchronousMachine name: ' + name + ', P_dis: ' + str(round(P_dis,4)), flush=True)
 
 
-  def dispatch_DGSs(self, Batteries, SynchronousMachines, eff_d, T, P_load, P_ren, P_sub, price=None):
+  def dispatch_DGSs(self, Batteries, SynchronousMachines, deltaT, P_load, P_ren, P_sub, price=None):
     P_batt_total = 0.0
     for name in Batteries:
       if Batteries[name]['SoC'] > 0.2:
-        P_batt_d = (Batteries[name]['SoC'] - 0.2)*Batteries[name]['ratedE'] / (1/eff_d * T)
+        P_batt_d = (Batteries[name]['SoC'] - 0.2)*Batteries[name]['ratedE'] / (1/Batteries[name]['eff_d'] * deltaT)
         Batteries[name]['P_batt_d'] = P_batt_d = min(P_batt_d, Batteries[name]['ratedkW'])
         P_batt_total += P_batt_d
       else:
@@ -525,7 +525,7 @@ class CompetingApp(GridAPPSD):
         for name in Batteries:
           Batteries[name]['P_batt_d'] = P_def * Batteries[name]['P_batt_d'] / P_batt_total
 
-      self.discharge_batteries(Batteries, eff_d, T)
+      self.discharge_batteries(Batteries, deltaT)
 
     # only the profit app passes in price
     if price:
@@ -556,22 +556,23 @@ class CompetingApp(GridAPPSD):
             print('SynchronousMachine name: ' + name + ', P_dis: ' + str(round(P_dis,4)), flush=True)
 
 
-  def charge_batteries(self, Batteries, eff_c, T):
+  def charge_batteries(self, Batteries, deltaT):
     for name in Batteries:
       Batteries[name]['state'] = 'charging'
       if 'P_batt_c' in Batteries[name]:
-        Batteries[name]['SoC'] += eff_c*Batteries[name]['P_batt_c']*T/Batteries[name]['ratedE']
+        Batteries[name]['SoC'] += Batteries[name]['eff_c']*Batteries[name]['P_batt_c']*deltaT/Batteries[name]['ratedE']
 
 
-  def discharge_batteries(self, Batteries, eff_d, T):
+  def discharge_batteries(self, Batteries, deltaT):
     for name in Batteries:
       Batteries[name]['state'] = 'discharging'
       if 'P_batt_d' in Batteries[name]:
-        Batteries[name]['SoC'] -= 1/eff_d*Batteries[name]['P_batt_d']*T/Batteries[name]['ratedE']
+        Batteries[name]['SoC'] -= 1/Batteries[name]['eff_d']*Batteries[name]['P_batt_d']*deltaT/Batteries[name]['ratedE']
 
 
   def resiliency(self, EnergyConsumers, SynchronousMachines, Batteries,
-                 SolarPVs, t, load_mult, pv_mult, emergencyState=False):
+                 SolarPVs, time, load_mult, pv_mult, deltaT,
+                 emergencyState=False):
 
     P_load = 0.0
     for name in EnergyConsumers:
@@ -586,17 +587,14 @@ class CompetingApp(GridAPPSD):
     else:
       print('\nRESILIENCY APP OUTPUT: Alert state\n----------------------------------', flush=True)
 
-    print('t: ' + str(t), flush=True)
+    print('time: ' + str(time), flush=True)
     print('Total EnergyConsumers P_load: ' + str(round(P_load,4)), flush=True)
     print('Total SolarPVs P_ren: ' + str(round(P_ren,4)), flush=True)
 
-    eff_c = 0.975 * 0.86
-    eff_d = 0.975 * 0.86
-    T = 0.25
     P_sub = 2.0*P_load
 
-    if t > 56 and t < 68:
-    # if t > 72 and t < 84:
+    if time > 56 and time < 68:
+    # if time > 72 and time < 84:
       P_sub = 0.0
       emergencyState = True
 
@@ -605,7 +603,7 @@ class CompetingApp(GridAPPSD):
       for name in Batteries:
         Batteries[name]['state'] = 'idling'
         if Batteries[name]['SoC'] < 0.9:
-          P_batt_c = (0.9 - Batteries[name]['SoC'])*Batteries[name]['ratedE'] / (eff_c * T)
+          P_batt_c = (0.9 - Batteries[name]['SoC'])*Batteries[name]['ratedE'] / (Batteries[name]['eff_c'] * deltaT)
           Batteries[name]['P_batt_c'] = P_batt_c = min(P_batt_c, Batteries[name]['ratedkW'])
           P_batt_total += P_batt_c
         else:
@@ -616,19 +614,19 @@ class CompetingApp(GridAPPSD):
           if P_ren - P_load >= P_batt_total:
             # print('Charging from renewables', flush=True)
             # YES, Charge ESS
-            self.charge_batteries(Batteries, eff_c, T)
+            self.charge_batteries(Batteries, deltaT)
 
           else:
             # NO, Check P_sub
             if P_ren + P_sub > P_load:
               # print('P_ren<P_load Charging from renewable + substation', flush=True)
-              self.charge_batteries(Batteries, eff_c, T)
+              self.charge_batteries(Batteries, deltaT)
 
         else:
           # Check P_sub
           if P_ren + P_sub > P_load:
             # print('P_ren+P_sub>P_load Charging from renewable + substation', flush=True)
-            self.charge_batteries(Batteries, eff_c, T)
+            self.charge_batteries(Batteries, deltaT)
 
     else: # emergency state
       # Shiva HACK
@@ -638,7 +636,7 @@ class CompetingApp(GridAPPSD):
         for name in Batteries:
           Batteries[name]['state'] = 'idling'
           if Batteries[name]['SoC'] < 0.9:
-            P_batt_c = (0.9 - Batteries[name]['SoC']) * Batteries[name]['ratedE'] / (eff_c * T)
+            P_batt_c = (0.9 - Batteries[name]['SoC']) * Batteries[name]['ratedE'] / (Batteries[name]['eff_c'] * deltaT)
             Batteries[name]['P_batt_c'] = P_batt_c = min(P_batt_c, Batteries[name]['ratedkW'])
             P_batt_total += P_batt_c
           else:
@@ -654,9 +652,9 @@ class CompetingApp(GridAPPSD):
               Batteries[name]['P_batt_c'] *= P_surplus / P_batt_total
 
         if P_batt_total > 0.0:
-          self.charge_batteries(Batteries, eff_c, T)
+          self.charge_batteries(Batteries, deltaT)
       else:
-        self.dispatch_DGSs(Batteries, SynchronousMachines, eff_d, T, P_load, P_ren, P_sub)
+        self.dispatch_DGSs(Batteries, SynchronousMachines, deltaT, P_load, P_ren, P_sub)
     for name in Batteries:
       if Batteries[name]['state'] == 'charging':
         print('Battery name: ' + name + ', ratedkW: ' + str(round(Batteries[name]['ratedkW'],4)) + ', P_batt_c: ' + str(round(Batteries[name]['P_batt_c'],4)) + ', updated SoC: ' + str(round(Batteries[name]['SoC'],4)), flush=True)
@@ -669,7 +667,7 @@ class CompetingApp(GridAPPSD):
 
 
   def decarbonization(self, EnergyConsumers, SynchronousMachines, Batteries,
-                      SolarPVs, t, load_mult, pv_mult):
+                      SolarPVs, time, load_mult, pv_mult, deltaT):
 
     P_load = 0.0
     for name in EnergyConsumers:
@@ -681,25 +679,22 @@ class CompetingApp(GridAPPSD):
 
     print('\nDECARBONIZATION APP OUTPUT\n--------------------------', flush=True)
 
-    print('t: ' + str(t), flush=True)
+    print('time: ' + str(time), flush=True)
     print('Total EnergyConsumers P_load: ' + str(round(P_load,4)), flush=True)
     print('Total SolarPVs P_ren: ' + str(round(P_ren,4)), flush=True)
 
 
-    eff_c = 0.975 * 0.86
-    eff_d = 0.975 * 0.86
-    T = 0.25
     P_sub = 2.0*P_load
 
-    if t > 56 and t < 68:
-    # if t > 72 and t < 84:
+    if time > 56 and time < 68:
+    # if time > 72 and time < 84:
       P_sub = 0.0
 
     P_batt_total = 0.0
     for name in Batteries:
       Batteries[name]['state'] = 'idling'
       if Batteries[name]['SoC'] < 0.9:
-        P_batt_c = (0.9 - Batteries[name]['SoC'])*Batteries[name]['ratedE'] / (eff_c * T)
+        P_batt_c = (0.9 - Batteries[name]['SoC'])*Batteries[name]['ratedE'] / (Batteries[name]['eff_c'] * deltaT)
         Batteries[name]['P_batt_c'] = P_batt_c = min(P_batt_c, Batteries[name]['ratedkW'])
         P_batt_total += P_batt_c
 
@@ -714,10 +709,10 @@ class CompetingApp(GridAPPSD):
             Batteries[name]['P_batt_c'] *= P_surplus/P_batt_total
 
       if P_batt_total > 0.0:
-        self.charge_batteries(Batteries, eff_c, T)
+        self.charge_batteries(Batteries, deltaT)
 
     else:
-      self.dispatch_DGSs(Batteries, SynchronousMachines, eff_d, T, P_load, P_ren, P_sub)
+      self.dispatch_DGSs(Batteries, SynchronousMachines, deltaT, P_load, P_ren, P_sub)
 
     for name in Batteries:
       if Batteries[name]['state'] == 'charging':
@@ -731,7 +726,7 @@ class CompetingApp(GridAPPSD):
 
 
   def profit(self, EnergyConsumers, SynchronousMachines, Batteries,
-             SolarPVs, t, load_mult, pv_mult, price):
+             SolarPVs, time, load_mult, pv_mult, price, deltaT):
 
     P_load = 0.0
     for name in EnergyConsumers:
@@ -743,25 +738,22 @@ class CompetingApp(GridAPPSD):
 
     print('\nPROFIT APP OUTPUT\n-----------------', flush=True)
 
-    print('t: ' + str(t), flush=True)
+    print('time: ' + str(time), flush=True)
     print('Total EnergyConsumers P_load: ' + str(round(P_load,4)), flush=True)
     print('Total SolarPVs P_ren: ' + str(round(P_ren,4)), flush=True)
 
 
-    eff_c = 0.975 * 0.86
-    eff_d = 0.975 * 0.86
-    T = 0.25
     P_sub = 2.0*P_load
 
-    if t > 56 and t < 68:
-    # if t > 72 and t < 84:
+    if time > 56 and time < 68:
+    # if time > 72 and time < 84:
       P_sub = 0.0
 
     P_batt_total = 0.0
     for name in Batteries:
       Batteries[name]['state'] = 'idling'
       if Batteries[name]['SoC'] < 0.9:
-        P_batt_c = (0.9 - Batteries[name]['SoC'])*Batteries[name]['ratedE'] / (eff_c * T)
+        P_batt_c = (0.9 - Batteries[name]['SoC'])*Batteries[name]['ratedE'] / (Batteries[name]['eff_c'] * deltaT)
         Batteries[name]['P_batt_c'] = P_batt_c = min(P_batt_c, Batteries[name]['ratedkW'])
         P_batt_total += P_batt_c
 
@@ -776,10 +768,10 @@ class CompetingApp(GridAPPSD):
             Batteries[name]['P_batt_c'] *= P_surplus/P_batt_total
 
       if P_batt_total > 0.0:
-        self.charge_batteries(Batteries, eff_c, T)
+        self.charge_batteries(Batteries, deltaT)
 
     else:
-      self.dispatch_DGSs(Batteries, SynchronousMachines, eff_d, T, P_load, P_ren, P_sub, price)
+      self.dispatch_DGSs(Batteries, SynchronousMachines, deltaT, P_load, P_ren, P_sub, price)
 
     for name in Batteries:
       if Batteries[name]['state'] == 'charging':
@@ -792,8 +784,8 @@ class CompetingApp(GridAPPSD):
     return
 
 
-  def to_datetime(self, t):
-    return datetime(1966, 8, 1, (t-1)//4, 15*((t-1) % 4), 0)
+  def to_datetime(self, time):
+    return datetime(1966, 8, 1, (time-1)//4, 15*((time-1) % 4), 0)
 
 
   def make_plots(self, title, prefix, Batteries, t_plot, p_batt_plot, soc_plot):
@@ -845,6 +837,8 @@ class CompetingApp(GridAPPSD):
         Solar[time] = float(row[2])
         Price[time] = float(row[3])
         #print('time series time: ' + str(time) + ', Loadshape: ' + str(Loadshape[time]) + ', Solar: ' + str(Solar[time]) + ', Price: ' + str(Price[time]), flush=True)
+
+    deltaT = 0.25 # timestamp interval in fractional hours, 0.25 = 15 min.
 
     EnergyConsumers = {}
     objs = sparql_mgr.obj_dict_export('EnergyConsumer')
@@ -906,6 +900,10 @@ class CompetingApp(GridAPPSD):
       # Shiva HACK
       Batteries[name]['SoC'] = 0.5
       #Batteries[name]['SoC'] = float(obj['storedE']['value'])/float(obj['ratedE']['value'])
+      # eff_c and eff_d don't come from the query, but they are used throughout
+      # and this is a convenient point to assign them with query results
+      Batteries[name]['eff_c'] = 0.975 * 0.86
+      Batteries[name]['eff_d'] = 0.975 * 0.86
       print('Battery name: ' + name + ', ratedE: ' + str(round(Batteries[name]['ratedE'],4)) + ', SoC: ' + str(round(Batteries[name]['SoC'],4)), flush=True)
 
     SolarPVs = {}
@@ -938,21 +936,21 @@ class CompetingApp(GridAPPSD):
         p_batt_plot[name] = []
 
       solution = {}
-      for t in range(1, 97):
-        t_plot.append(self.to_datetime(t)) # for plotting
-        solution[t] = {}
-        self.resiliency(EnergyConsumers, SynchronousMachines, Batteries, SolarPVs, t, Loadshape[t], Solar[t], emergencyState)
+      for time in range(1, 97):
+        t_plot.append(self.to_datetime(time)) # for plotting
+        solution[time] = {}
+        self.resiliency(EnergyConsumers, SynchronousMachines, Batteries, SolarPVs, time, Loadshape[time], Solar[time], deltaT, emergencyState)
         for name in Batteries:
-          solution[t][name] = {}
+          solution[time][name] = {}
           if Batteries[name]['state'] == 'charging':
-            solution[t][name]['P_batt'] = Batteries[name]['P_batt_c']
+            solution[time][name]['P_batt'] = Batteries[name]['P_batt_c']
           elif Batteries[name]['state'] == 'discharging':
-            solution[t][name]['P_batt'] = -Batteries[name]['P_batt_d']
+            solution[time][name]['P_batt'] = -Batteries[name]['P_batt_d']
           else:
-            solution[t][name]['P_batt'] = 0.0
+            solution[time][name]['P_batt'] = 0.0
 
-          solution[t][name]['SoC'] = Batteries[name]['SoC']
-          p_batt_plot[name].append(solution[t][name]['P_batt']) # for plotting
+          solution[time][name]['SoC'] = Batteries[name]['SoC']
+          p_batt_plot[name].append(solution[time][name]['P_batt']) # for plotting
           soc_plot[name].append(Batteries[name]['SoC']) # for plotting
 
       json_fp = open('output/resilience_solution.json', 'w')
@@ -972,21 +970,21 @@ class CompetingApp(GridAPPSD):
         p_batt_plot[name] = []
 
       solution = {}
-      for t in range(1, 97):
-        t_plot.append(self.to_datetime(t)) # for plotting
-        solution[t] = {}
-        self.decarbonization(EnergyConsumers, SynchronousMachines, Batteries, SolarPVs, t, Loadshape[t], Solar[t])
+      for time in range(1, 97):
+        t_plot.append(self.to_datetime(time)) # for plotting
+        solution[time] = {}
+        self.decarbonization(EnergyConsumers, SynchronousMachines, Batteries, SolarPVs, time, Loadshape[time], Solar[time], deltaT)
         for name in Batteries:
-          solution[t][name] = {}
+          solution[time][name] = {}
           if Batteries[name]['state'] == 'charging':
-            solution[t][name]['P_batt'] = Batteries[name]['P_batt_c']
+            solution[time][name]['P_batt'] = Batteries[name]['P_batt_c']
           elif Batteries[name]['state'] == 'discharging':
-            solution[t][name]['P_batt'] = -Batteries[name]['P_batt_d']
+            solution[time][name]['P_batt'] = -Batteries[name]['P_batt_d']
           else:
-            solution[t][name]['P_batt'] = 0.0
+            solution[time][name]['P_batt'] = 0.0
 
-          solution[t][name]['SoC'] = Batteries[name]['SoC']
-          p_batt_plot[name].append(solution[t][name]['P_batt']) # for plotting
+          solution[time][name]['SoC'] = Batteries[name]['SoC']
+          p_batt_plot[name].append(solution[time][name]['P_batt']) # for plotting
           soc_plot[name].append(Batteries[name]['SoC']) # for plotting
 
       json_fp = open('output/decarbonization_solution.json', 'w')
@@ -1006,21 +1004,21 @@ class CompetingApp(GridAPPSD):
         p_batt_plot[name] = []
 
       solution = {}
-      for t in range(1, 97):
-        t_plot.append(self.to_datetime(t)) # for plotting
-        solution[t] = {}
-        self.profit(EnergyConsumers, SynchronousMachines, Batteries, SolarPVs, t, Loadshape[t], Solar[t], Price[t])
+      for time in range(1, 97):
+        t_plot.append(self.to_datetime(time)) # for plotting
+        solution[time] = {}
+        self.profit(EnergyConsumers, SynchronousMachines, Batteries, SolarPVs, time, Loadshape[time], Solar[time], Price[time], deltaT)
         for name in Batteries:
-          solution[t][name] = {}
+          solution[time][name] = {}
           if Batteries[name]['state'] == 'charging':
-            solution[t][name]['P_batt'] = Batteries[name]['P_batt_c']
+            solution[time][name]['P_batt'] = Batteries[name]['P_batt_c']
           elif Batteries[name]['state'] == 'discharging':
-            solution[t][name]['P_batt'] = -Batteries[name]['P_batt_d']
+            solution[time][name]['P_batt'] = -Batteries[name]['P_batt_d']
           else:
-            solution[t][name]['P_batt'] = 0.0
+            solution[time][name]['P_batt'] = 0.0
 
-          solution[t][name]['SoC'] = Batteries[name]['SoC']
-          p_batt_plot[name].append(solution[t][name]['P_batt']) # for plotting
+          solution[time][name]['SoC'] = Batteries[name]['SoC']
+          p_batt_plot[name].append(solution[time][name]['P_batt']) # for plotting
           soc_plot[name].append(Batteries[name]['SoC']) # for plotting
 
       json_fp = open('output/profit_solution.json', 'w')
@@ -1042,12 +1040,12 @@ class CompetingApp(GridAPPSD):
         p_batt_plot[name] = []
 
       solution = {}
-      for t in range(1, 97):
-        t_plot.append(self.to_datetime(t)) # for plotting
+      for time in range(1, 97):
+        t_plot.append(self.to_datetime(time)) # for plotting
         resilience_solution = {}
         decarbonization_solution = {}
-        solution[t] = {}
-        self.resiliency(EnergyConsumers, SynchronousMachines, Batteries, SolarPVs, t, Loadshape[t], Solar[t], emergencyState)
+        solution[time] = {}
+        self.resiliency(EnergyConsumers, SynchronousMachines, Batteries, SolarPVs, time, Loadshape[time], Solar[time], deltaT, emergencyState)
         for name in Batteries:
           resilience_solution[name] = {}
           if Batteries[name]['state'] == 'charging':
@@ -1060,7 +1058,7 @@ class CompetingApp(GridAPPSD):
           resilience_solution[name]['SoC'] = Batteries[name]['SoC']
           Batteries[name]['SoC'] = Batteries[name]['initial_SoC']
 
-        self.decarbonization(EnergyConsumers, SynchronousMachines, Batteries, SolarPVs, t, Loadshape[t], Solar[t])
+        self.decarbonization(EnergyConsumers, SynchronousMachines, Batteries, SolarPVs, time, Loadshape[time], Solar[time], deltaT)
         for name in Batteries:
           decarbonization_solution[name] = {}
           if Batteries[name]['state'] == 'charging':
@@ -1074,29 +1072,26 @@ class CompetingApp(GridAPPSD):
           Batteries[name]['SoC'] = Batteries[name]['initial_SoC']
 
         for name in Batteries:
-          solution[t][name] = {}
-          solution[t][name]['P_batt'] = (resilience_solution[name]['P_batt'] + decarbonization_solution[name][
+          solution[time][name] = {}
+          solution[time][name]['P_batt'] = (resilience_solution[name]['P_batt'] + decarbonization_solution[name][
             'P_batt']) / 2
-          if solution[t][name]['P_batt'] > 0:
+          if solution[time][name]['P_batt'] > 0:
             Batteries[name]['state'] = 'charging'
-            Batteries[name]['P_batt_c'] = solution[t][name]['P_batt']
+            Batteries[name]['P_batt_c'] = solution[time][name]['P_batt']
             Batteries[name]['P_batt_d'] = 0.0
-          elif solution[t][name]['P_batt'] < 0:
+          elif solution[time][name]['P_batt'] < 0:
             Batteries[name]['state'] = 'discharging'
-            Batteries[name]['P_batt_d'] = -solution[t][name]['P_batt']
+            Batteries[name]['P_batt_d'] = -solution[time][name]['P_batt']
             Batteries[name]['P_batt_c'] = 0.0
           else:
             Batteries[name]['P_batt_c'] = Batteries[name]['P_batt_d'] = 0.0
-        self.charge_batteries(Batteries, 0.975 * 0.86, 0.25)
-        self.discharge_batteries(Batteries, 0.975 * 0.86, 0.25)
+
+        self.charge_batteries(Batteries, deltaT)
+        self.discharge_batteries(Batteries, deltaT)
         for name in Batteries:
-          # solution[t][name]['SoC'] = (decarbonization_solution[name]['SoC'] + resilience_solution[name]['SoC']) / 2
-          solution[t][name]['SoC'] = Batteries[name]['SoC']
-          Batteries[name]['initial_SoC'] = Batteries[name]['SoC']
-          print(Batteries[name]['SoC'])
-          # Batteries[name]['SoC'] = Batteries[name]['initial_SoC'] = solution[t][name]['SoC']
-          p_batt_plot[name].append(solution[t][name]['P_batt'])  # plotting
-          soc_plot[name].append(solution[t][name]['SoC'])  # plotting
+          solution[time][name]['SoC'] = Batteries[name]['initial_SoC'] = Batteries[name]['SoC']
+          p_batt_plot[name].append(solution[time][name]['P_batt'])  # plotting
+          soc_plot[name].append(solution[time][name]['SoC'])  # plotting
 
       json_fp = open('output/compromise_solution.json', 'w')
       json.dump(solution, json_fp, indent=2)
