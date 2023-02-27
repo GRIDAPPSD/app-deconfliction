@@ -302,37 +302,6 @@ class CompetingApp(GridAPPSD):
     return
 
 
-  def to_datetime(self, time):
-    return datetime(1966, 8, 1, (time-1)//4, 15*((time-1) % 4), 0)
-
-
-  def make_plots(self, title, prefix, Batteries, t_plot, p_batt_plot, soc_plot):
-    for name in Batteries:
-      plt.figure()
-      fig, ax = plt.subplots()
-      plt.title(title + ' P_batt:  ' + name, pad=15.0)
-      plt.plot(t_plot, p_batt_plot[name])
-      ax.xaxis.set_major_formatter(md.DateFormatter('%H:%M'))
-      plt.xlim([self.to_datetime(1), self.to_datetime(96)])
-      plt.xticks([self.to_datetime(1), self.to_datetime(25), self.to_datetime(49), self.to_datetime(73), self.to_datetime(96)])
-      plt.xlabel('Time')
-      plt.ylabel('P_batt  (kW)')
-      plt.savefig('output/' + prefix + '_p_batt_' + name + '.png')
-      #plot.show()
-
-      plt.figure()
-      fig, ax = plt.subplots()
-      plt.title(title + ' SoC:  ' + name, pad=15.0)
-      plt.plot(t_plot, soc_plot[name])
-      ax.xaxis.set_major_formatter(md.DateFormatter('%H:%M'))
-      plt.xlim([self.to_datetime(1), self.to_datetime(96)])
-      plt.xticks([self.to_datetime(1), self.to_datetime(25), self.to_datetime(49), self.to_datetime(73), self.to_datetime(96)])
-      plt.xlabel('Time')
-      plt.ylabel('Battery SoC')
-      plt.savefig('output/' + prefix + '_soc_' + name + '.png')
-      #plot.show()
-
-
   def __init__(self, gapps, feeder_mrid, simulation_id, app, state):
     self.AppUtil = getattr(importlib.import_module('shared.apputil'), 'AppUtil')
 
@@ -465,7 +434,7 @@ class CompetingApp(GridAPPSD):
           price = float(row[3])
           #print('time series time: ' + str(time) + ', loadshape: ' + str(loadshape) + ', solar: ' + str(solar) + ', price: ' + str(price), flush=True)
 
-          t_plot.append(self.to_datetime(time)) # for plotting
+          t_plot.append(self.AppUtil.to_datetime(time)) # for plotting
           solution[time] = {}
 
           competing_func(EnergyConsumers, SynchronousMachines, Batteries, SolarPVs, time, loadshape, solar, price, deltaT, emergencyState)
@@ -487,7 +456,7 @@ class CompetingApp(GridAPPSD):
         json.dump(solution, json_fp, indent=2)
         json_fp.close()
 
-        self.make_plots(competing_name.capitalize() + ' Exclusivity', competing_name, Batteries, t_plot, p_batt_plot, soc_plot)
+        self.AppUtil.make_plots(competing_name.capitalize() + ' Exclusivity', competing_name, Batteries, t_plot, p_batt_plot, soc_plot)
 
       elif app.startswith('c') or app.startswith('C'):
         # 4. Compromise (between resilience and decarbonization)
@@ -509,7 +478,7 @@ class CompetingApp(GridAPPSD):
           price = float(row[3])
           #print('time series time: ' + str(time) + ', loadshape: ' + str(loadshape) + ', solar: ' + str(solar) + ', price: ' + str(price), flush=True)
 
-          t_plot.append(self.to_datetime(time)) # for plotting
+          t_plot.append(self.AppUtil.to_datetime(time)) # for plotting
           resilience_solution = {}
           decarbonization_solution = {}
           solution[time] = {}
@@ -564,7 +533,7 @@ class CompetingApp(GridAPPSD):
         json.dump(solution, json_fp, indent=2)
         json_fp.close()
 
-        self.make_plots('Compromise', 'compromise', Batteries, t_plot, p_batt_plot, soc_plot)
+        self.AppUtil.make_plots('Compromise', 'compromise', Batteries, t_plot, p_batt_plot, soc_plot)
 
     return
 
