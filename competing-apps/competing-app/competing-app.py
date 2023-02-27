@@ -436,7 +436,7 @@ class CompetingApp(GridAPPSD):
     elif app.startswith('d') or app.startswith('D'):
       # 2. Decarbonization Exclusivity
       competing_func = self.decarbonization
-      competing_name = 'decarboniation'
+      competing_name = 'decarbonization'
     elif app.startswith('p') or app.startswith('P'):
       # 3. Profit Exclusivity
       competing_func = self.profit
