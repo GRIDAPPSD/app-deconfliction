@@ -133,7 +133,7 @@ class CompetingApp(GridAPPSD):
         for name in Batteries:
           Batteries[name]['P_batt_d'] = P_def * Batteries[name]['P_batt_d'] / P_batt_total
 
-      self.discharge_batteries(Batteries, deltaT)
+      self.AppUtil.discharge_batteries(Batteries, deltaT)
 
     # only the profit app passes in price
     if price:
@@ -162,20 +162,6 @@ class CompetingApp(GridAPPSD):
           for name, sync in SynchronousMachines.items():
             P_dis = sync['P_available']
             print('SynchronousMachine name: ' + name + ', P_dis: ' + str(round(P_dis,4)), flush=True)
-
-
-  def charge_batteries(self, Batteries, deltaT):
-    for name in Batteries:
-      Batteries[name]['state'] = 'charging'
-      if 'P_batt_c' in Batteries[name]:
-        Batteries[name]['SoC'] += Batteries[name]['eff_c']*Batteries[name]['P_batt_c']*deltaT/Batteries[name]['ratedE']
-
-
-  def discharge_batteries(self, Batteries, deltaT):
-    for name in Batteries:
-      Batteries[name]['state'] = 'discharging'
-      if 'P_batt_d' in Batteries[name]:
-        Batteries[name]['SoC'] -= 1/Batteries[name]['eff_d']*Batteries[name]['P_batt_d']*deltaT/Batteries[name]['ratedE']
 
 
   def resiliency(self, EnergyConsumers, SynchronousMachines, Batteries,
@@ -222,19 +208,19 @@ class CompetingApp(GridAPPSD):
           if P_ren - P_load >= P_batt_total:
             # print('Charging from renewables', flush=True)
             # YES, Charge ESS
-            self.charge_batteries(Batteries, deltaT)
+            self.AppUtil.charge_batteries(Batteries, deltaT)
 
           else:
             # NO, Check P_sub
             if P_ren + P_sub > P_load:
               # print('P_ren<P_load Charging from renewable + substation', flush=True)
-              self.charge_batteries(Batteries, deltaT)
+              self.AppUtil.charge_batteries(Batteries, deltaT)
 
         else:
           # Check P_sub
           if P_ren + P_sub > P_load:
             # print('P_ren+P_sub>P_load Charging from renewable + substation', flush=True)
-            self.charge_batteries(Batteries, deltaT)
+            self.AppUtil.charge_batteries(Batteries, deltaT)
 
     else: # emergency state
       # Shiva HACK
@@ -260,7 +246,7 @@ class CompetingApp(GridAPPSD):
               Batteries[name]['P_batt_c'] *= P_surplus / P_batt_total
 
         if P_batt_total > 0.0:
-          self.charge_batteries(Batteries, deltaT)
+          self.AppUtil.charge_batteries(Batteries, deltaT)
       else:
         self.dispatch_DGSs(Batteries, SynchronousMachines, deltaT, P_load, P_ren, P_sub)
     for name in Batteries:
@@ -318,7 +304,7 @@ class CompetingApp(GridAPPSD):
             Batteries[name]['P_batt_c'] *= P_surplus/P_batt_total
 
       if P_batt_total > 0.0:
-        self.charge_batteries(Batteries, deltaT)
+        self.AppUtil.charge_batteries(Batteries, deltaT)
 
     else:
       self.dispatch_DGSs(Batteries, SynchronousMachines, deltaT, P_load, P_ren, P_sub)
@@ -377,7 +363,7 @@ class CompetingApp(GridAPPSD):
             Batteries[name]['P_batt_c'] *= P_surplus/P_batt_total
 
       if P_batt_total > 0.0:
-        self.charge_batteries(Batteries, deltaT)
+        self.AppUtil.charge_batteries(Batteries, deltaT)
 
     else:
       self.dispatch_DGSs(Batteries, SynchronousMachines, deltaT, P_load, P_ren, P_sub, price)
@@ -425,6 +411,8 @@ class CompetingApp(GridAPPSD):
 
 
   def __init__(self, gapps, feeder_mrid, simulation_id, app, state):
+    self.AppUtil = getattr(importlib.import_module('shared.apputil'), 'AppUtil')
+
     SPARQLManager = getattr(importlib.import_module('shared.sparql'), 'SPARQLManager')
     sparql_mgr = SPARQLManager(gapps, feeder_mrid, simulation_id)
 
@@ -642,8 +630,8 @@ class CompetingApp(GridAPPSD):
             else:
               Batteries[name]['P_batt_c'] = Batteries[name]['P_batt_d'] = 0.0
 
-          self.charge_batteries(Batteries, deltaT)
-          self.discharge_batteries(Batteries, deltaT)
+          self.AppUtil.charge_batteries(Batteries, deltaT)
+          self.AppUtil.discharge_batteries(Batteries, deltaT)
           for name in Batteries:
             solution[time][name]['SoC'] = Batteries[name]['initial_SoC'] = Batteries[name]['SoC']
             p_batt_plot[name].append(solution[time][name]['P_batt'])  # plotting
