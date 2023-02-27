@@ -50,3 +50,50 @@ class AppUtil:
         print('SynchronousMachine name: ' + name + ', P_dis: ' + str(round(P_dis,4)), flush=True)
 
 
+  def dispatch_DGSs(Batteries, SynchronousMachines, deltaT, P_load, P_ren, P_sub, price=None):
+    P_batt_total = 0.0
+    for name in Batteries:
+      if Batteries[name]['SoC'] > 0.2:
+        P_batt_d = (Batteries[name]['SoC'] - 0.2)*Batteries[name]['ratedE'] / (1/Batteries[name]['eff_d'] * deltaT)
+        Batteries[name]['P_batt_d'] = P_batt_d = min(P_batt_d, Batteries[name]['ratedkW'])
+        P_batt_total += P_batt_d
+      else:
+        Batteries[name]['P_batt_d'] = P_batt_d = 0.0
+
+    if P_batt_total > 0.0:
+      if P_ren + P_batt_total > P_load:
+        P_def = P_load - P_ren
+        for name in Batteries:
+          Batteries[name]['P_batt_d'] = P_def * Batteries[name]['P_batt_d'] / P_batt_total
+
+      AppUtil.discharge_batteries(Batteries, deltaT)
+
+    # only the profit app passes in price
+    if price:
+      P_def = P_load - (P_batt_total + P_ren)
+      if P_def > 0.0:
+        print('Power deficiency: ' + str(round(P_def, 4)), flush=True)
+        P_sub = AppUtil.economic_dispatch(P_sub, SynchronousMachines, P_def, price)
+
+    else:
+      if P_batt_total + P_ren + P_sub <= P_load:
+        P_def = P_load - (P_batt_total + P_ren + P_sub)
+        print('Power deficiency: ' + str(round(P_def,4)), flush=True)
+
+        P_sync_available = 0.0
+        for name, sync in SynchronousMachines.items():
+          #avail = math.sqrt(sync['ratedS']**2 - (sync['kW']**2 + sync['kVar']**2))
+          sync['P_available'] = math.sqrt(sync['ratedS']**2 - sync['kVar']**2)
+          P_sync_available += sync['P_available']
+        print('SynchronousMachines available power: ' + str(round(P_sync_available,4)), flush=True)
+
+        if P_sync_available > P_def:
+          for name, sync in SynchronousMachines.items():
+            P_dis = P_def*sync['P_available']/P_sync_available
+            print('SynchronousMachine name: ' + name + ', P_dis: ' + str(round(P_dis,4)), flush=True)
+        else:
+          for name, sync in SynchronousMachines.items():
+            P_dis = sync['P_available']
+            print('SynchronousMachine name: ' + name + ', P_dis: ' + str(round(P_dis,4)), flush=True)
+
+
