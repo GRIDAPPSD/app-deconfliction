@@ -201,7 +201,6 @@ class CompetingApp(GridAPPSD):
     print('Total EnergyConsumers P_load: ' + str(round(P_load,4)), flush=True)
     print('Total SolarPVs P_ren: ' + str(round(P_ren,4)), flush=True)
 
-
     P_sub = 2.0*P_load
 
     if time > 56 and time < 68:
@@ -260,7 +259,6 @@ class CompetingApp(GridAPPSD):
     print('Total EnergyConsumers P_load: ' + str(round(P_load,4)), flush=True)
     print('Total SolarPVs P_ren: ' + str(round(P_ren,4)), flush=True)
 
-
     P_sub = 2.0*P_load
 
     if time > 56 and time < 68:
@@ -308,7 +306,7 @@ class CompetingApp(GridAPPSD):
     SPARQLManager = getattr(importlib.import_module('shared.sparql'), 'SPARQLManager')
     sparql_mgr = SPARQLManager(gapps, feeder_mrid, simulation_id)
 
-    # only needed for resiliency app
+    # really only needed for resiliency app, but passed to all for consistency
     emergencyState = state.startswith('e') or state.startswith('E')
 
     EnergyConsumers = self.AppUtil.getEnergyConsumers(sparql_mgr)
@@ -318,10 +316,6 @@ class CompetingApp(GridAPPSD):
     Batteries = self.AppUtil.getBatteries(sparql_mgr)
 
     SolarPVs = self.AppUtil.getSolarPVs(sparql_mgr)
-
-    # make sure output directory exists since that's where results go
-    if not os.path.isdir('output'):
-      os.makedirs('output')
 
     # Deconfliction methods
     competing_func = None
@@ -344,6 +338,10 @@ class CompetingApp(GridAPPSD):
       next(reader) # skip header
 
       deltaT = 0.25 # timestamp interval in fractional hours, 0.25 = 15 min.
+
+      # make sure output directory exists since that's where results go
+      if not os.path.isdir('output'):
+        os.makedirs('output')
 
       if competing_func != None:
         # for plotting
