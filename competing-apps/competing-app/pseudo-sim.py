@@ -67,7 +67,7 @@ def send_message(gapps, publish_topic, reader):
 
 def _main():
   # authenticate with GridAPPS-D Platform
-  os.environ['GRIDAPPSD_APPLICATION_ID'] = 'gridappsd-competing-app'
+  os.environ['GRIDAPPSD_APPLICATION_ID'] = 'gridappsd-pseudo-sim'
   os.environ['GRIDAPPSD_APPLICATION_STATUS'] = 'STARTED'
   os.environ['GRIDAPPSD_USER'] = 'app_user'
   os.environ['GRIDAPPSD_PASSWORD'] = '1234App'
@@ -76,7 +76,7 @@ def _main():
   assert gapps.connected
 
   # hardwire simulation_id as part of the topic
-  publish_topic = service_output_topic('gridappsd-competing-app', '0')
+  publish_topic = service_output_topic('gridappsd-pseudo-sim', '0')
   #print(publish_topic)
 
   fp = open('time-series-data.csv', 'r')
