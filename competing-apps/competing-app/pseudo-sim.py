@@ -45,12 +45,17 @@ from gridappsd.topics import service_output_topic
 
 
 def send_message(gapps, publish_topic, reader):
+  ret = True # return True to call this again the next time interval
+
   # next() will throw an exception on EOF
   try:
     row = next(reader)
   except:
+    # send out one final message with end-of-data flag for timestamp
+    row = ['-999', '', '', '']
+
     # returning False will exit from the timer-based calls
-    return False
+    ret = False
 
   message = {
     'timestamp': row[0],
@@ -61,8 +66,7 @@ def send_message(gapps, publish_topic, reader):
   gapps.send(publish_topic, message)
   print(time.time(), ': ', str(message), flush=True)
 
-  # return True to call this again the next time interval
-  return True
+  return ret
 
 
 def _main():
