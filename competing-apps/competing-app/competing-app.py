@@ -81,20 +81,6 @@ class CompetingApp(GridAPPSD):
     else:
       print('time series end-of-data!', flush=True)
 
-      if self.competing_func != None:
-        json_fp = open('output/' + self.competing_name + '_solution.json', 'w')
-        json.dump(self.solution, json_fp, indent=2)
-        json_fp.close()
-
-        self.AppUtil.make_plots(self.competing_name.capitalize() + ' Exclusivity', self.competing_name, self.Batteries, self.t_plot, self.p_batt_plot, self.soc_plot)
-
-      else: # compromise solution
-        json_fp = open('output/compromise_solution.json', 'w')
-        json.dump(self.solution, json_fp, indent=2)
-        json_fp.close()
-
-        self.AppUtil.make_plots('Compromise', 'compromise', self.Batteries, self.t_plot, self.p_batt_plot, self.soc_plot)
-
       self.exit_flag = True
       return
 
@@ -413,10 +399,6 @@ class CompetingApp(GridAPPSD):
 
     self.deltaT = 0.25 # timestamp interval in fractional hours, 0.25 = 15 min.
 
-    # make sure output directory exists since that's where results go
-    if not os.path.isdir('output'):
-      os.makedirs('output')
-
     # Deconfliction methods
     self.competing_func = None
     self.competing_name = None
@@ -454,6 +436,24 @@ class CompetingApp(GridAPPSD):
 
     while not self.exit_flag:
       time.sleep(0.1)
+
+    # make sure output directory exists since that's where results go
+    if not os.path.isdir('output'):
+      os.makedirs('output')
+
+    if self.competing_func != None:
+      json_fp = open('output/' + self.competing_name + '_solution.json', 'w')
+      json.dump(self.solution, json_fp, indent=2)
+      json_fp.close()
+
+      self.AppUtil.make_plots(self.competing_name.capitalize() + ' Exclusivity', self.competing_name, self.Batteries, self.t_plot, self.p_batt_plot, self.soc_plot)
+
+    else: # compromise solution
+      json_fp = open('output/compromise_solution.json', 'w')
+      json.dump(self.solution, json_fp, indent=2)
+      json_fp.close()
+
+      self.AppUtil.make_plots('Compromise', 'compromise', self.Batteries, self.t_plot, self.p_batt_plot, self.soc_plot)
 
     return
 
