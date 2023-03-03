@@ -89,6 +89,23 @@ class CompetingApp(GridAPPSD):
       self.soc_plot[name].append(self.Batteries[name]['SoC'])
 
 
+  def make_compromise(self, solution,
+                      resilience_solution, decarbonization_solution):
+    for name in self.Batteries:
+      solution[name] = {}
+      solution[name]['P_batt'] = (resilience_solution[name]['P_batt'] + decarbonization_solution[name]['P_batt']) / 2
+      if solution[name]['P_batt'] > 0:
+        self.Batteries[name]['state'] = 'charging'
+        self.Batteries[name]['P_batt_c'] = solution[name]['P_batt']
+        self.Batteries[name]['P_batt_d'] = 0.0
+      elif solution[name]['P_batt'] < 0:
+        self.Batteries[name]['state'] = 'discharging'
+        self.Batteries[name]['P_batt_d'] = -solution[name]['P_batt']
+        self.Batteries[name]['P_batt_c'] = 0.0
+      else:
+        self.Batteries[name]['P_batt_c'] = self.Batteries[name]['P_batt_d'] = 0.0
+
+
   def on_message(self, headers, message):
     #print('headers: ' + str(headers), flush=True)
     #print('message: ' + str(message), flush=True)
@@ -121,32 +138,25 @@ class CompetingApp(GridAPPSD):
     else: # compromise solution
       self.t_plot.append(self.AppUtil.to_datetime(time)) # plotting
 
-      self.resiliency(self.EnergyConsumers, self.SynchronousMachines, self.Batteries, self.SolarPVs, self.deltaT, self.emergencyState, time, loadshape, solar, price)
+      self.resiliency(self.EnergyConsumers, self.SynchronousMachines,
+                      self.Batteries, self.SolarPVs, self.deltaT,
+                      self.emergencyState, time, loadshape, solar, price)
 
       resilience_solution = {}
       self.batt_to_solution(resilience_solution)
       self.batt_to_initial()
 
-      self.decarbonization(self.EnergyConsumers, self.SynchronousMachines, self.Batteries, self.SolarPVs, self.deltaT, self.emergencyState, time, loadshape, solar, price)
+      self.decarbonization(self.EnergyConsumers, self.SynchronousMachines,
+                           self.Batteries, self.SolarPVs, self.deltaT,
+                           self.emergencyState, time, loadshape, solar, price)
 
       decarbonization_solution = {}
       self.batt_to_solution(decarbonization_solution)
       self.batt_to_initial()
 
       self.solution[time] = {}
-      for name in self.Batteries:
-        self.solution[time][name] = {}
-        self.solution[time][name]['P_batt'] = (resilience_solution[name]['P_batt'] + decarbonization_solution[name]['P_batt']) / 2
-        if self.solution[time][name]['P_batt'] > 0:
-          self.Batteries[name]['state'] = 'charging'
-          self.Batteries[name]['P_batt_c'] = self.solution[time][name]['P_batt']
-          self.Batteries[name]['P_batt_d'] = 0.0
-        elif self.solution[time][name]['P_batt'] < 0:
-          self.Batteries[name]['state'] = 'discharging'
-          self.Batteries[name]['P_batt_d'] = -self.solution[time][name]['P_batt']
-          self.Batteries[name]['P_batt_c'] = 0.0
-        else:
-          self.Batteries[name]['P_batt_c'] = self.Batteries[name]['P_batt_d'] = 0.0
+      self.make_compromise(self.solution[time],
+                           resilience_solution, decarbonization_solution)
 
       self.AppUtil.charge_batteries(self.Batteries, self.deltaT)
       self.AppUtil.discharge_batteries(self.Batteries, self.deltaT)
