@@ -164,6 +164,9 @@ class CompetingApp(GridAPPSD):
       self.AppUtil.charge_batteries(self.Batteries, self.deltaT)
       self.AppUtil.discharge_batteries(self.Batteries, self.deltaT)
 
+      for name in self.Batteries:
+        self.solution[time][name]['SoC'] = self.Batteries[name]['SoC']
+
       self.plot_solution(self.solution[time])
 
     #message = {
