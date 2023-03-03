@@ -138,6 +138,9 @@ class CompetingApp(GridAPPSD):
     else: # compromise solution
       self.t_plot.append(self.AppUtil.to_datetime(time)) # plotting
 
+      for name in self.Batteries:
+        self.Batteries[name]['initial_SoC'] = self.Batteries[name]['SoC']
+
       self.resiliency(self.EnergyConsumers, self.SynchronousMachines,
                       self.Batteries, self.SolarPVs, self.deltaT,
                       self.emergencyState, time, loadshape, solar, price)
@@ -162,8 +165,6 @@ class CompetingApp(GridAPPSD):
       self.AppUtil.discharge_batteries(self.Batteries, self.deltaT)
 
       self.plot_solution(self.solution[time])
-      for name in self.Batteries:
-        self.Batteries[name]['initial_SoC'] = self.Batteries[name]['SoC']
 
     #message = {
     #  'feeder_id': self.simRap.feeder_mrid,
@@ -431,8 +432,6 @@ class CompetingApp(GridAPPSD):
     self.soc_plot = {}
     self.p_batt_plot = {}
     for name in self.Batteries:
-      # to restore original state of batteries--used for compromise solution
-      self.Batteries[name]['initial_SoC'] = self.Batteries[name]['SoC']
       self.soc_plot[name] = []
       self.p_batt_plot[name] = []
 
