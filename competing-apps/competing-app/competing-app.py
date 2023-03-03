@@ -78,6 +78,17 @@ class CompetingApp(GridAPPSD):
       solution[name]['SoC'] = self.Batteries[name]['SoC']
 
 
+  def batt_to_initial(self):
+    for name in self.Batteries:
+       self.Batteries[name]['SoC'] = self.Batteries[name]['initial_SoC']
+
+
+  def plot_solution(self, solution):
+    for name in self.Batteries:
+      self.p_batt_plot[name].append(solution[name]['P_batt'])
+      self.soc_plot[name].append(self.Batteries[name]['SoC'])
+
+
   def on_message(self, headers, message):
     #print('headers: ' + str(headers), flush=True)
     #print('message: ' + str(message), flush=True)
@@ -105,9 +116,7 @@ class CompetingApp(GridAPPSD):
       self.solution[time] = {}
       self.batt_to_solution(self.solution[time])
 
-      for name in self.Batteries:
-        self.p_batt_plot[name].append(self.solution[time][name]['P_batt']) # plotting
-        self.soc_plot[name].append(self.Batteries[name]['SoC']) # plotting
+      self.plot_solution(self.solution[time])
 
     else: # compromise solution
       self.t_plot.append(self.AppUtil.to_datetime(time)) # plotting
@@ -116,15 +125,13 @@ class CompetingApp(GridAPPSD):
 
       resilience_solution = {}
       self.batt_to_solution(resilience_solution)
-      for name in self.Batteries:
-        self.Batteries[name]['SoC'] = self.Batteries[name]['initial_SoC']
+      self.batt_to_initial()
 
       self.decarbonization(self.EnergyConsumers, self.SynchronousMachines, self.Batteries, self.SolarPVs, self.deltaT, self.emergencyState, time, loadshape, solar, price)
 
       decarbonization_solution = {}
       self.batt_to_solution(decarbonization_solution)
-      for name in self.Batteries:
-        self.Batteries[name]['SoC'] = self.Batteries[name]['initial_SoC']
+      self.batt_to_initial()
 
       self.solution[time] = {}
       for name in self.Batteries:
@@ -143,10 +150,10 @@ class CompetingApp(GridAPPSD):
 
       self.AppUtil.charge_batteries(self.Batteries, self.deltaT)
       self.AppUtil.discharge_batteries(self.Batteries, self.deltaT)
+
+      self.plot_solution(self.solution[time])
       for name in self.Batteries:
-        self.solution[time][name]['SoC'] = self.Batteries[name]['initial_SoC'] = self.Batteries[name]['SoC']
-        self.p_batt_plot[name].append(self.solution[time][name]['P_batt'])  # plotting
-        self.soc_plot[name].append(self.solution[time][name]['SoC'])  # plotting
+        self.Batteries[name]['initial_SoC'] = self.Batteries[name]['SoC']
 
     #message = {
     #  'feeder_id': self.simRap.feeder_mrid,
