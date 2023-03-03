@@ -106,21 +106,21 @@ class CompetingApp(GridAPPSD):
         self.Batteries[name]['P_batt_c'] = self.Batteries[name]['P_batt_d'] = 0.0
 
 
-  def on_message(self, headers, message):
+  def on_message(self, headers, in_message):
     #print('headers: ' + str(headers), flush=True)
-    #print('message: ' + str(message), flush=True)
+    #print('message: ' + str(in_message), flush=True)
 
     # empty timestamp is end-of-data flag
-    if message['timestamp'] == '':
+    if in_message['timestamp'] == '':
       print('time series end-of-data!', flush=True)
       self.exit_flag = True
       return
 
     # if we get here we must have data to process
-    time = int(message['timestamp'])
-    loadshape = float(message['loadshape'])
-    solar = float(message['solar'])
-    price = float(message['price'])
+    time = int(in_message['timestamp'])
+    loadshape = float(in_message['loadshape'])
+    solar = float(in_message['solar'])
+    price = float(in_message['price'])
     #print('time series time: ' + str(time) + ', loadshape: ' + str(loadshape) + ', solar: ' + str(solar) + ', price: ' + str(price), flush=True)
 
     if self.competing_func != None: # anything but compromise
@@ -169,14 +169,18 @@ class CompetingApp(GridAPPSD):
 
       self.plot_solution(self.solution[time])
 
-    #message = {
-    #  'feeder_id': self.simRap.feeder_mrid,
-    #  'simulation_id': self.simRap.simulation_id,
-    #  'timestamp': self.simRap.timestamp,
-    #  'ybus': lowerUncomplex
-    #}
-    #print('Sending Ybus snapshot response for timestamp: ' + str(self.simRap.timestamp), flush=True)
-    #self.simRap.gapps.send(reply_to, message)
+    solution = self.solution[time]
+    set_points = {}
+    for name in solution:
+      set_points[name] = solution[name]['P_batt']
+
+    out_message = {
+      'app_name': self.competing_name,
+      'timestamp': in_message['timestamp'],
+      'set_points': set_points
+    }
+    print('\nSending message: ' + str(out_message), flush=True)
+    self.gapps.send(self.publish_topic, out_message)
 
     return
 
@@ -396,6 +400,8 @@ class CompetingApp(GridAPPSD):
 
 
   def __init__(self, gapps, feeder_mrid, simulation_id, app, state):
+    self.gapps = gapps
+
     self.AppUtil = getattr(importlib.import_module('shared.apputil'), 'AppUtil')
 
     SPARQLManager = getattr(importlib.import_module('shared.sparql'), 'SPARQLManager')
@@ -439,6 +445,9 @@ class CompetingApp(GridAPPSD):
       self.p_batt_plot[name] = []
 
     self.solution = {}
+
+    # topic for sending out set_points messages
+    self.publish_topic = service_output_topic('gridappsd-competing-app', '0')
 
     # subscribe to simulation output messages
     gapps.subscribe(service_output_topic('gridappsd-pseudo-sim', simulation_id), self)
