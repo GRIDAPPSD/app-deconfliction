@@ -69,20 +69,18 @@ class CompetingApp(GridAPPSD):
     #print('headers: ' + str(headers), flush=True)
     #print('message: ' + str(message), flush=True)
 
-    time = int(message['timestamp'])
-
-    # -999 is end-of-data flag
-    if time != -999:
-      loadshape = float(message['loadshape'])
-      solar = float(message['solar'])
-      price = float(message['price'])
-      #print('time series time: ' + str(time) + ', loadshape: ' + str(loadshape) + ', solar: ' + str(solar) + ', price: ' + str(price), flush=True)
-
-    else:
+    # empty timestamp is end-of-data flag
+    if message['timestamp'] == '':
       print('time series end-of-data!', flush=True)
-
       self.exit_flag = True
       return
+
+    # if we get here we must have data to process
+    time = int(message['timestamp'])
+    loadshape = float(message['loadshape'])
+    solar = float(message['solar'])
+    price = float(message['price'])
+    #print('time series time: ' + str(time) + ', loadshape: ' + str(loadshape) + ', solar: ' + str(solar) + ', price: ' + str(price), flush=True)
 
     if self.competing_func != None:
       self.t_plot.append(self.AppUtil.to_datetime(time)) # for plotting

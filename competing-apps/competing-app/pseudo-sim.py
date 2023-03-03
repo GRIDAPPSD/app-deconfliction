@@ -52,7 +52,7 @@ def send_message(gapps, publish_topic, reader):
     row = next(reader)
   except:
     # send out one final message with end-of-data flag for timestamp
-    row = ['-999', '', '', '']
+    row = ['', '', '', '']
 
     # returning False will exit from the timer-based calls
     ret = False
