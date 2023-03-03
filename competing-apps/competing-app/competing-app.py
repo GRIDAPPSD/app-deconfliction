@@ -65,6 +65,19 @@ from time import sleep
 
 class CompetingApp(GridAPPSD):
 
+  def batt_to_solution(self, solution):
+    for name in self.Batteries:
+      solution[name] = {}
+      if self.Batteries[name]['state'] == 'charging':
+        solution[name]['P_batt'] = self.Batteries[name]['P_batt_c']
+      elif self.Batteries[name]['state'] == 'discharging':
+        solution[name]['P_batt'] = -self.Batteries[name]['P_batt_d']
+      else:
+        solution[name]['P_batt'] = 0.0
+
+      solution[name]['SoC'] = self.Batteries[name]['SoC']
+
+
   def on_message(self, headers, message):
     #print('headers: ' + str(headers), flush=True)
     #print('message: ' + str(message), flush=True)
@@ -82,56 +95,38 @@ class CompetingApp(GridAPPSD):
     price = float(message['price'])
     #print('time series time: ' + str(time) + ', loadshape: ' + str(loadshape) + ', solar: ' + str(solar) + ', price: ' + str(price), flush=True)
 
-    if self.competing_func != None:
-      self.t_plot.append(self.AppUtil.to_datetime(time)) # for plotting
-      self.solution[time] = {}
+    if self.competing_func != None: # anything but compromise
+      self.t_plot.append(self.AppUtil.to_datetime(time)) # plotting
 
-      self.competing_func(self.EnergyConsumers, self.SynchronousMachines, self.Batteries, self.SolarPVs, time, loadshape, solar, price, self.deltaT, self.emergencyState)
+      self.competing_func(self.EnergyConsumers, self.SynchronousMachines,
+                          self.Batteries, self.SolarPVs, self.deltaT,
+                          self.emergencyState, time, loadshape, solar, price)
+
+      self.solution[time] = {}
+      self.batt_to_solution(self.solution[time])
 
       for name in self.Batteries:
-        self.solution[time][name] = {}
-        if self.Batteries[name]['state'] == 'charging':
-          self.solution[time][name]['P_batt'] = self.Batteries[name]['P_batt_c']
-        elif self.Batteries[name]['state'] == 'discharging':
-          self.solution[time][name]['P_batt'] = -self.Batteries[name]['P_batt_d']
-        else:
-          self.solution[time][name]['P_batt'] = 0.0
-
-        self.solution[time][name]['SoC'] = self.Batteries[name]['SoC']
-        self.p_batt_plot[name].append(self.solution[time][name]['P_batt']) # for plotting
-        self.soc_plot[name].append(self.Batteries[name]['SoC']) # for plotting
+        self.p_batt_plot[name].append(self.solution[time][name]['P_batt']) # plotting
+        self.soc_plot[name].append(self.Batteries[name]['SoC']) # plotting
 
     else: # compromise solution
-      self.t_plot.append(self.AppUtil.to_datetime(time)) # for plotting
+      self.t_plot.append(self.AppUtil.to_datetime(time)) # plotting
+
+      self.resiliency(self.EnergyConsumers, self.SynchronousMachines, self.Batteries, self.SolarPVs, self.deltaT, self.emergencyState, time, loadshape, solar, price)
+
       resilience_solution = {}
+      self.batt_to_solution(resilience_solution)
+      for name in self.Batteries:
+        self.Batteries[name]['SoC'] = self.Batteries[name]['initial_SoC']
+
+      self.decarbonization(self.EnergyConsumers, self.SynchronousMachines, self.Batteries, self.SolarPVs, self.deltaT, self.emergencyState, time, loadshape, solar, price)
+
       decarbonization_solution = {}
+      self.batt_to_solution(decarbonization_solution)
+      for name in self.Batteries:
+        self.Batteries[name]['SoC'] = self.Batteries[name]['initial_SoC']
+
       self.solution[time] = {}
-      self.resiliency(self.EnergyConsumers, self.SynchronousMachines, self.Batteries, self.SolarPVs, time, loadshape, solar, price, self.deltaT, self.emergencyState)
-      for name in self.Batteries:
-        resilience_solution[name] = {}
-        if self.Batteries[name]['state'] == 'charging':
-          resilience_solution[name]['P_batt'] = self.Batteries[name]['P_batt_c']
-        elif self.Batteries[name]['state'] == 'discharging':
-          resilience_solution[name]['P_batt'] = -self.Batteries[name]['P_batt_d']
-        else:
-          resilience_solution[name]['P_batt'] = 0.0
-
-        resilience_solution[name]['SoC'] = self.Batteries[name]['SoC']
-        self.Batteries[name]['SoC'] = self.Batteries[name]['initial_SoC']
-
-      self.decarbonization(self.EnergyConsumers, self.SynchronousMachines, self.Batteries, self.SolarPVs, time, loadshape, solar, price, self.deltaT, self.emergencyState)
-      for name in self.Batteries:
-        decarbonization_solution[name] = {}
-        if self.Batteries[name]['state'] == 'charging':
-          decarbonization_solution[name]['P_batt'] = self.Batteries[name]['P_batt_c']
-        elif self.Batteries[name]['state'] == 'discharging':
-          decarbonization_solution[name]['P_batt'] = -self.Batteries[name]['P_batt_d']
-        else:
-          decarbonization_solution[name]['P_batt'] = 0.0
-
-        decarbonization_solution[name]['SoC'] = self.Batteries[name]['SoC']
-        self.Batteries[name]['SoC'] = self.Batteries[name]['initial_SoC']
-
       for name in self.Batteries:
         self.solution[time][name] = {}
         self.solution[time][name]['P_batt'] = (resilience_solution[name]['P_batt'] + decarbonization_solution[name]['P_batt']) / 2
@@ -166,8 +161,8 @@ class CompetingApp(GridAPPSD):
 
 
   def resiliency(self, EnergyConsumers, SynchronousMachines, Batteries,
-                 SolarPVs, time, load_mult, pv_mult, price, deltaT,
-                 emergencyState):
+                 SolarPVs, deltaT, emergencyState,
+                 time, load_mult, pv_mult, price):
 
     P_load = 0.0
     for name in EnergyConsumers:
@@ -262,8 +257,8 @@ class CompetingApp(GridAPPSD):
 
 
   def decarbonization(self, EnergyConsumers, SynchronousMachines, Batteries,
-                      SolarPVs, time, load_mult, pv_mult, profit, deltaT,
-                      emergencyState):
+                      SolarPVs, deltaT, emergencyState,
+                      time, load_mult, pv_mult, profit):
 
     P_load = 0.0
     for name in EnergyConsumers:
@@ -321,7 +316,8 @@ class CompetingApp(GridAPPSD):
 
 
   def profit(self, EnergyConsumers, SynchronousMachines, Batteries,
-             SolarPVs, time, load_mult, pv_mult, price, deltaT, emergencyState):
+             SolarPVs, deltaT, emergencyState,
+             time, load_mult, pv_mult, price):
 
     P_load = 0.0
     for name in EnergyConsumers:
@@ -418,7 +414,7 @@ class CompetingApp(GridAPPSD):
     self.soc_plot = {}
     self.p_batt_plot = {}
     for name in self.Batteries:
-      # Restore original state of batteries -- only used for compromise solution
+      # to restore original state of batteries--used for compromise solution
       self.Batteries[name]['initial_SoC'] = self.Batteries[name]['SoC']
       self.soc_plot[name] = []
       self.p_batt_plot[name] = []
