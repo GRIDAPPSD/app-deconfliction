@@ -65,30 +65,6 @@ from time import sleep
 
 class CompetingApp(GridAPPSD):
 
-  def batt_to_solution(self, solution):
-    for name in self.Batteries:
-      solution[name] = {}
-      if self.Batteries[name]['state'] == 'charging':
-        solution[name]['P_batt'] = self.Batteries[name]['P_batt_c']
-      elif self.Batteries[name]['state'] == 'discharging':
-        solution[name]['P_batt'] = -self.Batteries[name]['P_batt_d']
-      else:
-        solution[name]['P_batt'] = 0.0
-
-      solution[name]['SoC'] = self.Batteries[name]['SoC']
-
-
-  def batt_to_initial(self):
-    for name in self.Batteries:
-       self.Batteries[name]['SoC'] = self.Batteries[name]['initial_SoC']
-
-
-  def plot_solution(self, solution):
-    for name in self.Batteries:
-      self.p_batt_plot[name].append(solution[name]['P_batt'])
-      self.soc_plot[name].append(self.Batteries[name]['SoC'])
-
-
   def make_compromise(self, solution,
                       resilience_solution, decarbonization_solution):
     for name in self.Batteries:
@@ -131,9 +107,11 @@ class CompetingApp(GridAPPSD):
                           self.emergencyState, time, loadshape, solar, price)
 
       self.solution[time] = {}
-      self.batt_to_solution(self.solution[time])
+      self.AppUtil.batt_to_solution(self.Batteries, self.solution[time])
 
-      self.plot_solution(self.solution[time])
+      for name in self.Batteries:
+        self.p_batt_plot[name].append(self.solution[time][name]['P_batt'])
+        self.soc_plot[name].append(self.Batteries[name]['SoC'])
 
     else: # compromise solution
       self.t_plot.append(self.AppUtil.to_datetime(time)) # plotting
@@ -146,16 +124,18 @@ class CompetingApp(GridAPPSD):
                       self.emergencyState, time, loadshape, solar, price)
 
       resilience_solution = {}
-      self.batt_to_solution(resilience_solution)
-      self.batt_to_initial()
+      self.AppUtil.batt_to_solution(self.Batteries, resilience_solution)
+      for name in self.Batteries:
+         self.Batteries[name]['SoC'] = self.Batteries[name]['initial_SoC']
 
       self.decarbonization(self.EnergyConsumers, self.SynchronousMachines,
                            self.Batteries, self.SolarPVs, self.deltaT,
                            self.emergencyState, time, loadshape, solar, price)
 
       decarbonization_solution = {}
-      self.batt_to_solution(decarbonization_solution)
-      self.batt_to_initial()
+      self.AppUtil.batt_to_solution(self.Batteries, decarbonization_solution)
+      for name in self.Batteries:
+         self.Batteries[name]['SoC'] = self.Batteries[name]['initial_SoC']
 
       self.solution[time] = {}
       self.make_compromise(self.solution[time],
@@ -167,7 +147,9 @@ class CompetingApp(GridAPPSD):
       for name in self.Batteries:
         self.solution[time][name]['SoC'] = self.Batteries[name]['SoC']
 
-      self.plot_solution(self.solution[time])
+      for name in self.Batteries:
+        self.p_batt_plot[name].append(self.solution[time][name]['P_batt'])
+        self.soc_plot[name].append(self.Batteries[name]['SoC'])
 
     solution = self.solution[time]
     set_points = {}
