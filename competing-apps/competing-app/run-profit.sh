@@ -20,11 +20,10 @@ if [[ -z "$SIMREQ" ]]; then
     read -d "\n" SIMREQ <<< $(../sim-starter/sim-starter.py $1 nosim)
     SIMID=0
     APP=$2
-    STATE=$3
 else
 #   invocation when simulation is already started from platform viz
     SIMID=$1
 fi
 
-python3 profit-app.py $SIMID "$SIMREQ" $APP $STATE 2>&1 | tee profit-app.log
+python3 profit-app.py $SIMID "$SIMREQ" $APP 2>&1 | tee profit-app.log
 

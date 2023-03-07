@@ -115,7 +115,7 @@ class CompetingApp(GridAPPSD):
 
     self.decarbonization(self.EnergyConsumers, self.SynchronousMachines,
                          self.Batteries, self.SolarPVs, self.deltaT,
-                         self.emergencyState, time, loadshape, solar, price)
+                         time, loadshape, solar, price)
 
     decarbonization_solution = {}
     self.AppUtil.batt_to_solution(self.Batteries, decarbonization_solution)
@@ -249,8 +249,7 @@ class CompetingApp(GridAPPSD):
 
 
   def decarbonization(self, EnergyConsumers, SynchronousMachines, Batteries,
-                      SolarPVs, deltaT, emergencyState,
-                      time, load_mult, pv_mult, profit):
+                      SolarPVs, deltaT, time, load_mult, pv_mult, profit):
 
     P_load = 0.0
     for name in EnergyConsumers:
@@ -315,7 +314,7 @@ class CompetingApp(GridAPPSD):
     SPARQLManager = getattr(importlib.import_module('shared.sparql'), 'SPARQLManager')
     sparql_mgr = SPARQLManager(gapps, feeder_mrid, simulation_id)
 
-    # really only needed for resiliency app, but passed to all for consistency
+    # only needed for resiliency app
     self.emergencyState = state.startswith('e') or state.startswith('E')
 
     self.EnergyConsumers = self.AppUtil.getEnergyConsumers(sparql_mgr)
