@@ -82,76 +82,6 @@ class CompetingApp(GridAPPSD):
         self.Batteries[name]['P_batt_c'] = self.Batteries[name]['P_batt_d'] = 0.0
 
 
-  def on_message(self, headers, in_message):
-    #print('headers: ' + str(headers), flush=True)
-    #print('message: ' + str(in_message), flush=True)
-
-    # empty timestamp is end-of-data flag
-    if in_message['timestamp'] == '':
-      print('time series end-of-data!', flush=True)
-      self.exit_flag = True
-      return
-
-    # if we get here we must have data to process
-    time = int(in_message['timestamp'])
-    loadshape = float(in_message['loadshape'])
-    solar = float(in_message['solar'])
-    price = float(in_message['price'])
-    #print('time series time: ' + str(time) + ', loadshape: ' + str(loadshape) + ', solar: ' + str(solar) + ', price: ' + str(price), flush=True)
-
-    self.t_plot.append(self.AppUtil.to_datetime(time)) # plotting
-
-    for name in self.Batteries:
-      self.Batteries[name]['initial_SoC'] = self.Batteries[name]['SoC']
-
-    self.resiliency(self.EnergyConsumers, self.SynchronousMachines,
-                    self.Batteries, self.SolarPVs, self.deltaT,
-                    self.emergencyState, time, loadshape, solar, price)
-
-    resilience_solution = {}
-    self.AppUtil.batt_to_solution(self.Batteries, resilience_solution)
-    for name in self.Batteries:
-       self.Batteries[name]['SoC'] = self.Batteries[name]['initial_SoC']
-
-    self.decarbonization(self.EnergyConsumers, self.SynchronousMachines,
-                         self.Batteries, self.SolarPVs, self.deltaT,
-                         time, loadshape, solar, price)
-
-    decarbonization_solution = {}
-    self.AppUtil.batt_to_solution(self.Batteries, decarbonization_solution)
-    for name in self.Batteries:
-       self.Batteries[name]['SoC'] = self.Batteries[name]['initial_SoC']
-
-    self.solution[time] = {}
-    self.make_compromise(self.solution[time],
-                         resilience_solution, decarbonization_solution)
-
-    self.AppUtil.charge_batteries(self.Batteries, self.deltaT)
-    self.AppUtil.discharge_batteries(self.Batteries, self.deltaT)
-
-    for name in self.Batteries:
-      self.solution[time][name]['SoC'] = self.Batteries[name]['SoC']
-
-    for name in self.Batteries:
-      self.p_batt_plot[name].append(self.solution[time][name]['P_batt'])
-      self.soc_plot[name].append(self.Batteries[name]['SoC'])
-
-    solution = self.solution[time]
-    set_points = {}
-    for name in solution:
-      set_points[name] = solution[name]['P_batt']
-
-    out_message = {
-      'app_name': 'compromise-app',
-      'timestamp': in_message['timestamp'],
-      'set_points': set_points
-    }
-    print('\nSending message: ' + str(out_message), flush=True)
-    self.gapps.send(self.publish_topic, out_message)
-
-    return
-
-
   def resiliency(self, EnergyConsumers, SynchronousMachines, Batteries,
                  SolarPVs, deltaT, emergencyState,
                  time, load_mult, pv_mult, price):
@@ -302,6 +232,76 @@ class CompetingApp(GridAPPSD):
         print('Battery name: ' + name + ', ratedkW: ' + str(round(Batteries[name]['ratedkW'],4)) + ', P_batt_d: ' + str(round(Batteries[name]['P_batt_d'],4)) + ', updated SoC: ' + str(round(Batteries[name]['SoC'],4)), flush=True)
       else:
         print('Battery name: ' + name + ', P_batt_c = P_batt_d = 0.0, updated SoC: ' + str(round(Batteries[name]['SoC'],4)), flush=True)
+
+    return
+
+
+  def on_message(self, headers, in_message):
+    #print('headers: ' + str(headers), flush=True)
+    #print('message: ' + str(in_message), flush=True)
+
+    # empty timestamp is end-of-data flag
+    if in_message['timestamp'] == '':
+      print('time series end-of-data!', flush=True)
+      self.exit_flag = True
+      return
+
+    # if we get here we must have data to process
+    time = int(in_message['timestamp'])
+    loadshape = float(in_message['loadshape'])
+    solar = float(in_message['solar'])
+    price = float(in_message['price'])
+    #print('time series time: ' + str(time) + ', loadshape: ' + str(loadshape) + ', solar: ' + str(solar) + ', price: ' + str(price), flush=True)
+
+    self.t_plot.append(self.AppUtil.to_datetime(time)) # plotting
+
+    for name in self.Batteries:
+      self.Batteries[name]['initial_SoC'] = self.Batteries[name]['SoC']
+
+    self.resiliency(self.EnergyConsumers, self.SynchronousMachines,
+                    self.Batteries, self.SolarPVs, self.deltaT,
+                    self.emergencyState, time, loadshape, solar, price)
+
+    resilience_solution = {}
+    self.AppUtil.batt_to_solution(self.Batteries, resilience_solution)
+    for name in self.Batteries:
+       self.Batteries[name]['SoC'] = self.Batteries[name]['initial_SoC']
+
+    self.decarbonization(self.EnergyConsumers, self.SynchronousMachines,
+                         self.Batteries, self.SolarPVs, self.deltaT,
+                         time, loadshape, solar, price)
+
+    decarbonization_solution = {}
+    self.AppUtil.batt_to_solution(self.Batteries, decarbonization_solution)
+    for name in self.Batteries:
+       self.Batteries[name]['SoC'] = self.Batteries[name]['initial_SoC']
+
+    self.solution[time] = {}
+    self.make_compromise(self.solution[time],
+                         resilience_solution, decarbonization_solution)
+
+    self.AppUtil.charge_batteries(self.Batteries, self.deltaT)
+    self.AppUtil.discharge_batteries(self.Batteries, self.deltaT)
+
+    for name in self.Batteries:
+      self.solution[time][name]['SoC'] = self.Batteries[name]['SoC']
+
+    for name in self.Batteries:
+      self.p_batt_plot[name].append(self.solution[time][name]['P_batt'])
+      self.soc_plot[name].append(self.Batteries[name]['SoC'])
+
+    solution = self.solution[time]
+    set_points = {}
+    for name in solution:
+      set_points[name] = solution[name]['P_batt']
+
+    out_message = {
+      'app_name': 'compromise-app',
+      'timestamp': in_message['timestamp'],
+      'set_points': set_points
+    }
+    print('\nSending message: ' + str(out_message), flush=True)
+    self.gapps.send(self.publish_topic, out_message)
 
     return
 
