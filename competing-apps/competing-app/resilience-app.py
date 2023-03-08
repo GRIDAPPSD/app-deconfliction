@@ -78,9 +78,9 @@ class CompetingApp(GridAPPSD):
       P_ren += pv_mult*SolarPVs[name]['kW']
 
     if emergencyState:
-      print('\nRESILIENCY APP OUTPUT: Emergency state\n--------------------------------------', flush=True)
+      print('\nRESILIENCE APP OUTPUT: Emergency state\n--------------------------------------', flush=True)
     else:
-      print('\nRESILIENCY APP OUTPUT: Alert state\n----------------------------------', flush=True)
+      print('\nRESILIENCE APP OUTPUT: Alert state\n----------------------------------', flush=True)
 
     print('time: ' + str(time), flush=True)
     print('Total EnergyConsumers P_load: ' + str(round(P_load,4)), flush=True)
