@@ -149,6 +149,7 @@ class CompetingApp(GridAPPSD):
           self.AppUtil.charge_batteries(Batteries, deltaT)
       else:
         self.AppUtil.dispatch_DGSs(Batteries, SynchronousMachines, deltaT, P_load, P_ren, P_sub)
+
     for name in Batteries:
       if Batteries[name]['state'] == 'charging':
         print('Battery name: ' + name + ', ratedkW: ' + str(round(Batteries[name]['ratedkW'],4)) + ', P_batt_c: ' + str(round(Batteries[name]['P_batt_c'],4)) + ', updated SoC: ' + str(round(Batteries[name]['SoC'],4)), flush=True)

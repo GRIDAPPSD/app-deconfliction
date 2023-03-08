@@ -82,7 +82,7 @@ class CompetingApp(GridAPPSD):
         self.Batteries[name]['P_batt_c'] = self.Batteries[name]['P_batt_d'] = 0.0
 
 
-  def resiliency(self, EnergyConsumers, SynchronousMachines, Batteries,
+  def resilience(self, EnergyConsumers, SynchronousMachines, Batteries,
                  SolarPVs, deltaT, emergencyState, outage,
                  time, load_mult, pv_mult, price):
 
@@ -166,6 +166,7 @@ class CompetingApp(GridAPPSD):
           self.AppUtil.charge_batteries(Batteries, deltaT)
       else:
         self.AppUtil.dispatch_DGSs(Batteries, SynchronousMachines, deltaT, P_load, P_ren, P_sub)
+
     for name in Batteries:
       if Batteries[name]['state'] == 'charging':
         print('Battery name: ' + name + ', ratedkW: ' + str(round(Batteries[name]['ratedkW'],4)) + ', P_batt_c: ' + str(round(Batteries[name]['P_batt_c'],4)) + ', updated SoC: ' + str(round(Batteries[name]['SoC'],4)), flush=True)
@@ -257,7 +258,7 @@ class CompetingApp(GridAPPSD):
     for name in self.Batteries:
       self.Batteries[name]['initial_SoC'] = self.Batteries[name]['SoC']
 
-    self.resiliency(self.EnergyConsumers, self.SynchronousMachines,
+    self.resilience(self.EnergyConsumers, self.SynchronousMachines,
                     self.Batteries, self.SolarPVs, self.deltaT,
                     self.emergencyState, self.outage,
                     time, loadshape, solar, price)
@@ -316,7 +317,7 @@ class CompetingApp(GridAPPSD):
 
     self.outage = outage
 
-    # only needed for resiliency app
+    # only needed for resilience app
     self.emergencyState = state.startswith('e') or state.startswith('E')
 
     self.EnergyConsumers = self.AppUtil.getEnergyConsumers(sparql_mgr)
