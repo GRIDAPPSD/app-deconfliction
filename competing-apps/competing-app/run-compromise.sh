@@ -25,6 +25,7 @@ else
     SIMID=$1
 fi
 
-#python3 compromise-app.py $SIMID "$SIMREQ" $STATE 2>&1 | tee compromise-app.log
-python3 compromise-app.py $SIMID "$SIMREQ" $STATE --outage 56 68 2>&1 | tee compromise-app.log
+mkdir -p output
+#python3 compromise-app.py $SIMID "$SIMREQ" $STATE 2>&1 | tee output/compromise-app.log
+python3 compromise-app.py $SIMID "$SIMREQ" $STATE --outage 56 68 2>&1 | tee output/compromise-app.log
 

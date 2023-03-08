@@ -25,6 +25,7 @@ else
     SIMID=$1
 fi
 
-#python3 resilience-app.py $SIMID "$SIMREQ" $STATE 2>&1 | tee resilience-app.log
-python3 resilience-app.py $SIMID "$SIMREQ" $STATE --outage 56 68 2>&1 | tee resilience-app.log
+mkdir -p output
+#python3 resilience-app.py $SIMID "$SIMREQ" $STATE 2>&1 | tee output/resilience-app.log
+python3 resilience-app.py $SIMID "$SIMREQ" $STATE --outage 56 68 2>&1 | tee output/resilience-app.log
 

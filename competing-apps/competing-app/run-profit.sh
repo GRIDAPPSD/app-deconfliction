@@ -24,6 +24,7 @@ else
     SIMID=$1
 fi
 
-#python3 profit-app.py $SIMID "$SIMREQ" 2>&1 | tee profit-app.log
-python3 profit-app.py $SIMID "$SIMREQ" --outage 56 68 2>&1 | tee profit-app.log
+mkdir -p output
+#python3 profit-app.py $SIMID "$SIMREQ" 2>&1 | tee output/profit-app.log
+python3 profit-app.py $SIMID "$SIMREQ" --outage 56 68 2>&1 | tee output/profit-app.log
 

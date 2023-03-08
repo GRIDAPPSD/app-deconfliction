@@ -24,6 +24,7 @@ else
     SIMID=$1
 fi
 
-#python3 decarbonization-app.py $SIMID "$SIMREQ" 2>&1 | tee decarbonization-app.log
-python3 decarbonization-app.py $SIMID "$SIMREQ" --outage 56 68 2>&1 | tee decarbonization-app.log
+mkdir -p output
+#python3 decarbonization-app.py $SIMID "$SIMREQ" 2>&1 | tee output/decarbonization-app.log
+python3 decarbonization-app.py $SIMID "$SIMREQ" --outage 56 68 2>&1 | tee output/decarbonization-app.log
 
