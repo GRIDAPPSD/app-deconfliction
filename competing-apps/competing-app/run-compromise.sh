@@ -19,12 +19,12 @@ if [[ -z "$SIMREQ" ]]; then
     #read -d "\n" SIMID SIMREQ <<< $(../sim-starter/sim-starter.py $1)
     read -d "\n" SIMREQ <<< $(../sim-starter/sim-starter.py $1 nosim)
     SIMID=0
-    APP=$2
-    STATE=$3
+    STATE=$2
 else
 #   invocation when simulation is already started from platform viz
     SIMID=$1
 fi
 
-python3 compromise-app.py $SIMID "$SIMREQ" $APP $STATE 2>&1 | tee compromise-app.log
+#python3 compromise-app.py $SIMID "$SIMREQ" $STATE 2>&1 | tee compromise-app.log
+python3 compromise-app.py $SIMID "$SIMREQ" $STATE --outage 56 68 2>&1 | tee compromise-app.log
 

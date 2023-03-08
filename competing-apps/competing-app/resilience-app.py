@@ -66,7 +66,7 @@ from time import sleep
 class CompetingApp(GridAPPSD):
 
   def resilience(self, EnergyConsumers, SynchronousMachines, Batteries,
-                 SolarPVs, deltaT, emergencyState,
+                 SolarPVs, deltaT, emergencyState, outage,
                  time, load_mult, pv_mult, price):
 
     P_load = 0.0
@@ -88,8 +88,7 @@ class CompetingApp(GridAPPSD):
 
     P_sub = 2.0*P_load
 
-    if time > 56 and time < 68:
-    # if time > 72 and time < 84:
+    if outage!=None and time>outage[0] and time<outage[1]:
       P_sub = 0.0
       emergencyState = True
 
@@ -182,7 +181,8 @@ class CompetingApp(GridAPPSD):
 
     self.resilience(self.EnergyConsumers, self.SynchronousMachines,
                     self.Batteries, self.SolarPVs, self.deltaT,
-                    self.emergencyState, time, loadshape, solar, price)
+                    self.emergencyState, self.outage,
+                    time, loadshape, solar, price)
 
     self.solution[time] = {}
     self.AppUtil.batt_to_solution(self.Batteries, self.solution[time])
@@ -207,7 +207,7 @@ class CompetingApp(GridAPPSD):
     return
 
 
-  def __init__(self, gapps, feeder_mrid, simulation_id, state):
+  def __init__(self, gapps, feeder_mrid, simulation_id, outage, state):
     self.gapps = gapps
 
     self.AppUtil = getattr(importlib.import_module('shared.apputil'), 'AppUtil')
@@ -215,7 +215,8 @@ class CompetingApp(GridAPPSD):
     SPARQLManager = getattr(importlib.import_module('shared.sparql'), 'SPARQLManager')
     sparql_mgr = SPARQLManager(gapps, feeder_mrid, simulation_id)
 
-    # really only needed for resilience app, but passed to all for consistency
+    self.outage = outage
+
     self.emergencyState = state.startswith('e') or state.startswith('E')
 
     self.EnergyConsumers = self.AppUtil.getEnergyConsumers(sparql_mgr)
@@ -281,12 +282,11 @@ def _main():
   parser.add_argument("simulation_id", help="Simulation ID")
   parser.add_argument("request", help="Simulation Request")
   parser.add_argument("state", nargs="?", default="Alert", help="Alert or Emergency State")
+  parser.add_argument("--outage", "--out", "-o", type=int, nargs=2)
   opts = parser.parse_args()
 
   sim_request = json.loads(opts.request.replace("\'",""))
   feeder_mrid = sim_request["power_system_config"]["Line_name"]
-  simulation_id = opts.simulation_id
-  state = opts.state
 
   # authenticate with GridAPPS-D Platform
   os.environ['GRIDAPPSD_APPLICATION_ID'] = 'gridappsd-resilience-app'
@@ -294,10 +294,11 @@ def _main():
   os.environ['GRIDAPPSD_USER'] = 'app_user'
   os.environ['GRIDAPPSD_PASSWORD'] = '1234App'
 
-  gapps = GridAPPSD(simulation_id)
+  gapps = GridAPPSD(opts.simulation_id)
   assert gapps.connected
 
-  competing_app = CompetingApp(gapps, feeder_mrid, simulation_id, state)
+  competing_app = CompetingApp(gapps, feeder_mrid, opts.simulation_id,
+                               opts.outage, opts.state)
 
 
 if __name__ == "__main__":

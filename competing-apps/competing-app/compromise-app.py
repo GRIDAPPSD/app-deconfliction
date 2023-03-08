@@ -83,7 +83,7 @@ class CompetingApp(GridAPPSD):
 
 
   def resiliency(self, EnergyConsumers, SynchronousMachines, Batteries,
-                 SolarPVs, deltaT, emergencyState,
+                 SolarPVs, deltaT, emergencyState, outage,
                  time, load_mult, pv_mult, price):
 
     P_load = 0.0
@@ -105,8 +105,7 @@ class CompetingApp(GridAPPSD):
 
     P_sub = 2.0*P_load
 
-    if time > 56 and time < 68:
-    # if time > 72 and time < 84:
+    if outage!=None and time>outage[0] and time<outage[1]:
       P_sub = 0.0
       emergencyState = True
 
@@ -179,7 +178,8 @@ class CompetingApp(GridAPPSD):
 
 
   def decarbonization(self, EnergyConsumers, SynchronousMachines, Batteries,
-                      SolarPVs, deltaT, time, load_mult, pv_mult, profit):
+                      SolarPVs, deltaT, outage,
+                      time, load_mult, pv_mult, profit):
 
     P_load = 0.0
     for name in EnergyConsumers:
@@ -197,8 +197,7 @@ class CompetingApp(GridAPPSD):
 
     P_sub = 2.0*P_load
 
-    if time > 56 and time < 68:
-    # if time > 72 and time < 84:
+    if outage!=None and time>outage[0] and time<outage[1]:
       P_sub = 0.0
 
     P_batt_total = 0.0
@@ -260,7 +259,8 @@ class CompetingApp(GridAPPSD):
 
     self.resiliency(self.EnergyConsumers, self.SynchronousMachines,
                     self.Batteries, self.SolarPVs, self.deltaT,
-                    self.emergencyState, time, loadshape, solar, price)
+                    self.emergencyState, self.outage,
+                    time, loadshape, solar, price)
 
     resilience_solution = {}
     self.AppUtil.batt_to_solution(self.Batteries, resilience_solution)
@@ -269,7 +269,7 @@ class CompetingApp(GridAPPSD):
 
     self.decarbonization(self.EnergyConsumers, self.SynchronousMachines,
                          self.Batteries, self.SolarPVs, self.deltaT,
-                         time, loadshape, solar, price)
+                         self.outage, time, loadshape, solar, price)
 
     decarbonization_solution = {}
     self.AppUtil.batt_to_solution(self.Batteries, decarbonization_solution)
@@ -306,13 +306,15 @@ class CompetingApp(GridAPPSD):
     return
 
 
-  def __init__(self, gapps, feeder_mrid, simulation_id, state):
+  def __init__(self, gapps, feeder_mrid, simulation_id, outage, state):
     self.gapps = gapps
 
     self.AppUtil = getattr(importlib.import_module('shared.apputil'), 'AppUtil')
 
     SPARQLManager = getattr(importlib.import_module('shared.sparql'), 'SPARQLManager')
     sparql_mgr = SPARQLManager(gapps, feeder_mrid, simulation_id)
+
+    self.outage = outage
 
     # only needed for resiliency app
     self.emergencyState = state.startswith('e') or state.startswith('E')
@@ -380,12 +382,11 @@ def _main():
   parser.add_argument("simulation_id", help="Simulation ID")
   parser.add_argument("request", help="Simulation Request")
   parser.add_argument("state", nargs="?", default="Alert", help="Alert or Emergency State")
+  parser.add_argument("--outage", "--out", "-o", type=int, nargs=2)
   opts = parser.parse_args()
 
   sim_request = json.loads(opts.request.replace("\'",""))
   feeder_mrid = sim_request["power_system_config"]["Line_name"]
-  simulation_id = opts.simulation_id
-  state = opts.state
 
   # authenticate with GridAPPS-D Platform
   os.environ['GRIDAPPSD_APPLICATION_ID'] = 'gridappsd-competing-app'
@@ -393,10 +394,11 @@ def _main():
   os.environ['GRIDAPPSD_USER'] = 'app_user'
   os.environ['GRIDAPPSD_PASSWORD'] = '1234App'
 
-  gapps = GridAPPSD(simulation_id)
+  gapps = GridAPPSD(opts.simulation_id)
   assert gapps.connected
 
-  competing_app = CompetingApp(gapps, feeder_mrid, simulation_id, state)
+  competing_app = CompetingApp(gapps, feeder_mrid, opts.simulation_id,
+                               opts.outage, opts.state)
 
 
 if __name__ == "__main__":

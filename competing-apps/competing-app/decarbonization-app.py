@@ -66,7 +66,8 @@ from time import sleep
 class CompetingApp(GridAPPSD):
 
   def decarbonization(self, EnergyConsumers, SynchronousMachines, Batteries,
-                      SolarPVs, deltaT, time, load_mult, pv_mult, profit):
+                      SolarPVs, deltaT, outage,
+                      time, load_mult, pv_mult, profit):
 
     P_load = 0.0
     for name in EnergyConsumers:
@@ -84,8 +85,7 @@ class CompetingApp(GridAPPSD):
 
     P_sub = 2.0*P_load
 
-    if time > 56 and time < 68:
-    # if time > 72 and time < 84:
+    if outage!=None and time>outage[0] and time<outage[1]:
       P_sub = 0.0
 
     P_batt_total = 0.0
@@ -144,7 +144,7 @@ class CompetingApp(GridAPPSD):
 
     self.decarbonization(self.EnergyConsumers, self.SynchronousMachines,
                          self.Batteries, self.SolarPVs, self.deltaT,
-                         time, loadshape, solar, price)
+                         self.outage, time, loadshape, solar, price)
 
     self.solution[time] = {}
     self.AppUtil.batt_to_solution(self.Batteries, self.solution[time])
@@ -169,13 +169,15 @@ class CompetingApp(GridAPPSD):
     return
 
 
-  def __init__(self, gapps, feeder_mrid, simulation_id):
+  def __init__(self, gapps, feeder_mrid, simulation_id, outage):
     self.gapps = gapps
 
     self.AppUtil = getattr(importlib.import_module('shared.apputil'), 'AppUtil')
 
     SPARQLManager = getattr(importlib.import_module('shared.sparql'), 'SPARQLManager')
     sparql_mgr = SPARQLManager(gapps, feeder_mrid, simulation_id)
+
+    self.outage = outage
 
     self.EnergyConsumers = self.AppUtil.getEnergyConsumers(sparql_mgr)
 
@@ -239,11 +241,11 @@ def _main():
   parser = argparse.ArgumentParser()
   parser.add_argument("simulation_id", help="Simulation ID")
   parser.add_argument("request", help="Simulation Request")
+  parser.add_argument("--outage", "--out", "-o", type=int, nargs=2)
   opts = parser.parse_args()
 
   sim_request = json.loads(opts.request.replace("\'",""))
   feeder_mrid = sim_request["power_system_config"]["Line_name"]
-  simulation_id = opts.simulation_id
 
   # authenticate with GridAPPS-D Platform
   os.environ['GRIDAPPSD_APPLICATION_ID'] = 'gridappsd-competing-app'
@@ -251,10 +253,11 @@ def _main():
   os.environ['GRIDAPPSD_USER'] = 'app_user'
   os.environ['GRIDAPPSD_PASSWORD'] = '1234App'
 
-  gapps = GridAPPSD(simulation_id)
+  gapps = GridAPPSD(opts.simulation_id)
   assert gapps.connected
 
-  competing_app = CompetingApp(gapps, feeder_mrid, simulation_id)
+  competing_app = CompetingApp(gapps, feeder_mrid, opts.simulation_id,
+                               opts.outage)
 
 
 if __name__ == "__main__":
