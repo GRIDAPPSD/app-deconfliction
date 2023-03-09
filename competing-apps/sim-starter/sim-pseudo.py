@@ -83,7 +83,7 @@ def _main():
   publish_topic = service_output_topic('gridappsd-pseudo-sim', '0')
   #print(publish_topic)
 
-  fp = open('time-series-data.csv', 'r')
+  fp = open('time-series.csv', 'r')
   reader = csv.reader(fp)
   next(reader) # skip header
 
