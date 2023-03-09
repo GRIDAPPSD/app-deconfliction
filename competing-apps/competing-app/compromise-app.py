@@ -79,7 +79,7 @@ class CompetingApp(GridAPPSD):
         self.Batteries[name]['P_batt_d'] = -solution[name]['P_batt']
         self.Batteries[name]['P_batt_c'] = 0.0
       else:
-        self.Batteries[name]['state'] = ''
+        self.Batteries[name]['state'] = 'idling'
         self.Batteries[name]['P_batt_c'] = self.Batteries[name]['P_batt_d'] = 0.0
 
 
