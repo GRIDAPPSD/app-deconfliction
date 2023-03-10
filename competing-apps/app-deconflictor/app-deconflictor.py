@@ -161,9 +161,24 @@ class AppDeconflictor(GridAPPSD):
     return
 
 
-  def on_message(self, headers, in_message):
+  def on_message(self, headers, message):
     #print('headers: ' + str(headers), flush=True)
-    print('message: ' + str(in_message), flush=True)
+    print('message: ' + str(message), flush=True)
+
+    # Step 1: Update conflict matrix with newly provided set-points
+    app = message['app_name']
+    self.ConflictTimestamps[app] = message['timestamp']
+
+    for device, value in message['set_points'].items():
+      #print('device: ' + device + ', value: ' + str(value), flush=True)
+      if device not in self.ConflictSetpoints:
+        self.ConflictSetpoints[device] = {}
+
+      self.ConflictSetpoints[device][app] = value
+
+    print('ConflictTimestamps: ' + str(self.ConflictTimestamps), flush=True)
+    print('ConflictSetpoints: ' + str(self.ConflictSetpoints) + '\n', flush=True)
+
     return
 
     # empty timestamp is end-of-data flag
@@ -234,6 +249,9 @@ class AppDeconflictor(GridAPPSD):
     for name in self.Batteries:
       self.soc_plot[name] = []
       self.p_batt_plot[name] = []
+
+    self.ConflictSetpoints = {}
+    self.ConflictTimestamps = {}
 
     self.solution = {}
 
