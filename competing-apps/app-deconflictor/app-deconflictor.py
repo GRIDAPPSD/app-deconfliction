@@ -53,6 +53,7 @@ import math
 import pprint
 import numpy as np
 import csv
+import copy
 
 from gridappsd import GridAPPSD
 from gridappsd.topics import service_output_topic
@@ -165,47 +166,51 @@ class AppDeconflictor(GridAPPSD):
     #print('headers: ' + str(headers), flush=True)
     print('message: ' + str(message), flush=True)
 
-    # Step 1: Update conflict matrix with newly provided set-points
+    # Step 1: Update conflict matrix with newly provided set-points after
+    #         comparing to include and exclude lists
     app_name = message['app_name']
-    set_points = message['set_points']
-    self.ConflictTimestamps[app_name] = message['timestamp']
 
-    for device, value in set_points.items():
-      #print('device: ' + device + ', value: ' + str(value), flush=True)
-      if device not in self.ConflictSetpoints:
-        self.ConflictSetpoints[device] = {}
+    if (len(self.AppIncludeList)==0 or app_name in self.AppIncludeList) and \
+       (app_name not in self.AppExcludeList):
+      set_points = message['set_points']
+      self.ConflictTimestamps[app_name] = message['timestamp']
 
-      self.ConflictSetpoints[device][app_name] = value
-
-    print('ConflictTimestamps: ' + str(self.ConflictTimestamps), flush=True)
-    print('ConflictSetpoints: ' + str(self.ConflictSetpoints) + '\n', flush=True)
-
-    # Step 2: Determine if there is a new conflict
-    conflictFlag = False
-    for device in set_points:
-      for app in set_points[device]:
-        # note this also checks the current app_name, but that's OK and
-        # it saves checking for that as well
-        if set_points[device][app] != set_points[device][app_name]:
-          conflictFlag = True
-          break # trickiness of breaking out of nested loops from Stack Overflow
-        else:
-          continue # only executed if the inner loop did not break
-      break # only executed if the inner loop did break
-
-    # Step 3: If there is no conflict, then the new solution is simply the
-    #         last solution with the new set-points added in
-    if not conflictFlag:
-      newSolution = self.Solution.deepcopy()
       for device, value in set_points.items():
-        newSolution[device] = value
+        #print('device: ' + device + ', value: ' + str(value), flush=True)
+        if device not in self.ConflictSetpoints:
+          self.ConflictSetpoints[device] = {}
 
+        self.ConflictSetpoints[device][app_name] = value
 
-    # OOOPs, I figured out that this won't work for exclusivity methods.
-    # Instead I need to call the deconfliction method as step 2 and let it
-    # figure out if there is a conflict and then what the solution is.  If
-    # it's done how I intended then without a conflict the solution will always
-    # include other apps, not just the exclusive one.
+      print('ConflictTimestamps: ' + str(self.ConflictTimestamps), flush=True)
+      print('ConflictSetpoints: ' + str(self.ConflictSetpoints), flush=True)
+
+      # Step 2: Determine if there is a new conflict
+      conflictFlag = False
+      for device in set_points:
+        for app in self.ConflictSetpoints[device]:
+          # note this also checks the current app_name, but that's OK and
+          # it saves checking for that as well
+          if set_points[device] != self.ConflictSetpoints[device][app_name]:
+            conflictFlag = True
+            break # breaking out of nested loops courtesy of Stack Overflow
+          else:
+            continue # only executed if the inner loop did not break
+        break # only executed if the inner loop did break
+      print('conflictFlag: ' + str(conflictFlag), flush=True)
+
+      # Step 3: If there is no conflict, then the new solution is simply the
+      #         last solution with the new set-points added in. Also determine
+      #         if the new solution is different from the last solution
+      changeFlag = False
+      if not conflictFlag:
+        for device, value in set_points.items():
+          if device not in self.Solution or self.Solution[device]!=value:
+            self.Solution[device] = value
+            changeFlag = True
+      print('changeFlag: ' + str(changeFlag) + '\n', flush=True)
+
+      # Step 4: START HERE
 
     return
 
