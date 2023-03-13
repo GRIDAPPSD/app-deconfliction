@@ -19,11 +19,12 @@ if [[ -z "$SIMREQ" ]]; then
     #read -d "\n" SIMID SIMREQ <<< $(../sim-starter/sim-starter.py $1)
     read -d "\n" SIMREQ <<< $(../sim-starter/sim-starter.py $1 nosim)
     SIMID=0
+    METHOD=$2
 else
 #   invocation when simulation is already started from platform viz
     SIMID=$1
 fi
 
 mkdir -p output
-python3 app-deconflictor.py $SIMID "$SIMREQ" 2>&1 | tee output/app-deconflictor.log
+python3 app-deconflictor.py $SIMID "$SIMREQ" $METHOD 2>&1 | tee output/app-deconflictor.log
 

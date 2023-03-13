@@ -189,9 +189,9 @@ class AppDeconflictor(GridAPPSD):
         if set_points[device][app] != set_points[device][app_name]:
           conflictFlag = True
           break # trickiness of breaking out of nested loops from Stack Overflow
-       else:
-         continue # only executed if the inner loop did not break
-       break # only executed if the inner loop did break
+        else:
+          continue # only executed if the inner loop did not break
+      break # only executed if the inner loop did break
 
     # Step 3: If there is no conflict, then the new solution is simply the
     #         last solution with the new set-points added in
@@ -252,9 +252,7 @@ class AppDeconflictor(GridAPPSD):
     return
 
 
-  def __init__(self, gapps, feeder_mrid, simulation_id):
-    self.gapps = gapps
-
+  def __init__(self, gapps, feeder_mrid, simulation_id, method):
     self.AppUtil = getattr(importlib.import_module('shared.apputil'), 'AppUtil')
 
     SPARQLManager = getattr(importlib.import_module('shared.sparql'), 'SPARQLManager')
@@ -283,11 +281,28 @@ class AppDeconflictor(GridAPPSD):
 
     self.Solution = {}
 
+    # Step 0: Import deconfliction methodology class for this invocation of
+    #         the Deconflictor based on method command line argument and
+    #         call the constructor to initialize include and exclude lists
+    #         for what to maintain in conflict matrix
+    self.AppIncludeList = []
+    self.AppExcludeList = []
+
+    DeconflictionMethod = getattr(importlib.import_module(method),
+                                  'DeconflictionMethod')
+    self.decon_method = DeconflictionMethod(
+                        self.AppIncludeList, self.AppExcludeList,
+                        self.ConflictSetpoints, self.ConflictTimestamps,
+                        self.Solution)
+    print('AppIncludeList: ' + str(self.AppIncludeList), flush=True)
+    print('AppExcludeList: ' + str(self.AppExcludeList), flush=True)
+
     # subscribe to simulation output messages
     gapps.subscribe(service_output_topic('gridappsd-competing-app', simulation_id), self)
 
     print('Initialized app deconflictor and now waiting for set-point messages...', flush=True)
 
+    self.gapps = gapps
     self.exit_flag = False
 
     while not self.exit_flag:
@@ -322,6 +337,7 @@ def _main():
   parser = argparse.ArgumentParser()
   parser.add_argument("simulation_id", help="Simulation ID")
   parser.add_argument("request", help="Simulation Request")
+  parser.add_argument("method", help="Deconfliction Methodology")
   opts = parser.parse_args()
 
   sim_request = json.loads(opts.request.replace("\'",""))
@@ -336,7 +352,8 @@ def _main():
   gapps = GridAPPSD(opts.simulation_id)
   assert gapps.connected
 
-  deconflictor = AppDeconflictor(gapps, feeder_mrid, opts.simulation_id)
+  deconflictor = AppDeconflictor(gapps, feeder_mrid,
+                                 opts.simulation_id, opts.method)
 
 
 if __name__ == "__main__":
