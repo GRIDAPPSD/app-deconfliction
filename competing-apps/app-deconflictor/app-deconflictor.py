@@ -189,28 +189,50 @@ class AppDeconflictor(GridAPPSD):
       conflictFlag = False
       for device in set_points:
         for app in self.ConflictSetpoints[device]:
-          # note this also checks the current app_name, but that's OK and
-          # it saves checking for that as well
-          if set_points[device] != self.ConflictSetpoints[device][app_name]:
+          if app!=app_name and \
+             set_points[device]!=self.ConflictSetpoints[device][app_name]:
             conflictFlag = True
             break # breaking out of nested loops courtesy of Stack Overflow
           else:
             continue # only executed if the inner loop did not break
         break # only executed if the inner loop did break
-      print('conflictFlag: ' + str(conflictFlag), flush=True)
+      print('Solution conflictFlag: ' + str(conflictFlag), flush=True)
 
-      # Step 3: If there is no conflict, then the new solution is simply the
-      #         last solution with the new set-points added in. Also determine
-      #         if the new solution is different from the last solution
-      changeFlag = False
-      if not conflictFlag:
+      # Step 3: If there is a conflict, then the call the deconflict method for
+      #         the given methodology to produce a solution
+      if conflictFlag:
+        newSolution = self.decon_method.deconflict()
+
+      # if there is no conflict, then the new solution is simply the last
+      # solution with the new set-points added in
+      else:
+        newSolution = copy.deepcopy(self.Solution)
         for device, value in set_points.items():
-          if device not in self.Solution or self.Solution[device]!=value:
-            self.Solution[device] = value
-            changeFlag = True
-      print('changeFlag: ' + str(changeFlag) + '\n', flush=True)
+          newSolution[device] = value
 
-      # Step 4: START HERE
+      # Step 4: Iterate over solution and send messages to devices that have
+      #         changed values
+      #changeFlag = newSolution == self.Solution
+      changeFlag = False
+      for device in newSolution:
+        if device not in self.Solution or \
+           newSolution[device]!=self.Solution[device]:
+          changeFlag = True
+          print('Solution send changed value to device: ' + device +
+                ', value: ' + str(value), flush=True)
+
+      if len(self.Solution) > len(newSolution):
+        for device in self.Solution:
+          if device not in newSolution:
+            changeFlag = True
+            print('Solution device deleted: ' + device + ', value: 0?',
+                  flush=True)
+
+      print('Solution changeFlag: ' + str(changeFlag) + '\n', flush=True)
+
+      # update to the new solution
+      self.Solution.clear()
+      self.Solution = newSolution
 
     return
 
