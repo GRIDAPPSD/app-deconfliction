@@ -230,7 +230,7 @@ class AppDeconflictor(GridAPPSD):
 
       print('Solution changeFlag: ' + str(changeFlag) + '\n', flush=True)
 
-      # update to the new solution
+      # update to the new solution to be ready for the next set-points message
       self.Solution.clear()
       self.Solution = newSolution
 
