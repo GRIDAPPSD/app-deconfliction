@@ -66,102 +66,6 @@ from time import sleep
 
 class AppDeconflictor(GridAPPSD):
 
-  def resilience(self, EnergyConsumers, SynchronousMachines, Batteries,
-                 SolarPVs, deltaT, emergencyState, outage,
-                 time, load_mult, pv_mult, price):
-
-    P_load = 0.0
-    for name in EnergyConsumers:
-      P_load += load_mult*EnergyConsumers[name]['kW']
-
-    P_ren = 0.0
-    for name in SolarPVs:
-      P_ren += pv_mult*SolarPVs[name]['kW']
-
-    if emergencyState:
-      print('\nRESILIENCE APP OUTPUT: Emergency state\n--------------------------------------', flush=True)
-    else:
-      print('\nRESILIENCE APP OUTPUT: Alert state\n----------------------------------', flush=True)
-
-    print('time: ' + str(time), flush=True)
-    print('Total EnergyConsumers P_load: ' + str(round(P_load,4)), flush=True)
-    print('Total SolarPVs P_ren: ' + str(round(P_ren,4)), flush=True)
-
-    P_sub = 2.0*P_load
-
-    if outage!=None and time>outage[0] and time<outage[1]:
-      P_sub = 0.0
-      emergencyState = True
-
-    if not emergencyState: # alert state
-      P_batt_total = 0.0
-      for name in Batteries:
-        Batteries[name]['state'] = 'idling'
-        if Batteries[name]['SoC'] < 0.9:
-          P_batt_c = (0.9 - Batteries[name]['SoC'])*Batteries[name]['ratedE'] / (Batteries[name]['eff_c'] * deltaT)
-          Batteries[name]['P_batt_c'] = P_batt_c = min(P_batt_c, Batteries[name]['ratedkW'])
-          P_batt_total += P_batt_c
-        else:
-          Batteries[name]['P_batt_c'] = P_batt_c = 0.0
-
-      if P_batt_total > 0.0:
-        if P_ren > P_load:
-          if P_ren - P_load >= P_batt_total:
-            # print('Charging from renewables', flush=True)
-            # YES, Charge ESS
-            self.AppUtil.charge_batteries(Batteries, deltaT)
-
-          else:
-            # NO, Check P_sub
-            if P_ren + P_sub > P_load:
-              # print('P_ren<P_load Charging from renewable + substation', flush=True)
-              self.AppUtil.charge_batteries(Batteries, deltaT)
-
-        else:
-          # Check P_sub
-          if P_ren + P_sub > P_load:
-            # print('P_ren+P_sub>P_load Charging from renewable + substation', flush=True)
-            self.AppUtil.charge_batteries(Batteries, deltaT)
-
-    else: # emergency state
-      # Shiva HACK
-      P_sub = 0.0
-      if P_ren > P_load:
-        P_batt_total = 0.0
-        for name in Batteries:
-          Batteries[name]['state'] = 'idling'
-          if Batteries[name]['SoC'] < 0.9:
-            P_batt_c = (0.9 - Batteries[name]['SoC']) * Batteries[name]['ratedE'] / (Batteries[name]['eff_c'] * deltaT)
-            Batteries[name]['P_batt_c'] = P_batt_c = min(P_batt_c, Batteries[name]['ratedkW'])
-            P_batt_total += P_batt_c
-          else:
-            Batteries[name]['P_batt_c'] = P_batt_c = 0.0
-
-        P_surplus = P_ren - P_load
-        print('P_surplus: ' + str(P_surplus) + ', P_batt_total: ' + str(P_batt_total), flush=True)
-
-        # print('Charging from renewables', flush=True)
-        if P_surplus < P_batt_total:
-          for name in Batteries:
-            if 'P_batt_c' in Batteries[name]:
-              Batteries[name]['P_batt_c'] *= P_surplus / P_batt_total
-
-        if P_batt_total > 0.0:
-          self.AppUtil.charge_batteries(Batteries, deltaT)
-      else:
-        self.AppUtil.dispatch_DGSs(Batteries, SynchronousMachines, deltaT, P_load, P_ren, P_sub)
-
-    for name in Batteries:
-      if Batteries[name]['state'] == 'charging':
-        print('Battery name: ' + name + ', ratedkW: ' + str(round(Batteries[name]['ratedkW'],4)) + ', P_batt_c: ' + str(round(Batteries[name]['P_batt_c'],4)) + ', updated SoC: ' + str(round(Batteries[name]['SoC'],4)), flush=True)
-      elif Batteries[name]['state'] == 'discharging':
-        print('Battery name: ' + name + ', ratedkW: ' + str(round(Batteries[name]['ratedkW'],4)) + ', P_batt_d: ' + str(round(Batteries[name]['P_batt_d'],4)) + ', updated SoC: ' + str(round(Batteries[name]['SoC'],4)), flush=True)
-      else:
-        print('Battery name: ' + name + ', P_batt_c = P_batt_d = 0.0, updated SoC: ' + str(round(Batteries[name]['SoC'],4)), flush=True)
-
-    return
-
-
   def on_message(self, headers, message):
     #print('headers: ' + str(headers), flush=True)
     print('message: ' + str(message), flush=True)
@@ -236,33 +140,7 @@ class AppDeconflictor(GridAPPSD):
 
     return
 
-    # empty timestamp is end-of-data flag
-    if in_message['timestamp'] == '':
-      print('time series end-of-data!', flush=True)
-      self.exit_flag = True
-      return
-
-    # if we get here we must have data to process
-    time = int(in_message['timestamp'])
-    loadshape = float(in_message['loadshape'])
-    solar = float(in_message['solar'])
-    price = float(in_message['price'])
-    #print('time series time: ' + str(time) + ', loadshape: ' + str(loadshape) + ', solar: ' + str(solar) + ', price: ' + str(price), flush=True)
-
-    self.t_plot.append(self.AppUtil.to_datetime(time)) # plotting
-
-    self.resilience(self.EnergyConsumers, self.SynchronousMachines,
-                    self.Batteries, self.SolarPVs, self.deltaT,
-                    self.emergencyState, self.outage,
-                    time, loadshape, solar, price)
-
-    self.solution[time] = {}
-    self.AppUtil.batt_to_solution(self.Batteries, self.solution[time])
-
-    for name in self.Batteries:
-      self.p_batt_plot[name].append(self.solution[time][name]['P_batt'])
-      self.soc_plot[name].append(self.Batteries[name]['SoC'])
-
+    # just example code for sending out a message
     solution = self.solution[time]
     set_points = {}
     for name in solution:
