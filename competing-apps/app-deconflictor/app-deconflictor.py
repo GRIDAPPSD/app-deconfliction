@@ -70,73 +70,80 @@ class AppDeconflictor(GridAPPSD):
     #print('headers: ' + str(headers), flush=True)
     print('message: ' + str(message), flush=True)
 
-    # Step 1: Update conflict matrix with newly provided set-points after
-    #         comparing to include and exclude lists
     app_name = message['app_name']
 
-    if (len(self.AppIncludeList)==0 or app_name in self.AppIncludeList) and \
-       (app_name not in self.AppExcludeList):
-      set_points = message['set_points']
-      self.ConflictTimestamps[app_name] = message['timestamp']
+    # Step 1: Check include and exclude lists and bail if we are ignoring
+    #         the app that sent this message
+    if (len(self.AppIncludeList)>0 and app_name in not in self.AppIncludeList) \
+       or (app_name in self.AppExcludeList):
+      return
 
+    # Step 2: Update conflict matrix with newly provided set-points
+    set_points = message['set_points']
+    self.ConflictTimestamps[app_name] = message['timestamp']
+
+    for device, value in set_points.items():
+      #print('device: ' + device + ', value: ' + str(value), flush=True)
+      if device not in self.ConflictSetpoints:
+        self.ConflictSetpoints[device] = {}
+
+      self.ConflictSetpoints[device][app_name] = value
+
+    print('ConflictTimestamps: ' + str(self.ConflictTimestamps), flush=True)
+    print('ConflictSetpoints: ' + str(self.ConflictSetpoints), flush=True)
+
+    # Step 3: Determine if there is a new conflict
+    conflictFlag = False
+    for device in set_points:
+      for app in self.ConflictSetpoints[device]:
+        if app!=app_name and \
+           set_points[device]!=self.ConflictSetpoints[device][app_name]:
+          conflictFlag = True
+          break # breaking out of nested loops courtesy of Stack Overflow
+        else:
+          continue # only executed if the inner loop did not break
+      break # only executed if the inner loop did break
+    print('Solution conflictFlag: ' + str(conflictFlag), flush=True)
+
+    # Step 4: If there is a conflict, then the call the deconflict method for
+    #         the given methodology to produce a solution
+    if conflictFlag:
+      newSolution = self.decon_method.deconflict()
+
+    # Step 5: If there is no conflict, then the new solution is simply the
+    #         last solution with the new set-points added in
+    else:
+      newSolution = copy.deepcopy(self.Solution)
       for device, value in set_points.items():
-        #print('device: ' + device + ', value: ' + str(value), flush=True)
-        if device not in self.ConflictSetpoints:
-          self.ConflictSetpoints[device] = {}
+        newSolution[device] = value
 
-        self.ConflictSetpoints[device][app_name] = value
+    # Step 6: Iterate over solution and send messages to devices that have
+    #         changed values
+    #changeFlag = newSolution == self.Solution
+    changeFlag = False
+    for device in newSolution:
+      if device not in self.Solution or \
+         newSolution[device]!=self.Solution[device]:
+        changeFlag = True
+        print('Solution send changed value to device: ' + device +
+              ', value: ' + str(value), flush=True)
 
-      print('ConflictTimestamps: ' + str(self.ConflictTimestamps), flush=True)
-      print('ConflictSetpoints: ' + str(self.ConflictSetpoints), flush=True)
-
-      # Step 2: Determine if there is a new conflict
-      conflictFlag = False
-      for device in set_points:
-        for app in self.ConflictSetpoints[device]:
-          if app!=app_name and \
-             set_points[device]!=self.ConflictSetpoints[device][app_name]:
-            conflictFlag = True
-            break # breaking out of nested loops courtesy of Stack Overflow
-          else:
-            continue # only executed if the inner loop did not break
-        break # only executed if the inner loop did break
-      print('Solution conflictFlag: ' + str(conflictFlag), flush=True)
-
-      # Step 3: If there is a conflict, then the call the deconflict method for
-      #         the given methodology to produce a solution
-      if conflictFlag:
-        newSolution = self.decon_method.deconflict()
-
-      # if there is no conflict, then the new solution is simply the last
-      # solution with the new set-points added in
-      else:
-        newSolution = copy.deepcopy(self.Solution)
-        for device, value in set_points.items():
-          newSolution[device] = value
-
-      # Step 4: Iterate over solution and send messages to devices that have
-      #         changed values
-      #changeFlag = newSolution == self.Solution
-      changeFlag = False
-      for device in newSolution:
-        if device not in self.Solution or \
-           newSolution[device]!=self.Solution[device]:
+    # ??? What to do if a device was deleted from the new solution ???
+    if len(self.Solution) > len(newSolution):
+      for device in self.Solution:
+        if device not in newSolution:
           changeFlag = True
-          print('Solution send changed value to device: ' + device +
-                ', value: ' + str(value), flush=True)
+          print('Solution device deleted: ' + device + ', value: 0?',
+                flush=True)
 
-      if len(self.Solution) > len(newSolution):
-        for device in self.Solution:
-          if device not in newSolution:
-            changeFlag = True
-            print('Solution device deleted: ' + device + ', value: 0?',
-                  flush=True)
+    print('Solution changeFlag: ' + str(changeFlag) + '\n', flush=True)
 
-      print('Solution changeFlag: ' + str(changeFlag) + '\n', flush=True)
+    # Step 7: Update the current solution to the new solution to be ready
+    #         for the next set-points message
+    self.Solution.clear()
+    self.Solution = newSolution
 
-      # update to the new solution to be ready for the next set-points message
-      self.Solution.clear()
-      self.Solution = newSolution
+    # Step 8: TBD: Update battery SoC values and report them
 
     return
 
