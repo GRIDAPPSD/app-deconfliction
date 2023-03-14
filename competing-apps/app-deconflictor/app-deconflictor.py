@@ -127,12 +127,13 @@ class AppDeconflictor(GridAPPSD):
         print('Solution send changed value to device: ' + device +
               ', value: ' + str(value), flush=True)
 
-    # ??? What to do if a device was deleted from the new solution ???
+    # it's also possible a device from the last solution does not appear in
+    # the new solution.  In this case it's a "don't care" for the new solution
+    # and the device is left at the previous value so nothing is sent
     if len(self.Solution) > len(newSolution):
       for device in self.Solution:
         if device not in newSolution:
-          changeFlag = True
-          print('Solution device deleted: ' + device + ', value: 0?',
+          print('Solution device deleted: ' + device + ', no value sent',
                 flush=True)
 
     print('Solution changeFlag: ' + str(changeFlag), flush=True)
@@ -145,16 +146,12 @@ class AppDeconflictor(GridAPPSD):
     # Step 8: Update battery SoC values and report them
     for name in self.Batteries:
       if name in self.Solution:
-        efficiency = 0.0
-        if self.Solution[name] > 0:
-          efficiency = self.Batteries[name]['eff_c']
-        elif self.Solution[name] < 0:
-          efficiency = self.Batteries[name]['eff_d']
+        if self.Solution[name] > 0: # charging
+          self.Batteries[name]['SoC'] += self.Batteries[name]['eff_c']*self.Solution[name]*self.deltaT/self.Batteries[name]['ratedE']
+        elif self.Solution[name] < 0: # discharging
+          self.Batteries[name]['SoC'] += 1/self.Batteries[name]['eff_d']*self.Solution[name]*self.deltaT/self.Batteries[name]['ratedE']
 
-        self.Batteries[name]['SoC'] += efficiency*self.Solution[name]* \
-                                      self.deltaT/self.Batteries[name]['ratedE']
-
-        print('Solution updated battery Soc for: ' + device + ', SoC: ' +
+        print('Solution updated battery SoC for: ' + device + ', SoC: ' +
               str(self.Batteries[name]['SoC']), flush=True)
 
     print(flush=True)
