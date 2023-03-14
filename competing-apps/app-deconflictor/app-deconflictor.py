@@ -74,7 +74,7 @@ class AppDeconflictor(GridAPPSD):
 
     # Step 1: Check include and exclude lists and bail if we are ignoring
     #         the app that sent this message
-    if (len(self.AppIncludeList)>0 and app_name in not in self.AppIncludeList) \
+    if (len(self.AppIncludeList)>0 and app_name not in self.AppIncludeList) \
        or (app_name in self.AppExcludeList):
       return
 
@@ -119,7 +119,6 @@ class AppDeconflictor(GridAPPSD):
 
     # Step 6: Iterate over solution and send messages to devices that have
     #         changed values
-    #changeFlag = newSolution == self.Solution
     changeFlag = False
     for device in newSolution:
       if device not in self.Solution or \
@@ -136,18 +135,33 @@ class AppDeconflictor(GridAPPSD):
           print('Solution device deleted: ' + device + ', value: 0?',
                 flush=True)
 
-    print('Solution changeFlag: ' + str(changeFlag) + '\n', flush=True)
+    print('Solution changeFlag: ' + str(changeFlag), flush=True)
 
     # Step 7: Update the current solution to the new solution to be ready
     #         for the next set-points message
     self.Solution.clear()
     self.Solution = newSolution
 
-    # Step 8: TBD: Update battery SoC values and report them
+    # Step 8: Update battery SoC values and report them
+    for name in self.Batteries:
+      if name in self.Solution:
+        efficiency = 0.0
+        if self.Solution[name] > 0:
+          efficiency = self.Batteries[name]['eff_c']
+        elif self.Solution[name] < 0:
+          efficiency = self.Batteries[name]['eff_d']
+
+        self.Batteries[name]['SoC'] += efficiency*self.Solution[name]* \
+                                      self.deltaT/self.Batteries[name]['ratedE']
+
+        print('Solution updated battery Soc for: ' + device + ', SoC: ' +
+              str(self.Batteries[name]['SoC']), flush=True)
+
+    print(flush=True)
 
     return
 
-    # just example code for sending out a message
+    # just sample code for sending out a message
     solution = self.solution[time]
     set_points = {}
     for name in solution:
