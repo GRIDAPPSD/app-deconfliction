@@ -98,7 +98,7 @@ class AppDeconflictor(GridAPPSD):
     for device in set_points:
       for app in self.ConflictSetpoints[device]:
         if app!=app_name and \
-           set_points[device]!=self.ConflictSetpoints[device][app_name]:
+           set_points[device]!=self.ConflictSetpoints[device][app]:
           conflictFlag = True
           break # breaking out of nested loops courtesy of Stack Overflow
         else:
@@ -117,6 +117,8 @@ class AppDeconflictor(GridAPPSD):
       newSolution = copy.deepcopy(self.Solution)
       for device, value in set_points.items():
         newSolution[device] = value
+
+    print('Solution deconflicted: ' + str(newSolution), flush=True)
 
     # Step 5: Iterate over solution and send messages to devices that have
     #         changed values
