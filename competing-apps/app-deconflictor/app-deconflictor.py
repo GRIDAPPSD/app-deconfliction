@@ -72,16 +72,17 @@ class AppDeconflictor(GridAPPSD):
 
     app_name = message['app_name']
 
-    # Step 1: Check include and exclude lists and bail if we are ignoring
-    #         the app that sent this message
-    if (len(self.AppIncludeList)>0 and app_name not in self.AppIncludeList) \
-       or (app_name in self.AppExcludeList):
-      return
-
-    # Step 2: Update conflict matrix with newly provided set-points
-    set_points = message['set_points']
+    # Step 1: Update conflict matrix with newly provided set-points
     self.ConflictTimestamps[app_name] = message['timestamp']
 
+    # delete any existing matches for app_name so there are no stragglers
+    # from past timestamps
+    for device in self.ConflictSetpoints:
+      if app_name in self.ConflictSetpoints[device]:
+        self.ConflictSetpoints[device].pop(app_name)
+
+    # now add the new set-points for app_name
+    set_points = message['set_points']
     for device, value in set_points.items():
       #print('device: ' + device + ', value: ' + str(value), flush=True)
       if device not in self.ConflictSetpoints:
@@ -92,7 +93,7 @@ class AppDeconflictor(GridAPPSD):
     print('ConflictTimestamps: ' + str(self.ConflictTimestamps), flush=True)
     print('ConflictSetpoints: ' + str(self.ConflictSetpoints), flush=True)
 
-    # Step 3: Determine if there is a new conflict
+    # Step 2: Determine if there is a new conflict
     conflictFlag = False
     for device in set_points:
       for app in self.ConflictSetpoints[device]:
@@ -105,19 +106,19 @@ class AppDeconflictor(GridAPPSD):
       break # only executed if the inner loop did break
     print('Solution conflictFlag: ' + str(conflictFlag), flush=True)
 
-    # Step 4: If there is a conflict, then the call the deconflict method for
+    # Step 3: If there is a conflict, then the call the deconflict method for
     #         the given methodology to produce a solution
     if conflictFlag:
       newSolution = self.decon_method.deconflict()
 
-    # Step 5: If there is no conflict, then the new solution is simply the
+    # Step 4: If there is no conflict, then the new solution is simply the
     #         last solution with the new set-points added in
     else:
       newSolution = copy.deepcopy(self.Solution)
       for device, value in set_points.items():
         newSolution[device] = value
 
-    # Step 6: Iterate over solution and send messages to devices that have
+    # Step 5: Iterate over solution and send messages to devices that have
     #         changed values
     changeFlag = False
     for device in newSolution:
@@ -138,12 +139,12 @@ class AppDeconflictor(GridAPPSD):
 
     print('Solution changeFlag: ' + str(changeFlag), flush=True)
 
-    # Step 7: Update the current solution to the new solution to be ready
+    # Step 6: Update the current solution to the new solution to be ready
     #         for the next set-points message
     self.Solution.clear()
     self.Solution = newSolution
 
-    # Step 8: Update battery SoC values and report them
+    # Step 7: Update battery SoC values and report them
     for name in self.Batteries:
       if name in self.Solution:
         if self.Solution[name] > 0: # charging
@@ -206,19 +207,11 @@ class AppDeconflictor(GridAPPSD):
 
     # Step 0: Import deconfliction methodology class for this invocation of
     #         the Deconflictor based on method command line argument and
-    #         call the constructor to initialize include and exclude lists
-    #         for what to maintain in conflict matrix
-    self.AppIncludeList = []
-    self.AppExcludeList = []
-
+    #         create an instance of the class
     DeconflictionMethod = getattr(importlib.import_module(method),
                                   'DeconflictionMethod')
-    self.decon_method = DeconflictionMethod(
-                        self.AppIncludeList, self.AppExcludeList,
-                        self.ConflictSetpoints, self.ConflictTimestamps,
-                        self.Solution)
-    print('AppIncludeList: ' + str(self.AppIncludeList), flush=True)
-    print('AppExcludeList: ' + str(self.AppExcludeList), flush=True)
+    self.decon_method = DeconflictionMethod(self.ConflictSetpoints,
+                                            self.ConflictTimestamps)
 
     # subscribe to simulation output messages
     gapps.subscribe(service_output_topic('gridappsd-competing-app', simulation_id), self)
