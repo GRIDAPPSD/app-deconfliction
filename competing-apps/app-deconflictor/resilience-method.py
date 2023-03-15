@@ -8,7 +8,7 @@ class DeconflictionMethod:
     self.ConflictTimestamps = ConflictTimestamps
 
 
-  def deconflict():
+  def deconflict(self):
     Solution = {}
 
     for device in self.ConflictSetpoints:
