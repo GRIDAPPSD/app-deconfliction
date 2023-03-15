@@ -14,6 +14,7 @@ class DeconflictionMethod:
     for device in self.ConflictSetpoints:
       count = 0
       total = 0.0
+
       for app in self.ConflictSetpoints[device]:
         if app == 'resilience-app':
           Solution[device] = self.ConflictSetpoints[device][app]
