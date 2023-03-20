@@ -71,9 +71,10 @@ class AppDeconflictor(GridAPPSD):
     print('message: ' + str(message), flush=True)
 
     app_name = message['app_name']
+    timestamp = int(message['timestamp'])
 
     # Step 1: Update conflict matrix with newly provided set-points
-    self.ConflictTimestamps[app_name] = message['timestamp']
+    self.ConflictTimestamps[app_name] = timestamp
 
     # delete any existing matches for app_name so there are no stragglers
     # from past timestamps
@@ -109,53 +110,59 @@ class AppDeconflictor(GridAPPSD):
     # Step 3: If there is a conflict, then the call the deconflict method for
     #         the given methodology to produce a solution
     if conflictFlag:
-      newSolution = self.decon_method.deconflict()
+      newSolutionSetpoints,newSolutionTimestamps =self.decon_method.deconflict()
 
     # Step 4: If there is no conflict, then the new solution is simply the
     #         last solution with the new set-points added in
     else:
-      newSolution = copy.deepcopy(self.Solution)
+      newSolutionSetpoints = copy.deepcopy(self.SolutionSetpoints)
+      newSolutionTimestamps = copy.deepcopy(self.SolutionTimestamps)
       for device, value in set_points.items():
-        newSolution[device] = value
+        newSolutionSetpoints[device] = value
+        newSolutionTimestamps[device] = timestamp
 
-    print('Solution deconflicted: ' + str(newSolution), flush=True)
+    print('Solution deconflicted set-points: ' + str(newSolutionSetpoints), flush=True)
+    print('Solution deconflicted timestamps: ' + str(newSolutionTimestamps), flush=True)
 
-    # Step 5: Iterate over solution and send messages to devices that have
-    #         changed values
-    changeFlag = False
-    for device in newSolution:
-      if device not in self.Solution or \
-         newSolution[device]!=self.Solution[device]:
-        changeFlag = True
-        print('Solution send changed value to device: ' + device +
-              ', value: ' + str(value), flush=True)
+    # Step 5: Iterate over solution and send set-points to devices that have
+    #         different or new values
+    for device, value in newSolutionSetpoints.items():
+      if device not in self.SolutionSetpoints or \
+         (newSolutionTimestamps[device]==timestamp and \
+          (self.SolutionTimestamps[device]!=timestamp or \
+           self.SolutionSetpoints[device]!=value)):
+
+        print('Solution send value to device: ' + device + ', value: ' +
+              str(value), flush=True)
+
+        # update battery SoC
+        if value > 0: # charging
+          self.Batteries[device]['SoC'] += self.Batteries[device]['eff_c']*value* \
+                               self.deltaT/self.Batteries[device]['ratedE']
+        elif value < 0: # discharging
+          self.Batteries[device]['SoC'] += 1/self.Batteries[device]['eff_d']*value* \
+                                 self.deltaT/self.Batteries[device]['ratedE']
 
     # it's also possible a device from the last solution does not appear in
     # the new solution.  In this case it's a "don't care" for the new solution
     # and the device is left at the previous value so nothing is sent
-    if len(self.Solution) > len(newSolution):
-      for device in self.Solution:
-        if device not in newSolution:
+    if len(self.SolutionSetpoints) > len(newSolutionSetpoints):
+      for device in self.SolutionSetpoints:
+        if device not in newSolutionSetpoints:
           print('Solution device deleted: ' + device + ', no value sent',
                 flush=True)
 
-    print('Solution changeFlag: ' + str(changeFlag), flush=True)
-
     # Step 6: Update the current solution to the new solution to be ready
     #         for the next set-points message
-    self.Solution.clear()
-    self.Solution = newSolution
+    self.SolutionSetpoints.clear()
+    self.SolutionTimestamps.clear()
+    self.SolutionSetpoints = newSolutionSetpoints
+    self.SolutionTimestamps = newSolutionTimestamps
 
-    # Step 7: Update battery SoC values and report them
+    # Report battery SoC values
     for name in self.Batteries:
-      if name in self.Solution:
-        if self.Solution[name] > 0: # charging
-          self.Batteries[name]['SoC'] += self.Batteries[name]['eff_c']*self.Solution[name]*self.deltaT/self.Batteries[name]['ratedE']
-        elif self.Solution[name] < 0: # discharging
-          self.Batteries[name]['SoC'] += 1/self.Batteries[name]['eff_d']*self.Solution[name]*self.deltaT/self.Batteries[name]['ratedE']
-
-        print('Solution updated battery SoC for: ' + device + ', SoC: ' +
-              str(self.Batteries[name]['SoC']), flush=True)
+      print('Battery name: ' + name + ', SoC: ' +
+            str(self.Batteries[name]['SoC']), flush=True)
 
     print(flush=True)
 
@@ -205,7 +212,8 @@ class AppDeconflictor(GridAPPSD):
     self.ConflictSetpoints = {}
     self.ConflictTimestamps = {}
 
-    self.Solution = {}
+    self.SolutionSetpoints = {}
+    self.SolutionTimestamps = {}
 
     # Step 0: Import deconfliction methodology class for this invocation of
     #         the Deconflictor based on method command line argument and
@@ -218,7 +226,7 @@ class AppDeconflictor(GridAPPSD):
     # subscribe to simulation output messages
     gapps.subscribe(service_output_topic('gridappsd-competing-app', simulation_id), self)
 
-    print('Initialized app deconflictor and now waiting for set-point messages...', flush=True)
+    print('Initialized app deconflictor and now waiting for set-point messages...\n', flush=True)
 
     self.gapps = gapps
     self.exit_flag = False
