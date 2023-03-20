@@ -87,8 +87,8 @@ def _main():
   reader = csv.reader(fp)
   next(reader) # skip header
 
-  rt = RepeatedTimer(.5, send_message, gapps, publish_topic, reader)
-  #rt = RepeatedTimer(3, send_message, gapps, publish_topic, reader)
+  #rt = RepeatedTimer(.5, send_message, gapps, publish_topic, reader)
+  rt = RepeatedTimer(3, send_message, gapps, publish_topic, reader)
 
 
 if __name__ == "__main__":
