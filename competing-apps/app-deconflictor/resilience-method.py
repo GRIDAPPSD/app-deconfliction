@@ -9,23 +9,28 @@ class DeconflictionMethod:
 
 
   def deconflict(self):
-    Solution = {}
+    SolutionSetpoints = {}
+    SolutionTimestamps = {}
 
     for device in self.ConflictSetpoints:
       count = 0
       total = 0.0
+      timestamp = 0
 
       for app in self.ConflictSetpoints[device]:
         if app == 'resilience-app':
-          Solution[device] = self.ConflictSetpoints[device][app]
+          SolutionSetpoints[device] = self.ConflictSetpoints[device][app]
+          SolutionTimestamps[device] = self.ConflictTimestamps[app]
           count = 0
           break
         else:
           count += 1
           total += self.ConflictSetpoints[device][app]
+          timestamp = max(timestamp, self.ConflictTimestamps[app])
 
       if count > 0:
-        Solution[device] = total/count
+        SolutionSetpoints[device] = total/count
+        SolutionTimestamps[device] = timestamp
 
-    return Solution
+    return SolutionSetpoints, SolutionTimestamps
 
