@@ -99,7 +99,8 @@ class AppDeconflictor(GridAPPSD):
     for device in set_points:
       for app in self.ConflictSetpoints[device]:
         if app!=app_name and \
-           set_points[device]!=self.ConflictSetpoints[device][app]:
+           (set_points[device]!=self.ConflictSetpoints[device][app] or \
+            timestamp!=self.ConflictTimestamps[app]):
           conflictFlag = True
           break # breaking out of nested loops courtesy of Stack Overflow
         else:
@@ -132,7 +133,7 @@ class AppDeconflictor(GridAPPSD):
           (self.SolutionTimestamps[device]!=timestamp or \
            self.SolutionSetpoints[device]!=value)):
 
-        print('Solution send value to device: ' + device + ', value: ' +
+        print('==> Solution sending value to device: ' + device + ', value: ' +
               str(value), flush=True)
 
         # update battery SoC
@@ -149,7 +150,7 @@ class AppDeconflictor(GridAPPSD):
     if len(self.SolutionSetpoints) > len(newSolutionSetpoints):
       for device in self.SolutionSetpoints:
         if device not in newSolutionSetpoints:
-          print('Solution device deleted: ' + device + ', no value sent',
+          print('==> Solution device deleted: ' + device + ', no value sent',
                 flush=True)
 
     # Step 6: Update the current solution to the new solution to be ready
