@@ -106,12 +106,13 @@ class AppDeconflictor(GridAPPSD):
         else:
           continue # only executed if the inner loop did not break
       break # only executed if the inner loop did break
+    #conflictFlag = True # just override it to always call deconflict method
     print('Solution conflictFlag: ' + str(conflictFlag), flush=True)
 
     # Step 3: If there is a conflict, then the call the deconflict method for
     #         the given methodology to produce a solution
     if conflictFlag:
-      newSolutionSetpoints,newSolutionTimestamps =self.decon_method.deconflict()
+      newSolutionSetpoints,newSolutionTimestamps= self.decon_method.deconflict()
 
     # Step 4: If there is no conflict, then the new solution is simply the
     #         last solution with the new set-points added in
