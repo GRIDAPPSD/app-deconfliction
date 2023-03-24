@@ -152,18 +152,32 @@ class CompetingApp(GridAPPSD):
 
     for name in Batteries:
       if Batteries[name]['state'] == 'charging':
-        print('Battery name: ' + name + ', ratedkW: ' + str(round(Batteries[name]['ratedkW'],4)) + ', P_batt_c: ' + str(round(Batteries[name]['P_batt_c'],4)) + ', updated SoC: ' + str(round(Batteries[name]['SoC'],4)), flush=True)
+        print('Battery name: ' + name + ', ratedkW: ' + str(round(Batteries[name]['ratedkW'],4)) + ', P_batt_c: ' + str(round(Batteries[name]['P_batt_c'],4)) + ', target SoC: ' + str(round(Batteries[name]['SoC'],4)), flush=True)
       elif Batteries[name]['state'] == 'discharging':
-        print('Battery name: ' + name + ', ratedkW: ' + str(round(Batteries[name]['ratedkW'],4)) + ', P_batt_d: ' + str(round(Batteries[name]['P_batt_d'],4)) + ', updated SoC: ' + str(round(Batteries[name]['SoC'],4)), flush=True)
+        print('Battery name: ' + name + ', ratedkW: ' + str(round(Batteries[name]['ratedkW'],4)) + ', P_batt_d: ' + str(round(Batteries[name]['P_batt_d'],4)) + ', target SoC: ' + str(round(Batteries[name]['SoC'],4)), flush=True)
       else:
-        print('Battery name: ' + name + ', P_batt_c = P_batt_d = 0.0, updated SoC: ' + str(round(Batteries[name]['SoC'],4)), flush=True)
+        print('Battery name: ' + name + ', P_batt_c = P_batt_d = 0.0, target SoC: ' + str(round(Batteries[name]['SoC'],4)), flush=True)
 
     return
+
+
+  def updateSoC(self, SoC, Batteries):
+    for device, value in SoC.items():
+      Batteries[device]['SoC'] = value
+      print('Battery name: ' + device + ', Deconflictor provided updated SoC: ' + str(round(value,4)), flush=True)
 
 
   def on_message(self, headers, in_message):
     #print('headers: ' + str(headers), flush=True)
     #print('message: ' + str(in_message), flush=True)
+
+    # handling both simulation and deconflictor feedback messages here so need
+    # to figure out which it is
+    if 'app-deconflictor' in headers['destination']:
+      self.updateSoC(in_message['SoC'], self.Batteries)
+      return
+
+    # must be a simulation message if we are here
 
     # empty timestamp is end-of-data flag
     if in_message['timestamp'] == '':
@@ -202,7 +216,7 @@ class CompetingApp(GridAPPSD):
       'timestamp': in_message['timestamp'],
       'set_points': set_points
     }
-    print('\nSending message: ' + str(out_message), flush=True)
+    print('Sending message: ' + str(out_message), flush=True)
     self.gapps.send(self.publish_topic, out_message)
 
     return
@@ -245,6 +259,9 @@ class CompetingApp(GridAPPSD):
 
     # subscribe to simulation output messages
     gapps.subscribe(service_output_topic('gridappsd-pseudo-sim', simulation_id), self)
+
+    # subscribe to app-deconflictor feedback messages
+    gapps.subscribe(service_output_topic('gridappsd-app-deconflictor', simulation_id), self)
 
     print('Initialized resilience app and now waiting for messages...', flush=True)
 
