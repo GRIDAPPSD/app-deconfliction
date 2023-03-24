@@ -67,8 +67,7 @@ from time import sleep
 class AppDeconflictor(GridAPPSD):
 
   def on_message(self, headers, message):
-    #print('headers: ' + str(headers), flush=True)
-    print('message: ' + str(message), flush=True)
+    print('Received set-points message: ' + str(message), flush=True)
 
     app_name = message['app_name']
     timestamp = int(message['timestamp'])
@@ -128,14 +127,12 @@ class AppDeconflictor(GridAPPSD):
 
     # Step 5: Iterate over solution and send set-points to devices that have
     #         different or new values
+    updated_socs = {}
     for device, value in newSolutionSetpoints.items():
       if device not in self.SolutionSetpoints or \
          (newSolutionTimestamps[device]==timestamp and \
           (self.SolutionTimestamps[device]!=timestamp or \
            self.SolutionSetpoints[device]!=value)):
-
-        print('==> Solution sending value to device: ' + device + ', value: ' +
-              str(value), flush=True)
 
         # update battery SoC
         if value > 0: # charging
@@ -145,14 +142,20 @@ class AppDeconflictor(GridAPPSD):
           self.Batteries[device]['SoC'] += 1/self.Batteries[device]['eff_d']*value* \
                                  self.deltaT/self.Batteries[device]['ratedE']
 
+        # for message back to competing apps
+        updated_socs[device] = self.Batteries[device]['SoC']
+
+        print('==> Dispatching value to device: ' + device + ', value: ' +
+              str(value) + ' (new SoC: ' +
+              str(updated_socs[device]) + ')', flush=True)
+
     # it's also possible a device from the last solution does not appear in
     # the new solution.  In this case it's a "don't care" for the new solution
     # and the device is left at the previous value so nothing is sent
     if len(self.SolutionSetpoints) > len(newSolutionSetpoints):
       for device in self.SolutionSetpoints:
         if device not in newSolutionSetpoints:
-          print('==> Solution device deleted: ' + device + ', no value sent',
-                flush=True)
+          print('==> Device deleted from solution: ' + device, flush=True)
 
     # Step 6: Update the current solution to the new solution to be ready
     #         for the next set-points message
@@ -161,28 +164,16 @@ class AppDeconflictor(GridAPPSD):
     self.SolutionSetpoints = newSolutionSetpoints
     self.SolutionTimestamps = newSolutionTimestamps
 
-    # Report battery SoC values
-    for name in self.Batteries:
-      print('Battery name: ' + name + ', SoC: ' +
-            str(self.Batteries[name]['SoC']), flush=True)
+    if len(updated_socs) > 0:
+      # Feed updated SoC values back to competing apps
+      socs_message = {
+        'timestamp': timestamp,
+        'SoC': updated_socs
+      }
+      print('Sending updated-socs message: ' + str(socs_message), flush=True)
+      self.gapps.send(self.publish_topic, socs_message)
 
-    print(flush=True)
-
-    return
-
-    # just sample code for sending out a message
-    solution = self.solution[time]
-    set_points = {}
-    for name in solution:
-      set_points[name] = solution[name]['P_batt']
-
-    out_message = {
-      'app_name': 'resilience-app',
-      'timestamp': in_message['timestamp'],
-      'set_points': set_points
-    }
-    print('\nSending message: ' + str(out_message), flush=True)
-    self.gapps.send(self.publish_topic, out_message)
+    print(flush=True) # blank line
 
     return
 
@@ -225,10 +216,12 @@ class AppDeconflictor(GridAPPSD):
     self.decon_method = DeconflictionMethod(self.ConflictSetpoints,
                                             self.ConflictTimestamps)
 
+    self.publish_topic = service_output_topic('gridappsd-app-deconflictor', '0')
+
     # subscribe to simulation output messages
     gapps.subscribe(service_output_topic('gridappsd-competing-app', simulation_id), self)
 
-    print('Initialized app deconflictor and now waiting for set-point messages...\n', flush=True)
+    print('Initialized app deconflictor and now waiting for set-points messages...\n', flush=True)
 
     self.gapps = gapps
     self.exit_flag = False
