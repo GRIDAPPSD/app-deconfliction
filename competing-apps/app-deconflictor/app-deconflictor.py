@@ -164,8 +164,13 @@ class AppDeconflictor(GridAPPSD):
     self.SolutionSetpoints = newSolutionSetpoints
     self.SolutionTimestamps = newSolutionTimestamps
 
+    # Step 7: Feedback loop with competing apps through updated SoC values so
+    #         they can make new set-point requests based on actual changes.
+    #         If running from a GridLAB-D simulation where Deconflictor updates
+    #         devices in simulation, this feedback would come to apps through
+    #         simulation measurement messages and there would be no need to
+    #         explicitly publish updates
     if len(updated_socs) > 0:
-      # Feed updated SoC values back to competing apps
       socs_message = {
         'timestamp': timestamp,
         'SoC': updated_socs
