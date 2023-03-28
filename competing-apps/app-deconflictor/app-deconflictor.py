@@ -134,13 +134,27 @@ class AppDeconflictor(GridAPPSD):
           (self.SolutionTimestamps[device]!=timestamp or \
            self.SolutionSetpoints[device]!=value)):
 
+        # determine if a solution for this device for this timestamp has already
+        # been sent
+        if device in self.SolutionTimestamps and \
+           self.SolutionTimestamps[device]==timestamp:
+          # rollback the previous contribution to SoC as the new one overrides
+          backval = self.SolutionSetpoints[device]
+          if backval > 0:
+            self.Batteries[device]['SoC'] -= self.Batteries[device]['eff_c']* \
+                            backval*self.deltaT/self.Batteries[device]['ratedE']
+          elif backval < 0:
+            self.Batteries[device]['SoC'] -= 1/self.Batteries[device]['eff_d']*\
+                            backval*self.deltaT/self.Batteries[device]['ratedE']
+          print('*** Rollback SoC for device: ' + device + ', SoC: ' + str(self.Batteries[device]['SoC']), flush=True)
+
         # update battery SoC
         if value > 0: # charging
-          self.Batteries[device]['SoC'] += self.Batteries[device]['eff_c']*value* \
-                               self.deltaT/self.Batteries[device]['ratedE']
+          self.Batteries[device]['SoC'] += self.Batteries[device]['eff_c']* \
+                              value*self.deltaT/self.Batteries[device]['ratedE']
         elif value < 0: # discharging
-          self.Batteries[device]['SoC'] += 1/self.Batteries[device]['eff_d']*value* \
-                                 self.deltaT/self.Batteries[device]['ratedE']
+          self.Batteries[device]['SoC'] += 1/self.Batteries[device]['eff_d']* \
+                              value*self.deltaT/self.Batteries[device]['ratedE']
 
         # for message back to competing apps
         updated_socs[device] = self.Batteries[device]['SoC']
@@ -186,7 +200,8 @@ class AppDeconflictor(GridAPPSD):
   def __init__(self, gapps, feeder_mrid, simulation_id, method):
     self.AppUtil = getattr(importlib.import_module('shared.apputil'), 'AppUtil')
 
-    SPARQLManager = getattr(importlib.import_module('shared.sparql'), 'SPARQLManager')
+    SPARQLManager = getattr(importlib.import_module('shared.sparql'),
+                            'SPARQLManager')
     sparql_mgr = SPARQLManager(gapps, feeder_mrid, simulation_id)
 
     self.EnergyConsumers = self.AppUtil.getEnergyConsumers(sparql_mgr)
@@ -197,7 +212,7 @@ class AppDeconflictor(GridAPPSD):
 
     self.SolarPVs = self.AppUtil.getSolarPVs(sparql_mgr)
 
-    self.deltaT = 0.25 # timestamp interval in fractional hours, 0.25 = 15 min.
+    self.deltaT = 0.25 # timestamp interval in fractional hours, 0.25 = 15 min
 
     # for plotting
     self.t_plot = []
@@ -224,7 +239,8 @@ class AppDeconflictor(GridAPPSD):
     self.publish_topic = service_output_topic('gridappsd-app-deconflictor', '0')
 
     # subscribe to simulation output messages
-    gapps.subscribe(service_output_topic('gridappsd-competing-app', simulation_id), self)
+    gapps.subscribe(service_output_topic('gridappsd-competing-app',
+                                         simulation_id), self)
 
     print('Initialized app deconflictor and now waiting for set-points messages...\n', flush=True)
 
@@ -242,7 +258,8 @@ class AppDeconflictor(GridAPPSD):
     json.dump(self.solution, json_fp, indent=2)
     json_fp.close()
 
-    self.AppUtil.make_plots('Deconflictor Solution', 'deconflictor', self.Batteries, self.t_plot, self.p_batt_plot, self.soc_plot)
+    self.AppUtil.make_plots('Deconflictor Solution', 'deconflictor',
+                   self.Batteries, self.t_plot, self.p_batt_plot, self.soc_plot)
 
     return
 
