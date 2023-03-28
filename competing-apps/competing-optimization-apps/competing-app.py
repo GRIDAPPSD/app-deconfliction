@@ -86,7 +86,6 @@ class CompetingApp(GridAPPSD):
             message = "No valid requestType specified"
             self.simRap.gapps.send(reply_to, message)
 
-
     def resiliency(self, EnergyConsumers, SynchronousMachines, Batteries,
                    SolarPVs, time, load_mult, pv_mult, price, deltaT,
                    emergencyState):
@@ -148,21 +147,6 @@ class CompetingApp(GridAPPSD):
                 Batteries[name]['P_batt_d'] = - pbatt_d[idx].varValue
                 Batteries[name]['state'] = 'discharging'
             idx += 1
-
-        for name in Batteries:
-            if Batteries[name]['state'] == 'charging':
-                print('Battery name: ' + name + ', ratedkW: ' + str(
-                    round(Batteries[name]['ratedkW'], 4)) + ', P_batt_c: ' + str(
-                    round(Batteries[name]['P_batt_c'], 4)) + ', updated SoC: ' + str(round(Batteries[name]['SoC'], 4)),
-                      flush=True)
-            elif Batteries[name]['state'] == 'discharging':
-                print('Battery name: ' + name + ', ratedkW: ' + str(
-                    round(Batteries[name]['ratedkW'], 4)) + ', P_batt_d: ' + str(
-                    round(Batteries[name]['P_batt_d'], 4)) + ', updated SoC: ' + str(round(Batteries[name]['SoC'], 4)),
-                      flush=True)
-            else:
-                print('Battery name: ' + name + ', P_batt_c = P_batt_d = 0.0, updated SoC: ' + str(
-                    round(Batteries[name]['SoC'], 4)), flush=True)
 
         return
 
@@ -231,20 +215,6 @@ class CompetingApp(GridAPPSD):
                 Batteries[name]['P_batt_d'] = - pbatt_d[idx].varValue
                 Batteries[name]['state'] = 'discharging'
             idx += 1
-        for name in Batteries:
-            if Batteries[name]['state'] == 'charging':
-                print('Battery name: ' + name + ', ratedkW: ' + str(
-                    round(Batteries[name]['ratedkW'], 4)) + ', P_batt_c: ' + str(
-                    round(Batteries[name]['P_batt_c'], 4)) + ', updated SoC: ' + str(round(Batteries[name]['SoC'], 4)),
-                      flush=True)
-            elif Batteries[name]['state'] == 'discharging':
-                print('Battery name: ' + name + ', ratedkW: ' + str(
-                    round(Batteries[name]['ratedkW'], 4)) + ', P_batt_d: ' + str(
-                    round(Batteries[name]['P_batt_d'], 4)) + ', updated SoC: ' + str(round(Batteries[name]['SoC'], 4)),
-                      flush=True)
-            else:
-                print('Battery name: ' + name + ', P_batt_c = P_batt_d = 0.0, updated SoC: ' + str(
-                    round(Batteries[name]['SoC'], 4)), flush=True)
 
         return
 
@@ -279,7 +249,34 @@ class CompetingApp(GridAPPSD):
             plt.savefig('output/' + prefix + '_soc_' + name + '.png')
             # plot.show()
 
-    def __init__(self, gapps, feeder_mrid, simulation_id, app, state):
+    def conflict_matrix(self, solution):
+        d_c = []
+        centroid = []
+        apps = {}
+        n_devices = len(solution.keys())
+        for device in solution:
+            n_apps = len(solution[device])
+            device_setpoints = []
+            for app in solution[device]:
+                if app not in apps:
+                    apps[app] = []
+                apps[app].append((solution[device][app] + 250) / 500)
+                device_setpoints.append((solution[device][app] + 250) / 500)
+            # Find centroid
+            centroid.append(sum(device_setpoints) / n_apps)
+
+        # Distance matrix
+        for app in apps:
+            s = 0
+            for k in range(len(centroid)):
+                s += (centroid[k] - apps[app][k]) ** 2
+            d_c.append(math.sqrt(s))
+
+        conflict_metric = sum(d_c) / n_apps
+        conflict_metric = conflict_metric * 2 / math.sqrt(n_devices)
+        return conflict_metric
+
+    def __init__(self, gapps, feeder_mrid, simulation_id, state):
         SPARQLManager = getattr(importlib.import_module('shared.sparql'), 'SPARQLManager')
         sparql_mgr = SPARQLManager(gapps, feeder_mrid, simulation_id)
 
@@ -373,150 +370,96 @@ class CompetingApp(GridAPPSD):
         if not os.path.isdir('output'):
             os.makedirs('output')
 
-        # Deconfliction methods
-        competing_func = None
-        competing_name = None
-        if app.startswith('r') or app.startswith('R'):
-            # 1. Resilience Exclusivity
-            competing_func = self.resiliency
-            competing_name = 'resilience'
-        elif app.startswith('d') or app.startswith('D'):
-            # 2. Decarbonization Exclusivity
-            competing_func = self.decarbonization
-            competing_name = 'decarboniation'
-        elif app.startswith('p') or app.startswith('P'):
-            # 3. Profit Exclusivity
-            competing_func = self.profit
-            competing_name = 'profit'
-
-        with open('../pseudo-sim/time-series-data.csv', 'r') as f:
+        # Invoke Competing Apps
+        solution = {}
+        with open('../sim-starter/time-series.csv', 'r') as f:
             reader = csv.reader(f)
             next(reader)  # skip header
 
             deltaT = 0.25  # timestamp interval in fractional hours, 0.25 = 15 min.
 
-            if competing_func != None:
-                # for plotting
-                t_plot = []
-                soc_plot = {}
-                p_batt_plot = {}
+            for name in Batteries:
+                Batteries[name]['initial_soc'] = Batteries[name]['SoC']
+
+            for row in reader:
+                time = int(row[0])
+                # loadshape = float(row[1])
+                # solar = float(row[2])
+                loadshape = 0.1728
+                solar = 0.951665
+                price = float(row[3])
+
+                # Resilience App
+                print('Resilience App...', flush=True)
+                self.resiliency(EnergyConsumers, SynchronousMachines, Batteries, SolarPVs, time, loadshape, solar,
+                                price, deltaT, emergencyState)
+
                 for name in Batteries:
-                    soc_plot[name] = []
-                    p_batt_plot[name] = []
+                    solution[name] = {}
+                    if Batteries[name]['state'] == 'charging':
+                        print('Battery name: ' + name + ', ratedkW: ' + str(
+                            round(Batteries[name]['ratedkW'], 4)) + ', P_batt_c: ' + str(
+                            round(Batteries[name]['P_batt_c'], 4)) + ', updated SoC: ' + str(
+                            round(Batteries[name]['SoC'], 4)),
+                              flush=True)
+                        solution[name]['resilience'] = Batteries[name]['P_batt_c']
+                    elif Batteries[name]['state'] == 'discharging':
+                        print('Battery name: ' + name + ', ratedkW: ' + str(
+                            round(Batteries[name]['ratedkW'], 4)) + ', P_batt_d: ' + str(
+                            round(Batteries[name]['P_batt_d'], 4)) + ', updated SoC: ' + str(
+                            round(Batteries[name]['SoC'], 4)),
+                              flush=True)
+                        solution[name]['resilience'] = -Batteries[name]['P_batt_d']
+                    else:
+                        print('Battery name: ' + name + ', P_batt_c = P_batt_d = 0.0, updated SoC: ' + str(
+                            round(Batteries[name]['SoC'], 4)), flush=True)
+                        solution[name]['resilience'] = Batteries[name]['P_batt_d']
 
-                solution = {}
-                for row in reader:
-                    time = int(row[0])
-                    loadshape = float(row[1])
-                    solar = float(row[2])
-                    price = float(row[3])
-                    # print('time series time: ' + str(time) + ', loadshape: ' + str(loadshape) + ', solar: ' + str(solar) + ', price: ' + str(price), flush=True)
-
-                    t_plot.append(self.to_datetime(time))  # for plotting
-                    solution[time] = {}
-
-                    competing_func(EnergyConsumers, SynchronousMachines, Batteries, SolarPVs, time, loadshape, solar,
-                                   price, deltaT, emergencyState)
-
-                    for name in Batteries:
-                        solution[time][name] = {}
-                        if Batteries[name]['state'] == 'charging':
-                            solution[time][name]['P_batt'] = Batteries[name]['P_batt_c']
-                        elif Batteries[name]['state'] == 'discharging':
-                            solution[time][name]['P_batt'] = -Batteries[name]['P_batt_d']
-                        else:
-                            solution[time][name]['P_batt'] = 0.0
-
-                        solution[time][name]['SoC'] = Batteries[name]['SoC']
-                        p_batt_plot[name].append(solution[time][name]['P_batt'])  # for plotting
-                        soc_plot[name].append(Batteries[name]['SoC'])  # for plotting
-
-                json_fp = open('output/' + competing_name + '_solution.json', 'w')
-                json.dump(solution, json_fp, indent=2)
-                json_fp.close()
-
-                self.make_plots(competing_name.capitalize() + ' Exclusivity', competing_name, Batteries, t_plot,
-                                p_batt_plot, soc_plot)
-
-            elif app.startswith('c') or app.startswith('C'):
-                # 4. Compromise (between resilience and decarbonization)
-                # for plotting
-                t_plot = []
-                soc_plot = {}
-                p_batt_plot = {}
+                # To make sure batteries start with same initial conditions for decarbonization app
                 for name in Batteries:
-                    # Restore original state of batteries
-                    Batteries[name]['initial_SoC'] = Batteries[name]['SoC']
-                    soc_plot[name] = []
-                    p_batt_plot[name] = []
+                    Batteries[name]['SoC'] = Batteries[name]['initial_soc']
 
-                solution = {}
-                for row in reader:
-                    time = int(row[0])
-                    loadshape = float(row[1])
-                    solar = float(row[2])
-                    price = float(row[3])
-                    # print('time series time: ' + str(time) + ', loadshape: ' + str(loadshape) + ', solar: ' + str(solar) + ', price: ' + str(price), flush=True)
+                # Decarbonization App
+                print('\nDecarbonization App...', flush=True)
+                self.decarbonization(EnergyConsumers, SynchronousMachines, Batteries, SolarPVs, time, loadshape, solar,
+                                     price, deltaT, emergencyState)
 
-                    t_plot.append(self.to_datetime(time))  # for plotting
-                    resilience_solution = {}
-                    decarbonization_solution = {}
-                    solution[time] = {}
-                    self.resiliency(EnergyConsumers, SynchronousMachines, Batteries, SolarPVs, time, loadshape, solar,
-                                    price, deltaT, emergencyState)
-                    for name in Batteries:
-                        resilience_solution[name] = {}
-                        if Batteries[name]['state'] == 'charging':
-                            resilience_solution[name]['P_batt'] = Batteries[name]['P_batt_c']
-                        elif Batteries[name]['state'] == 'discharging':
-                            resilience_solution[name]['P_batt'] = -Batteries[name]['P_batt_d']
-                        else:
-                            resilience_solution[name]['P_batt'] = 0.0
+                for name in Batteries:
+                    if Batteries[name]['state'] == 'charging':
+                        print('Battery name: ' + name + ', ratedkW: ' + str(
+                            round(Batteries[name]['ratedkW'], 4)) + ', P_batt_c: ' + str(
+                            round(Batteries[name]['P_batt_c'], 4)) + ', updated SoC: ' + str(
+                            round(Batteries[name]['SoC'], 4)),
+                              flush=True)
+                        solution[name]['decarbonization'] = Batteries[name]['P_batt_c']
+                    elif Batteries[name]['state'] == 'discharging':
+                        print('Battery name: ' + name + ', ratedkW: ' + str(
+                            round(Batteries[name]['ratedkW'], 4)) + ', P_batt_d: ' + str(
+                            round(Batteries[name]['P_batt_d'], 4)) + ', updated SoC: ' + str(
+                            round(Batteries[name]['SoC'], 4)),
+                              flush=True)
+                        solution[name]['decarbonization'] = -Batteries[name]['P_batt_d']
+                    else:
+                        print('Battery name: ' + name + ', P_batt_c = P_batt_d = 0.0, updated SoC: ' + str(
+                            round(Batteries[name]['SoC'], 4)), flush=True)
+                        solution[name]['decarbonization'] = Batteries[name]['P_batt_c']
 
-                        resilience_solution[name]['SoC'] = Batteries[name]['SoC']
-                        Batteries[name]['SoC'] = Batteries[name]['initial_SoC']
+                print('\n', solution)
 
-                    self.decarbonization(EnergyConsumers, SynchronousMachines, Batteries, SolarPVs, time, loadshape,
-                                         solar, price, deltaT, emergencyState)
-                    for name in Batteries:
-                        decarbonization_solution[name] = {}
-                        if Batteries[name]['state'] == 'charging':
-                            decarbonization_solution[name]['P_batt'] = Batteries[name]['P_batt_c']
-                        elif Batteries[name]['state'] == 'discharging':
-                            decarbonization_solution[name]['P_batt'] = -Batteries[name]['P_batt_d']
-                        else:
-                            decarbonization_solution[name]['P_batt'] = 0.0
+                # Quantify the conflict. Can be useful for incentive-based scheme
+                conflict_metric = self.conflict_matrix(solution)
+                print('Conflict Metric: ', conflict_metric, flush=True)
 
-                        decarbonization_solution[name]['SoC'] = Batteries[name]['SoC']
-                        Batteries[name]['SoC'] = Batteries[name]['initial_SoC']
+                # Invoke cooperative solution here....
+                exit()
 
-                    for name in Batteries:
-                        solution[time][name] = {}
-                        solution[time][name]['P_batt'] = (resilience_solution[name]['P_batt'] +
-                                                          decarbonization_solution[name]['P_batt']) / 2
-                        if solution[time][name]['P_batt'] > 0:
-                            Batteries[name]['state'] = 'charging'
-                            Batteries[name]['P_batt_c'] = solution[time][name]['P_batt']
-                            Batteries[name]['P_batt_d'] = 0.0
-                        elif solution[time][name]['P_batt'] < 0:
-                            Batteries[name]['state'] = 'discharging'
-                            Batteries[name]['P_batt_d'] = -solution[time][name]['P_batt']
-                            Batteries[name]['P_batt_c'] = 0.0
-                        else:
-                            Batteries[name]['P_batt_c'] = Batteries[name]['P_batt_d'] = 0.0
+            # json_fp = open('output/' + 'resilience' + '_solution.json', 'w')
+            # json.dump(resilience_solution, json_fp, indent=2)
+            # json_fp.close()
 
-                    self.charge_batteries(Batteries, deltaT)
-                    self.discharge_batteries(Batteries, deltaT)
-                    for name in Batteries:
-                        solution[time][name]['SoC'] = Batteries[name]['initial_SoC'] = Batteries[name]['SoC']
-                        p_batt_plot[name].append(solution[time][name]['P_batt'])  # plotting
-                        soc_plot[name].append(solution[time][name]['SoC'])  # plotting
-
-                json_fp = open('output/compromise_solution.json', 'w')
-                json.dump(solution, json_fp, indent=2)
-                json_fp.close()
-
-                self.make_plots('Compromise', 'compromise', Batteries, t_plot, p_batt_plot, soc_plot)
+            # json_fp = open('output/' + 'resilience' + '_solution.json', 'w')
+            # json.dump(resilience_solution, json_fp, indent=2)
+            # json_fp.close()
 
         return
 
@@ -534,17 +477,9 @@ def _main():
     else:
         sys.path.append('/gridappsd/services/app-deconfliction/competing-apps')
 
-    parser = argparse.ArgumentParser()
-    # parser.add_argument("simulation_id", help="Simulation ID")
-    # parser.add_argument("request", help="Simulation Request")
-    parser.add_argument("app", nargs="?", default="Resiliency", help="Resiliency or Decarbonization or Profit")
-    parser.add_argument("state", nargs="?", default="Alert", help="Alert or Emergency State")
-    opts = parser.parse_args()
-
     # sim_request = json.loads(opts.request.replace("\'", ""))
     feeder_mrid = "_AAE94E4A-2465-6F5E-37B1-3E72183A4E44"
     simulation_id = 0.0
-    app = opts.app
     state = 'a'
 
     # authenticate with GridAPPS-D Platform
@@ -556,7 +491,7 @@ def _main():
     gapps = GridAPPSD(simulation_id)
     assert gapps.connected
 
-    competing_app = CompetingApp(gapps, feeder_mrid, simulation_id, app, state)
+    competing_app = CompetingApp(gapps, feeder_mrid, simulation_id, state)
 
 
 if __name__ == "__main__":
