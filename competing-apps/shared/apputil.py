@@ -110,18 +110,28 @@ class AppUtil:
     #  print('SynchronousMachine: ' + str(item), flush=True)
 
 
+  def discharge_SoC(value, name, Batteries, deltaT):
+    return 1/Batteries[name]['eff_d']*value*deltaT/Batteries[name]['ratedE']
+
+
   def discharge_batteries(Batteries, deltaT):
     for name in Batteries:
       Batteries[name]['state'] = 'discharging'
       if 'P_batt_d' in Batteries[name]:
-        Batteries[name]['SoC'] -= 1/Batteries[name]['eff_d']*Batteries[name]['P_batt_d']*deltaT/Batteries[name]['ratedE']
+        Batteries[name]['SoC'] -= AppUtil.discharge_SoC(Batteries[name]['P_batt_d'], name,
+                                                        Batteries, deltaT)
+
+
+  def charge_SoC(value, name, Batteries, deltaT):
+    return Batteries[name]['eff_c']*value*deltaT/Batteries[name]['ratedE']
 
 
   def charge_batteries(Batteries, deltaT):
     for name in Batteries:
       Batteries[name]['state'] = 'charging'
       if 'P_batt_c' in Batteries[name]:
-        Batteries[name]['SoC'] += Batteries[name]['eff_c']*Batteries[name]['P_batt_c']*deltaT/Batteries[name]['ratedE']
+        Batteries[name]['SoC'] += AppUtil.charge_SoC(Batteries[name]['P_batt_c'], name,
+                                                     Batteries, deltaT)
 
 
   def economic_dispatch(P_sub, SynchronousMachines, P_def, price):

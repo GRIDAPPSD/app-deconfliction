@@ -141,20 +141,20 @@ class AppDeconflictor(GridAPPSD):
           # rollback the previous contribution to SoC as the new one overrides
           backval = self.SolutionSetpoints[device]
           if backval > 0:
-            self.Batteries[device]['SoC'] -= self.Batteries[device]['eff_c']* \
-                            backval*self.deltaT/self.Batteries[device]['ratedE']
+            self.Batteries[device]['SoC'] -= self.AppUtil.charge_SoC(backval,
+                                            device, self.Batteries, self.deltaT)
           elif backval < 0:
-            self.Batteries[device]['SoC'] -= 1/self.Batteries[device]['eff_d']*\
-                            backval*self.deltaT/self.Batteries[device]['ratedE']
+            self.Batteries[device]['SoC'] -= self.AppUtil.discharge_SoC(backval,
+                                            device, self.Batteries, self.deltaT)
           print('*** Rollback SoC for device: ' + device + ', SoC: ' + str(self.Batteries[device]['SoC']), flush=True)
 
         # update battery SoC
         if value > 0: # charging
-          self.Batteries[device]['SoC'] += self.Batteries[device]['eff_c']* \
-                              value*self.deltaT/self.Batteries[device]['ratedE']
+          self.Batteries[device]['SoC'] += self.AppUtil.charge_SoC(value,
+                                            device, self.Batteries, self.deltaT)
         elif value < 0: # discharging
-          self.Batteries[device]['SoC'] += 1/self.Batteries[device]['eff_d']* \
-                              value*self.deltaT/self.Batteries[device]['ratedE']
+          self.Batteries[device]['SoC'] += self.AppUtil.discharge_SoC(value,
+                                            device, self.Batteries, self.deltaT)
 
         # for message back to competing apps
         updated_socs[device] = self.Batteries[device]['SoC']
