@@ -88,7 +88,7 @@ class CompetingApp(GridAPPSD):
 
     def resiliency(self, EnergyConsumers, SynchronousMachines, Batteries,
                    SolarPVs, time, load_mult, pv_mult, price, deltaT,
-                   emergencyState):
+                   emergencyState) -> dict:
 
         P_load = 0.0
         for name in EnergyConsumers:
@@ -149,18 +149,20 @@ class CompetingApp(GridAPPSD):
         for name in Batteries:
             Batteries[name]['SoC'] = soc[idx].varValue
             if pbatt_c[idx].varValue >= 0.01:
+                Batteries[name]['P_batt_d'] = 0.0
                 Batteries[name]['P_batt_c'] = pbatt_c[idx].varValue
                 Batteries[name]['state'] = 'charging'
-            if pbatt_d[idx].varValue <= - 0.01:
+            if pbatt_d[idx].varValue <= -0.01:
+                Batteries[name]['P_batt_c'] = 0.0
                 Batteries[name]['P_batt_d'] = - pbatt_d[idx].varValue
                 Batteries[name]['state'] = 'discharging'
             idx += 1
 
-        return
+        return Batteries
 
     def decarbonization(self, EnergyConsumers, SynchronousMachines, Batteries,
                         SolarPVs, time, load_mult, pv_mult, profit, deltaT,
-                        emergencyState):
+                        emergencyState) -> dict:
 
         P_load = 0.0
         for name in EnergyConsumers:
@@ -192,7 +194,7 @@ class CompetingApp(GridAPPSD):
             prob += P_load_v <= P_load
             prob += Psub == 0
         else:
-            prob += lpSum(- soc[n] for n in range(n_batt))
+            prob += lpSum(Psub_mod)
             prob += P_load_v == P_load
 
         # SoC constraints of the battery
@@ -224,13 +226,15 @@ class CompetingApp(GridAPPSD):
         for name in Batteries:
             Batteries[name]['SoC'] = soc[idx].varValue
             if pbatt_c[idx].varValue >= 0.01:
+                Batteries[name]['P_batt_d'] = 0.0
                 Batteries[name]['P_batt_c'] = pbatt_c[idx].varValue
                 Batteries[name]['state'] = 'charging'
             if pbatt_d[idx].varValue <= -0.01:
+                Batteries[name]['P_batt_c'] = 0.0
                 Batteries[name]['P_batt_d'] = - pbatt_d[idx].varValue
                 Batteries[name]['state'] = 'discharging'
             idx += 1
-        return
+        return Batteries
 
     def to_datetime(self, time):
         return datetime(1966, 8, 1, (time - 1) // 4, 15 * ((time - 1) % 4), 0)
@@ -398,75 +402,50 @@ class CompetingApp(GridAPPSD):
 
             for row in reader:
                 time = int(row[0])
-                # loadshape = float(row[1])
-                # solar = float(row[2])
-                loadshape = 0.1728
-                solar = 0.951665
+                loadshape = float(row[1])
+                solar = float(row[2])
                 price = float(row[3])
                 # time = 73
+                
                 # Resilience App
-                print('Resilience App...', flush=True)
-                self.resiliency(EnergyConsumers, SynchronousMachines, Batteries, SolarPVs, time, loadshape, solar,
+                resiliency_setpoints = self.resiliency(EnergyConsumers, SynchronousMachines, Batteries, SolarPVs, time, loadshape, solar,
                                 price, deltaT, emergencyState)
 
-                for name in Batteries:
+                for name, battery in resiliency_setpoints.items():
                     solution[name] = {}
-                    if Batteries[name]['state'] == 'charging':
-                        print('Battery name: ' + name + ', ratedkW: ' + str(
-                            round(Batteries[name]['ratedkW'], 4)) + ', P_batt_c: ' + str(
-                            round(Batteries[name]['P_batt_c'], 4)) + ', updated SoC: ' + str(
-                            round(Batteries[name]['SoC'], 4)),
-                              flush=True)
-                        solution[name]['resilience'] = Batteries[name]['P_batt_c']
-                    elif Batteries[name]['state'] == 'discharging':
-                        print('Battery name: ' + name + ', ratedkW: ' + str(
-                            round(Batteries[name]['ratedkW'], 4)) + ', P_batt_d: ' + str(
-                            round(Batteries[name]['P_batt_d'], 4)) + ', updated SoC: ' + str(
-                            round(Batteries[name]['SoC'], 4)),
-                              flush=True)
-                        solution[name]['resilience'] = -Batteries[name]['P_batt_d']
+                    print("res: " , name, battery)
+                    if battery['state'] == 'charging':
+                        solution[name]['resilience'] = battery['P_batt_c']
+                    elif battery['state'] == 'discharging':
+                        solution[name]['resilience'] = -battery['P_batt_d']
                     else:
-                        print('Battery name: ' + name + ', P_batt_c = P_batt_d = 0.0, updated SoC: ' + str(
-                            round(Batteries[name]['SoC'], 4)), flush=True)
                         solution[name]['resilience'] = 0.0
-
-                # To make sure batteries start with same initial conditions for decarbonization app
-                for name in Batteries:
-                    Batteries[name]['SoC'] = Batteries[name]['initial_soc']
+                        
+                print(solution)
 
                 # Decarbonization App
-                print('\nDecarbonization App...', flush=True)
-                self.decarbonization(EnergyConsumers, SynchronousMachines, Batteries, SolarPVs, time, loadshape, solar,
+                decarb_setpoints = self.decarbonization(EnergyConsumers, SynchronousMachines, Batteries, SolarPVs, time, loadshape, solar,
                                      price, deltaT, emergencyState)
 
-                for name in Batteries:
-                    if Batteries[name]['state'] == 'charging':
-                        print('Battery name: ' + name + ', ratedkW: ' + str(
-                            round(Batteries[name]['ratedkW'], 4)) + ', P_batt_c: ' + str(
-                            round(Batteries[name]['P_batt_c'], 4)) + ', updated SoC: ' + str(
-                            round(Batteries[name]['SoC'], 4)),
-                              flush=True)
-                        solution[name]['decarbonization'] = Batteries[name]['P_batt_c']
-                    elif Batteries[name]['state'] == 'discharging':
-                        print('Battery name: ' + name + ', ratedkW: ' + str(
-                            round(Batteries[name]['ratedkW'], 4)) + ', P_batt_d: ' + str(
-                            round(Batteries[name]['P_batt_d'], 4)) + ', updated SoC: ' + str(
-                            round(Batteries[name]['SoC'], 4)),
-                              flush=True)
-                        solution[name]['decarbonization'] = -Batteries[name]['P_batt_d']
+                for name, battery in decarb_setpoints.items():
+                    print("decarb: " , name, battery)
+                    if battery['state'] == 'charging':
+                        solution[name]['decarbonization'] = battery['P_batt_c']
+                    elif battery['state'] == 'discharging':
+                        solution[name]['decarbonization'] = -battery['P_batt_d']
                     else:
-                        print('Battery name: ' + name + ', P_batt_c = P_batt_d = 0.0, updated SoC: ' + str(
-                            round(Batteries[name]['SoC'], 4)), flush=True)
                         solution[name]['decarbonization'] = 0.0
                         
-                print('\nSolution from apps', solution)
-                # Quantify the conflict. Can be useful for incentive-based scheme
+                print(solution)
+                        
                 conflict_metric = self.conflict_matrix(solution)
                 print('\nConflict Metric: ', conflict_metric, flush=True)
 
                 solutions[time] = {}
                 solutions[time]['solution'] = solution
                 solutions[time]['conflict'] = conflict_metric
+                
+                Batteries = resiliency_setpoints
                 
                 # Invoke cooperative solution here....
                 # exit()
