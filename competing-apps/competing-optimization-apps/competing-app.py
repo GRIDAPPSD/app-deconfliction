@@ -192,7 +192,7 @@ class CompetingApp(GridAPPSD):
             prob += P_load_v <= P_load
             prob += Psub == 0
         else:
-            prob += lpSum(Psub_mod)
+            prob += lpSum(- soc[n] for n in range(n_batt))
             prob += P_load_v == P_load
 
         # SoC constraints of the battery
