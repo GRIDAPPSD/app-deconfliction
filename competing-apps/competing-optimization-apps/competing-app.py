@@ -60,8 +60,8 @@ from matplotlib import pyplot as plt
 from matplotlib import dates as md
 from datetime import datetime
 
-
 class CompetingApp(GridAPPSD):
+    energy_credits = {}
 
     def on_message(self, headers, message):
         reply_to = headers['reply-to']
@@ -386,6 +386,7 @@ class CompetingApp(GridAPPSD):
 
         # Invoke Competing Apps
         solution = {}
+        solutions = {}
         with open('../sim-starter/time-series.csv', 'r') as f:
             reader = csv.reader(f)
             next(reader)  # skip header
@@ -457,22 +458,22 @@ class CompetingApp(GridAPPSD):
                         print('Battery name: ' + name + ', P_batt_c = P_batt_d = 0.0, updated SoC: ' + str(
                             round(Batteries[name]['SoC'], 4)), flush=True)
                         solution[name]['decarbonization'] = 0.0
-
+                        
                 print('\nSolution from apps', solution)
                 # Quantify the conflict. Can be useful for incentive-based scheme
                 conflict_metric = self.conflict_matrix(solution)
                 print('\nConflict Metric: ', conflict_metric, flush=True)
 
+                solutions[time] = {}
+                solutions[time]['solution'] = solution
+                solutions[time]['conflict'] = conflict_metric
+                
                 # Invoke cooperative solution here....
-                exit()
+                # exit()
 
-            # json_fp = open('output/' + 'resilience' + '_solution.json', 'w')
-            # json.dump(resilience_solution, json_fp, indent=2)
-            # json_fp.close()
-
-            # json_fp = open('output/' + 'resilience' + '_solution.json', 'w')
-            # json.dump(resilience_solution, json_fp, indent=2)
-            # json_fp.close()
+        json_fp = open('output/' + 'conflict' + '_solution.json', 'w')
+        json.dump(solutions, json_fp, indent=2)
+        json_fp.close()
 
         return
 
