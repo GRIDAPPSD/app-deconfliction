@@ -105,15 +105,23 @@ class CompetingApp(GridAPPSD):
         # Implement simple PuLP optimization for resilience
         # Objective function: Max: SoC of the Battery
         n_batt = len(Batteries)
-        soc = LpVariable.dicts("soc", (i for i in range(n_batt)), lowBound=0, upBound=0.9, cat='Continuous')
+        soc = LpVariable.dicts("soc", (i for i in range(n_batt)), lowBound=0.2, upBound=0.9, cat='Continuous')
         pbatt_c = LpVariable.dicts("pbatt_c", (i for i in range(n_batt)), lowBound=0, upBound=250, cat='Continuous')
         pbatt_d = LpVariable.dicts("pbatt_d", (i for i in range(n_batt)), lowBound=-250, upBound=0, cat='Continuous')
         lamda_c = LpVariable.dicts("lamda_c", (i for i in range(n_batt)), lowBound=0, upBound=1, cat='Binary')
         lamda_d = LpVariable.dicts("lamda_d", (i for i in range(n_batt)), lowBound=0, upBound=1, cat='Binary')
+        P_load_v = LpVariable("P_load_v", lowBound=0, upBound=P_load, cat='Continuous')
         Psub = LpVariable("Psub", lowBound=-10000, upBound=10000, cat='Continuous')
 
         prob = LpProblem("Energy_Stored", LpMinimize)
-        prob += lpSum(- soc[n] for n in range(n_batt))
+        if 72 < time < 84:
+            prob += lpSum(soc[n] for n in range(n_batt))
+            prob += P_load_v <= P_load
+            prob += Psub == 0
+        else:
+            # prob += lpSum(-P_load_v)
+            prob += lpSum(- soc[n] for n in range(n_batt))
+            prob += P_load_v == P_load
 
         # SoC constraints of the battery
         idx = 0
@@ -128,7 +136,7 @@ class CompetingApp(GridAPPSD):
             idx += 1
 
         # Energy Balance equations
-        prob += Psub == -P_ren + P_load + pbatt_c[0] + pbatt_c[1] + pbatt_d[0] + pbatt_d[1]
+        prob += Psub == -P_ren + P_load_v + pbatt_c[0] + pbatt_c[1] + pbatt_d[0] + pbatt_d[1]
 
         # print('Now solving the resilience application.......')
         prob.solve(PULP_CBC_CMD(msg=0))
@@ -169,16 +177,23 @@ class CompetingApp(GridAPPSD):
         # Implement simple PuLP optimization for resilience
         # Objective function: Max: SoC of the Battery
         n_batt = len(Batteries)
-        soc = LpVariable.dicts("soc", (i for i in range(n_batt)), lowBound=0, upBound=0.9, cat='Continuous')
+        soc = LpVariable.dicts("soc", (i for i in range(n_batt)), lowBound=0.2, upBound=0.9, cat='Continuous')
         pbatt_c = LpVariable.dicts("pbatt_c", (i for i in range(n_batt)), lowBound=0, upBound=250, cat='Continuous')
         pbatt_d = LpVariable.dicts("pbatt_d", (i for i in range(n_batt)), lowBound=-250, upBound=0, cat='Continuous')
         lamda_c = LpVariable.dicts("lamda_c", (i for i in range(n_batt)), lowBound=0, upBound=1, cat='Binary')
         lamda_d = LpVariable.dicts("lamda_d", (i for i in range(n_batt)), lowBound=0, upBound=1, cat='Binary')
         Psub = LpVariable("Psub", lowBound=-10000, upBound=10000, cat='Continuous')
+        P_load_v = LpVariable("P_load_v", lowBound=0, upBound=P_load, cat='Continuous')
         Psub_mod = LpVariable("Psub_mod", lowBound=-10000, upBound=10000, cat='Continuous')
 
         prob = LpProblem("Dirty_Generations", LpMinimize)
-        prob += lpSum(Psub_mod)
+        if 72 < time < 84:
+            prob += lpSum(soc[n] for n in range(n_batt))
+            prob += P_load_v <= P_load
+            prob += Psub == 0
+        else:
+            prob += lpSum(Psub_mod)
+            prob += P_load_v == P_load
 
         # SoC constraints of the battery
         idx = 0
@@ -197,7 +212,7 @@ class CompetingApp(GridAPPSD):
         prob += Psub_mod >= - Psub
 
         # Energy Balance equations
-        prob += Psub == -P_ren + P_load + pbatt_c[0] + pbatt_c[1] + pbatt_d[0] + pbatt_d[1]
+        prob += Psub == -P_ren + P_load_v + pbatt_c[0] + pbatt_c[1] + pbatt_d[0] + pbatt_d[1]
 
         # print('Now solving the decarbonization application.......')
         prob.solve(PULP_CBC_CMD(msg=0))
@@ -215,7 +230,6 @@ class CompetingApp(GridAPPSD):
                 Batteries[name]['P_batt_d'] = - pbatt_d[idx].varValue
                 Batteries[name]['state'] = 'discharging'
             idx += 1
-
         return
 
     def to_datetime(self, time):
@@ -388,7 +402,7 @@ class CompetingApp(GridAPPSD):
                 loadshape = 0.1728
                 solar = 0.951665
                 price = float(row[3])
-
+                # time = 73
                 # Resilience App
                 print('Resilience App...', flush=True)
                 self.resiliency(EnergyConsumers, SynchronousMachines, Batteries, SolarPVs, time, loadshape, solar,
@@ -413,7 +427,7 @@ class CompetingApp(GridAPPSD):
                     else:
                         print('Battery name: ' + name + ', P_batt_c = P_batt_d = 0.0, updated SoC: ' + str(
                             round(Batteries[name]['SoC'], 4)), flush=True)
-                        solution[name]['resilience'] = Batteries[name]['P_batt_d']
+                        solution[name]['resilience'] = 0.0
 
                 # To make sure batteries start with same initial conditions for decarbonization app
                 for name in Batteries:
@@ -442,13 +456,12 @@ class CompetingApp(GridAPPSD):
                     else:
                         print('Battery name: ' + name + ', P_batt_c = P_batt_d = 0.0, updated SoC: ' + str(
                             round(Batteries[name]['SoC'], 4)), flush=True)
-                        solution[name]['decarbonization'] = Batteries[name]['P_batt_c']
+                        solution[name]['decarbonization'] = 0.0
 
-                print('\n', solution)
-
+                print('\nSolution from apps', solution)
                 # Quantify the conflict. Can be useful for incentive-based scheme
                 conflict_metric = self.conflict_matrix(solution)
-                print('Conflict Metric: ', conflict_metric, flush=True)
+                print('\nConflict Metric: ', conflict_metric, flush=True)
 
                 # Invoke cooperative solution here....
                 exit()
