@@ -126,16 +126,13 @@ class CompetingApp(GridAPPSD):
 
         # SoC constraints of the battery
         idx = 0     
-        if not advise:
-            advise = {name:battery['ratedkW'] for name,battery in Batteries.items()}   
-                 
         for name in Batteries:
             Batteries[name]['state'] = 'idling'
             prob += soc[idx] == Batteries[name]['SoC'] + \
                     Batteries[name]['eff_c'] * pbatt_c[idx] * deltaT / Batteries[name]['ratedE'] + \
                     1 / Batteries[name]['eff_d'] * pbatt_d[idx] * deltaT / Batteries[name]['ratedE']
-            prob += pbatt_c[idx] <= lamda_c[idx] * advise[name] if advise[name] > 0 else 0
-            prob += pbatt_d[idx] >= - lamda_d[idx] * advise[name] if advise[name] < 0 else 0
+            prob += pbatt_c[idx] <= lamda_c[idx] * advise[name] if advise else 250
+            prob += pbatt_d[idx] >= lamda_d[idx] * advise[name] if advise else -250
             prob += lamda_c[idx] + lamda_d[idx] <= 1
             idx += 1
 
@@ -202,17 +199,14 @@ class CompetingApp(GridAPPSD):
             prob += P_load_v == P_load
 
         # SoC constraints of the battery
-        idx = 0
-        if not advise:
-            advise = {name:battery['ratedkW'] for name,battery in Batteries.items()}
-            
+        idx = 0            
         for name in Batteries:
             Batteries[name]['state'] = 'idling'
             prob += soc[idx] == Batteries[name]['SoC'] + \
                     Batteries[name]['eff_c'] * pbatt_c[idx] * deltaT / Batteries[name]['ratedE'] + \
                     1 / Batteries[name]['eff_d'] * pbatt_d[idx] * deltaT / Batteries[name]['ratedE']
-            prob += pbatt_c[idx] <= lamda_c[idx] * advise[name] if advise[name] > 0 else 0
-            prob += pbatt_d[idx] >= - lamda_d[idx] * advise[name] if advise[name] < 0 else 0
+            prob += pbatt_c[idx] <= lamda_c[idx] * advise[name] if advise else 250
+            prob += pbatt_d[idx] >= lamda_d[idx] * advise[name] if advise else -250
             prob += lamda_c[idx] + lamda_d[idx] <= 1
             idx += 1
 
@@ -450,15 +444,18 @@ class CompetingApp(GridAPPSD):
                     if conflict_metric > 0.1 or not advise:
                         advise = {name:np.average(list(power.values())) for name,power in solution.items()} 
                         print("conflict: " , conflict_metric, advise)
-                    else:
-                        solutions[time] = {}
-                        for name, battery in decarb_setpoints.items():
-                            print(name, advise)
+                    else:       
+                        solutions[time] = {}          
+                        for name, battery in BIS.items():  
+                            BIS[name]['P_batt_c'] = advise[name]if advise[name] > 0 else 0
+                            BIS[name]['P_batt_d'] = advise[name] if advise[name] < 0 else 0
+                            charge_energy =  battery['SoC'] + battery['eff_c'] * battery['P_batt_c'] * deltaT / battery['ratedE']
+                            discharge_energy =   + (1 / battery['eff_d']) * battery['P_batt_d'] * deltaT / battery['ratedE']
+                            BIS[name]['SoC'] = charge_energy + discharge_energy
+                            
                             solutions[time][name] = {}
-                            solutions[time][name]['SoC'] = battery['SoC']
+                            solutions[time][name]['SoC'] = BIS[name]['SoC']
                             solutions[time][name]['P_batt'] = advise[name]
-                        break
-                BIS = deepcopy(decarb_setpoints)
                     
                     # Invoke cooperative solution here....
                     # exit()
