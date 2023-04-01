@@ -449,6 +449,7 @@ class CompetingApp(GridAPPSD):
                     
                     if conflict_metric > 0.1 or not advise:
                         advise = {name:np.average(list(power.values())) for name,power in solution.items()} 
+                        print("conflict: " , conflict_metric, advise)
                     else:
                         solutions[time] = {}
                         for name, battery in decarb_setpoints.items():
