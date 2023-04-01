@@ -53,6 +53,7 @@ import pprint
 import numpy as np
 import csv
 from pulp import *
+from copy import deepcopy
 
 from gridappsd import GridAPPSD
 
@@ -88,7 +89,7 @@ class CompetingApp(GridAPPSD):
 
     def resiliency(self, EnergyConsumers, SynchronousMachines, Batteries,
                    SolarPVs, time, load_mult, pv_mult, price, deltaT,
-                   emergencyState) -> dict:
+                   emergencyState, advise) -> dict:
 
         P_load = 0.0
         for name in EnergyConsumers:
@@ -124,14 +125,17 @@ class CompetingApp(GridAPPSD):
             prob += P_load_v == P_load
 
         # SoC constraints of the battery
-        idx = 0
+        idx = 0     
+        if not advise:
+            advise = {name:battery['ratedkW'] for name,battery in Batteries.items()}   
+                 
         for name in Batteries:
             Batteries[name]['state'] = 'idling'
             prob += soc[idx] == Batteries[name]['SoC'] + \
                     Batteries[name]['eff_c'] * pbatt_c[idx] * deltaT / Batteries[name]['ratedE'] + \
                     1 / Batteries[name]['eff_d'] * pbatt_d[idx] * deltaT / Batteries[name]['ratedE']
-            prob += pbatt_c[idx] <= lamda_c[idx] * 250
-            prob += pbatt_d[idx] >= - lamda_d[idx] * 250
+            prob += pbatt_c[idx] <= lamda_c[idx] * advise[name] if advise[name] > 0 else 0
+            prob += pbatt_d[idx] >= - lamda_d[idx] * advise[name] if advise[name] < 0 else 0
             prob += lamda_c[idx] + lamda_d[idx] <= 1
             idx += 1
 
@@ -162,7 +166,7 @@ class CompetingApp(GridAPPSD):
 
     def decarbonization(self, EnergyConsumers, SynchronousMachines, Batteries,
                         SolarPVs, time, load_mult, pv_mult, profit, deltaT,
-                        emergencyState) -> dict:
+                        emergencyState, advise) -> dict:
 
         P_load = 0.0
         for name in EnergyConsumers:
@@ -199,13 +203,16 @@ class CompetingApp(GridAPPSD):
 
         # SoC constraints of the battery
         idx = 0
+        if not advise:
+            advise = {name:battery['ratedkW'] for name,battery in Batteries.items()}
+            
         for name in Batteries:
             Batteries[name]['state'] = 'idling'
             prob += soc[idx] == Batteries[name]['SoC'] + \
                     Batteries[name]['eff_c'] * pbatt_c[idx] * deltaT / Batteries[name]['ratedE'] + \
                     1 / Batteries[name]['eff_d'] * pbatt_d[idx] * deltaT / Batteries[name]['ratedE']
-            prob += pbatt_c[idx] <= lamda_c[idx] * 250
-            prob += pbatt_d[idx] >= - lamda_d[idx] * 250
+            prob += pbatt_c[idx] <= lamda_c[idx] * advise[name] if advise[name] > 0 else 0
+            prob += pbatt_d[idx] >= - lamda_d[idx] * advise[name] if advise[name] < 0 else 0
             prob += lamda_c[idx] + lamda_d[idx] <= 1
             idx += 1
 
@@ -239,8 +246,8 @@ class CompetingApp(GridAPPSD):
     def to_datetime(self, time):
         return datetime(1966, 8, 1, (time - 1) // 4, 15 * ((time - 1) % 4), 0)
 
-    def make_plots(self, title, prefix, Batteries, t_plot, p_batt_plot, soc_plot):
-        for name in Batteries:
+    def make_plots(self, title, prefix, BIS, t_plot, p_batt_plot, soc_plot):
+        for name in BIS:
             plt.figure()
             fig, ax = plt.subplots()
             plt.title(title + ' P_batt:  ' + name, pad=15.0)
@@ -352,24 +359,24 @@ class CompetingApp(GridAPPSD):
         # for item in objs:
         #  print('SynchronousMachine: ' + str(item), flush=True)
 
-        Batteries = {}
+        BIS = {}
         bindings = sparql_mgr.battery_query()
-        print('Count of Batteries: ' + str(len(bindings)), flush=True)
+        print('Count of BIS: ' + str(len(bindings)), flush=True)
         for obj in bindings:
             name = obj['name']['value']
             # bus = obj['bus']['value'].upper()
-            Batteries[name] = {}
-            Batteries[name]['ratedkW'] = float(obj['ratedS']['value']) / 1000.0
-            Batteries[name]['ratedE'] = float(obj['ratedE']['value']) / 1000.0
+            BIS[name] = {}
+            BIS[name]['ratedkW'] = float(obj['ratedS']['value']) / 1000.0
+            BIS[name]['ratedE'] = float(obj['ratedE']['value']) / 1000.0
             # Shiva HACK
-            Batteries[name]['SoC'] = 0.5
-            # Batteries[name]['SoC'] = float(obj['storedE']['value'])/float(obj['ratedE']['value'])
+            BIS[name]['SoC'] = 0.5
+            # BIS[name]['SoC'] = float(obj['storedE']['value'])/float(obj['ratedE']['value'])
             # eff_c and eff_d don't come from the query, but they are used throughout
             # and this is a convenient point to assign them with query results
-            Batteries[name]['eff_c'] = 0.975 * 0.86
-            Batteries[name]['eff_d'] = 0.975 * 0.86
-            print('Battery name: ' + name + ', ratedE: ' + str(round(Batteries[name]['ratedE'], 4)) + ', SoC: ' + str(
-                round(Batteries[name]['SoC'], 4)), flush=True)
+            BIS[name]['eff_c'] = 0.975 * 0.86
+            BIS[name]['eff_d'] = 0.975 * 0.86
+            print('Battery name: ' + name + ', ratedE: ' + str(round(BIS[name]['ratedE'], 4)) + ', SoC: ' + str(
+                round(BIS[name]['SoC'], 4)), flush=True)
 
         SolarPVs = {}
         bindings = sparql_mgr.pv_query()
@@ -397,8 +404,8 @@ class CompetingApp(GridAPPSD):
 
             deltaT = 0.25  # timestamp interval in fractional hours, 0.25 = 15 min.
 
-            for name in Batteries:
-                Batteries[name]['initial_soc'] = Batteries[name]['SoC']
+            for name in BIS:
+                BIS[name]['initial_soc'] = BIS[name]['SoC']
 
             for row in reader:
                 time = int(row[0])
@@ -407,48 +414,53 @@ class CompetingApp(GridAPPSD):
                 price = float(row[3])
                 # time = 73
                 
-                # Resilience App
-                resiliency_setpoints = self.resiliency(EnergyConsumers, SynchronousMachines, Batteries, SolarPVs, time, loadshape, solar,
-                                price, deltaT, emergencyState)
+                advise = {}
+                for _ in range(10):
+                    # Resilience App
+                    resiliency_setpoints = self.resiliency(EnergyConsumers, SynchronousMachines, deepcopy(BIS), SolarPVs, time, loadshape, solar,
+                                    price, deltaT, emergencyState, advise)
 
-                for name, battery in resiliency_setpoints.items():
-                    solution[name] = {}
-                    print("res: " , name, battery)
-                    if battery['state'] == 'charging':
-                        solution[name]['resilience'] = battery['P_batt_c']
-                    elif battery['state'] == 'discharging':
-                        solution[name]['resilience'] = -battery['P_batt_d']
+                    for name, battery in resiliency_setpoints.items():
+                        solution[name] = {}
+                        print("res: " , name, battery)
+                        print("base: " , BIS[name])
+                        if battery['state'] == 'charging':
+                            solution[name]['resilience'] = battery['P_batt_c']
+                        elif battery['state'] == 'discharging':
+                            solution[name]['resilience'] = -battery['P_batt_d']
+                        else:
+                            solution[name]['resilience'] = 0.0
+
+                    # Decarbonization App
+                    decarb_setpoints = self.decarbonization(EnergyConsumers, SynchronousMachines, deepcopy(BIS), SolarPVs, time, loadshape, solar,
+                                        price, deltaT, emergencyState, advise)
+
+                    for name, battery in decarb_setpoints.items():
+                        print("decarb: " , name, battery)
+                        print("base: " , BIS[name])
+                        if battery['state'] == 'charging':
+                            solution[name]['decarbonization'] = battery['P_batt_c']
+                        elif battery['state'] == 'discharging':
+                            solution[name]['decarbonization'] = -battery['P_batt_d']
+                        else:
+                            solution[name]['decarbonization'] = 0.0
+                            
+                    conflict_metric = self.conflict_matrix(solution)
+                    
+                    if conflict_metric > 0.1 or not advise:
+                        advise = {name:np.average(list(power.values())) for name,power in solution.items()} 
                     else:
-                        solution[name]['resilience'] = 0.0
-                        
-                print(solution)
-
-                # Decarbonization App
-                decarb_setpoints = self.decarbonization(EnergyConsumers, SynchronousMachines, Batteries, SolarPVs, time, loadshape, solar,
-                                     price, deltaT, emergencyState)
-
-                for name, battery in decarb_setpoints.items():
-                    print("decarb: " , name, battery)
-                    if battery['state'] == 'charging':
-                        solution[name]['decarbonization'] = battery['P_batt_c']
-                    elif battery['state'] == 'discharging':
-                        solution[name]['decarbonization'] = -battery['P_batt_d']
-                    else:
-                        solution[name]['decarbonization'] = 0.0
-                        
-                print(solution)
-                        
-                conflict_metric = self.conflict_matrix(solution)
-                print('\nConflict Metric: ', conflict_metric, flush=True)
-
-                solutions[time] = {}
-                solutions[time]['solution'] = solution
-                solutions[time]['conflict'] = conflict_metric
-                
-                Batteries = resiliency_setpoints
-                
-                # Invoke cooperative solution here....
-                # exit()
+                        solutions[time] = {}
+                        for name, battery in decarb_setpoints.items():
+                            print(name, advise)
+                            solutions[time][name] = {}
+                            solutions[time][name]['SoC'] = battery['SoC']
+                            solutions[time][name]['P_batt'] = advise[name]
+                        break
+                BIS = deepcopy(decarb_setpoints)
+                    
+                    # Invoke cooperative solution here....
+                    # exit()
 
         json_fp = open('output/' + 'conflict' + '_solution.json', 'w')
         json.dump(solutions, json_fp, indent=2)
