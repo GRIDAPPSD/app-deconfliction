@@ -242,15 +242,15 @@ class AppUtil:
       #plot.show()
 
 
-  def batt_to_solution(Batteries, solution):
+  def batt_to_resolution(Batteries, resolution):
     for name in Batteries:
-      solution[name] = {}
+      resolution[name] = {}
       if Batteries[name]['state'] == 'charging':
-        solution[name]['P_batt'] = Batteries[name]['P_batt_c']
+        resolution[name]['P_batt'] = Batteries[name]['P_batt_c']
       elif Batteries[name]['state'] == 'discharging':
-        solution[name]['P_batt'] = -Batteries[name]['P_batt_d']
+        resolution[name]['P_batt'] = -Batteries[name]['P_batt_d']
       else:
-        solution[name]['P_batt'] = 0.0
+        resolution[name]['P_batt'] = 0.0
 
-      solution[name]['SoC'] = Batteries[name]['SoC']
+      resolution[name]['SoC'] = Batteries[name]['SoC']
 

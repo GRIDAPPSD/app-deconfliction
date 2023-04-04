@@ -106,40 +106,40 @@ class AppDeconflictor(GridAPPSD):
           continue # only executed if the inner loop did not break
       break # only executed if the inner loop did break
     #conflictFlag = True # just override it to always call deconflict method
-    print('Solution conflictFlag: ' + str(conflictFlag), flush=True)
+    print('Resolution conflictFlag: ' + str(conflictFlag), flush=True)
 
     # Step 3: If there is a conflict, then the call the deconflict method for
-    #         the given methodology to produce a solution
+    #         the given methodology to produce a resolution
     if conflictFlag:
-      newSolutionSetpoints,newSolutionTimestamps= self.decon_method.deconflict()
+      newResolutionSetpoints,newResolutionTimestamps= self.decon_method.deconflict()
 
-    # Step 4: If there is no conflict, then the new solution is simply the
-    #         last solution with the new set-points added in
+    # Step 4: If there is no conflict, then the new resolution is simply the
+    #         last resolution with the new set-points added in
     else:
-      newSolutionSetpoints = copy.deepcopy(self.SolutionSetpoints)
-      newSolutionTimestamps = copy.deepcopy(self.SolutionTimestamps)
+      newResolutionSetpoints = copy.deepcopy(self.ResolutionSetpoints)
+      newResolutionTimestamps = copy.deepcopy(self.ResolutionTimestamps)
       for device, value in set_points.items():
-        newSolutionSetpoints[device] = value
-        newSolutionTimestamps[device] = timestamp
+        newResolutionSetpoints[device] = value
+        newResolutionTimestamps[device] = timestamp
 
-    print('Solution deconflicted set-points: ' + str(newSolutionSetpoints), flush=True)
-    print('Solution deconflicted timestamps: ' + str(newSolutionTimestamps), flush=True)
+    print('Resolution deconflicted set-points: ' + str(newResolutionSetpoints), flush=True)
+    print('Resolution deconflicted timestamps: ' + str(newResolutionTimestamps), flush=True)
 
-    # Step 5: Iterate over solution and send set-points to devices that have
+    # Step 5: Iterate over resolution and send set-points to devices that have
     #         different or new values
     updated_socs = {}
-    for device, value in newSolutionSetpoints.items():
-      if device not in self.SolutionSetpoints or \
-         (newSolutionTimestamps[device]==timestamp and \
-          (self.SolutionTimestamps[device]!=timestamp or \
-           self.SolutionSetpoints[device]!=value)):
+    for device, value in newResolutionSetpoints.items():
+      if device not in self.ResolutionSetpoints or \
+         (newResolutionTimestamps[device]==timestamp and \
+          (self.ResolutionTimestamps[device]!=timestamp or \
+           self.ResolutionSetpoints[device]!=value)):
 
-        # determine if a solution for this device for this timestamp has already
+        # determine if a resolution for this device for this timestamp has already
         # been sent
-        if device in self.SolutionTimestamps and \
-           self.SolutionTimestamps[device]==timestamp:
+        if device in self.ResolutionTimestamps and \
+           self.ResolutionTimestamps[device]==timestamp:
           # rollback the previous contribution to SoC as the new one overrides
-          backval = self.SolutionSetpoints[device]
+          backval = self.ResolutionSetpoints[device]
           if backval > 0:
             self.Batteries[device]['SoC'] -= self.AppUtil.charge_SoC(backval,
                                             device, self.Batteries, self.deltaT)
@@ -163,20 +163,20 @@ class AppDeconflictor(GridAPPSD):
               str(value) + ' (new SoC: ' +
               str(updated_socs[device]) + ')', flush=True)
 
-    # it's also possible a device from the last solution does not appear in
-    # the new solution.  In this case it's a "don't care" for the new solution
+    # it's also possible a device from the last resolution does not appear in
+    # the new resolution.  In this case it's a "don't care" for the new resolution
     # and the device is left at the previous value so nothing is sent
-    if len(self.SolutionSetpoints) > len(newSolutionSetpoints):
-      for device in self.SolutionSetpoints:
-        if device not in newSolutionSetpoints:
-          print('==> Device deleted from solution: ' + device, flush=True)
+    if len(self.ResolutionSetpoints) > len(newResolutionSetpoints):
+      for device in self.ResolutionSetpoints:
+        if device not in newResolutionSetpoints:
+          print('==> Device deleted from resolution: ' + device, flush=True)
 
-    # Step 6: Update the current solution to the new solution to be ready
+    # Step 6: Update the current resolution to the new resolution to be ready
     #         for the next set-points message
-    self.SolutionSetpoints.clear()
-    self.SolutionTimestamps.clear()
-    self.SolutionSetpoints = newSolutionSetpoints
-    self.SolutionTimestamps = newSolutionTimestamps
+    self.ResolutionSetpoints.clear()
+    self.ResolutionTimestamps.clear()
+    self.ResolutionSetpoints = newResolutionSetpoints
+    self.ResolutionTimestamps = newResolutionTimestamps
 
     # Step 7: Feedback loop with competing apps through updated SoC values so
     #         they can make new set-point requests based on actual changes.
@@ -225,8 +225,8 @@ class AppDeconflictor(GridAPPSD):
     self.ConflictSetpoints = {}
     self.ConflictTimestamps = {}
 
-    self.SolutionSetpoints = {}
-    self.SolutionTimestamps = {}
+    self.ResolutionSetpoints = {}
+    self.ResolutionTimestamps = {}
 
     # Step 0: Import deconfliction methodology class for this invocation of
     #         the Deconflictor based on method command line argument and
@@ -254,11 +254,12 @@ class AppDeconflictor(GridAPPSD):
     if not os.path.isdir('output'):
       os.makedirs('output')
 
-    json_fp = open('output/deconflictor_solution.json', 'w')
-    json.dump(self.solution, json_fp, indent=2)
+    json_fp = open('output/deconflictor_resolution.json', 'w')
+    json.dump(self.ResolutionSetpoints, json_fp, indent=2)
+    json.dump(self.ResolutionTimestamps, json_fp, indent=2)
     json_fp.close()
 
-    self.AppUtil.make_plots('Deconflictor Solution', 'deconflictor',
+    self.AppUtil.make_plots('Deconflictor Resolution', 'deconflictor',
                    self.Batteries, self.t_plot, self.p_batt_plot, self.soc_plot)
 
     return
