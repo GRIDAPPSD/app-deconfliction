@@ -26,5 +26,5 @@ else
 fi
 
 mkdir -p output
-python3 app-deconflictor.py $SIMID "$SIMREQ" $METHOD 2>&1 | tee output/app-deconflictor.log
+python3 deconfliction-pipeline.py $SIMID "$SIMREQ" $METHOD 2>&1 | tee output/deconfliction-pipeline.log
 
