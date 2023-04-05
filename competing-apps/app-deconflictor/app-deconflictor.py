@@ -64,7 +64,7 @@ from datetime import datetime
 
 from time import sleep
 
-class AppDeconflictor(GridAPPSD):
+class DeconflictionPipeline(GridAPPSD):
 
   def SetpointProcessor(self, app_name, timestamp, set_points):
     # Update conflict matrix with newly provided set-points
@@ -275,7 +275,7 @@ class AppDeconflictor(GridAPPSD):
     gapps.subscribe(service_output_topic('gridappsd-competing-app',
                                          simulation_id), self)
 
-    print('Initialized app deconflictor and now waiting for set-points messages...\n', flush=True)
+    print('Initialized deconfliction pipeline and now waiting for set-points messages...\n', flush=True)
 
     self.gapps = gapps
     self.exit_flag = False
@@ -299,7 +299,7 @@ class AppDeconflictor(GridAPPSD):
 
 
 def _main():
-  print('Starting app deconflictor code...', flush=True)
+  print('Starting deconfliction pipeline code...', flush=True)
 
   # for loading modules
   if (os.path.isdir('shared')):
@@ -329,8 +329,7 @@ def _main():
   gapps = GridAPPSD(opts.simulation_id)
   assert gapps.connected
 
-  deconflictor = AppDeconflictor(gapps, feeder_mrid,
-                                 opts.simulation_id, opts.method)
+  DeconflictionPipeline(gapps, feeder_mrid, opts.simulation_id, opts.method)
 
 
 if __name__ == "__main__":
