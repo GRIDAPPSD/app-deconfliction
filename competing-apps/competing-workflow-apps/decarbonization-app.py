@@ -160,17 +160,17 @@ class CompetingApp(GridAPPSD):
                          self.Batteries, self.SolarPVs, self.deltaT,
                          self.outage, time, loadshape, solar, price)
 
-    self.resolution[time] = {}
-    self.AppUtil.batt_to_resolution(self.Batteries, self.resolution[time])
+    self.solution[time] = {}
+    self.AppUtil.batt_to_solution(self.Batteries, self.solution[time])
 
     for name in self.Batteries:
-      self.p_batt_plot[name].append(self.resolution[time][name]['P_batt'])
+      self.p_batt_plot[name].append(self.solution[time][name]['P_batt'])
       self.soc_plot[name].append(self.Batteries[name]['SoC'])
 
-    resolution = self.resolution[time]
+    solution = self.solution[time]
     set_points = {}
-    for name in resolution:
-      set_points[name] = resolution[name]['P_batt']
+    for name in solution:
+      set_points[name] = solution[name]['P_batt']
 
     out_message = {
       'app_name': 'decarbonization-app',
@@ -212,7 +212,7 @@ class CompetingApp(GridAPPSD):
       self.soc_plot[name] = []
       self.p_batt_plot[name] = []
 
-    self.resolution = {}
+    self.solution = {}
 
     # topic for sending out set_points messages
     self.publish_topic = service_output_topic('gridappsd-competing-app', '0')
@@ -236,8 +236,8 @@ class CompetingApp(GridAPPSD):
     if not os.path.isdir('output'):
       os.makedirs('output')
 
-    json_fp = open('output/decarbonization_resolution.json', 'w')
-    json.dump(self.resolution, json_fp, indent=2)
+    json_fp = open('output/decarbonization_solution.json', 'w')
+    json.dump(self.solution, json_fp, indent=2)
     json_fp.close()
 
     self.AppUtil.make_plots('Decarbonization Exclusivity', 'decarbonization',
