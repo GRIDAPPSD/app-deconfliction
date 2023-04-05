@@ -66,13 +66,8 @@ from time import sleep
 
 class AppDeconflictor(GridAPPSD):
 
-  def on_message(self, headers, message):
-    print('Received set-points message: ' + str(message), flush=True)
-
-    app_name = message['app_name']
-    timestamp = int(message['timestamp'])
-
-    # Step 1: Update conflict matrix with newly provided set-points
+  def SetpointProcessor(self, app_name, timestamp, set_points):
+    # Update conflict matrix with newly provided set-points
     self.ConflictTimestamps[app_name] = timestamp
 
     # delete any existing matches for app_name so there are no stragglers
@@ -82,7 +77,6 @@ class AppDeconflictor(GridAPPSD):
         self.ConflictSetpoints[device].pop(app_name)
 
     # now add the new set-points for app_name
-    set_points = message['set_points']
     for device, value in set_points.items():
       #print('device: ' + device + ', value: ' + str(value), flush=True)
       if device not in self.ConflictSetpoints:
@@ -93,7 +87,9 @@ class AppDeconflictor(GridAPPSD):
     print('ConflictTimestamps: ' + str(self.ConflictTimestamps), flush=True)
     print('ConflictSetpoints: ' + str(self.ConflictSetpoints), flush=True)
 
-    # Step 2: Determine if there is a new conflict
+
+  def ConflictIdentification(self, app_name, timestamp, set_points):
+    # Determine if there is a new conflict
     conflictFlag = False
     for device in set_points:
       for app in self.ConflictSetpoints[device]:
@@ -105,16 +101,21 @@ class AppDeconflictor(GridAPPSD):
         else:
           continue # only executed if the inner loop did not break
       break # only executed if the inner loop did break
+
     #conflictFlag = True # just override it to always call deconflict method
     print('Resolution conflictFlag: ' + str(conflictFlag), flush=True)
 
-    # Step 3: If there is a conflict, then the call the deconflict method for
-    #         the given methodology to produce a resolution
-    if conflictFlag:
-      newResolutionSetpoints,newResolutionTimestamps= self.decon_method.deconflict()
+    return conflictFlag
 
-    # Step 4: If there is no conflict, then the new resolution is simply the
-    #         last resolution with the new set-points added in
+
+  def DeconflictionAndResolution(self, timestamp, set_points, conflictFlag):
+    # If there is a conflict, then the call the deconflict method for the given
+    # methodology to produce a resolution
+    if conflictFlag:
+      newResolutionSetpoints,newResolutionTimestamps = self.decon_method.deconflict()
+
+    # If there is no conflict, then the new resolution is simply the last resolution
+    # with the new set-points added in
     else:
       newResolutionSetpoints = copy.deepcopy(self.ResolutionSetpoints)
       newResolutionTimestamps = copy.deepcopy(self.ResolutionTimestamps)
@@ -125,8 +126,12 @@ class AppDeconflictor(GridAPPSD):
     print('Resolution deconflicted set-points: ' + str(newResolutionSetpoints), flush=True)
     print('Resolution deconflicted timestamps: ' + str(newResolutionTimestamps), flush=True)
 
-    # Step 5: Iterate over resolution and send set-points to devices that have
-    #         different or new values
+    return newResolutionSetpoints,newResolutionTimestamps
+
+
+  def DeviceDispatcher(self, timestamp, newResolutionSetpoints, newResolutionTimestamps):
+    # Iterate over resolution and send set-points to devices that have different
+    # or new values
     updated_socs = {}
     for device, value in newResolutionSetpoints.items():
       if device not in self.ResolutionSetpoints or \
@@ -171,19 +176,40 @@ class AppDeconflictor(GridAPPSD):
         if device not in newResolutionSetpoints:
           print('==> Device deleted from resolution: ' + device, flush=True)
 
-    # Step 6: Update the current resolution to the new resolution to be ready
-    #         for the next set-points message
-    self.ResolutionSetpoints.clear()
-    self.ResolutionTimestamps.clear()
-    self.ResolutionSetpoints = newResolutionSetpoints
-    self.ResolutionTimestamps = newResolutionTimestamps
+    return updated_socs
 
-    # Step 7: Feedback loop with competing apps through updated SoC values so
-    #         they can make new set-point requests based on actual changes.
-    #         If running from a GridLAB-D simulation where Deconflictor updates
-    #         devices in simulation, this feedback would come to apps through
-    #         simulation measurement messages and there would be no need to
-    #         explicitly publish updates
+
+  def on_message(self, headers, message):
+    print('Received set-points message: ' + str(message), flush=True)
+
+    app_name = message['app_name']
+    timestamp = int(message['timestamp'])
+    set_points = message['set_points']
+
+    # Step 1: Setpoint Processor
+    self.SetpointProcessor(app_name, timestamp, set_points)
+
+    # Step 2: Feasibility Maintainer -- not implemented for prototype
+
+    # Step 3: Deconflictor
+    # Step 3.1: Conflict Identification
+    conflictFlag = self.ConflictIdentification(app_name, timestamp, set_points)
+
+    # Steps 3.2 and 3.3: Deconfliction Solution and Resolution
+    newResolutionSetpoints,newResolutionTimestamps = self.DeconflictionAndResolution(
+                                                       timestamp, set_points, conflictFlag)
+
+    # Step 4: Setpoint Validator -- not implemented for prototype
+
+    # Step 5: Device Dispatcher
+    updated_socs = self.DeviceDispatcher(timestamp,
+                                         newResolutionSetpoints, newResolutionTimestamps)
+
+    # Feedback loop with competing apps through updated SoC values so they can make
+    # new set-point requests based on actual changes
+    # If running from a GridLAB-D simulation where Deconflictor Pipeline updates
+    # devices in simulation, this feedback would come to apps through simulation
+    # measurement messages and there would be no need to explicitly publish updates
     if len(updated_socs) > 0:
       socs_message = {
         'timestamp': timestamp,
@@ -193,6 +219,13 @@ class AppDeconflictor(GridAPPSD):
       self.gapps.send(self.publish_topic, socs_message)
 
     print(flush=True) # blank line
+
+    # Update the current resolution to the new resolution to be ready for the
+    # next set-points message
+    self.ResolutionSetpoints.clear()
+    self.ResolutionTimestamps.clear()
+    self.ResolutionSetpoints = newResolutionSetpoints
+    self.ResolutionTimestamps = newResolutionTimestamps
 
     return
 
