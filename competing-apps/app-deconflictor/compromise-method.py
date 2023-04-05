@@ -3,16 +3,16 @@
 
 class DeconflictionMethod:
 
-  def __init__(self, ConflictSetpoints, ConflictTimestamps):
-    self.ConflictSetpoints = ConflictSetpoints
-    self.ConflictTimestamps = ConflictTimestamps
+  def __init__(self, ConflictMatrix):
+    self.ConflictMatrix = ConflictMatrix
 
 
   def deconflict(self):
-    SolutionSetpoints = {}
-    SolutionTimestamps = {}
+    ResolutionVector = {}
+    ResolutionVector['setpoints'] = {}
+    ResolutionVector['timestamps'] = {}
 
-    for device in self.ConflictSetpoints:
+    for device in self.ConflictMatrix['setpoints']:
       compCount = 0
       compTotal = 0.0
       compTimestamp = 0
@@ -20,24 +20,26 @@ class DeconflictionMethod:
       otherTotal = 0.0
       otherTimestamp = 0
 
-      for app in self.ConflictSetpoints[device]:
+      for app in self.ConflictMatrix['setpoints'][device]:
         if app=='resilience-app' or app=='decarbonization-app':
           compCount += 1
-          compTotal += self.ConflictSetpoints[device][app]
-          compTimestamp = max(compTimestamp, self.ConflictTimestamps[app])
+          compTotal += self.ConflictMatrix['setpoints'][device][app]
+          compTimestamp = max(compTimestamp,
+                              self.ConflictMatrix['timestamps'][app])
           if compCount == 2:
             break
         else:
           otherCount += 1
-          otherTotal += self.ConflictSetpoints[device][app]
-          otherTimestamp = max(otherTimestamp, self.ConflictTimestamps[app])
+          otherTotal += self.ConflictMatrix['setpoints'][device][app]
+          otherTimestamp = max(otherTimestamp,
+                               self.ConflictMatrix['timestamps'][app])
 
       if compCount > 0:
-        SolutionSetpoints[device] = compTotal/compCount
-        SolutionTimestamps[device] = compTimestamp
+        ResolutionVector['setpoints'][device] = compTotal/compCount
+        ResolutionVector['timestamps'][device] = compTimestamp
       elif otherCount > 0:
-        SolutionSetpoints[device] = otherTotal/otherCount
-        SolutionTimestamps[device] = otherTimestamp
+        ResolutionVector['setpoints'][device] = otherTotal/otherCount
+        ResolutionVector['timestamps'][device] = otherTimestamp
 
-    return SolutionSetpoints, SolutionTimestamps
+    return ResolutionVector
 

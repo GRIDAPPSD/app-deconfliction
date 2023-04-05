@@ -68,34 +68,33 @@ class DeconflictionPipeline(GridAPPSD):
 
   def SetpointProcessor(self, app_name, timestamp, set_points):
     # Update conflict matrix with newly provided set-points
-    self.ConflictTimestamps[app_name] = timestamp
+    self.ConflictMatrix['timestamps'][app_name] = timestamp
 
     # delete any existing matches for app_name so there are no stragglers
     # from past timestamps
-    for device in self.ConflictSetpoints:
-      if app_name in self.ConflictSetpoints[device]:
-        self.ConflictSetpoints[device].pop(app_name)
+    for device in self.ConflictMatrix['setpoints']:
+      if app_name in self.ConflictMatrix['setpoints'][device]:
+        self.ConflictMatrix['setpoints'][device].pop(app_name)
 
     # now add the new set-points for app_name
     for device, value in set_points.items():
       #print('device: ' + device + ', value: ' + str(value), flush=True)
-      if device not in self.ConflictSetpoints:
-        self.ConflictSetpoints[device] = {}
+      if device not in self.ConflictMatrix['setpoints']:
+        self.ConflictMatrix['setpoints'][device] = {}
 
-      self.ConflictSetpoints[device][app_name] = value
+      self.ConflictMatrix['setpoints'][device][app_name] = value
 
-    print('ConflictTimestamps: ' + str(self.ConflictTimestamps), flush=True)
-    print('ConflictSetpoints: ' + str(self.ConflictSetpoints), flush=True)
+    print('ConflictMatrix: ' + str(self.ConflictMatrix), flush=True)
 
 
   def ConflictIdentification(self, app_name, timestamp, set_points):
     # Determine if there is a new conflict
     conflictFlag = False
     for device in set_points:
-      for app in self.ConflictSetpoints[device]:
+      for app in self.ConflictMatrix['setpoints'][device]:
         if app!=app_name and \
-           (set_points[device]!=self.ConflictSetpoints[device][app] or \
-            timestamp!=self.ConflictTimestamps[app]):
+           (set_points[device]!=self.ConflictMatrix['setpoints'][device][app] \
+            or timestamp!=self.ConflictMatrix['timestamps'][app]):
           conflictFlag = True
           break # breaking out of nested loops courtesy of Stack Overflow
         else:
@@ -103,48 +102,46 @@ class DeconflictionPipeline(GridAPPSD):
       break # only executed if the inner loop did break
 
     #conflictFlag = True # just override it to always call deconflict method
-    print('Resolution conflictFlag: ' + str(conflictFlag), flush=True)
+    print('conflictFlag: ' + str(conflictFlag), flush=True)
 
     return conflictFlag
 
 
-  def DeconflictionAndResolution(self, timestamp, set_points, conflictFlag):
+  def DeconflictionToResolution(self, timestamp, set_points, conflictFlag):
     # If there is a conflict, then the call the deconflict method for the given
     # methodology to produce a resolution
     if conflictFlag:
-      newResolutionSetpoints,newResolutionTimestamps = self.decon_method.deconflict()
+      newResolutionVector = self.decon_method.deconflict()
 
     # If there is no conflict, then the new resolution is simply the last resolution
     # with the new set-points added in
     else:
-      newResolutionSetpoints = copy.deepcopy(self.ResolutionSetpoints)
-      newResolutionTimestamps = copy.deepcopy(self.ResolutionTimestamps)
+      newResolutionVector = copy.deepcopy(self.ResolutionVector)
       for device, value in set_points.items():
-        newResolutionSetpoints[device] = value
-        newResolutionTimestamps[device] = timestamp
+        newResolutionVector['setpoints'][device] = value
+        newResolutionVector['timestamps'][device] = timestamp
 
-    print('Resolution deconflicted set-points: ' + str(newResolutionSetpoints), flush=True)
-    print('Resolution deconflicted timestamps: ' + str(newResolutionTimestamps), flush=True)
+    print('ResolutionVector: ' + str(newResolutionVector), flush=True)
 
-    return newResolutionSetpoints,newResolutionTimestamps
+    return newResolutionVector
 
 
-  def DeviceDispatcher(self, timestamp, newResolutionSetpoints, newResolutionTimestamps):
-    # Iterate over resolution and send set-points to devices that have different
-    # or new values
+  def DeviceDispatcher(self, timestamp, newResolutionVector):
+    # Iterate over resolution and send set-points to devices that have
+    # different or new values
     updated_socs = {}
-    for device, value in newResolutionSetpoints.items():
-      if device not in self.ResolutionSetpoints or \
-         (newResolutionTimestamps[device]==timestamp and \
-          (self.ResolutionTimestamps[device]!=timestamp or \
-           self.ResolutionSetpoints[device]!=value)):
+    for device, value in newResolutionVector['setpoints'].items():
+      if device not in self.ResolutionVector['setpoints'] or \
+         (newResolutionVector['timestamps'][device]==timestamp and \
+          (self.ResolutionVector['timestamps'][device]!=timestamp or \
+           self.ResolutionVector['setpoints'][device]!=value)):
 
-        # determine if a resolution for this device for this timestamp has already
-        # been sent
-        if device in self.ResolutionTimestamps and \
-           self.ResolutionTimestamps[device]==timestamp:
+        # determine if a resolution for this device for this timestamp has
+        # already been sent
+        if device in self.ResolutionVector['timestamps'] and \
+           self.ResolutionVector['timestamps'][device]==timestamp:
           # rollback the previous contribution to SoC as the new one overrides
-          backval = self.ResolutionSetpoints[device]
+          backval = self.ResolutionVector['setpoints'][device]
           if backval > 0:
             self.Batteries[device]['SoC'] -= self.AppUtil.charge_SoC(backval,
                                             device, self.Batteries, self.deltaT)
@@ -168,15 +165,32 @@ class DeconflictionPipeline(GridAPPSD):
               str(value) + ' (new SoC: ' +
               str(updated_socs[device]) + ')', flush=True)
 
-    # it's also possible a device from the last resolution does not appear in
-    # the new resolution.  In this case it's a "don't care" for the new resolution
-    # and the device is left at the previous value so nothing is sent
-    if len(self.ResolutionSetpoints) > len(newResolutionSetpoints):
-      for device in self.ResolutionSetpoints:
-        if device not in newResolutionSetpoints:
+    # it's also possible a device from the last resolution does not appear
+    # in the new resolution.  In this case it's a "don't care" for the new
+    # resolution and the device is left at the previous value with nothing sent
+    if len(self.ResolutionVector['setpoints']) > \
+       len(newResolutionVector['setpoints']):
+      for device in self.ResolutionVector['setpoints']:
+        if device not in newResolutionVector['setpoints']:
           print('==> Device deleted from resolution: ' + device, flush=True)
 
     return updated_socs
+
+
+  def AppFeedback(self, timestamp, updated_socs):
+    # If running from a GridLAB-D simulation where Deconflictor Pipeline
+    # updates devices in simulation, this feedback would come to apps through
+    # simulation measurement messages and there would be no need to explicitly
+    # publish updates
+    if len(updated_socs) > 0:
+      socs_message = {
+        'timestamp': timestamp,
+        'SoC': updated_socs
+      }
+      print('Sending updated-socs message: ' + str(socs_message), flush=True)
+      self.gapps.send(self.publish_topic, socs_message)
+
+    print(flush=True) # blank line
 
 
   def on_message(self, headers, message):
@@ -196,36 +210,22 @@ class DeconflictionPipeline(GridAPPSD):
     conflictFlag = self.ConflictIdentification(app_name, timestamp, set_points)
 
     # Steps 3.2 and 3.3: Deconfliction Solution and Resolution
-    newResolutionSetpoints,newResolutionTimestamps = self.DeconflictionAndResolution(
-                                                       timestamp, set_points, conflictFlag)
+    newResolutionVector = self.DeconflictionToResolution(timestamp, set_points,
+                                                         conflictFlag)
 
     # Step 4: Setpoint Validator -- not implemented for prototype
 
     # Step 5: Device Dispatcher
-    updated_socs = self.DeviceDispatcher(timestamp,
-                                         newResolutionSetpoints, newResolutionTimestamps)
+    updated_socs = self.DeviceDispatcher(timestamp, newResolutionVector)
 
-    # Feedback loop with competing apps through updated SoC values so they can make
-    # new set-point requests based on actual changes
-    # If running from a GridLAB-D simulation where Deconflictor Pipeline updates
-    # devices in simulation, this feedback would come to apps through simulation
-    # measurement messages and there would be no need to explicitly publish updates
-    if len(updated_socs) > 0:
-      socs_message = {
-        'timestamp': timestamp,
-        'SoC': updated_socs
-      }
-      print('Sending updated-socs message: ' + str(socs_message), flush=True)
-      self.gapps.send(self.publish_topic, socs_message)
-
-    print(flush=True) # blank line
+    # Feedback loop with competing apps through updated SoC values so they
+    # can make new set-point requests based on actual changes
+    self.AppFeedback(timestamp, updated_socs)
 
     # Update the current resolution to the new resolution to be ready for the
     # next set-points message
-    self.ResolutionSetpoints.clear()
-    self.ResolutionTimestamps.clear()
-    self.ResolutionSetpoints = newResolutionSetpoints
-    self.ResolutionTimestamps = newResolutionTimestamps
+    self.ResolutionVector.clear()
+    self.ResolutionVector = newResolutionVector
 
     return
 
@@ -255,19 +255,20 @@ class DeconflictionPipeline(GridAPPSD):
       self.soc_plot[name] = []
       self.p_batt_plot[name] = []
 
-    self.ConflictSetpoints = {}
-    self.ConflictTimestamps = {}
+    self.ConflictMatrix = {}
+    self.ConflictMatrix['setpoints'] = {}
+    self.ConflictMatrix['timestamps'] = {}
 
-    self.ResolutionSetpoints = {}
-    self.ResolutionTimestamps = {}
+    self.ResolutionVector = {}
+    self.ResolutionVector['setpoints'] = {}
+    self.ResolutionVector['timestamps'] = {}
 
     # Step 0: Import deconfliction methodology class for this invocation of
     #         the Deconflictor based on method command line argument and
     #         create an instance of the class
     DeconflictionMethod = getattr(importlib.import_module(method),
                                   'DeconflictionMethod')
-    self.decon_method = DeconflictionMethod(self.ConflictSetpoints,
-                                            self.ConflictTimestamps)
+    self.decon_method = DeconflictionMethod(self.ConflictMatrix)
 
     self.publish_topic = service_output_topic('gridappsd-app-deconflictor', '0')
 
@@ -288,8 +289,7 @@ class DeconflictionPipeline(GridAPPSD):
       os.makedirs('output')
 
     json_fp = open('output/deconflictor_resolution.json', 'w')
-    json.dump(self.ResolutionSetpoints, json_fp, indent=2)
-    json.dump(self.ResolutionTimestamps, json_fp, indent=2)
+    json.dump(self.ResolutionVector, json_fp, indent=2)
     json_fp.close()
 
     self.AppUtil.make_plots('Deconflictor Resolution', 'deconflictor',
