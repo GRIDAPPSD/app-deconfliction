@@ -227,6 +227,19 @@ class DeconflictionPipeline(GridAPPSD):
     self.ResolutionVector.clear()
     self.ResolutionVector = newResolutionVector
 
+    # For plotting
+    datetime = self.AppUtil.to_datetime(timestamp)
+    if datetime not in self.t_plot:
+      self.t_plot.append(datetime)
+      for name in self.ResolutionVector['setpoints']:
+        self.p_batt_plot[name].append(self.ResolutionVector['setpoints'][name])
+        self.soc_plot[name].append(self.Batteries[name]['SoC'])
+    else:
+      # replacing last list item is equivalent to rollback
+      for name in self.ResolutionVector['setpoints']:
+        self.p_batt_plot[name][-1] = self.ResolutionVector['setpoints'][name]
+        self.soc_plot[name][-1] = self.Batteries[name]['SoC']
+
     return
 
 
@@ -280,20 +293,17 @@ class DeconflictionPipeline(GridAPPSD):
     print('Initialized deconfliction pipeline and now waiting for set-points messages...\n', flush=True)
 
     self.gapps = gapps
-    self.exit_flag = False
 
-    while not self.exit_flag:
-      time.sleep(0.1)
+    try:
+      while True:
+        time.sleep(0.1)
 
-    # make sure output directory exists since that's where results go
-    if not os.path.isdir('output'):
-      os.makedirs('output')
+    except KeyboardInterrupt:
+      # make sure output directory exists since that's where results go
+      if not os.path.isdir('output'):
+        os.makedirs('output')
 
-    json_fp = open('output/deconflictor_resolution.json', 'w')
-    json.dump(self.ResolutionVector, json_fp, indent=2)
-    json_fp.close()
-
-    self.AppUtil.make_plots('Deconflictor Resolution', 'deconflictor',
+      self.AppUtil.make_plots('Deconfliction Resolution', 'deconfliction',
                    self.Batteries, self.t_plot, self.p_batt_plot, self.soc_plot)
 
     return
