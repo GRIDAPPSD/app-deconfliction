@@ -270,7 +270,8 @@ class DeconflictionPipeline(GridAPPSD):
                                   'DeconflictionMethod')
     self.decon_method = DeconflictionMethod(self.ConflictMatrix)
 
-    self.publish_topic = service_output_topic('gridappsd-app-deconflictor', '0')
+    self.publish_topic = service_output_topic(
+                                 'gridappsd-deconfliction-pipeline', '0')
 
     # subscribe to simulation output messages
     gapps.subscribe(service_output_topic('gridappsd-competing-app',
@@ -321,7 +322,7 @@ def _main():
   feeder_mrid = sim_request["power_system_config"]["Line_name"]
 
   # authenticate with GridAPPS-D Platform
-  os.environ['GRIDAPPSD_APPLICATION_ID'] = 'gridappsd-app-deconflictor'
+  os.environ['GRIDAPPSD_APPLICATION_ID'] = 'gridappsd-deconfliction-pipeline'
   os.environ['GRIDAPPSD_APPLICATION_STATUS'] = 'STARTED'
   os.environ['GRIDAPPSD_USER'] = 'app_user'
   os.environ['GRIDAPPSD_PASSWORD'] = '1234App'

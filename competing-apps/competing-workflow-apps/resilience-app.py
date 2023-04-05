@@ -173,7 +173,7 @@ class CompetingApp(GridAPPSD):
 
     # handling both simulation and deconflictor feedback messages here so need
     # to figure out which it is
-    if 'app-deconflictor' in headers['destination']:
+    if 'deconfliction-pipeline' in headers['destination']:
       self.updateSoC(in_message['SoC'], self.Batteries)
       return
 
@@ -227,7 +227,8 @@ class CompetingApp(GridAPPSD):
 
     self.AppUtil = getattr(importlib.import_module('shared.apputil'), 'AppUtil')
 
-    SPARQLManager = getattr(importlib.import_module('shared.sparql'), 'SPARQLManager')
+    SPARQLManager = getattr(importlib.import_module('shared.sparql'),
+                            'SPARQLManager')
     sparql_mgr = SPARQLManager(gapps, feeder_mrid, simulation_id)
 
     self.outage = outage
@@ -258,10 +259,12 @@ class CompetingApp(GridAPPSD):
     self.publish_topic = service_output_topic('gridappsd-competing-app', '0')
 
     # subscribe to simulation output messages
-    gapps.subscribe(service_output_topic('gridappsd-pseudo-sim', simulation_id), self)
+    gapps.subscribe(service_output_topic('gridappsd-pseudo-sim',
+                                         simulation_id), self)
 
-    # subscribe to app-deconflictor feedback messages
-    gapps.subscribe(service_output_topic('gridappsd-app-deconflictor', simulation_id), self)
+    # subscribe to deconfliction-pipeline feedback messages
+    gapps.subscribe(service_output_topic('gridappsd-deconfliction-pipeline',
+                                         simulation_id), self)
 
     print('Initialized resilience app and now waiting for messages...', flush=True)
 
@@ -278,7 +281,8 @@ class CompetingApp(GridAPPSD):
     json.dump(self.resolution, json_fp, indent=2)
     json_fp.close()
 
-    self.AppUtil.make_plots('Resilience Exclusivity', 'resilience', self.Batteries, self.t_plot, self.p_batt_plot, self.soc_plot)
+    self.AppUtil.make_plots('Resilience Exclusivity', 'resilience',
+                 self.Batteries, self.t_plot, self.p_batt_plot, self.soc_plot)
 
     return
 
@@ -299,7 +303,8 @@ def _main():
   parser = argparse.ArgumentParser()
   parser.add_argument("simulation_id", help="Simulation ID")
   parser.add_argument("request", help="Simulation Request")
-  parser.add_argument("state", nargs="?", default="Alert", help="Alert or Emergency State")
+  parser.add_argument("state", nargs="?", default="Alert",
+                      help="Alert or Emergency State")
   parser.add_argument("--outage", "--out", "-o", type=int, nargs=2)
   opts = parser.parse_args()
 
