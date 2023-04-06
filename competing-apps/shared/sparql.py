@@ -171,6 +171,77 @@ class SPARQLManager:
         bindings = results['data']['results']['bindings']
         return bindings
 
+
+    def lines_connectivity_query(self):
+        LINES_QUERY = """
+        PREFIX r:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+        PREFIX c:  <http://iec.ch/TC57/CIM100#>
+        SELECT ?name ?bus1 ?bus2 ?id (group_concat(distinct ?phs;separator="") as ?phases) WHERE {
+        SELECT ?name ?bus1 ?bus2 ?phs ?id WHERE {
+        VALUES ?fdrid {"%s"}
+         ?fdr c:IdentifiedObject.mRID ?fdrid.
+         ?s r:type c:ACLineSegment.
+         ?s c:Equipment.EquipmentContainer ?fdr.
+         ?s c:IdentifiedObject.name ?name.
+         ?s c:IdentifiedObject.mRID ?id.
+         ?t1 c:Terminal.ConductingEquipment ?s.
+         ?t1 c:ACDCTerminal.sequenceNumber "1".
+         ?t1 c:Terminal.ConnectivityNode ?cn1.
+         ?cn1 c:IdentifiedObject.name ?bus1.
+         ?t2 c:Terminal.ConductingEquipment ?s.
+         ?t2 c:ACDCTerminal.sequenceNumber "2".
+         ?t2 c:Terminal.ConnectivityNode ?cn2.
+         ?cn2 c:IdentifiedObject.name ?bus2.
+         OPTIONAL {?acp c:ACLineSegmentPhase.ACLineSegment ?s.
+           ?acp c:ACLineSegmentPhase.phase ?phsraw.
+             bind(strafter(str(?phsraw),"SinglePhaseKind.") as ?phs)}
+         } ORDER BY ?name ?phs
+        }
+        GROUP BY ?name ?bus1 ?bus2 ?id
+        ORDER BY ?name
+        """% self.feeder_mrid
+
+        results = self.gad.query_data(LINES_QUERY)
+        bindings = results['data']['results']['bindings']
+        return bindings
+
+
+    def PerLengthPhaseImpedance_line_names(self):
+        LINES_QUERY = """
+        PREFIX r:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+        PREFIX c:  <http://iec.ch/TC57/CIM100#>
+        SELECT ?line_name ?bus1 ?bus2 ?length ?line_config ?phase
+        WHERE {
+        VALUES ?fdrid {"%s"}
+         ?s r:type c:ACLineSegment.
+         ?s c:Equipment.EquipmentContainer ?fdr.
+         ?fdr c:IdentifiedObject.mRID ?fdrid.
+         ?s c:IdentifiedObject.name ?line_name.
+         ?s c:Conductor.length ?length.
+         ?s c:ACLineSegment.PerLengthImpedance ?lcode.
+         ?lcode r:type c:PerLengthPhaseImpedance.
+         ?lcode c:IdentifiedObject.name ?line_config.
+         ?t1 c:Terminal.ConductingEquipment ?s.
+         ?t1 c:Terminal.ConnectivityNode ?cn1.
+         ?t1 c:ACDCTerminal.sequenceNumber "1".
+         ?cn1 c:IdentifiedObject.name ?bus1.
+         ?t2 c:Terminal.ConductingEquipment ?s.
+         ?t2 c:Terminal.ConnectivityNode ?cn2.
+         ?t2 c:ACDCTerminal.sequenceNumber "2".
+         ?cn2 c:IdentifiedObject.name ?bus2.
+         OPTIONAL {?acp c:ACLineSegmentPhase.ACLineSegment ?s.
+           ?acp c:ACLineSegmentPhase.phase ?phsraw.
+           ?acp c:ACLineSegmentPhase.sequenceNumber ?seq.
+             bind(strafter(str(?phsraw),"SinglePhaseKind.") as ?phase)}
+        }
+        ORDER BY ?line_name ?phase
+        """% self.feeder_mrid
+
+        results = self.gad.query_data(LINES_QUERY)
+        bindings = results['data']['results']['bindings']
+        return bindings
+
+
 # End of Common Competing Apps queries
 
 # Start of Static/Dynamic Y-bus queries
