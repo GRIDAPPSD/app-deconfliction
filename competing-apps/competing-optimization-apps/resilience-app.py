@@ -371,7 +371,7 @@ class CompetingApp(GridAPPSD):
 
         SolarPVs = {}
         bindings = sparql_mgr.pv_query()
-        print('Count of SolarPV: ' + str(len(bindings)) + '\n\n', flush=True)
+        print('Count of SolarPV: ' + str(len(bindings)), flush=True)
         for obj in bindings:
             name = obj['name']['value']
             # bus = obj['bus']['value'].upper()
@@ -382,9 +382,9 @@ class CompetingApp(GridAPPSD):
             SolarPVs[name]['kVar'] = float(obj['q']['value']) / 1000.0
             # print('SolarPV name: ' + name + ', kW: ' + str(SolarPVs[name]['kW']) + ', kVar: ' + str(SolarPVs[name]['kVar']), flush=True)
 
-        # GARY
+        # GARY STARTED HERE
         bindings = sparql_mgr.lines_connectivity_query()
-        print('Count of ACLineSegments: ' + str(len(bindings)) + '\n\n', flush=True)
+        print('\nCount of ACLineSegments: ' + str(len(bindings)), flush=True)
         for obj in bindings:
             name = obj['name']['value']
             bus1 = obj['bus1']['value']
@@ -392,6 +392,31 @@ class CompetingApp(GridAPPSD):
             eyedee = obj['id']['value']
             phases = obj['phases']['value']
             print('ACLineSegment name: ' + name + ', bus1: ' + bus1 + ', bus2: ' + bus2 + ', id: ' + eyedee + ', phases: ' + phases, flush=True)
+            #print(obj)
+
+        bindings = sparql_mgr.power_transformer_connectivity_query()
+        print('\nCount of PowerTransformers: ' + str(len(bindings)), flush=True)
+        for obj in bindings:
+            xfmr_name = obj['xfmr_name']['value']
+            bus = obj['bus']['value']
+            print('PowerTransformer name: ' + xfmr_name + ', bus: ' + bus, flush=True)
+            #print(obj)
+
+        bindings = sparql_mgr.tank_transformer_connectivity_query()
+        print('\nCount of TankTransformers: ' + str(len(bindings)), flush=True)
+        for obj in bindings:
+            xfmr_name = obj['xfmr_name']['value']
+            bus = obj['bus']['value']
+            print('TankTransformer name: ' + xfmr_name + ', bus: ' + bus, flush=True)
+            #print(obj)
+
+        bindings = sparql_mgr.switch_connectivity_query()
+        print('\nCount of Switches: ' + str(len(bindings)), flush=True)
+        for obj in bindings:
+            name = obj['name']['value']
+            bus1 = obj['bus1']['value']
+            bus2 = obj['bus2']['value']
+            print('Switch name: ' + xfmr_name + ', bus1: ' + bus1 + ', bus2: ' + bus2, flush=True)
             #print(obj)
 
         exit()

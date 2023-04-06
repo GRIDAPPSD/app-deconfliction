@@ -205,39 +205,112 @@ class SPARQLManager:
         bindings = results['data']['results']['bindings']
         return bindings
 
-
-    def PerLengthPhaseImpedance_line_names(self):
-        LINES_QUERY = """
+    def power_transformer_connectivity_query(self):
+        XFMRS_QUERY = """
         PREFIX r:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
         PREFIX c:  <http://iec.ch/TC57/CIM100#>
-        SELECT ?line_name ?bus1 ?bus2 ?length ?line_config ?phase
+        SELECT ?xfmr_name ?vector_group ?end_number ?bus ?base_voltage ?connection ?ratedS ?ratedU ?r_ohm ?angle ?grounded ?r_ground ?x_ground
         WHERE {
         VALUES ?fdrid {"%s"}
-         ?s r:type c:ACLineSegment.
-         ?s c:Equipment.EquipmentContainer ?fdr.
+         ?p c:Equipment.EquipmentContainer ?fdr.
          ?fdr c:IdentifiedObject.mRID ?fdrid.
-         ?s c:IdentifiedObject.name ?line_name.
-         ?s c:Conductor.length ?length.
-         ?s c:ACLineSegment.PerLengthImpedance ?lcode.
-         ?lcode r:type c:PerLengthPhaseImpedance.
-         ?lcode c:IdentifiedObject.name ?line_config.
-         ?t1 c:Terminal.ConductingEquipment ?s.
-         ?t1 c:Terminal.ConnectivityNode ?cn1.
-         ?t1 c:ACDCTerminal.sequenceNumber "1".
-         ?cn1 c:IdentifiedObject.name ?bus1.
-         ?t2 c:Terminal.ConductingEquipment ?s.
-         ?t2 c:Terminal.ConnectivityNode ?cn2.
-         ?t2 c:ACDCTerminal.sequenceNumber "2".
-         ?cn2 c:IdentifiedObject.name ?bus2.
-         OPTIONAL {?acp c:ACLineSegmentPhase.ACLineSegment ?s.
-           ?acp c:ACLineSegmentPhase.phase ?phsraw.
-           ?acp c:ACLineSegmentPhase.sequenceNumber ?seq.
-             bind(strafter(str(?phsraw),"SinglePhaseKind.") as ?phase)}
+         ?p r:type c:PowerTransformer.
+         ?p c:IdentifiedObject.name ?xfmr_name.
+         ?p c:PowerTransformer.vectorGroup ?vector_group.
+         ?end c:PowerTransformerEnd.PowerTransformer ?p.
+         ?end c:TransformerEnd.endNumber ?end_number.
+         ?end c:PowerTransformerEnd.ratedS ?ratedS.
+         ?end c:PowerTransformerEnd.ratedU ?ratedU.
+         ?end c:PowerTransformerEnd.r ?r_ohm.
+         ?end c:PowerTransformerEnd.phaseAngleClock ?angle.
+         ?end c:PowerTransformerEnd.connectionKind ?connraw.
+          bind(strafter(str(?connraw),"WindingConnection.") as ?connection)
+         ?end c:TransformerEnd.grounded ?grounded.
+         OPTIONAL {?end c:TransformerEnd.rground ?r_ground.}
+         OPTIONAL {?end c:TransformerEnd.xground ?x_ground.}
+         ?end c:TransformerEnd.Terminal ?trm.
+         ?trm c:Terminal.ConnectivityNode ?cn.
+         ?cn c:IdentifiedObject.name ?bus.
+         ?end c:TransformerEnd.BaseVoltage ?bv.
+         ?bv c:BaseVoltage.nominalVoltage ?base_voltage.
         }
-        ORDER BY ?line_name ?phase
+        ORDER BY ?xfmr_name ?end_number
         """% self.feeder_mrid
 
-        results = self.gad.query_data(LINES_QUERY)
+        results = self.gad.query_data(XFMRS_QUERY)
+        bindings = results['data']['results']['bindings']
+        return bindings
+
+
+    def tank_transformer_connectivity_query(self):
+        XFMRS_QUERY = """
+        PREFIX r:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+        PREFIX c:  <http://iec.ch/TC57/CIM100#>
+        SELECT ?xfmr_name ?xfmr_code ?vector_group ?enum ?bus ?baseV ?phase ?grounded ?rground ?xground
+        WHERE {
+        VALUES ?fdrid {"%s"}
+         ?p c:Equipment.EquipmentContainer ?fdr.
+         ?fdr c:IdentifiedObject.mRID ?fdrid.
+         ?p r:type c:PowerTransformer.
+         ?p c:IdentifiedObject.name ?pname.
+         ?p c:PowerTransformer.vectorGroup ?vector_group.
+         ?t c:TransformerTank.PowerTransformer ?p.
+         ?t c:IdentifiedObject.name ?xfmr_name.
+         ?asset c:Asset.PowerSystemResources ?t.
+         ?asset c:Asset.AssetInfo ?inf.
+         ?inf c:IdentifiedObject.name ?xfmr_code.
+         ?end c:TransformerTankEnd.TransformerTank ?t.
+         ?end c:TransformerTankEnd.phases ?phsraw.
+          bind(strafter(str(?phsraw),"PhaseCode.") as ?phase)
+         ?end c:TransformerEnd.endNumber ?enum.
+         ?end c:TransformerEnd.grounded ?grounded.
+         OPTIONAL {?end c:TransformerEnd.rground ?rground.}
+         OPTIONAL {?end c:TransformerEnd.xground ?xground.}
+         ?end c:TransformerEnd.Terminal ?trm.
+         ?trm c:Terminal.ConnectivityNode ?cn.
+         ?cn c:IdentifiedObject.name ?bus.
+         ?end c:TransformerEnd.BaseVoltage ?bv.
+         ?bv c:BaseVoltage.nominalVoltage ?baseV.
+        }
+        ORDER BY ?xfmr_name ?enum
+        """% self.feeder_mrid
+
+        results = self.gad.query_data(XFMRS_QUERY)
+        bindings = results['data']['results']['bindings']
+        return bindings
+
+
+    def switch_connectivity_query(self):
+        SWITCH_QUERY = """
+        PREFIX r:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+        PREFIX c:  <http://iec.ch/TC57/CIM100#>
+        SELECT ?name ?basev ?open ?bus1 ?bus2 (group_concat(distinct ?phs1;separator="\\n") as ?phases)
+        WHERE {
+         ?s r:type c:LoadBreakSwitch.
+        VALUES ?fdrid {"%s"}
+         ?s c:Equipment.EquipmentContainer ?fdr.
+         ?fdr c:IdentifiedObject.mRID ?fdrid.
+         ?s c:IdentifiedObject.name ?name.
+         ?s c:ConductingEquipment.BaseVoltage ?bv.
+         ?bv c:BaseVoltage.nominalVoltage ?base_V.
+         ?s c:Switch.normalOpen ?open.
+         ?t1 c:Terminal.ConductingEquipment ?s.
+         ?t1 c:ACDCTerminal.sequenceNumber "1".
+         ?t1 c:Terminal.ConnectivityNode ?cn1.
+         ?cn1 c:IdentifiedObject.name ?bus1.
+         ?t2 c:Terminal.ConductingEquipment ?s.
+         ?t2 c:ACDCTerminal.sequenceNumber "2".
+         ?t2 c:Terminal.ConnectivityNode ?cn2.
+         ?cn2 c:IdentifiedObject.name ?bus2
+           OPTIONAL {?swp c:SwitchPhase.Switch ?s.
+           ?swp c:SwitchPhase.phaseSide1 ?phsraw.
+           bind(strafter(str(?phsraw),"SinglePhaseKind.") as ?phs) }
+        }
+        GROUP BY ?name ?basev ?open ?fdrid ?bus1 ?bus2
+        ORDER BY ?name
+        """% self.feeder_mrid
+
+        results = self.gad.query_data(SWITCH_QUERY)
         bindings = results['data']['results']['bindings']
         return bindings
 
