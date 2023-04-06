@@ -383,7 +383,7 @@ class CompetingApp(GridAPPSD):
             # print('SolarPV name: ' + name + ', kW: ' + str(SolarPVs[name]['kW']) + ', kVar: ' + str(SolarPVs[name]['kVar']), flush=True)
 
         # GARY
-        bindings = sparql_mgr.lines_query()
+        bindings = sparql_mgr.lines_connectivity_query()
         print('Count of ACLineSegments: ' + str(len(bindings)) + '\n\n', flush=True)
         for obj in bindings:
             name = obj['name']['value']
