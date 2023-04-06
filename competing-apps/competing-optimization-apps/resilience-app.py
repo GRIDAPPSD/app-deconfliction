@@ -383,6 +383,8 @@ class CompetingApp(GridAPPSD):
             # print('SolarPV name: ' + name + ', kW: ' + str(SolarPVs[name]['kW']) + ', kVar: ' + str(SolarPVs[name]['kVar']), flush=True)
 
         # GARY STARTED HERE
+        branch_info = {}
+      
         bindings = sparql_mgr.lines_connectivity_query()
         print('\nCount of ACLineSegments: ' + str(len(bindings)), flush=True)
         for obj in bindings:
@@ -392,6 +394,12 @@ class CompetingApp(GridAPPSD):
             eyedee = obj['id']['value']
             phases = obj['phases']['value']
             print('ACLineSegment name: ' + name + ', bus1: ' + bus1 + ', bus2: ' + bus2 + ', id: ' + eyedee + ', phases: ' + phases, flush=True)
+
+            branch_info[name] = {}
+            branch_info[name]['phases'] = phases
+            branch_info[name]['type'] = 'line'
+            branch_info[name]['from_bus'] = bus1
+            branch_info[name]['to_bus'] = bus2
             #print(obj)
 
         bindings = sparql_mgr.power_transformer_connectivity_query()
