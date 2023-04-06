@@ -26,6 +26,6 @@ else
 fi
 
 mkdir -p output
-python3 competing-app.py $SIMID "$SIMREQ" $STATE 2>&1 | tee output/competing-app.log
-#python3 competing-app.py $SIMID "$SIMREQ" $STATE --outage 56 68 2>&1 | tee output/competing-app.log
+python3 resilience-app.py $SIMID "$SIMREQ" $STATE 2>&1 | tee output/resilience-app.log
+#python3 resilience-app.py $SIMID "$SIMREQ" $STATE --outage 56 68 2>&1 | tee output/resilience-app.log
 
