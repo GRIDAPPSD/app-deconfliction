@@ -301,16 +301,28 @@ class CompetingApp(GridAPPSD):
         emergencyState = state.startswith('e') or state.startswith('E')
 
         EnergyConsumers = {}
-        objs = sparql_mgr.obj_dict_export('EnergyConsumer')
-        print('Count of EnergyConsumers Dict: ' + str(len(objs)), flush=True)
-        for item in objs:
-            name = item['IdentifiedObject.name']
-            EnergyConsumers[name] = {}
-            # Shiva HACK to force battery charging...
-            # EnergyConsumers[name]['kW'] = 0.01*float(item['EnergyConsumer.p'])/1000.0
-            EnergyConsumers[name]['kW'] = float(item['EnergyConsumer.p']) / 1000.0
-            EnergyConsumers[name]['kVar'] = float(item['EnergyConsumer.q']) / 1000.0
-            # print('EnergyConsumer name: ' + name + ', kW: ' + str(EnergyConsumers[name]['kW']) + ', kVar: ' + str(EnergyConsumers[name]['kVar']), flush=True)
+        bindings = sparql_mgr.energyconsumer_query()
+        for obj in bindings:
+            bus = obj['bus']['value'].upper()
+            if bus not in EnergyConsumers:
+                EnergyConsumers[bus] = {}
+                EnergyConsumers[bus]['kW'] = {}
+                EnergyConsumers[bus]['kVar'] = {}
+
+            phases = obj['phases']['value']
+            if phases == '':
+                pval = float(obj['p']['value']) / 3000.0
+                EnergyConsumers[bus]['kW']['A'] = EnergyConsumers[bus]['kW']['B'] = EnergyConsumers[bus]['kW']['C'] = pval
+                qval = float(obj['q']['value']) / 3000.0
+                EnergyConsumers[bus]['kVar']['A'] = EnergyConsumers[bus]['kVar']['B'] = EnergyConsumers[bus]['kVar']['C'] = qval
+            else:
+                EnergyConsumers[bus]['kW'][phases] = float(obj['p']['value']) / 1000.0
+                EnergyConsumers[bus]['kVar'][phases] = float(obj['q']['value']) / 1000.0
+
+        print('EnergyConsumers[65]: ' + str(EnergyConsumers['65']), flush=True)
+        print('EnergyConsumers[47]: ' + str(EnergyConsumers['47']), flush=True)
+        print('EnergyConsumers[99]: ' + str(EnergyConsumers['99']), flush=True)
+
 
         # objs = sparql_mgr.obj_meas_export('EnergyConsumer')
         # print('Count of EnergyConsumers Meas: ' + str(len(objs)), flush=True)
@@ -383,49 +395,99 @@ class CompetingApp(GridAPPSD):
             # print('SolarPV name: ' + name + ', kW: ' + str(SolarPVs[name]['kW']) + ', kVar: ' + str(SolarPVs[name]['kVar']), flush=True)
 
         # GARY STARTED HERE
+        vnom = sparql_mgr.vnom_export()
+
+        print('Processing Vnom...', flush=True)
+
+        bus_info = {}
+        idx = 0
+        for obj in vnom:
+            phases = []
+
+            items = obj.split(',')
+            if items[0] == 'Bus':  # skip header line
+                continue
+
+            bus = items[0].strip('"')
+            node1 = items[2].strip()
+            phases.append(node1)
+
+            node2 = items[6].strip()
+            if node2 != '0':
+                phases.append(node2)
+                node3 = items[10].strip()
+                if node3 != '0':
+                    phases.append(node3)
+
+            bus_info[bus] = {}
+            bus_info[bus]['idx'] = idx
+            bus_info[bus]['phases'] = phases
+
+            if bus in EnergyConsumers:
+                bus_info[bus]['p'] = {}
+                bus_info[bus]['q'] = {}
+                for phs in EnergyConsumers[bus]['kW']:
+                    bus_info[bus]['p'][phs] = EnergyConsumers[bus]['kW'][phs]
+                    bus_info[bus]['q'][phs] = EnergyConsumers[bus]['kVar'][phs]
+
+            idx += 1
+
+        print('bus_info[65]: ' + str(bus_info['65']), flush=True)
+        print('bus_info[47]: ' + str(bus_info['47']), flush=True)
+        print('bus_info[150]: ' + str(bus_info['150']), flush=True)
+        print('Vnom Processed', flush=True)
+
         branch_info = {}
       
         bindings = sparql_mgr.lines_connectivity_query()
         print('\nCount of ACLineSegments: ' + str(len(bindings)), flush=True)
+        idx = 0
         for obj in bindings:
             name = obj['name']['value']
-            bus1 = obj['bus1']['value']
-            bus2 = obj['bus2']['value']
-            eyedee = obj['id']['value']
+            bus1 = obj['bus1']['value'].upper()
+            bus2 = obj['bus2']['value'].upper()
             phases = obj['phases']['value']
-            print('ACLineSegment name: ' + name + ', bus1: ' + bus1 + ', bus2: ' + bus2 + ', id: ' + eyedee + ', phases: ' + phases, flush=True)
+            print('ACLineSegment name: ' + name + ', bus1: ' + bus1 + ', bus2: ' + bus2 + ', phases: ' + phases, flush=True)
 
             branch_info[name] = {}
+            branch_info[name]['idx'] = idx
             branch_info[name]['phases'] = phases
             branch_info[name]['type'] = 'line'
             branch_info[name]['from_bus'] = bus1
             branch_info[name]['to_bus'] = bus2
+            branch_info[name]['from_bus_idx'] = bus_info[bus1]['idx']
+            branch_info[name]['to_bus_idx'] = bus_info[bus2]['idx']
+            print(branch_info[name])
             #print(obj)
+            idx += 1
 
         bindings = sparql_mgr.power_transformer_connectivity_query()
         print('\nCount of PowerTransformers: ' + str(len(bindings)), flush=True)
         for obj in bindings:
             xfmr_name = obj['xfmr_name']['value']
-            bus = obj['bus']['value']
+            bus = obj['bus']['value'].upper()
             print('PowerTransformer name: ' + xfmr_name + ', bus: ' + bus, flush=True)
             #print(obj)
+            idx += 1
 
         bindings = sparql_mgr.tank_transformer_connectivity_query()
         print('\nCount of TankTransformers: ' + str(len(bindings)), flush=True)
         for obj in bindings:
             xfmr_name = obj['xfmr_name']['value']
-            bus = obj['bus']['value']
+            bus = obj['bus']['value'].upper()
             print('TankTransformer name: ' + xfmr_name + ', bus: ' + bus, flush=True)
             #print(obj)
+            idx += 1
 
         bindings = sparql_mgr.switch_connectivity_query()
         print('\nCount of Switches: ' + str(len(bindings)), flush=True)
         for obj in bindings:
             name = obj['name']['value']
-            bus1 = obj['bus1']['value']
-            bus2 = obj['bus2']['value']
-            print('Switch name: ' + xfmr_name + ', bus1: ' + bus1 + ', bus2: ' + bus2, flush=True)
+            bus1 = obj['bus1']['value'].upper()
+            bus2 = obj['bus2']['value'].upper()
+            print('Switch name: ' + name + ', bus1: ' + bus1 + ', bus2: ' + bus2, flush=True)
             #print(obj)
+            idx += 1
 
         exit()
 
@@ -541,9 +603,9 @@ def _main():
 
     # sim_request = json.loads(opts.request.replace("\'", ""))
     #feeder_mrid = "_AAE94E4A-2465-6F5E-37B1-3E72183A4E44" # 9500
-    feeder_mrid = "_49AD8E07-3BF9-A4E2-CB8F-C3722F837B62" # 13
+    #feeder_mrid = "_49AD8E07-3BF9-A4E2-CB8F-C3722F837B62" # 13
     #feeder_mrid = "_5B816B93-7A5F-B64C-8460-47C17D6E4B0F" # 13assets
-    #feeder_mrid = "_C1C3E687-6FFD-C753-582B-632A27E28507" # 123
+    feeder_mrid = "_C1C3E687-6FFD-C753-582B-632A27E28507" # 123
     simulation_id = 0.0
     state = 'a'
 
