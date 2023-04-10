@@ -284,7 +284,7 @@ class SPARQLManager:
         SWITCH_QUERY = """
         PREFIX r:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
         PREFIX c:  <http://iec.ch/TC57/CIM100#>
-        SELECT ?name ?basev ?open ?bus1 ?bus2 (group_concat(distinct ?phs1;separator="\\n") as ?phases)
+        SELECT ?name ?basev ?open ?bus1 ?bus2 (group_concat(distinct ?phs;separator="\\n") as ?phases)
         WHERE {
          ?s r:type c:LoadBreakSwitch.
         VALUES ?fdrid {"%s"}
