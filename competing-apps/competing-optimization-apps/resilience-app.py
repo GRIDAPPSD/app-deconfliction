@@ -457,7 +457,7 @@ class CompetingApp(GridAPPSD):
             branch_info[name]['from_bus_idx'] = bus_info[bus1]['idx']
             branch_info[name]['to_bus'] = bus2
             branch_info[name]['to_bus_idx'] = bus_info[bus2]['idx']
-            print(branch_info[name])
+            print(name + ': ' + str(branch_info[name]))
             #print(obj)
             idx += 1
 
@@ -479,7 +479,7 @@ class CompetingApp(GridAPPSD):
             else:
                 branch_info[name]['to_bus'] = bus
                 branch_info[name]['to_bus_idx'] = bus_info[bus]['idx']
-                print(branch_info[name])
+                print(name + ': ' + str(branch_info[name]))
                 idx += 1
 
         bindings = sparql_mgr.tank_transformer_connectivity_query()
@@ -501,7 +501,7 @@ class CompetingApp(GridAPPSD):
             else:
                 branch_info[name]['to_bus'] = bus
                 branch_info[name]['to_bus_idx'] = bus_info[bus]['idx']
-                print(branch_info[name])
+                print(name + ': ' + str(branch_info[name]))
                 idx += 1
 
         bindings = sparql_mgr.switch_connectivity_query()
@@ -521,7 +521,7 @@ class CompetingApp(GridAPPSD):
             branch_info[name]['from_bus_idx'] = bus_info[bus1]['idx']
             branch_info[name]['to_bus'] = bus2
             branch_info[name]['to_bus_idx'] = bus_info[bus2]['idx']
-            print(branch_info[name])
+            print(name + ': ' + str(branch_info[name]))
             #print(obj)
             idx += 1
 
