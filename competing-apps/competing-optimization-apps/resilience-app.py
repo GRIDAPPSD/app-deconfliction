@@ -466,10 +466,11 @@ class CompetingApp(GridAPPSD):
         Regulators = {}
         for obj in bindings:
             pname = obj['pname']['value']
-            if pname not in Regulators:
-                Regulators[pname] = []
             if 'tname' in obj:
-                Regulators[pname].append((obj['tname']['value'], obj['phs']['value']))
+                tname = obj['tname']['value']
+                Regulators[tname] = pname
+            else:
+                Regulators[pname] = pname
         print('Regulators: ' + str(Regulators), flush=True)
 
         bindings = sparql_mgr.power_transformer_connectivity_query()
@@ -484,7 +485,10 @@ class CompetingApp(GridAPPSD):
                 branch_info[name] = {}
                 branch_info[name]['idx'] = idx
                 branch_info[name]['phases'] = 'ABC'
-                branch_info[name]['type'] = 'transformer'
+                if name in Regulators:
+                    branch_info[name]['type'] = 'regulator'
+                else:
+                    branch_info[name]['type'] = 'transformer'
                 branch_info[name]['from_bus'] = bus
                 branch_info[name]['from_bus_idx'] = bus_info[bus]['idx']
             else:
@@ -502,18 +506,21 @@ class CompetingApp(GridAPPSD):
             print('TankTransformer name: ' + name + ', bus: ' + bus + ', phase: ' + phase, flush=True)
             #print(obj)
 
-            if name not in branch_info:
-                branch_info[name] = {}
-                branch_info[name]['idx'] = idx
-                branch_info[name]['phases'] = phase
-                branch_info[name]['type'] = 'regulator'
-                branch_info[name]['from_bus'] = bus
-                branch_info[name]['from_bus_idx'] = bus_info[bus]['idx']
-            else:
-                branch_info[name]['to_bus'] = bus
-                branch_info[name]['to_bus_idx'] = bus_info[bus]['idx']
-                print(name + ': ' + str(branch_info[name]))
+            pname = Regulators[name]
+            if pname not in branch_info:
+                branch_info[pname] = {}
+                branch_info[pname]['idx'] = idx
+                branch_info[pname]['phases'] = phase
+                branch_info[pname]['type'] = 'regulator'
+                branch_info[pname]['from_bus'] = bus
+                branch_info[pname]['from_bus_idx'] = bus_info[bus]['idx']
                 idx += 1
+            elif bus != branch_info[pname]['from_bus']:
+                if phase not in branch_info[pname]['phases']:
+                    branch_info[pname]['phases'] += phase
+                branch_info[pname]['to_bus'] = bus
+                branch_info[pname]['to_bus_idx'] = bus_info[bus]['idx']
+                print(pname + ': ' + str(branch_info[pname]))
 
         bindings = sparql_mgr.switch_connectivity_query()
         print('\nCount of Switches: ' + str(len(bindings)), flush=True)
