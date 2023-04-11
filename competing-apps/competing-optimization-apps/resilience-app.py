@@ -472,7 +472,7 @@ class CompetingApp(GridAPPSD):
             if name not in branch_info:
                 branch_info[name] = {}
                 branch_info[name]['idx'] = idx
-                branch_info[name]['phases'] = ''
+                branch_info[name]['phases'] = 'ABC'
                 branch_info[name]['type'] = 'transformer'
                 branch_info[name]['from_bus'] = bus
                 branch_info[name]['from_bus_idx'] = bus_info[bus]['idx']
@@ -495,7 +495,7 @@ class CompetingApp(GridAPPSD):
                 branch_info[name] = {}
                 branch_info[name]['idx'] = idx
                 branch_info[name]['phases'] = phase
-                branch_info[name]['type'] = 'transformer'
+                branch_info[name]['type'] = 'regulator'
                 branch_info[name]['from_bus'] = bus
                 branch_info[name]['from_bus_idx'] = bus_info[bus]['idx']
             else:
@@ -508,22 +508,26 @@ class CompetingApp(GridAPPSD):
         print('\nCount of Switches: ' + str(len(bindings)), flush=True)
         for obj in bindings:
             name = obj['name']['value']
+            isopen = obj['open']['value'].upper()
             bus1 = obj['bus1']['value'].upper()
             bus2 = obj['bus2']['value'].upper()
             phases = obj['phases']['value']
-            print('Switch name: ' + name + ', bus1: ' + bus1 + ', bus2: ' + bus2 + ', phases: ' + phases, flush=True)
+            if phases == '':
+                phases = 'ABC'
+            print('Switch name: ' + name + ', open: ' + isopen + ', bus1: ' + bus1 + ', bus2: ' + bus2 + ', phases: ' + phases, flush=True)
 
-            branch_info[name] = {}
-            branch_info[name]['idx'] = idx
-            branch_info[name]['phases'] = phases
-            branch_info[name]['type'] = 'line'
-            branch_info[name]['from_bus'] = bus1
-            branch_info[name]['from_bus_idx'] = bus_info[bus1]['idx']
-            branch_info[name]['to_bus'] = bus2
-            branch_info[name]['to_bus_idx'] = bus_info[bus2]['idx']
-            print(name + ': ' + str(branch_info[name]))
-            #print(obj)
-            idx += 1
+            if isopen == 'FALSE':
+                branch_info[name] = {}
+                branch_info[name]['idx'] = idx
+                branch_info[name]['phases'] = phases
+                branch_info[name]['type'] = 'line'
+                branch_info[name]['from_bus'] = bus1
+                branch_info[name]['from_bus_idx'] = bus_info[bus1]['idx']
+                branch_info[name]['to_bus'] = bus2
+                branch_info[name]['to_bus_idx'] = bus_info[bus2]['idx']
+                print(name + ': ' + str(branch_info[name]))
+                #print(obj)
+                idx += 1
 
         exit()
 
