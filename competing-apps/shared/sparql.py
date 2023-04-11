@@ -172,6 +172,43 @@ class SPARQLManager:
         return bindings
 
 
+    def regulator_combine_query(self):
+        VALUES_QUERY = """
+        PREFIX r:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+        PREFIX c:  <http://iec.ch/TC57/CIM100#>
+        SELECT ?rname ?pname ?tname ?wnum ?phs ?incr ?mode ?enabled ?highStep ?lowStep
+        WHERE {
+        VALUES ?fdrid {"%s"}
+         ?pxf c:Equipment.EquipmentContainer ?fdr.
+         ?fdr c:IdentifiedObject.mRID ?fdrid.
+         ?rtc r:type c:RatioTapChanger.
+         ?rtc c:IdentifiedObject.name ?rname.
+         ?rtc c:RatioTapChanger.TransformerEnd ?end.
+         ?end c:TransformerEnd.endNumber ?wnum.
+        {?end c:PowerTransformerEnd.PowerTransformer ?pxf.}
+          UNION
+        {?end c:TransformerTankEnd.TransformerTank ?tank.
+         ?tank c:IdentifiedObject.name ?tname.
+         OPTIONAL {?end c:TransformerTankEnd.phases ?phsraw.
+          bind(strafter(str(?phsraw),"PhaseCode.") as ?phs)}
+         ?tank c:TransformerTank.PowerTransformer ?pxf.}
+         ?pxf c:IdentifiedObject.name ?pname.
+         ?rtc c:RatioTapChanger.stepVoltageIncrement ?incr.
+         ?rtc c:RatioTapChanger.tculControlMode ?moderaw.
+          bind(strafter(str(?moderaw),"TransformerControlMode.") as ?mode)
+         ?rtc c:TapChanger.controlEnabled ?enabled.
+         ?rtc c:TapChanger.highStep ?highStep.
+         ?rtc c:TapChanger.initialDelay ?initDelay.
+         ?rtc c:TapChanger.lowStep ?lowStep.
+        }
+        ORDER BY ?pname ?tname ?rname ?wnum
+        """% self.feeder_mrid
+
+        results = self.gad.query_data(VALUES_QUERY)
+        bindings = results['data']['results']['bindings']
+        return bindings
+
+
     def lines_connectivity_query(self):
         LINES_QUERY = """
         PREFIX r:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#>

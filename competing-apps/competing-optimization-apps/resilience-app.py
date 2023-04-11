@@ -461,6 +461,17 @@ class CompetingApp(GridAPPSD):
             #print(obj)
             idx += 1
 
+        bindings = sparql_mgr.regulator_combine_query()
+        print('\nCount of Combine Regulators: ' + str(len(bindings)), flush=True)
+        Regulators = {}
+        for obj in bindings:
+            pname = obj['pname']['value']
+            if pname not in Regulators:
+                Regulators[pname] = []
+            if 'tname' in obj:
+                Regulators[pname].append((obj['tname']['value'], obj['phs']['value']))
+        print('Regulators: ' + str(Regulators), flush=True)
+
         bindings = sparql_mgr.power_transformer_connectivity_query()
         print('\nCount of PowerTransformers: ' + str(len(bindings)), flush=True)
         for obj in bindings:
