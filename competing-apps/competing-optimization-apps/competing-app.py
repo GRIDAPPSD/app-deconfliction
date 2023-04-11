@@ -173,9 +173,9 @@ class CompetingApp(GridAPPSD):
         for name in SolarPVs:
             P_ren += pv_mult * SolarPVs[name]['kW']
 
-        print('time: ' + str(time), flush=True)
-        print('Total EnergyConsumers P_load: ' + str(round(P_load, 4)), flush=True)
-        print('Total SolarPVs P_ren: ' + str(round(P_ren, 4)), flush=True)
+        print('time: ' + str(time))
+        print('Total EnergyConsumers P_load: ' + str(round(P_load, 4)))
+        print('Total SolarPVs P_ren: ' + str(round(P_ren, 4)))
 
         # Implement simple PuLP optimization for resilience
         # Objective function: Max: SoC of the Battery
@@ -413,11 +413,11 @@ class CompetingApp(GridAPPSD):
                     # Resilience App
                     resiliency_setpoints = self.resiliency(EnergyConsumers, SynchronousMachines, deepcopy(BIS), SolarPVs, time, loadshape, solar,
                                     price, deltaT, emergencyState, advise)
+                    
+                    print(resiliency_setpoints)
 
                     for name, battery in resiliency_setpoints.items():
                         solution[name] = {}
-                        print("res: " , name, battery)
-                        print("base: " , BIS[name])
                         if battery['state'] == 'charging':
                             solution[name]['resilience'] = battery['P_batt_c']
                         elif battery['state'] == 'discharging':
@@ -429,9 +429,9 @@ class CompetingApp(GridAPPSD):
                     decarb_setpoints = self.decarbonization(EnergyConsumers, SynchronousMachines, deepcopy(BIS), SolarPVs, time, loadshape, solar,
                                         price, deltaT, emergencyState, advise)
 
+                    print(decarb_setpoints)
+
                     for name, battery in decarb_setpoints.items():
-                        print("decarb: " , name, battery)
-                        print("base: " , BIS[name])
                         if battery['state'] == 'charging':
                             solution[name]['decarbonization'] = battery['P_batt_c']
                         elif battery['state'] == 'discharging':
@@ -441,26 +441,31 @@ class CompetingApp(GridAPPSD):
                             
                     conflict_metric = self.conflict_matrix(solution)
                     
-                    if conflict_metric > 0.1 or not advise:
+                    if conflict_metric >= 0.1 or not advise:
                         advise = {name:np.average(list(power.values())) for name,power in solution.items()} 
                         print("conflict: " , conflict_metric, advise)
-                    else:       
-                        solutions[time] = {}          
-                        for name, battery in BIS.items():  
-                            BIS[name]['P_batt_c'] = advise[name]if advise[name] > 0 else 0
-                            BIS[name]['P_batt_d'] = advise[name] if advise[name] < 0 else 0
-                            charge_energy =  battery['SoC'] + battery['eff_c'] * battery['P_batt_c'] * deltaT / battery['ratedE']
-                            discharge_energy =   + (1 / battery['eff_d']) * battery['P_batt_d'] * deltaT / battery['ratedE']
-                            BIS[name]['SoC'] = charge_energy + discharge_energy
-                            
-                            solutions[time][name] = {}
-                            solutions[time][name]['SoC'] = BIS[name]['SoC']
-                            solutions[time][name]['P_batt'] = advise[name]
+                    
+                    for name, battery in BIS.items():
+                        BIS[name]['P_batt_c'] = advise[name]if advise[name] > 0 else 0
+                        BIS[name]['P_batt_d'] = advise[name] if advise[name] < 0 else 0
+                        charge_energy =  battery['SoC'] + battery['eff_c'] * battery['P_batt_c'] * deltaT / battery['ratedE']
+                        discharge_energy =   + (1 / battery['eff_d']) * battery['P_batt_d'] * deltaT / battery['ratedE']
+                        BIS[name]['SoC'] = charge_energy + discharge_energy    
+                        
+                    if conflict_metric < 0.1:   
+                        break                    
+                        
+                        
+                solutions[time] = {}          
+                for name, battery in BIS.items():
+                    solutions[time][name] = {}
+                    solutions[time][name]['SoC'] = BIS[name]['SoC']
+                    solutions[time][name]['P_batt'] = advise[name]
                     
                     # Invoke cooperative solution here....
                     # exit()
 
-        json_fp = open('output/' + 'conflict' + '_solution.json', 'w')
+        json_fp = open('output/' + 'mcdm' + '_solution.json', 'w')
         json.dump(solutions, json_fp, indent=2)
         json_fp.close()
 
