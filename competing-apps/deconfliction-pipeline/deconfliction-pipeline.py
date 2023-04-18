@@ -148,7 +148,7 @@ class DeconflictionPipeline(GridAPPSD):
           elif backval < 0:
             self.Batteries[device]['SoC'] -= self.AppUtil.discharge_SoC(backval,
                                             device, self.Batteries, self.deltaT)
-          print('*** Rollback SoC for device: ' + device + ', SoC: ' + str(self.Batteries[device]['SoC']), flush=True)
+          print('*** Updated potential SoC for device: ' + device + ', SoC: ' + str(self.Batteries[device]['SoC']), flush=True)
 
         # update battery SoC
         if value > 0: # charging
@@ -162,7 +162,7 @@ class DeconflictionPipeline(GridAPPSD):
         updated_socs[device] = self.Batteries[device]['SoC']
 
         print('==> Dispatching value to device: ' + device + ', value: ' +
-              str(value) + ' (new SoC: ' +
+              str(value) + ' (potential SoC: ' +
               str(updated_socs[device]) + ')', flush=True)
 
     # it's also possible a device from the last resolution does not appear
