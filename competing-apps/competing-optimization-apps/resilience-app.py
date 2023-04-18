@@ -401,6 +401,7 @@ class CompetingApp(GridAPPSD):
 
         bus_info = {}
         idx = 0
+        p_total = {'A': 0, 'B': 0, 'C': 0}
         for obj in vnom:
             phases = []
 
@@ -429,13 +430,15 @@ class CompetingApp(GridAPPSD):
                 for phs in EnergyConsumers[bus]['kW']:
                     bus_info[bus]['p'][phs] = EnergyConsumers[bus]['kW'][phs]
                     bus_info[bus]['q'][phs] = EnergyConsumers[bus]['kVar'][phs]
+                    p_total[phs] += bus_info[bus]['p'][phs]
 
             idx += 1
 
-        print('bus_info[65]: ' + str(bus_info['65']), flush=True)
-        print('bus_info[47]: ' + str(bus_info['47']), flush=True)
-        print('bus_info[150]: ' + str(bus_info['150']), flush=True)
         print('Vnom Processed', flush=True)
+        #print('bus_info[65]: ' + str(bus_info['65']), flush=True)
+        #print('bus_info[47]: ' + str(bus_info['47']), flush=True)
+        #print('bus_info[150]: ' + str(bus_info['150']), flush=True)
+        print('p_total: ' + str(p_total), flush=True)
 
         branch_info = {}
       
@@ -447,7 +450,7 @@ class CompetingApp(GridAPPSD):
             bus1 = obj['bus1']['value'].upper()
             bus2 = obj['bus2']['value'].upper()
             phases = obj['phases']['value']
-            print('ACLineSegment name: ' + name + ', bus1: ' + bus1 + ', bus2: ' + bus2 + ', phases: ' + phases, flush=True)
+            #print('ACLineSegment name: ' + name + ', bus1: ' + bus1 + ', bus2: ' + bus2 + ', phases: ' + phases, flush=True)
 
             branch_info[name] = {}
             branch_info[name]['idx'] = idx
@@ -457,7 +460,7 @@ class CompetingApp(GridAPPSD):
             branch_info[name]['from_bus_idx'] = bus_info[bus1]['idx']
             branch_info[name]['to_bus'] = bus2
             branch_info[name]['to_bus_idx'] = bus_info[bus2]['idx']
-            print(name + ': ' + str(branch_info[name]))
+            #print(name + ': ' + str(branch_info[name]))
             #print(obj)
             idx += 1
 
