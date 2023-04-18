@@ -164,7 +164,7 @@ class CompetingApp(GridAPPSD):
   def updateSoC(self, SoC, Batteries):
     for device, value in SoC.items():
       Batteries[device]['SoC'] = value
-      print('Battery name: ' + device + ', Deconflictor sent updated potential SoC: ' + str(round(value,4)), flush=True)
+      print('Battery name: ' + device + ', Deconflictor sent revised target SoC: ' + str(round(value,4)), flush=True)
 
 
   def on_message(self, headers, in_message):
