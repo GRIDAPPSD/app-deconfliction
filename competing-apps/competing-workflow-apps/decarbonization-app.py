@@ -114,11 +114,11 @@ class CompetingApp(GridAPPSD):
 
     for name in Batteries:
       if Batteries[name]['state'] == 'charging':
-        print('Battery name: ' + name + ', ratedkW: ' + str(round(Batteries[name]['ratedkW'],4)) + ', P_batt_c: ' + str(round(Batteries[name]['P_batt_c'],4)) + ', target SoC: ' + str(round(Batteries[name]['SoC'],4)), flush=True)
+        print('Battery name: ' + name + ', ratedkW: ' + str(round(Batteries[name]['ratedkW'],4)) + ', P_batt_c: ' + str(round(Batteries[name]['P_batt_c'],4)) + ', projected SoC: ' + str(round(Batteries[name]['SoC'],4)), flush=True)
       elif Batteries[name]['state'] == 'discharging':
-        print('Battery name: ' + name + ', ratedkW: ' + str(round(Batteries[name]['ratedkW'],4)) + ', P_batt_d: ' + str(round(Batteries[name]['P_batt_d'],4)) + ', target SoC: ' + str(round(Batteries[name]['SoC'],4)), flush=True)
+        print('Battery name: ' + name + ', ratedkW: ' + str(round(Batteries[name]['ratedkW'],4)) + ', P_batt_d: ' + str(round(Batteries[name]['P_batt_d'],4)) + ', projected SoC: ' + str(round(Batteries[name]['SoC'],4)), flush=True)
       else:
-        print('Battery name: ' + name + ', P_batt_c = P_batt_d = 0.0, target SoC: ' + str(round(Batteries[name]['SoC'],4)), flush=True)
+        print('Battery name: ' + name + ', P_batt_c = P_batt_d = 0.0, projected SoC: ' + str(round(Batteries[name]['SoC'],4)), flush=True)
 
     return
 
@@ -126,7 +126,7 @@ class CompetingApp(GridAPPSD):
   def updateSoC(self, SoC, Batteries):
     for device, value in SoC.items():
       Batteries[device]['SoC'] = value
-      print('Battery name: ' + device + ', Deconflictor sent revised target SoC: ' + str(round(value,4)), flush=True)
+      print('Battery name: ' + device + ', Deconflictor sent revised projected SoC: ' + str(round(value,4)), flush=True)
 
 
   def on_message(self, headers, in_message):
