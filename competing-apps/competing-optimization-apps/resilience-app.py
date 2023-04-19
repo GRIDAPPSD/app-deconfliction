@@ -319,9 +319,9 @@ class CompetingApp(GridAPPSD):
                 EnergyConsumers[bus]['kW'][phases] = float(obj['p']['value']) / 1000.0
                 EnergyConsumers[bus]['kVar'][phases] = float(obj['q']['value']) / 1000.0
 
-        print('EnergyConsumers[65]: ' + str(EnergyConsumers['65']), flush=True)
-        print('EnergyConsumers[47]: ' + str(EnergyConsumers['47']), flush=True)
-        print('EnergyConsumers[99]: ' + str(EnergyConsumers['99']), flush=True)
+        #print('EnergyConsumers[65]: ' + str(EnergyConsumers['65']), flush=True)
+        #print('EnergyConsumers[47]: ' + str(EnergyConsumers['47']), flush=True)
+        #print('EnergyConsumers[99]: ' + str(EnergyConsumers['99']), flush=True)
 
 
         # objs = sparql_mgr.obj_meas_export('EnergyConsumer')
@@ -403,6 +403,7 @@ class CompetingApp(GridAPPSD):
         idx = 0
         p_total = {'A': 0, 'B': 0, 'C': 0}
         for obj in vnom:
+            #print(obj)
             phases = []
 
             items = obj.split(',')
@@ -425,6 +426,7 @@ class CompetingApp(GridAPPSD):
             bus_info[bus]['phases'] = phases
 
             if bus in EnergyConsumers:
+                #print(EnergyConsumers[bus]['kW'])
                 bus_info[bus]['p'] = {}
                 bus_info[bus]['q'] = {}
                 for phs in EnergyConsumers[bus]['kW']:
@@ -549,6 +551,23 @@ class CompetingApp(GridAPPSD):
                 print(name + ': ' + str(branch_info[name]))
                 #print(obj)
                 idx += 1
+
+        for bus in bus_info:
+            bus_idx = bus_info[bus]['idx']
+            #print('For bus: ' + bus + ', idx: ' + str(bus_idx), flush=True)
+            incident_line = 0
+            outgoing_lines = []
+            for branch in branch_info:
+                if branch_info[branch]['to_bus_idx'] == bus_idx:
+                    #print('  Incident branch: ' + str(branch_info[branch]['idx']), flush=True)
+                    incident_line = branch_info[branch]['idx']
+                elif branch_info[branch]['from_bus_idx'] == bus_idx:
+                    #print('  Outgoing branch: ' + str(branch_info[branch]['idx']), flush=True)
+                    outgoing_lines.append(branch_info[branch]['idx'])
+
+            print('For bus: ' + bus + ', idx: ' + str(bus_idx) + ', incident: ' + str(incident_line) + ', outgoing: ' + str(outgoing_lines), flush=True)
+
+        exit()
 
         print('\nPerforming PULP optimization', flush=True)
         p_load_6 = 100
