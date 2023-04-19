@@ -552,18 +552,26 @@ class CompetingApp(GridAPPSD):
                 #print(obj)
                 idx += 1
 
+        # setup two dictionaries for quick lookup of incident line and
+        # outgoing lines for any bus index
+        line_in = {}
+        lines_out = {}
+        for branch in branch_info:
+            line_in[branch_info[branch]['to_bus_idx']] = branch_info[branch]['idx']
+            if branch_info[branch]['from_bus_idx'] not in lines_out:
+                lines_out[branch_info[branch]['from_bus_idx']] = []
+            lines_out[branch_info[branch]['from_bus_idx']].append(branch_info[branch]['idx'])
+
         for bus in bus_info:
             bus_idx = bus_info[bus]['idx']
-            #print('For bus: ' + bus + ', idx: ' + str(bus_idx), flush=True)
-            incident_line = 0
-            outgoing_lines = []
-            for branch in branch_info:
-                if branch_info[branch]['to_bus_idx'] == bus_idx:
-                    #print('  Incident branch: ' + str(branch_info[branch]['idx']), flush=True)
-                    incident_line = branch_info[branch]['idx']
-                elif branch_info[branch]['from_bus_idx'] == bus_idx:
-                    #print('  Outgoing branch: ' + str(branch_info[branch]['idx']), flush=True)
-                    outgoing_lines.append(branch_info[branch]['idx'])
+
+            incident_line = None # flag for no incident line
+            if bus_idx in line_in:
+                incident_line = line_in[bus_idx]
+
+            outgoing_lines = None
+            if bus_idx in lines_out:
+                outgoing_lines = lines_out[bus_idx]
 
             print('For bus: ' + bus + ', idx: ' + str(bus_idx) + ', incident: ' + str(incident_line) + ', outgoing: ' + str(outgoing_lines), flush=True)
 
