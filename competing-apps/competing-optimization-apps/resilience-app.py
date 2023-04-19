@@ -550,6 +550,34 @@ class CompetingApp(GridAPPSD):
                 #print(obj)
                 idx += 1
 
+        print('\nPerforming PULP optimization', flush=True)
+        p_load_6 = 100
+        p_load_5 = 110
+        p_ren_6 = 50
+        p_ren_5 = 30
+        nline = 2
+
+        # decision variables
+        p_flow = LpVariable.dicts("p_flow", (i for i in range(nline)), lowBound=-1000, upBound=1000, cat='Continuous')
+        p_batt = LpVariable("p_batt", lowBound=-250, upBound=250, cat='Continuous')
+
+        # objective
+        prob = LpProblem("flow", LpMinimize)
+        prob += p_flow[0]
+
+        # constraints
+        prob += p_flow[0] == p_flow[1] + p_load_5 - p_ren_5 + p_batt
+        prob += p_flow[1] == p_load_6 - p_ren_6
+        prob += p_batt >= -20
+
+        # solve
+        prob.solve(PULP_CBC_CMD(msg=0))
+        prob.writeLP('Resilience.lp')
+        print('Status: ', LpStatus[prob.status], flush=True)
+        print('Batt Power: ', p_batt.varValue, flush=True)
+        print('Flow line 0: ', p_flow[0].varValue, flush=True)
+        print('Flow line 1: ', p_flow[1].varValue, flush=True)
+
         exit()
 
         # make sure output directory exists since that's where results go
