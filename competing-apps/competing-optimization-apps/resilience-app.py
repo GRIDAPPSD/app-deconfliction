@@ -556,6 +556,7 @@ class CompetingApp(GridAPPSD):
         # outgoing lines for any bus index
         line_in = {}
         lines_out = {}
+        n_line_phase = {}
         for branch in branch_info:
             line_in[branch_info[branch]['to_bus_idx']] = branch_info[branch]
 
@@ -563,6 +564,13 @@ class CompetingApp(GridAPPSD):
                 lines_out[branch_info[branch]['from_bus_idx']] = []
 
             lines_out[branch_info[branch]['from_bus_idx']].append(branch_info[branch])
+
+            for char in branch_info[branch]['phases']:
+                if char not in n_line_phase:
+                    n_line_phase[char] = 0
+                n_line_phase[char] += 1
+
+        print('\nbranch_info phase count: ' + str(n_line_phase), flush=True)
 
         for bus in bus_info:
             bus_idx = bus_info[bus]['idx']
