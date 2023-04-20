@@ -575,23 +575,7 @@ class CompetingApp(GridAPPSD):
 
         print('\nbranch_info phase count: ' + str(n_line_phase), flush=True)
 
-        for bus in bus_info:
-            bus_idx = bus_info[bus]['idx']
-
-            print('For bus: ' + bus + ', idx: ' + str(bus_idx) + ':', flush=True)
-
-            if bus_idx in lines_in:
-                for incident in lines_in[bus_idx]:
-                    print('  incident: ' + str(incident), flush=True)
-            else:
-                print('  incident: None, Source Bus', flush=True)
-
-            if bus_idx in lines_out:
-                for outgoing in lines_out[bus_idx]:
-                    print('  outgoing: ' + str(outgoing), flush=True)
-            else:
-                print('  outgoing: None', flush=True)
-
+        # Optimization problem formulation
         # decision variables
         p_flow_A = LpVariable.dicts("p_flow_A", (i for i in range(n_line_phase['A'])), lowBound=-10000, upBound=10000, cat='Continuous')
 
