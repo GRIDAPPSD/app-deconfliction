@@ -554,16 +554,19 @@ class CompetingApp(GridAPPSD):
 
         # setup two dictionaries for quick lookup of incident line and
         # outgoing lines for any bus index
-        line_in = {}
+        lines_in = {}
         lines_out = {}
         n_line_phase = {}
         for branch in branch_info:
-            line_in[branch_info[branch]['to_bus_idx']] = branch_info[branch]
+            if branch_info[branch]['to_bus_idx'] not in lines_in:
+                lines_in[branch_info[branch]['to_bus_idx']] = []
+            #lines_in[branch_info[branch]['to_bus_idx']].append(branch_info[branch])
+            lines_in[branch_info[branch]['to_bus_idx']].append(branch_info[branch]['idx'])
 
             if branch_info[branch]['from_bus_idx'] not in lines_out:
                 lines_out[branch_info[branch]['from_bus_idx']] = []
-
-            lines_out[branch_info[branch]['from_bus_idx']].append(branch_info[branch])
+            #lines_out[branch_info[branch]['from_bus_idx']].append(branch_info[branch])
+            lines_out[branch_info[branch]['from_bus_idx']].append(branch_info[branch]['idx'])
 
             for char in branch_info[branch]['phases']:
                 if char not in n_line_phase:
@@ -577,16 +580,58 @@ class CompetingApp(GridAPPSD):
 
             print('For bus: ' + bus + ', idx: ' + str(bus_idx) + ':', flush=True)
 
-            if bus_idx in line_in:
-                print('  incident: ' + str(line_in[bus_idx]['idx']), flush=True)
+            if bus_idx in lines_in:
+                for incident in lines_in[bus_idx]:
+                    print('  incident: ' + str(incident), flush=True)
             else:
                 print('  incident: None, Source Bus', flush=True)
 
             if bus_idx in lines_out:
                 for outgoing in lines_out[bus_idx]:
-                    print('  outgoing: ' + str(outgoing['idx']), flush=True)
+                    print('  outgoing: ' + str(outgoing), flush=True)
             else:
                 print('  outgoing: None', flush=True)
+
+        # decision variables
+        p_flow_A = LpVariable.dicts("p_flow_A", (i for i in range(n_line_phase['A'])), lowBound=-10000, upBound=10000, cat='Continuous')
+
+        # objective
+        prob = LpProblem("flow", LpMinimize)
+        prob += p_flow_A[0]
+
+        # constraints
+        #for bus in bus_info:
+        for bus in ['106']:
+            bus_idx = bus_info[bus]['idx']
+
+            print('For bus: ' + bus + ', idx: ' + str(bus_idx) + ':', flush=True)
+
+            if bus_idx in lines_in:
+                for incident in lines_in[bus_idx]:
+                    print('  incident: ' + str(incident), flush=True)
+            else:
+                print('  incident: None, Source Bus', flush=True)
+
+            if bus_idx in lines_out:
+                for outgoing in lines_out[bus_idx]:
+                    print('  outgoing: ' + str(outgoing), flush=True)
+            else:
+                print('  outgoing: None', flush=True)
+
+            if bus_idx not in lines_in:
+              lines_in[bus_idx] = []
+
+            if bus_idx not in lines_out:
+              lines_out[bus_idx] = []
+
+            prob += lpSum(p_flow_A[idx] for idx in lines_in[bus_idx]) - bus_info[bus]['p']['A'] == lpSum(p_flow_A[idx] for idx in lines_out[bus_idx])
+
+        # solve
+        prob.solve(PULP_CBC_CMD(msg=0))
+        prob.writeLP('Resilience.lp')
+        print('Status: ', LpStatus[prob.status], flush=True)
+        print('Flow A line 0: ', p_flow_A[0].varValue, flush=True)
+        print('Flow A line 16: ', p_flow_A[16].varValue, flush=True)
 
         exit()
 
