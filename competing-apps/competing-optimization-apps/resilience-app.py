@@ -381,6 +381,11 @@ class CompetingApp(GridAPPSD):
             print('Battery name: ' + name + ', ratedE: ' + str(round(Batteries[name]['ratedE'], 4)) + ', SoC: ' + str(
                 round(Batteries[name]['SoC'], 4)), flush=True)
 
+        # SHIVA HACK for 123 model testing
+        Batteries['65'] = {'idx': 0, 'prated': 250, 'phase': 'A'}
+        Batteries['52'] = {'idx': 1, 'prated': 250, 'phase': 'B'}
+        Batteries['76'] = {'idx': 2, 'prated': 250, 'phase': 'C'}
+
         SolarPVs = {}
         bindings = sparql_mgr.pv_query()
         print('Count of SolarPV: ' + str(len(bindings)), flush=True)
@@ -393,6 +398,11 @@ class CompetingApp(GridAPPSD):
             SolarPVs[name]['kW'] = float(obj['p']['value']) / 1000.0
             SolarPVs[name]['kVar'] = float(obj['q']['value']) / 1000.0
             # print('SolarPV name: ' + name + ', kW: ' + str(SolarPVs[name]['kW']) + ', kVar: ' + str(SolarPVs[name]['kVar']), flush=True)
+
+        # SHIVA HACK for 123 model testing
+        SolarPVs['65'] = {'p': 120, 'phase': 'A'}
+        SolarPVs['52'] = {'p': 100, 'phase': 'B'}
+        SolarPVs['76'] = {'p': 165, 'phase': 'C'}
 
         # GARY STARTED HERE
         vnom = sparql_mgr.vnom_export()
@@ -568,6 +578,8 @@ class CompetingApp(GridAPPSD):
         p_flow_B = LpVariable.dicts("p_flow_B", (i for i in range(len(branch_info))), lowBound=-10000, upBound=10000, cat='Continuous')
         p_flow_C = LpVariable.dicts("p_flow_C", (i for i in range(len(branch_info))), lowBound=-10000, upBound=10000, cat='Continuous')
 
+        p_batt = LpVariable.dicts("p_batt", (i for i in range(len(Batteries))), lowBound=-250, upBound=250, cat='Continuous')
+
         # objective
         prob = LpProblem("flow", LpMinimize)
         prob += p_flow_A[0]
@@ -586,24 +598,48 @@ class CompetingApp(GridAPPSD):
             if bus_idx in lines_in: # check for source bus
                 if '1' in bus_info[bus]['phases']:
                     demand = 0
-                    if bus in EnergyConsumers and \
+                    if bus in SolarPVs and 'A' in SolarPVs[bus]['phase']:
+                        demand = SolarPVs[bus]['p']
+                        print('SolarPVs A bus: ' + bus + ', demand: ' + str(demand), flush=True)
+                    elif bus in EnergyConsumers and \
                        'A' in EnergyConsumers[bus]['kW']:
                         demand = EnergyConsumers[bus]['kW']['A']
-                    prob += lpSum(p_flow_A[idx] for idx in lines_in[bus_idx]['A']) - demand == lpSum(p_flow_A[idx] for idx in lines_out[bus_idx]['A'])
+
+                    if bus in Batteries and 'A' in Batteries[bus]['phase']:
+                        print('Batteries A bus: ' + bus, flush=True)
+                        prob += lpSum(p_flow_A[idx] for idx in lines_in[bus_idx]['A']) + p_batt[Batteries[bus]['idx']] - demand == lpSum(p_flow_A[idx] for idx in lines_out[bus_idx]['A'])
+                    else:
+                        prob += lpSum(p_flow_A[idx] for idx in lines_in[bus_idx]['A']) - demand == lpSum(p_flow_A[idx] for idx in lines_out[bus_idx]['A'])
 
                 if '2' in bus_info[bus]['phases']:
                     demand = 0
-                    if bus in EnergyConsumers and \
+                    if bus in SolarPVs and 'B' in SolarPVs[bus]['phase']:
+                        demand = SolarPVs[bus]['p']
+                        print('SolarPVs B bus: ' + bus + ', demand: ' + str(demand), flush=True)
+                    elif bus in EnergyConsumers and \
                        'B' in EnergyConsumers[bus]['kW']:
                         demand = EnergyConsumers[bus]['kW']['B']
-                    prob += lpSum(p_flow_B[idx] for idx in lines_in[bus_idx]['B']) - demand == lpSum(p_flow_B[idx] for idx in lines_out[bus_idx]['B'])
+
+                    if bus in Batteries and 'B' in Batteries[bus]['phase']:
+                        print('Batteries B bus: ' + bus, flush=True)
+                        prob += lpSum(p_flow_B[idx] for idx in lines_in[bus_idx]['B']) + p_batt[Batteries[bus]['idx']] - demand == lpSum(p_flow_B[idx] for idx in lines_out[bus_idx]['B'])
+                    else:
+                        prob += lpSum(p_flow_B[idx] for idx in lines_in[bus_idx]['B']) - demand == lpSum(p_flow_B[idx] for idx in lines_out[bus_idx]['B'])
 
                 if '3' in bus_info[bus]['phases']:
                     demand = 0
-                    if bus in EnergyConsumers and \
+                    if bus in SolarPVs and 'C' in SolarPVs[bus]['phase']:
+                        demand = SolarPVs[bus]['p']
+                        print('SolarPVs C bus: ' + bus + ', demand: ' + str(demand), flush=True)
+                    elif bus in EnergyConsumers and \
                        'C' in EnergyConsumers[bus]['kW']:
                         demand = EnergyConsumers[bus]['kW']['C']
-                    prob += lpSum(p_flow_C[idx] for idx in lines_in[bus_idx]['C']) - demand == lpSum(p_flow_C[idx] for idx in lines_out[bus_idx]['C'])
+
+                    if bus in Batteries and 'C' in Batteries[bus]['phase']:
+                        print('Batteries C bus: ' + bus, flush=True)
+                        prob += lpSum(p_flow_C[idx] for idx in lines_in[bus_idx]['C']) + p_batt[Batteries[bus]['idx']] - demand == lpSum(p_flow_C[idx] for idx in lines_out[bus_idx]['C'])
+                    else:
+                        prob += lpSum(p_flow_C[idx] for idx in lines_in[bus_idx]['C']) - demand == lpSum(p_flow_C[idx] for idx in lines_out[bus_idx]['C'])
 
         # solve
         prob.solve(PULP_CBC_CMD(msg=0))
@@ -611,7 +647,9 @@ class CompetingApp(GridAPPSD):
         print('Status: ', LpStatus[prob.status], flush=True)
         #for idx in range(len(branch_info)):
         for idx in [118]:
-            print('Flow line ' + str(idx) + ', A: ', p_flow_A[idx].varValue, ', B: ', p_flow_B[idx].varValue, ', C: ', p_flow_C[idx].varValue, flush=True)
+            print('Flow line ' + str(idx) + ', A:', p_flow_A[idx].varValue, ', B:', p_flow_B[idx].varValue, ', C:', p_flow_C[idx].varValue, flush=True)
+        for i in range(len(Batteries)):
+            print('p_batt[' + str(i) + ']:', p_batt[i].varValue, flush=True);
 
         exit()
 
