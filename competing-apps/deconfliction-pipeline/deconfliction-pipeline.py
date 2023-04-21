@@ -250,13 +250,7 @@ class DeconflictionPipeline(GridAPPSD):
                             'SPARQLManager')
     sparql_mgr = SPARQLManager(gapps, feeder_mrid, simulation_id)
 
-    self.EnergyConsumers = self.AppUtil.getEnergyConsumers(sparql_mgr)
-
-    self.SynchronousMachines = self.AppUtil.getSynchronousMachines(sparql_mgr)
-
     self.Batteries = self.AppUtil.getBatteries(sparql_mgr)
-
-    self.SolarPVs = self.AppUtil.getSolarPVs(sparql_mgr)
 
     self.deltaT = 0.25 # timestamp interval in fractional hours, 0.25 = 15 min
 
@@ -279,6 +273,9 @@ class DeconflictionPipeline(GridAPPSD):
     # Step 0: Import deconfliction methodology class for this invocation of
     #         the Deconflictor based on method command line argument and
     #         create an instance of the class
+    if method.endswith('.py'):
+      method = method[:-3] # allow full python file name
+
     DeconflictionMethod = getattr(importlib.import_module(method),
                                   'DeconflictionMethod')
     self.decon_method = DeconflictionMethod(self.ConflictMatrix)
