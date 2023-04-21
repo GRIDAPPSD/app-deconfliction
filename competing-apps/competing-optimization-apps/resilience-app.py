@@ -590,7 +590,7 @@ class CompetingApp(GridAPPSD):
         for bus in bus_info:
         #for bus in ['106']:
             if 'p' not in bus_info[bus] or 'A' not in bus_info[bus]['p']:
-                print('Skipping bus: ' + bus, flush=True)
+                print('Skipping bus: ' + bus + ', phases: ' + str(bus_info[bus]['phases']), flush=True)
                 continue
 
             bus_idx = bus_info[bus]['idx']
