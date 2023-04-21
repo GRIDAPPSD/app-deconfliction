@@ -425,22 +425,12 @@ class CompetingApp(GridAPPSD):
             bus_info[bus]['idx'] = idx
             bus_info[bus]['phases'] = phases
 
-            if bus in EnergyConsumers:
-                #print(EnergyConsumers[bus]['kW'])
-                bus_info[bus]['p'] = {}
-                bus_info[bus]['q'] = {}
-                for phs in EnergyConsumers[bus]['kW']:
-                    bus_info[bus]['p'][phs] = EnergyConsumers[bus]['kW'][phs]
-                    bus_info[bus]['q'][phs] = EnergyConsumers[bus]['kVar'][phs]
-                    p_total[phs] += bus_info[bus]['p'][phs]
-
             idx += 1
 
         print('Vnom Processed', flush=True)
         #print('bus_info[65]: ' + str(bus_info['65']), flush=True)
         #print('bus_info[47]: ' + str(bus_info['47']), flush=True)
         #print('bus_info[150]: ' + str(bus_info['150']), flush=True)
-        print('p_total: ' + str(p_total), flush=True)
 
         branch_info = {}
       
@@ -559,16 +549,13 @@ class CompetingApp(GridAPPSD):
         n_line_phase = {}
         for branch in branch_info:
             if branch_info[branch]['to_bus_idx'] not in lines_in:
-                lines_in[branch_info[branch]['to_bus_idx']] = []
-            #lines_in[branch_info[branch]['to_bus_idx']].append(branch_info[branch])
-            lines_in[branch_info[branch]['to_bus_idx']].append(branch_info[branch]['idx'])
-
+                lines_in[branch_info[branch]['to_bus_idx']] = {'A': [], 'B': [], 'C': []}
             if branch_info[branch]['from_bus_idx'] not in lines_out:
-                lines_out[branch_info[branch]['from_bus_idx']] = []
-            #lines_out[branch_info[branch]['from_bus_idx']].append(branch_info[branch])
-            lines_out[branch_info[branch]['from_bus_idx']].append(branch_info[branch]['idx'])
+                lines_out[branch_info[branch]['from_bus_idx']] = {'A': [], 'B': [], 'C': []}
 
             for char in branch_info[branch]['phases']:
+                lines_in[branch_info[branch]['to_bus_idx']][char].append(branch_info[branch]['idx'])
+                lines_out[branch_info[branch]['from_bus_idx']][char].append(branch_info[branch]['idx'])
                 if char not in n_line_phase:
                     n_line_phase[char] = 0
                 n_line_phase[char] += 1
@@ -577,57 +564,54 @@ class CompetingApp(GridAPPSD):
 
         # Optimization problem formulation
         # decision variables
-        #p_flow_A = LpVariable.dicts("p_flow_A", (i for i in range(n_line_phase['A'])), lowBound=-10000, upBound=10000, cat='Continuous')
-        # HACK ALERT: range value hardwired to avoid crash
-        p_flow_A = LpVariable.dicts("p_flow_A", (i for i in range(127)), lowBound=-10000, upBound=10000, cat='Continuous')
+        p_flow_A = LpVariable.dicts("p_flow_A", (i for i in range(len(branch_info))), lowBound=-10000, upBound=10000, cat='Continuous')
+        p_flow_B = LpVariable.dicts("p_flow_B", (i for i in range(len(branch_info))), lowBound=-10000, upBound=10000, cat='Continuous')
+        p_flow_C = LpVariable.dicts("p_flow_C", (i for i in range(len(branch_info))), lowBound=-10000, upBound=10000, cat='Continuous')
 
         # objective
         prob = LpProblem("flow", LpMinimize)
         prob += p_flow_A[0]
 
         # constraints
-        solve_set = set()
         for bus in bus_info:
         #for bus in ['106']:
-            if 'p' not in bus_info[bus] or 'A' not in bus_info[bus]['p']:
-                print('Skipping bus: ' + bus + ', phases: ' + str(bus_info[bus]['phases']), flush=True)
-                continue
-
             bus_idx = bus_info[bus]['idx']
 
-            print('For bus: ' + bus + ', idx: ' + str(bus_idx) + ':', flush=True)
-
-            if bus_idx in lines_in:
-                for incident in lines_in[bus_idx]:
-                    print('  incident: ' + str(incident), flush=True)
-            else:
-                print('  incident: None, Source Bus', flush=True)
-
-            if bus_idx in lines_out:
-                for outgoing in lines_out[bus_idx]:
-                    print('  outgoing: ' + str(outgoing), flush=True)
-            else:
-                print('  outgoing: None', flush=True)
-
             if bus_idx not in lines_in:
-                lines_in[bus_idx] = []
+                print('Source bus: ' + bus, flush=True)
 
             if bus_idx not in lines_out:
-                lines_out[bus_idx] = []
+                lines_out[bus_idx] = {'A': [], 'B': [], 'C': []}
 
-            prob += lpSum(p_flow_A[idx] for idx in lines_in[bus_idx]) - bus_info[bus]['p']['A'] == lpSum(p_flow_A[idx] for idx in lines_out[bus_idx])
+            if bus_idx in lines_in: # check for source bus
+                if '1' in bus_info[bus]['phases']:
+                    demand = 0
+                    if bus in EnergyConsumers and \
+                       'A' in EnergyConsumers[bus]['kW']:
+                        demand = EnergyConsumers[bus]['kW']['A']
+                    prob += lpSum(p_flow_A[idx] for idx in lines_in[bus_idx]['A']) - demand == lpSum(p_flow_A[idx] for idx in lines_out[bus_idx]['A'])
 
-            for idx in lines_in[bus_idx]:
-                solve_set.add(idx)
-            for idx in lines_out[bus_idx]:
-                solve_set.add(idx)
+                if '2' in bus_info[bus]['phases']:
+                    demand = 0
+                    if bus in EnergyConsumers and \
+                       'B' in EnergyConsumers[bus]['kW']:
+                        demand = EnergyConsumers[bus]['kW']['B']
+                    prob += lpSum(p_flow_B[idx] for idx in lines_in[bus_idx]['B']) - demand == lpSum(p_flow_B[idx] for idx in lines_out[bus_idx]['B'])
+
+                if '3' in bus_info[bus]['phases']:
+                    demand = 0
+                    if bus in EnergyConsumers and \
+                       'C' in EnergyConsumers[bus]['kW']:
+                        demand = EnergyConsumers[bus]['kW']['C']
+                    prob += lpSum(p_flow_C[idx] for idx in lines_in[bus_idx]['C']) - demand == lpSum(p_flow_C[idx] for idx in lines_out[bus_idx]['C'])
 
         # solve
         prob.solve(PULP_CBC_CMD(msg=0))
         prob.writeLP('Resilience.lp')
         print('Status: ', LpStatus[prob.status], flush=True)
-        for idx in solve_set:
-            print('Flow A line ' + str(idx) + ': ', p_flow_A[idx].varValue, flush=True)
+        #for idx in range(len(branch_info)):
+        for idx in [118]:
+            print('Flow line ' + str(idx) + ', A: ', p_flow_A[idx].varValue, ', B: ', p_flow_B[idx].varValue, ', C: ', p_flow_C[idx].varValue, flush=True)
 
         exit()
 
