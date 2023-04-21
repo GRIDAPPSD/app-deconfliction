@@ -597,49 +597,52 @@ class CompetingApp(GridAPPSD):
 
             if bus_idx in lines_in: # check for source bus
                 if '1' in bus_info[bus]['phases']:
-                    demand = 0
-                    if bus in SolarPVs and 'A' in SolarPVs[bus]['phase']:
-                        demand = SolarPVs[bus]['p']
-                        print('SolarPVs A bus: ' + bus + ', demand: ' + str(demand), flush=True)
-                    elif bus in EnergyConsumers and \
+                    injection = 0
+                    if bus in EnergyConsumers and \
                        'A' in EnergyConsumers[bus]['kW']:
-                        demand = EnergyConsumers[bus]['kW']['A']
+                        injection = EnergyConsumers[bus]['kW']['A']
+
+                    if bus in SolarPVs and 'A' in SolarPVs[bus]['phase']:
+                        injection -= SolarPVs[bus]['p']
+                        print('SolarPVs A bus: ' + bus + ', injection: ' + str(injection), flush=True)
 
                     if bus in Batteries and 'A' in Batteries[bus]['phase']:
                         print('Batteries A bus: ' + bus, flush=True)
-                        prob += lpSum(p_flow_A[idx] for idx in lines_in[bus_idx]['A']) + p_batt[Batteries[bus]['idx']] - demand == lpSum(p_flow_A[idx] for idx in lines_out[bus_idx]['A'])
+                        prob += lpSum(p_flow_A[idx] for idx in lines_in[bus_idx]['A']) + p_batt[Batteries[bus]['idx']] - injection == lpSum(p_flow_A[idx] for idx in lines_out[bus_idx]['A'])
                     else:
-                        prob += lpSum(p_flow_A[idx] for idx in lines_in[bus_idx]['A']) - demand == lpSum(p_flow_A[idx] for idx in lines_out[bus_idx]['A'])
+                        prob += lpSum(p_flow_A[idx] for idx in lines_in[bus_idx]['A']) - injection == lpSum(p_flow_A[idx] for idx in lines_out[bus_idx]['A'])
 
                 if '2' in bus_info[bus]['phases']:
-                    demand = 0
-                    if bus in SolarPVs and 'B' in SolarPVs[bus]['phase']:
-                        demand = SolarPVs[bus]['p']
-                        print('SolarPVs B bus: ' + bus + ', demand: ' + str(demand), flush=True)
-                    elif bus in EnergyConsumers and \
+                    injection = 0
+                    if bus in EnergyConsumers and \
                        'B' in EnergyConsumers[bus]['kW']:
-                        demand = EnergyConsumers[bus]['kW']['B']
+                        injection = EnergyConsumers[bus]['kW']['B']
+
+                    if bus in SolarPVs and 'B' in SolarPVs[bus]['phase']:
+                        injection -= SolarPVs[bus]['p']
+                        print('SolarPVs B bus: ' + bus + ', injection: ' + str(injection), flush=True)
 
                     if bus in Batteries and 'B' in Batteries[bus]['phase']:
                         print('Batteries B bus: ' + bus, flush=True)
-                        prob += lpSum(p_flow_B[idx] for idx in lines_in[bus_idx]['B']) + p_batt[Batteries[bus]['idx']] - demand == lpSum(p_flow_B[idx] for idx in lines_out[bus_idx]['B'])
+                        prob += lpSum(p_flow_B[idx] for idx in lines_in[bus_idx]['B']) + p_batt[Batteries[bus]['idx']] - injection == lpSum(p_flow_B[idx] for idx in lines_out[bus_idx]['B'])
                     else:
-                        prob += lpSum(p_flow_B[idx] for idx in lines_in[bus_idx]['B']) - demand == lpSum(p_flow_B[idx] for idx in lines_out[bus_idx]['B'])
+                        prob += lpSum(p_flow_B[idx] for idx in lines_in[bus_idx]['B']) - injection == lpSum(p_flow_B[idx] for idx in lines_out[bus_idx]['B'])
 
                 if '3' in bus_info[bus]['phases']:
-                    demand = 0
-                    if bus in SolarPVs and 'C' in SolarPVs[bus]['phase']:
-                        demand = SolarPVs[bus]['p']
-                        print('SolarPVs C bus: ' + bus + ', demand: ' + str(demand), flush=True)
-                    elif bus in EnergyConsumers and \
+                    injection = 0
+                    if bus in EnergyConsumers and \
                        'C' in EnergyConsumers[bus]['kW']:
-                        demand = EnergyConsumers[bus]['kW']['C']
+                        injection = EnergyConsumers[bus]['kW']['C']
+
+                    if bus in SolarPVs and 'C' in SolarPVs[bus]['phase']:
+                        injection -= SolarPVs[bus]['p']
+                        print('SolarPVs C bus: ' + bus + ', injection: ' + str(injection), flush=True)
 
                     if bus in Batteries and 'C' in Batteries[bus]['phase']:
                         print('Batteries C bus: ' + bus, flush=True)
-                        prob += lpSum(p_flow_C[idx] for idx in lines_in[bus_idx]['C']) + p_batt[Batteries[bus]['idx']] - demand == lpSum(p_flow_C[idx] for idx in lines_out[bus_idx]['C'])
+                        prob += lpSum(p_flow_C[idx] for idx in lines_in[bus_idx]['C']) + p_batt[Batteries[bus]['idx']] - injection == lpSum(p_flow_C[idx] for idx in lines_out[bus_idx]['C'])
                     else:
-                        prob += lpSum(p_flow_C[idx] for idx in lines_in[bus_idx]['C']) - demand == lpSum(p_flow_C[idx] for idx in lines_out[bus_idx]['C'])
+                        prob += lpSum(p_flow_C[idx] for idx in lines_in[bus_idx]['C']) - injection == lpSum(p_flow_C[idx] for idx in lines_out[bus_idx]['C'])
 
         # solve
         prob.solve(PULP_CBC_CMD(msg=0))
