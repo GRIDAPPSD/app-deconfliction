@@ -577,15 +577,22 @@ class CompetingApp(GridAPPSD):
 
         # Optimization problem formulation
         # decision variables
-        p_flow_A = LpVariable.dicts("p_flow_A", (i for i in range(n_line_phase['A'])), lowBound=-10000, upBound=10000, cat='Continuous')
+        #p_flow_A = LpVariable.dicts("p_flow_A", (i for i in range(n_line_phase['A'])), lowBound=-10000, upBound=10000, cat='Continuous')
+        # HACK ALERT: range value hardwired to avoid crash
+        p_flow_A = LpVariable.dicts("p_flow_A", (i for i in range(127)), lowBound=-10000, upBound=10000, cat='Continuous')
 
         # objective
         prob = LpProblem("flow", LpMinimize)
         prob += p_flow_A[0]
 
         # constraints
-        #for bus in bus_info:
-        for bus in ['106']:
+        solve_set = set()
+        for bus in bus_info:
+        #for bus in ['106']:
+            if 'p' not in bus_info[bus] or 'A' not in bus_info[bus]['p']:
+                print('Skipping bus: ' + bus, flush=True)
+                continue
+
             bus_idx = bus_info[bus]['idx']
 
             print('For bus: ' + bus + ', idx: ' + str(bus_idx) + ':', flush=True)
@@ -603,23 +610,28 @@ class CompetingApp(GridAPPSD):
                 print('  outgoing: None', flush=True)
 
             if bus_idx not in lines_in:
-              lines_in[bus_idx] = []
+                lines_in[bus_idx] = []
 
             if bus_idx not in lines_out:
-              lines_out[bus_idx] = []
+                lines_out[bus_idx] = []
 
             prob += lpSum(p_flow_A[idx] for idx in lines_in[bus_idx]) - bus_info[bus]['p']['A'] == lpSum(p_flow_A[idx] for idx in lines_out[bus_idx])
+
+            for idx in lines_in[bus_idx]:
+                solve_set.add(idx)
+            for idx in lines_out[bus_idx]:
+                solve_set.add(idx)
 
         # solve
         prob.solve(PULP_CBC_CMD(msg=0))
         prob.writeLP('Resilience.lp')
         print('Status: ', LpStatus[prob.status], flush=True)
-        print('Flow A line 0: ', p_flow_A[0].varValue, flush=True)
-        print('Flow A line 16: ', p_flow_A[16].varValue, flush=True)
+        for idx in solve_set:
+            print('Flow A line ' + str(idx) + ': ', p_flow_A[idx].varValue, flush=True)
 
         exit()
 
-        print('\nPerforming PULP optimization', flush=True)
+        print('\nPerforming hardwired PULP optimization', flush=True)
         p_load_6 = 100
         p_load_5 = 110
         p_ren_6 = 50
