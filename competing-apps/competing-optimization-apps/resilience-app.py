@@ -582,7 +582,7 @@ class CompetingApp(GridAPPSD):
 
         # objective
         prob = LpProblem("flow", LpMinimize)
-        prob += p_flow_A[0]
+        prob += p_flow_A[118] + p_flow_B[118] + p_flow_C[118]
 
         # constraints
         for bus in bus_info:
@@ -608,7 +608,7 @@ class CompetingApp(GridAPPSD):
 
                     if bus in Batteries and 'A' in Batteries[bus]['phase']:
                         print('Batteries A bus: ' + bus, flush=True)
-                        prob += lpSum(p_flow_A[idx] for idx in lines_in[bus_idx]['A']) + p_batt[Batteries[bus]['idx']] - injection == lpSum(p_flow_A[idx] for idx in lines_out[bus_idx]['A'])
+                        prob += lpSum(p_flow_A[idx] for idx in lines_in[bus_idx]['A']) - p_batt[Batteries[bus]['idx']] - injection == lpSum(p_flow_A[idx] for idx in lines_out[bus_idx]['A'])
                     else:
                         prob += lpSum(p_flow_A[idx] for idx in lines_in[bus_idx]['A']) - injection == lpSum(p_flow_A[idx] for idx in lines_out[bus_idx]['A'])
 
@@ -624,7 +624,7 @@ class CompetingApp(GridAPPSD):
 
                     if bus in Batteries and 'B' in Batteries[bus]['phase']:
                         print('Batteries B bus: ' + bus, flush=True)
-                        prob += lpSum(p_flow_B[idx] for idx in lines_in[bus_idx]['B']) + p_batt[Batteries[bus]['idx']] - injection == lpSum(p_flow_B[idx] for idx in lines_out[bus_idx]['B'])
+                        prob += lpSum(p_flow_B[idx] for idx in lines_in[bus_idx]['B']) - p_batt[Batteries[bus]['idx']] - injection == lpSum(p_flow_B[idx] for idx in lines_out[bus_idx]['B'])
                     else:
                         prob += lpSum(p_flow_B[idx] for idx in lines_in[bus_idx]['B']) - injection == lpSum(p_flow_B[idx] for idx in lines_out[bus_idx]['B'])
 
@@ -640,7 +640,7 @@ class CompetingApp(GridAPPSD):
 
                     if bus in Batteries and 'C' in Batteries[bus]['phase']:
                         print('Batteries C bus: ' + bus, flush=True)
-                        prob += lpSum(p_flow_C[idx] for idx in lines_in[bus_idx]['C']) + p_batt[Batteries[bus]['idx']] - injection == lpSum(p_flow_C[idx] for idx in lines_out[bus_idx]['C'])
+                        prob += lpSum(p_flow_C[idx] for idx in lines_in[bus_idx]['C']) - p_batt[Batteries[bus]['idx']] - injection == lpSum(p_flow_C[idx] for idx in lines_out[bus_idx]['C'])
                     else:
                         prob += lpSum(p_flow_C[idx] for idx in lines_in[bus_idx]['C']) - injection == lpSum(p_flow_C[idx] for idx in lines_out[bus_idx]['C'])
 
