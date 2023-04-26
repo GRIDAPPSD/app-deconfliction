@@ -580,12 +580,36 @@ class CompetingApp(GridAPPSD):
             if branch_info[branch]['from_bus_idx'] not in lines_out:
                 lines_out[branch_info[branch]['from_bus_idx']] = {'A': [], 'B': [], 'C': []}
 
-            for char in branch_info[branch]['phases']:
+            phases = branch_info[branch]['phases']
+            for char in phases:
                 lines_in[branch_info[branch]['to_bus_idx']][char].append(branch_info[branch]['idx'])
                 lines_out[branch_info[branch]['from_bus_idx']][char].append(branch_info[branch]['idx'])
                 if char not in n_line_phase:
                     n_line_phase[char] = 0
                 n_line_phase[char] += 1
+
+            if branch_info[branch]['type'] == 'line':
+                fr_bus = branch_info[branch]['from_bus']
+                to_bus = branch_info[branch]['to_bus']
+                fr_nodes = []
+                to_nodes = []
+                if 'A' in phases:
+                    fr_nodes.append(node_name[fr_bus+'.1'])
+                    to_nodes.append(node_name[to_bus+'.1'])
+                if 'B' in phases:
+                    fr_nodes.append(node_name[fr_bus+'.2'])
+                    to_nodes.append(node_name[to_bus+'.2'])
+                if 'C' in phases:
+                    fr_nodes.append(node_name[fr_bus+'.3'])
+                    to_nodes.append(node_name[to_bus+'.3'])
+
+                branch_info[branch]['zprim'] = -1 * \
+                                 np.linalg.inv(ybus[np.ix_(fr_nodes, to_nodes)])
+
+                #print('added line branch_info for: ' + branch + ', zprim: ' + str(branch_info[branch]['zprim']), flush=True)
+            else:
+                branch_info[branch]['zprim'] = np.zeros((3, 3), dtype=complex)
+                #print('added non-line branch_info for: ' + branch + ', zprim: empty', flush=True)
 
         print('\nbranch_info phase count: ' + str(n_line_phase), flush=True)
 
