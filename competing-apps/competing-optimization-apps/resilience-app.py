@@ -442,6 +442,23 @@ class CompetingApp(GridAPPSD):
         #print('bus_info[47]: ' + str(bus_info['47']), flush=True)
         #print('bus_info[150]: ' + str(bus_info['150']), flush=True)
 
+        ysparse, nodelist = sparql_mgr.ybus_export()
+
+        print('Processing Ybus...', flush=True)
+
+        node_name = {}
+        for idx, obj in enumerate(nodelist):
+            node_name[obj.strip('\"')] = idx
+
+        num_nodes = len(node_name)
+        ybus = np.zeros((num_nodes, num_nodes), dtype=complex)
+
+        for obj in ysparse:
+            items = obj.split(',')
+            if items[0] == 'Row': # skip header
+                continue
+            ybus[int(items[0])-1][int(items[1])-1] = ybus[int(items[1])-1][int(items[0])-1] = complex(float(items[2]), float(items[3]))
+
         branch_info = {}
       
         bindings = sparql_mgr.lines_connectivity_query()
