@@ -648,6 +648,10 @@ class CompetingApp(GridAPPSD):
         lamda_c = LpVariable.dicts("lamda_c", (i for i in range(len(Batteries))), lowBound=0, upBound=1, cat='Binary')
         lamda_d = LpVariable.dicts("lamda_d", (i for i in range(len(Batteries))), lowBound=0, upBound=1, cat='Binary')
 
+        v_A = LpVariable.dicts("v_A", (i for i in range(len(bus_info))), lowBound=-10000, upBound=10000, cat='Continuous')
+        v_B = LpVariable.dicts("v_B", (i for i in range(len(bus_info))), lowBound=-10000, upBound=10000, cat='Continuous')
+        v_C = LpVariable.dicts("v_C", (i for i in range(len(bus_info))), lowBound=-10000, upBound=10000, cat='Continuous')
+
         # objective
 
         # Decarbonization
@@ -743,7 +747,65 @@ class CompetingApp(GridAPPSD):
             prob += p_batt_d[idx] >= - lamda_d[idx] * 250
             prob += p_batt[idx] == p_batt_c[idx] + p_batt_d[idx]
             prob += lamda_c[idx] + lamda_d[idx] <= 1
-            idx += 1
+
+        for branch in branch_info:
+            zprim = branch_info[branch]['zprim']
+            phases = branch_info[branch]['phases']
+
+            r_aa = 0.0; x_aa = 0.0
+            r_bb = 0.0; x_bb = 0.0
+            r_cc = 0.0; x_cc = 0.0
+            r_ab = 0.0; x_ab = 0.0
+            r_ac = 0.0; x_ac = 0.0
+            r_bc = 0.0; x_bc = 0.0
+
+            if zprim.size == 1:
+                if phases == 'A':
+                    r_aa = zprim[0,0].real; x_aa = zprim[0,0].imag
+                elif phases == 'B':
+                    r_bb = zprim[0,0].real; x_bb = zprim[0,0].imag
+                elif phases == 'C':
+                    r_cc = zprim[0,0].real; x_cc = zprim[0,0].imag
+                else:
+                    print('*** Unrecognized single phase for branch: ' + branch + ', phase: ' + phases, flush=True)
+
+            elif zprim.size == 4:
+                if 'A' in phases and 'B' in phases:
+                    r_aa = zprim[0,0].real; x_aa = zprim[0,0].imag
+                    r_bb = zprim[1,1].real; x_bb = zprim[1,1].imag
+                    r_ab = zprim[0,1].real; x_ab = zprim[0,1].imag
+                elif 'A' in phases and 'C' in phases:
+                    r_aa = zprim[0,0].real; x_aa = zprim[0,0].imag
+                    r_cc = zprim[1,1].real; x_cc = zprim[1,1].imag
+                    r_ac = zprim[0,1].real; x_ac = zprim[0,1].imag
+                elif 'B' in phases and 'C' in phases:
+                    r_bb = zprim[0,0].real; x_bb = zprim[0,0].imag
+                    r_cc = zprim[1,1].real; x_cc = zprim[1,1].imag
+                    r_bc = zprim[0,1].real; x_bc = zprim[0,1].imag
+                else:
+                    print('*** Unrecognized two phases for branch: ' + branch + ', phases: ' + phases, flush=True)
+
+            elif zprim.size == 9:
+                r_aa = zprim[0,0].real; x_aa = zprim[0,0].imag
+                r_bb = zprim[1,1].real; x_bb = zprim[1,1].imag
+                r_cc = zprim[2,2].real; x_cc = zprim[2,2].imag
+                r_ab = zprim[0,1].real; x_ab = zprim[0,1].imag
+                r_ac = zprim[0,2].real; x_ac = zprim[0,2].imag
+                r_bc = zprim[1,2].real; x_bc = zprim[1,2].imag
+
+            else:
+                print('*** Unrecognized zprim size for branch: ' + branch + ', size: ' + str(zprim.size), flush=True)
+
+            fr_bus_idx = branch_info[branch]['from_bus_idx']
+            to_bus_idx = branch_info[branch]['to_bus_idx']
+            idx = branch_info[branch]['idx']
+            hsqrt3 = math.sqrt(3)/2
+
+            prob += v_A[to_bus_idx] == v_A[fr_bus_idx] - 2*(p_flow_A[idx]*r_aa + q_flow_A[idx]*x_aa + p_flow_B[idx]*(-0.5*r_ab + hsqrt3*x_ab) + q_flow_B[idx]*(-0.5*x_ab - hsqrt3*r_ab) + p_flow_C[idx]*(-0.5*r_ac - hsqrt3*x_ac) + q_flow_C[idx]*(-0.5*x_ac + hsqrt3*r_ac))
+
+            prob += v_B[to_bus_idx] == v_B[fr_bus_idx] - 2*(p_flow_B[idx]*r_bb + q_flow_B[idx]*x_bb + p_flow_A[idx]*(-0.5*r_ab + hsqrt3*x_ab) + q_flow_A[idx]*(-0.5*x_ab - hsqrt3*r_ab) + p_flow_C[idx]*(-0.5*r_bc - hsqrt3*x_bc) + q_flow_C[idx]*(-0.5*x_bc + hsqrt3*r_bc))
+
+            prob += v_C[to_bus_idx] == v_C[fr_bus_idx] - 2*(p_flow_C[idx]*r_cc + q_flow_C[idx]*x_cc + p_flow_A[idx]*(-0.5*r_ac + hsqrt3*x_ac) + q_flow_A[idx]*(-0.5*x_ac - hsqrt3*r_ac) + p_flow_B[idx]*(-0.5*r_bc - hsqrt3*x_bc) + q_flow_B[idx]*(-0.5*x_bc + hsqrt3*r_bc))
 
         # solve
         prob.solve(PULP_CBC_CMD(msg=0))
