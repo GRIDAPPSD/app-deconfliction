@@ -61,6 +61,7 @@ from gridappsd import GridAPPSD
 from matplotlib import pyplot as plt
 from matplotlib import dates as md
 from datetime import datetime
+from tabulate import tabulate
 
 
 class CompetingApp(GridAPPSD):
@@ -300,6 +301,7 @@ class CompetingApp(GridAPPSD):
 
         emergencyState = state.startswith('e') or state.startswith('E')
 
+        feeder_power = {'p': {'A': 0, 'B': 0, 'C': 0}, 'q': {'A': 0, 'B': 0, 'C': 0}}
         EnergyConsumers = {}
         bindings = sparql_mgr.energyconsumer_query()
         for obj in bindings:
@@ -315,9 +317,17 @@ class CompetingApp(GridAPPSD):
                 EnergyConsumers[bus]['kW']['A'] = EnergyConsumers[bus]['kW']['B'] = EnergyConsumers[bus]['kW']['C'] = pval
                 qval = float(obj['q']['value']) / 3000.0
                 EnergyConsumers[bus]['kVar']['A'] = EnergyConsumers[bus]['kVar']['B'] = EnergyConsumers[bus]['kVar']['C'] = qval
+                feeder_power['p']['A'] += pval
+                feeder_power['p']['B'] += pval
+                feeder_power['p']['C'] += pval
+                feeder_power['q']['A'] += qval
+                feeder_power['q']['B'] += qval
+                feeder_power['q']['C'] += qval
             else:
                 EnergyConsumers[bus]['kW'][phases] = float(obj['p']['value']) / 1000.0
                 EnergyConsumers[bus]['kVar'][phases] = float(obj['q']['value']) / 1000.0
+                feeder_power['p'][phases] += float(obj['p']['value']) / 1000.0
+                feeder_power['q'][phases] += float(obj['q']['value']) / 1000.0
 
         #print('EnergyConsumers[65]: ' + str(EnergyConsumers['65']), flush=True)
         #print('EnergyConsumers[47]: ' + str(EnergyConsumers['47']), flush=True)
@@ -382,9 +392,9 @@ class CompetingApp(GridAPPSD):
                 round(Batteries[name]['SoC'], 4)), flush=True)
 
         # SHIVA HACK for 123 model testing
-        Batteries['65'] = {'idx': 0, 'prated': 250, 'phase': 'A'}
-        Batteries['52'] = {'idx': 1, 'prated': 250, 'phase': 'B'}
-        Batteries['76'] = {'idx': 2, 'prated': 250, 'phase': 'C'}
+        Batteries['65'] = {'idx': 0, 'prated': 250, 'phase': 'A', 'eff': 0.975 * 0.86, 'ratedE': 500, 'SoC': 0.25}
+        Batteries['52'] = {'idx': 1, 'prated': 250, 'phase': 'B', 'eff': 0.975 * 0.86, 'ratedE': 500, 'SoC': 0.275}
+        Batteries['76'] = {'idx': 2, 'prated': 250, 'phase': 'C', 'eff': 0.975 * 0.86, 'ratedE': 500, 'SoC': 0.265}
 
         SolarPVs = {}
         bindings = sparql_mgr.pv_query()
@@ -613,17 +623,40 @@ class CompetingApp(GridAPPSD):
 
         print('\nbranch_info phase count: ' + str(n_line_phase), flush=True)
 
+        deltaT = 0.25
+
         # Optimization problem formulation
         # decision variables
         p_flow_A = LpVariable.dicts("p_flow_A", (i for i in range(len(branch_info))), lowBound=-10000, upBound=10000, cat='Continuous')
         p_flow_B = LpVariable.dicts("p_flow_B", (i for i in range(len(branch_info))), lowBound=-10000, upBound=10000, cat='Continuous')
         p_flow_C = LpVariable.dicts("p_flow_C", (i for i in range(len(branch_info))), lowBound=-10000, upBound=10000, cat='Continuous')
 
+        q_flow_A = LpVariable.dicts("q_flow_A", (i for i in range(len(branch_info))), lowBound=-10000, upBound=10000,
+                                    cat='Continuous')
+        q_flow_B = LpVariable.dicts("q_flow_B", (i for i in range(len(branch_info))), lowBound=-10000, upBound=10000,
+                                    cat='Continuous')
+        q_flow_C = LpVariable.dicts("q_flow_C", (i for i in range(len(branch_info))), lowBound=-10000, upBound=10000,
+                                    cat='Continuous')
+
         p_batt = LpVariable.dicts("p_batt", (i for i in range(len(Batteries))), lowBound=-250, upBound=250, cat='Continuous')
+        p_batt_c = LpVariable.dicts("p_batt_c", (i for i in range(len(Batteries))), lowBound=-250, upBound=250,
+                                  cat='Continuous')
+        p_batt_d = LpVariable.dicts("p_batt_d", (i for i in range(len(Batteries))), lowBound=-250, upBound=250,
+                                  cat='Continuous')
+        soc = LpVariable.dicts("soc", (i for i in range(len(Batteries))), lowBound=0.2, upBound=0.9,
+                                  cat='Continuous')
+        lamda_c = LpVariable.dicts("lamda_c", (i for i in range(len(Batteries))), lowBound=0, upBound=1, cat='Binary')
+        lamda_d = LpVariable.dicts("lamda_d", (i for i in range(len(Batteries))), lowBound=0, upBound=1, cat='Binary')
 
         # objective
-        prob = LpProblem("flow", LpMinimize)
-        prob += p_flow_A[118] + p_flow_B[118] + p_flow_C[118]
+
+        # Decarbonization
+        # prob = LpProblem("Min_Sub_Flow", LpMinimize)
+        # prob += p_flow_A[118] + p_flow_B[118] + p_flow_C[118]
+
+        # Resilience
+        prob = LpProblem("Max_Reserve", LpMinimize)
+        prob += lpSum(-soc[i] for i in range(len(Batteries)))
 
         # constraints
         for bus in bus_info:
@@ -638,94 +671,111 @@ class CompetingApp(GridAPPSD):
 
             if bus_idx in lines_in: # check for source bus
                 if '1' in bus_info[bus]['phases']:
-                    injection = 0
+                    injection_p, injection_q = 0, 0
                     if bus in EnergyConsumers and \
                        'A' in EnergyConsumers[bus]['kW']:
-                        injection = EnergyConsumers[bus]['kW']['A']
+                        injection_p = EnergyConsumers[bus]['kW']['A']
+                        injection_q = EnergyConsumers[bus]['kVar']['A']
 
                     if bus in SolarPVs and 'A' in SolarPVs[bus]['phase']:
-                        injection -= SolarPVs[bus]['p']
-                        print('SolarPVs A bus: ' + bus + ', injection: ' + str(injection), flush=True)
+                        injection_p -= SolarPVs[bus]['p']
+                        print('SolarPVs A bus: ' + bus + ', injection_p: ' + str(injection_p), flush=True)
 
                     if bus in Batteries and 'A' in Batteries[bus]['phase']:
                         print('Batteries A bus: ' + bus, flush=True)
-                        prob += lpSum(p_flow_A[idx] for idx in lines_in[bus_idx]['A']) - p_batt[Batteries[bus]['idx']] - injection == lpSum(p_flow_A[idx] for idx in lines_out[bus_idx]['A'])
+                        prob += lpSum(p_flow_A[idx] for idx in lines_in[bus_idx]['A']) - p_batt[Batteries[bus]['idx']] - injection_p == lpSum(p_flow_A[idx] for idx in lines_out[bus_idx]['A'])
+                        prob += lpSum(q_flow_A[idx] for idx in lines_in[bus_idx]['A']) - injection_q == lpSum(
+                            q_flow_A[idx] for idx in lines_out[bus_idx]['A'])
                     else:
-                        prob += lpSum(p_flow_A[idx] for idx in lines_in[bus_idx]['A']) - injection == lpSum(p_flow_A[idx] for idx in lines_out[bus_idx]['A'])
+                        prob += lpSum(p_flow_A[idx] for idx in lines_in[bus_idx]['A']) - injection_p == lpSum(p_flow_A[idx] for idx in lines_out[bus_idx]['A'])
+                        prob += lpSum(q_flow_A[idx] for idx in lines_in[bus_idx]['A']) - injection_q == lpSum(
+                            q_flow_A[idx] for idx in lines_out[bus_idx]['A'])
 
                 if '2' in bus_info[bus]['phases']:
-                    injection = 0
+                    injection_p, injection_q = 0, 0
                     if bus in EnergyConsumers and \
                        'B' in EnergyConsumers[bus]['kW']:
-                        injection = EnergyConsumers[bus]['kW']['B']
+                        injection_p = EnergyConsumers[bus]['kW']['B']
+                        injection_q = EnergyConsumers[bus]['kVar']['B']
 
                     if bus in SolarPVs and 'B' in SolarPVs[bus]['phase']:
-                        injection -= SolarPVs[bus]['p']
-                        print('SolarPVs B bus: ' + bus + ', injection: ' + str(injection), flush=True)
+                        injection_p -= SolarPVs[bus]['p']
+                        print('SolarPVs B bus: ' + bus + ', injection_p: ' + str(injection_p), flush=True)
 
                     if bus in Batteries and 'B' in Batteries[bus]['phase']:
                         print('Batteries B bus: ' + bus, flush=True)
-                        prob += lpSum(p_flow_B[idx] for idx in lines_in[bus_idx]['B']) - p_batt[Batteries[bus]['idx']] - injection == lpSum(p_flow_B[idx] for idx in lines_out[bus_idx]['B'])
+                        prob += lpSum(p_flow_B[idx] for idx in lines_in[bus_idx]['B']) - p_batt[Batteries[bus]['idx']] - injection_p == lpSum(p_flow_B[idx] for idx in lines_out[bus_idx]['B'])
+                        prob += lpSum(q_flow_B[idx] for idx in lines_in[bus_idx]['B']) - injection_q == lpSum(
+                            q_flow_B[idx] for idx in lines_out[bus_idx]['B'])
                     else:
-                        prob += lpSum(p_flow_B[idx] for idx in lines_in[bus_idx]['B']) - injection == lpSum(p_flow_B[idx] for idx in lines_out[bus_idx]['B'])
+                        prob += lpSum(p_flow_B[idx] for idx in lines_in[bus_idx]['B']) - injection_p == lpSum(p_flow_B[idx] for idx in lines_out[bus_idx]['B'])
+                        prob += lpSum(q_flow_B[idx] for idx in lines_in[bus_idx]['B']) - injection_q == lpSum(
+                            q_flow_B[idx] for idx in lines_out[bus_idx]['B'])
 
                 if '3' in bus_info[bus]['phases']:
-                    injection = 0
+                    injection_p, injection_q = 0, 0
                     if bus in EnergyConsumers and \
                        'C' in EnergyConsumers[bus]['kW']:
-                        injection = EnergyConsumers[bus]['kW']['C']
+                        injection_p = EnergyConsumers[bus]['kW']['C']
+                        injection_q = EnergyConsumers[bus]['kVar']['C']
 
                     if bus in SolarPVs and 'C' in SolarPVs[bus]['phase']:
-                        injection -= SolarPVs[bus]['p']
-                        print('SolarPVs C bus: ' + bus + ', injection: ' + str(injection), flush=True)
+                        injection_p -= SolarPVs[bus]['p']
+                        print('SolarPVs C bus: ' + bus + ', injection_p: ' + str(injection_p), flush=True)
 
                     if bus in Batteries and 'C' in Batteries[bus]['phase']:
                         print('Batteries C bus: ' + bus, flush=True)
-                        prob += lpSum(p_flow_C[idx] for idx in lines_in[bus_idx]['C']) - p_batt[Batteries[bus]['idx']] - injection == lpSum(p_flow_C[idx] for idx in lines_out[bus_idx]['C'])
+                        prob += lpSum(p_flow_C[idx] for idx in lines_in[bus_idx]['C']) - p_batt[Batteries[bus]['idx']] - injection_p == lpSum(p_flow_C[idx] for idx in lines_out[bus_idx]['C'])
+                        prob += lpSum(q_flow_C[idx] for idx in lines_in[bus_idx]['C']) - injection_q == lpSum(
+                            q_flow_C[idx] for idx in lines_out[bus_idx]['C'])
                     else:
-                        prob += lpSum(p_flow_C[idx] for idx in lines_in[bus_idx]['C']) - injection == lpSum(p_flow_C[idx] for idx in lines_out[bus_idx]['C'])
+                        prob += lpSum(p_flow_C[idx] for idx in lines_in[bus_idx]['C']) - injection_p == lpSum(p_flow_C[idx] for idx in lines_out[bus_idx]['C'])
+                        prob += lpSum(q_flow_C[idx] for idx in lines_in[bus_idx]['C']) - injection_q == lpSum(
+                            q_flow_C[idx] for idx in lines_out[bus_idx]['C'])
+
+        for name in Batteries:
+            Batteries[name]['state'] = 'idling'
+            idx = Batteries[name]['idx']
+            prob += soc[idx] == Batteries[name]['SoC'] + \
+                    Batteries[name]['eff'] * p_batt_c[idx] * deltaT / Batteries[name]['ratedE'] + \
+                    1 / Batteries[name]['eff'] * p_batt_d[idx] * deltaT / Batteries[name]['ratedE']
+            prob += p_batt_c[idx] <= lamda_c[idx] * 250
+            prob += p_batt_d[idx] >= - lamda_d[idx] * 250
+            prob += p_batt[idx] == p_batt_c[idx] + p_batt_d[idx]
+            prob += lamda_c[idx] + lamda_d[idx] <= 1
+            idx += 1
 
         # solve
         prob.solve(PULP_CBC_CMD(msg=0))
         prob.writeLP('Resilience.lp')
         print('Status: ', LpStatus[prob.status], flush=True)
         #for idx in range(len(branch_info)):
+        branch_flow = []
+        for branch in branch_info:
+            idx = branch_info[branch]['idx']
+            branch_flow.append([branch, branch_info[branch]['from_bus'], branch_info[branch]['to_bus'],
+                                p_flow_A[idx].varValue, p_flow_B[idx].varValue, p_flow_C[idx].varValue,
+                               q_flow_A[idx].varValue, q_flow_B[idx].varValue, q_flow_C[idx].varValue])
+
+        print(tabulate(branch_flow, headers=['Line Name', 'from', 'to', 'P_A', 'P_B', 'P_C', 'Q_A', 'Q_B', 'Q_C'], tablefmt='psql'))
+
+        p_batt_setpoint = []
+        for name in Batteries:
+            idx = Batteries[name]['idx']
+            p_batt_setpoint.append([name, p_batt[idx].varValue, soc[idx].varValue])
+
+        print(tabulate(p_batt_setpoint, headers=['Battery', 'P_batt', 'Target SoC'], tablefmt='psql'))
         for idx in [118]:
-            print('Flow line ' + str(idx) + ', A:', p_flow_A[idx].varValue, ', B:', p_flow_B[idx].varValue, ', C:', p_flow_C[idx].varValue, flush=True)
-        for i in range(len(Batteries)):
-            print('p_batt[' + str(i) + ']:', p_batt[i].varValue, flush=True);
-
+            print('P Flow line ' + str(idx) + ', A:', p_flow_A[idx].varValue, ', B:', p_flow_B[idx].varValue, ', C:',
+                  p_flow_C[idx].varValue, flush=True)
+            print('Q Flow line ' + str(idx) + ', A:', q_flow_A[idx].varValue, ', B:', q_flow_B[idx].varValue, ', C:',
+                  q_flow_C[idx].varValue, flush=True)
+        print('Total Real Power ' + ', A:', feeder_power['p']['A'], ', B:', feeder_power['p']['B'], ', C:',
+              feeder_power['p']['C'], flush=True)
+        print('Total Reactive Power ' + ', A:', feeder_power['q']['A'], ', B:', feeder_power['q']['B'], ', C:',
+              feeder_power['q']['C'], flush=True)
         exit()
 
-        print('\nPerforming hardwired PULP optimization', flush=True)
-        p_load_6 = 100
-        p_load_5 = 110
-        p_ren_6 = 50
-        p_ren_5 = 30
-        nline = 2
-
-        # decision variables
-        p_flow = LpVariable.dicts("p_flow", (i for i in range(nline)), lowBound=-1000, upBound=1000, cat='Continuous')
-        p_batt = LpVariable("p_batt", lowBound=-250, upBound=250, cat='Continuous')
-
-        # objective
-        prob = LpProblem("flow", LpMinimize)
-        prob += p_flow[0]
-
-        # constraints
-        prob += p_flow[0] == p_flow[1] + p_load_5 - p_ren_5 + p_batt
-        prob += p_flow[1] == p_load_6 - p_ren_6
-        prob += p_batt >= -20
-
-        # solve
-        prob.solve(PULP_CBC_CMD(msg=0))
-        prob.writeLP('Resilience.lp')
-        print('Status: ', LpStatus[prob.status], flush=True)
-        print('Batt Power: ', p_batt.varValue, flush=True)
-        print('Flow line 0: ', p_flow[0].varValue, flush=True)
-        print('Flow line 1: ', p_flow[1].varValue, flush=True)
-
-        exit()
 
         # make sure output directory exists since that's where results go
         if not os.path.isdir('output'):
