@@ -752,46 +752,41 @@ class CompetingApp(GridAPPSD):
             zprim = branch_info[branch]['zprim']
             phases = branch_info[branch]['phases']
 
-            r_aa = 0.0; x_aa = 0.0
-            r_bb = 0.0; x_bb = 0.0
-            r_cc = 0.0; x_cc = 0.0
-            r_ab = 0.0; x_ab = 0.0
-            r_ac = 0.0; x_ac = 0.0
-            r_bc = 0.0; x_bc = 0.0
+            z_aa = z_bb = z_cc = z_ab = z_ac = z_bc = complex(0.0, 0.0)
 
             if zprim.size == 1:
                 if phases == 'A':
-                    r_aa = zprim[0,0].real; x_aa = zprim[0,0].imag
+                    z_aa = zprim[0,0]
                 elif phases == 'B':
-                    r_bb = zprim[0,0].real; x_bb = zprim[0,0].imag
+                    z_bb = zprim[0,0]
                 elif phases == 'C':
-                    r_cc = zprim[0,0].real; x_cc = zprim[0,0].imag
+                    z_cc = zprim[0,0]
                 else:
                     print('*** Unrecognized single phase for branch: ' + branch + ', phase: ' + phases, flush=True)
 
             elif zprim.size == 4:
                 if 'A' in phases and 'B' in phases:
-                    r_aa = zprim[0,0].real; x_aa = zprim[0,0].imag
-                    r_bb = zprim[1,1].real; x_bb = zprim[1,1].imag
-                    r_ab = zprim[0,1].real; x_ab = zprim[0,1].imag
+                    z_aa = zprim[0,0]
+                    z_bb = zprim[1,1]
+                    z_ab = zprim[0,1]
                 elif 'A' in phases and 'C' in phases:
-                    r_aa = zprim[0,0].real; x_aa = zprim[0,0].imag
-                    r_cc = zprim[1,1].real; x_cc = zprim[1,1].imag
-                    r_ac = zprim[0,1].real; x_ac = zprim[0,1].imag
+                    z_aa = zprim[0,0]
+                    z_cc = zprim[1,1]
+                    z_ac = zprim[0,1]
                 elif 'B' in phases and 'C' in phases:
-                    r_bb = zprim[0,0].real; x_bb = zprim[0,0].imag
-                    r_cc = zprim[1,1].real; x_cc = zprim[1,1].imag
-                    r_bc = zprim[0,1].real; x_bc = zprim[0,1].imag
+                    z_bb = zprim[0,0]
+                    z_cc = zprim[1,1]
+                    z_bc = zprim[0,1]
                 else:
                     print('*** Unrecognized two phases for branch: ' + branch + ', phases: ' + phases, flush=True)
 
             elif zprim.size == 9:
-                r_aa = zprim[0,0].real; x_aa = zprim[0,0].imag
-                r_bb = zprim[1,1].real; x_bb = zprim[1,1].imag
-                r_cc = zprim[2,2].real; x_cc = zprim[2,2].imag
-                r_ab = zprim[0,1].real; x_ab = zprim[0,1].imag
-                r_ac = zprim[0,2].real; x_ac = zprim[0,2].imag
-                r_bc = zprim[1,2].real; x_bc = zprim[1,2].imag
+                z_aa = zprim[0,0]
+                z_bb = zprim[1,1]
+                z_cc = zprim[2,2]
+                z_ab = zprim[0,1]
+                z_ac = zprim[0,2]
+                z_bc = zprim[1,2]
 
             else:
                 print('*** Unrecognized zprim size for branch: ' + branch + ', size: ' + str(zprim.size), flush=True)
@@ -801,11 +796,11 @@ class CompetingApp(GridAPPSD):
             idx = branch_info[branch]['idx']
             hfsqrt3 = math.sqrt(3.0)/2.0
 
-            prob += v_A[to_bus_idx] == v_A[fr_bus_idx] - 2.0*(p_flow_A[idx]*r_aa + q_flow_A[idx]*x_aa + p_flow_B[idx]*(-0.5*r_ab + hfsqrt3*x_ab) + q_flow_B[idx]*(-0.5*x_ab - hfsqrt3*r_ab) + p_flow_C[idx]*(-0.5*r_ac - hfsqrt3*x_ac) + q_flow_C[idx]*(-0.5*x_ac + hfsqrt3*r_ac))
+            prob += v_A[to_bus_idx] == v_A[fr_bus_idx] - 2.0*(p_flow_A[idx]*z_aa.real + q_flow_A[idx]*z_aa.imag + p_flow_B[idx]*(-0.5*z_ab.real + hfsqrt3*z_ab.imag) + q_flow_B[idx]*(-0.5*z_ab.imag - hfsqrt3*z_ab.real) + p_flow_C[idx]*(-0.5*z_ac.real - hfsqrt3*z_ac.imag) + q_flow_C[idx]*(-0.5*z_ac.imag + hfsqrt3*z_ac.real))
 
-            prob += v_B[to_bus_idx] == v_B[fr_bus_idx] - 2.0*(p_flow_B[idx]*r_bb + q_flow_B[idx]*x_bb + p_flow_A[idx]*(-0.5*r_ab - hfsqrt3*x_ab) + q_flow_A[idx]*(-0.5*x_ab + hfsqrt3*r_ab) + p_flow_C[idx]*(-0.5*r_bc + hfsqrt3*x_bc) + q_flow_C[idx]*(-0.5*x_bc - hfsqrt3*r_bc))
+            prob += v_B[to_bus_idx] == v_B[fr_bus_idx] - 2.0*(p_flow_B[idx]*z_bb.real + q_flow_B[idx]*z_bb.imag + p_flow_A[idx]*(-0.5*z_ab.real - hfsqrt3*z_ab.imag) + q_flow_A[idx]*(-0.5*z_ab.imag + hfsqrt3*z_ab.real) + p_flow_C[idx]*(-0.5*z_bc.real + hfsqrt3*z_bc.imag) + q_flow_C[idx]*(-0.5*z_bc.imag - hfsqrt3*z_bc.real))
 
-            prob += v_C[to_bus_idx] == v_C[fr_bus_idx] - 2.0*(p_flow_C[idx]*r_cc + q_flow_C[idx]*x_cc + p_flow_A[idx]*(-0.5*r_ac + hfsqrt3*x_ac) + q_flow_A[idx]*(-0.5*x_ac - hfsqrt3*r_ac) + p_flow_B[idx]*(-0.5*r_bc - hfsqrt3*x_bc) + q_flow_B[idx]*(-0.5*x_bc + hfsqrt3*r_bc))
+            prob += v_C[to_bus_idx] == v_C[fr_bus_idx] - 2.0*(p_flow_C[idx]*z_cc.real + q_flow_C[idx]*z_cc.imag + p_flow_A[idx]*(-0.5*z_ac.real + hfsqrt3*z_ac.imag) + q_flow_A[idx]*(-0.5*z_ac.imag - hfsqrt3*z_ac.real) + p_flow_B[idx]*(-0.5*z_bc.real - hfsqrt3*z_bc.imag) + q_flow_B[idx]*(-0.5*z_bc.imag + hfsqrt3*z_bc.real))
 
         # solve
         prob.solve(PULP_CBC_CMD(msg=0))
