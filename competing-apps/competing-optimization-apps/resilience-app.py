@@ -799,13 +799,13 @@ class CompetingApp(GridAPPSD):
             fr_bus_idx = branch_info[branch]['from_bus_idx']
             to_bus_idx = branch_info[branch]['to_bus_idx']
             idx = branch_info[branch]['idx']
-            hsqrt3 = math.sqrt(3)/2
+            hfsqrt3 = math.sqrt(3.0)/2.0
 
-            prob += v_A[to_bus_idx] == v_A[fr_bus_idx] - 2*(p_flow_A[idx]*r_aa + q_flow_A[idx]*x_aa + p_flow_B[idx]*(-0.5*r_ab + hsqrt3*x_ab) + q_flow_B[idx]*(-0.5*x_ab - hsqrt3*r_ab) + p_flow_C[idx]*(-0.5*r_ac - hsqrt3*x_ac) + q_flow_C[idx]*(-0.5*x_ac + hsqrt3*r_ac))
+            prob += v_A[to_bus_idx] == v_A[fr_bus_idx] - 2.0*(p_flow_A[idx]*r_aa + q_flow_A[idx]*x_aa + p_flow_B[idx]*(-0.5*r_ab + hfsqrt3*x_ab) + q_flow_B[idx]*(-0.5*x_ab - hfsqrt3*r_ab) + p_flow_C[idx]*(-0.5*r_ac - hfsqrt3*x_ac) + q_flow_C[idx]*(-0.5*x_ac + hfsqrt3*r_ac))
 
-            prob += v_B[to_bus_idx] == v_B[fr_bus_idx] - 2*(p_flow_B[idx]*r_bb + q_flow_B[idx]*x_bb + p_flow_A[idx]*(-0.5*r_ab + hsqrt3*x_ab) + q_flow_A[idx]*(-0.5*x_ab - hsqrt3*r_ab) + p_flow_C[idx]*(-0.5*r_bc - hsqrt3*x_bc) + q_flow_C[idx]*(-0.5*x_bc + hsqrt3*r_bc))
+            prob += v_B[to_bus_idx] == v_B[fr_bus_idx] - 2.0*(p_flow_B[idx]*r_bb + q_flow_B[idx]*x_bb + p_flow_A[idx]*(-0.5*r_ab - hfsqrt3*x_ab) + q_flow_A[idx]*(-0.5*x_ab + hfsqrt3*r_ab) + p_flow_C[idx]*(-0.5*r_bc + hfsqrt3*x_bc) + q_flow_C[idx]*(-0.5*x_bc - hfsqrt3*r_bc))
 
-            prob += v_C[to_bus_idx] == v_C[fr_bus_idx] - 2*(p_flow_C[idx]*r_cc + q_flow_C[idx]*x_cc + p_flow_A[idx]*(-0.5*r_ac + hsqrt3*x_ac) + q_flow_A[idx]*(-0.5*x_ac - hsqrt3*r_ac) + p_flow_B[idx]*(-0.5*r_bc - hsqrt3*x_bc) + q_flow_B[idx]*(-0.5*x_bc + hsqrt3*r_bc))
+            prob += v_C[to_bus_idx] == v_C[fr_bus_idx] - 2.0*(p_flow_C[idx]*r_cc + q_flow_C[idx]*x_cc + p_flow_A[idx]*(-0.5*r_ac + hfsqrt3*x_ac) + q_flow_A[idx]*(-0.5*x_ac - hfsqrt3*r_ac) + p_flow_B[idx]*(-0.5*r_bc - hfsqrt3*x_bc) + q_flow_B[idx]*(-0.5*x_bc + hfsqrt3*r_bc))
 
         # solve
         prob.solve(PULP_CBC_CMD(msg=0))
