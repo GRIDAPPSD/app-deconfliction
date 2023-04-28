@@ -751,7 +751,6 @@ class CompetingApp(GridAPPSD):
         for branch in branch_info:
             zprim = branch_info[branch]['zprim']
             phases = branch_info[branch]['phases']
-
             z_aa = z_bb = z_cc = z_ab = z_ac = z_bc = complex(0.0, 0.0)
 
             if zprim.size == 1:
