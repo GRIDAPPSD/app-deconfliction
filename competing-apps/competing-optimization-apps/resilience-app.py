@@ -640,20 +640,15 @@ class CompetingApp(GridAPPSD):
         p_flow_B = LpVariable.dicts("p_flow_B", (i for i in range(len(branch_info))), lowBound=flow_min, upBound=flow_max, cat='Continuous')
         p_flow_C = LpVariable.dicts("p_flow_C", (i for i in range(len(branch_info))), lowBound=flow_min, upBound=flow_max, cat='Continuous')
 
-        q_flow_A = LpVariable.dicts("q_flow_A", (i for i in range(len(branch_info))), lowBound=flow_min, upBound=flow_max,
-                                    cat='Continuous')
-        q_flow_B = LpVariable.dicts("q_flow_B", (i for i in range(len(branch_info))), lowBound=flow_min, upBound=flow_max,
-                                    cat='Continuous')
-        q_flow_C = LpVariable.dicts("q_flow_C", (i for i in range(len(branch_info))), lowBound=flow_min, upBound=flow_max,
-                                    cat='Continuous')
+        q_flow_A = LpVariable.dicts("q_flow_A", (i for i in range(len(branch_info))), lowBound=flow_min, upBound=flow_max, cat='Continuous')
+        q_flow_B = LpVariable.dicts("q_flow_B", (i for i in range(len(branch_info))), lowBound=flow_min, upBound=flow_max, cat='Continuous')
+        q_flow_C = LpVariable.dicts("q_flow_C", (i for i in range(len(branch_info))), lowBound=flow_min, upBound=flow_max, cat='Continuous')
+
         p_rated = 250e3
         p_batt = LpVariable.dicts("p_batt", (i for i in range(len(Batteries))), lowBound=-p_rated, upBound=p_rated, cat='Continuous')
-        p_batt_c = LpVariable.dicts("p_batt_c", (i for i in range(len(Batteries))), lowBound=-p_rated, upBound=p_rated,
-                                  cat='Continuous')
-        p_batt_d = LpVariable.dicts("p_batt_d", (i for i in range(len(Batteries))), lowBound=-p_rated, upBound=p_rated,
-                                  cat='Continuous')
-        soc = LpVariable.dicts("soc", (i for i in range(len(Batteries))), lowBound=0.2, upBound=0.9,
-                                  cat='Continuous')
+        p_batt_c = LpVariable.dicts("p_batt_c", (i for i in range(len(Batteries))), lowBound=-p_rated, upBound=p_rated, cat='Continuous')
+        p_batt_d = LpVariable.dicts("p_batt_d", (i for i in range(len(Batteries))), lowBound=-p_rated, upBound=p_rated, cat='Continuous')
+        soc = LpVariable.dicts("soc", (i for i in range(len(Batteries))), lowBound=0.2, upBound=0.9, cat='Continuous')
         lamda_c = LpVariable.dicts("lamda_c", (i for i in range(len(Batteries))), lowBound=0, upBound=1, cat='Binary')
         lamda_d = LpVariable.dicts("lamda_d", (i for i in range(len(Batteries))), lowBound=0, upBound=1, cat='Binary')
 
@@ -663,8 +658,7 @@ class CompetingApp(GridAPPSD):
         v_B = LpVariable.dicts("v_B", (i for i in range(len(bus_info))), lowBound=v_min, upBound=v_max, cat='Continuous')
         v_C = LpVariable.dicts("v_C", (i for i in range(len(bus_info))), lowBound=v_min, upBound=v_max, cat='Continuous')
 
-        reg_taps = LpVariable.dicts("reg_tap", [(i, tap) for i in range(len(Regulators)) for tap in range(32)],
-                                    lowBound=0, upBound=1, cat='Binary')
+        reg_taps = LpVariable.dicts("reg_tap", [(i, tap) for i in range(len(Regulators)) for tap in range(32)], lowBound=0, upBound=1, cat='Binary')
         b_i = np.arange(0.9, 1.1, 0.00625)
 
         # objective
@@ -703,12 +697,10 @@ class CompetingApp(GridAPPSD):
                     if bus in Batteries and 'A' in Batteries[bus]['phase']:
                         print('Batteries A bus: ' + bus, flush=True)
                         prob += lpSum(p_flow_A[idx] for idx in lines_in[bus_idx]['A']) - p_batt[Batteries[bus]['idx']] - injection_p == lpSum(p_flow_A[idx] for idx in lines_out[bus_idx]['A'])
-                        prob += lpSum(q_flow_A[idx] for idx in lines_in[bus_idx]['A']) - injection_q == lpSum(
-                            q_flow_A[idx] for idx in lines_out[bus_idx]['A'])
+                        prob += lpSum(q_flow_A[idx] for idx in lines_in[bus_idx]['A']) - injection_q == lpSum(q_flow_A[idx] for idx in lines_out[bus_idx]['A'])
                     else:
                         prob += lpSum(p_flow_A[idx] for idx in lines_in[bus_idx]['A']) - injection_p == lpSum(p_flow_A[idx] for idx in lines_out[bus_idx]['A'])
-                        prob += lpSum(q_flow_A[idx] for idx in lines_in[bus_idx]['A']) - injection_q == lpSum(
-                            q_flow_A[idx] for idx in lines_out[bus_idx]['A'])
+                        prob += lpSum(q_flow_A[idx] for idx in lines_in[bus_idx]['A']) - injection_q == lpSum(q_flow_A[idx] for idx in lines_out[bus_idx]['A'])
 
                 if '2' in bus_info[bus]['phases']:
                     injection_p, injection_q = 0, 0
@@ -724,12 +716,10 @@ class CompetingApp(GridAPPSD):
                     if bus in Batteries and 'B' in Batteries[bus]['phase']:
                         print('Batteries B bus: ' + bus, flush=True)
                         prob += lpSum(p_flow_B[idx] for idx in lines_in[bus_idx]['B']) - p_batt[Batteries[bus]['idx']] - injection_p == lpSum(p_flow_B[idx] for idx in lines_out[bus_idx]['B'])
-                        prob += lpSum(q_flow_B[idx] for idx in lines_in[bus_idx]['B']) - injection_q == lpSum(
-                            q_flow_B[idx] for idx in lines_out[bus_idx]['B'])
+                        prob += lpSum(q_flow_B[idx] for idx in lines_in[bus_idx]['B']) - injection_q == lpSum(q_flow_B[idx] for idx in lines_out[bus_idx]['B'])
                     else:
                         prob += lpSum(p_flow_B[idx] for idx in lines_in[bus_idx]['B']) - injection_p == lpSum(p_flow_B[idx] for idx in lines_out[bus_idx]['B'])
-                        prob += lpSum(q_flow_B[idx] for idx in lines_in[bus_idx]['B']) - injection_q == lpSum(
-                            q_flow_B[idx] for idx in lines_out[bus_idx]['B'])
+                        prob += lpSum(q_flow_B[idx] for idx in lines_in[bus_idx]['B']) - injection_q == lpSum(q_flow_B[idx] for idx in lines_out[bus_idx]['B'])
 
                 if '3' in bus_info[bus]['phases']:
                     injection_p, injection_q = 0, 0
@@ -745,12 +735,10 @@ class CompetingApp(GridAPPSD):
                     if bus in Batteries and 'C' in Batteries[bus]['phase']:
                         print('Batteries C bus: ' + bus, flush=True)
                         prob += lpSum(p_flow_C[idx] for idx in lines_in[bus_idx]['C']) - p_batt[Batteries[bus]['idx']] - injection_p == lpSum(p_flow_C[idx] for idx in lines_out[bus_idx]['C'])
-                        prob += lpSum(q_flow_C[idx] for idx in lines_in[bus_idx]['C']) - injection_q == lpSum(
-                            q_flow_C[idx] for idx in lines_out[bus_idx]['C'])
+                        prob += lpSum(q_flow_C[idx] for idx in lines_in[bus_idx]['C']) - injection_q == lpSum(q_flow_C[idx] for idx in lines_out[bus_idx]['C'])
                     else:
                         prob += lpSum(p_flow_C[idx] for idx in lines_in[bus_idx]['C']) - injection_p == lpSum(p_flow_C[idx] for idx in lines_out[bus_idx]['C'])
-                        prob += lpSum(q_flow_C[idx] for idx in lines_in[bus_idx]['C']) - injection_q == lpSum(
-                            q_flow_C[idx] for idx in lines_out[bus_idx]['C'])
+                        prob += lpSum(q_flow_C[idx] for idx in lines_in[bus_idx]['C']) - injection_q == lpSum(q_flow_C[idx] for idx in lines_out[bus_idx]['C'])
 
         for name in Batteries:
             Batteries[name]['state'] = 'idling'
@@ -872,21 +860,19 @@ class CompetingApp(GridAPPSD):
         branch_flow = []
         for branch in branch_info:
             idx = branch_info[branch]['idx']
-            branch_flow.append([branch, branch_info[branch]['from_bus'], branch_info[branch]['to_bus'],
-                                p_flow_A[idx].varValue, p_flow_B[idx].varValue, p_flow_C[idx].varValue,
-                               q_flow_A[idx].varValue, q_flow_B[idx].varValue, q_flow_C[idx].varValue])
+            branch_flow.append([branch, branch_info[branch]['from_bus'],
+                        branch_info[branch]['to_bus'], p_flow_A[idx].varValue,
+                        p_flow_B[idx].varValue, p_flow_C[idx].varValue,
+                        q_flow_A[idx].varValue, q_flow_B[idx].varValue,
+                        q_flow_C[idx].varValue])
 
         print(tabulate(branch_flow, headers=['Line Name', 'from', 'to', 'P_A', 'P_B', 'P_C', 'Q_A', 'Q_B', 'Q_C'], tablefmt='psql'))
 
         for idx in [118]:
-            print('P Flow line ' + str(idx) + ', A:', p_flow_A[idx].varValue/1000, ', B:', p_flow_B[idx].varValue/1000, ', C:',
-                  p_flow_C[idx].varValue/1000, flush=True)
-            print('Q Flow line ' + str(idx) + ', A:', q_flow_A[idx].varValue/1000, ', B:', q_flow_B[idx].varValue/1000, ', C:',
-                  q_flow_C[idx].varValue/1000, flush=True)
-        print('Total Real Power ' + ', A:', feeder_power['p']['A']/1000, ', B:', feeder_power['p']['B']/1000, ', C:',
-              feeder_power['p']['C']/1000, flush=True)
-        print('Total Reactive Power ' + ', A:', feeder_power['q']['A']/1000, ', B:', feeder_power['q']['B']/1000, ', C:',
-              feeder_power['q']['C']/1000, flush=True)
+            print('P Flow line ' + str(idx) + ', A:', p_flow_A[idx].varValue/1000, ', B:', p_flow_B[idx].varValue/1000, ', C:', p_flow_C[idx].varValue/1000, flush=True)
+            print('Q Flow line ' + str(idx) + ', A:', q_flow_A[idx].varValue/1000, ', B:', q_flow_B[idx].varValue/1000, ', C:', q_flow_C[idx].varValue/1000, flush=True)
+        print('Total Real Power ' + ', A:', feeder_power['p']['A']/1000, ', B:', feeder_power['p']['B']/1000, ', C:', feeder_power['p']['C']/1000, flush=True)
+        print('Total Reactive Power ' + ', A:', feeder_power['q']['A']/1000, ', B:', feeder_power['q']['B']/1000, ', C:', feeder_power['q']['C']/1000, flush=True)
 
         bus_voltage = []
         v = []
