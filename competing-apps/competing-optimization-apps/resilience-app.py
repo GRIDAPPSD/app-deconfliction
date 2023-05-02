@@ -313,9 +313,9 @@ class CompetingApp(GridAPPSD):
 
             phases = obj['phases']['value']
             if phases == '':
-                pval = float(obj['p']['value']) / 3000.0
+                pval = float(obj['p']['value']) / 3.0
                 EnergyConsumers[bus]['kW']['A'] = EnergyConsumers[bus]['kW']['B'] = EnergyConsumers[bus]['kW']['C'] = pval
-                qval = float(obj['q']['value']) / 3000.0
+                qval = float(obj['q']['value']) / 3.0
                 EnergyConsumers[bus]['kVar']['A'] = EnergyConsumers[bus]['kVar']['B'] = EnergyConsumers[bus]['kVar']['C'] = qval
                 feeder_power['p']['A'] += pval
                 feeder_power['p']['B'] += pval
@@ -324,10 +324,10 @@ class CompetingApp(GridAPPSD):
                 feeder_power['q']['B'] += qval
                 feeder_power['q']['C'] += qval
             else:
-                EnergyConsumers[bus]['kW'][phases] = float(obj['p']['value']) / 1000.0
-                EnergyConsumers[bus]['kVar'][phases] = float(obj['q']['value']) / 1000.0
-                feeder_power['p'][phases] += float(obj['p']['value']) / 1000.0
-                feeder_power['q'][phases] += float(obj['q']['value']) / 1000.0
+                EnergyConsumers[bus]['kW'][phases] = float(obj['p']['value'])
+                EnergyConsumers[bus]['kVar'][phases] = float(obj['q']['value'])
+                feeder_power['p'][phases] += float(obj['p']['value'])
+                feeder_power['q'][phases] += float(obj['q']['value'])
 
         #print('EnergyConsumers[65]: ' + str(EnergyConsumers['65']), flush=True)
         #print('EnergyConsumers[47]: ' + str(EnergyConsumers['47']), flush=True)
@@ -392,9 +392,9 @@ class CompetingApp(GridAPPSD):
                 round(Batteries[name]['SoC'], 4)), flush=True)
 
         # SHIVA HACK for 123 model testing
-        Batteries['65'] = {'idx': 0, 'prated': 250, 'phase': 'A', 'eff': 0.975 * 0.86, 'ratedE': 500, 'SoC': 0.25}
-        Batteries['52'] = {'idx': 1, 'prated': 250, 'phase': 'B', 'eff': 0.975 * 0.86, 'ratedE': 500, 'SoC': 0.275}
-        Batteries['76'] = {'idx': 2, 'prated': 250, 'phase': 'C', 'eff': 0.975 * 0.86, 'ratedE': 500, 'SoC': 0.265}
+        Batteries['65'] = {'idx': 0, 'prated': 250000, 'phase': 'A', 'eff': 0.975 * 0.86, 'ratedE': 500000, 'SoC': 0.35}
+        Batteries['52'] = {'idx': 1, 'prated': 250000, 'phase': 'B', 'eff': 0.975 * 0.86, 'ratedE': 500000, 'SoC': 0.275}
+        Batteries['76'] = {'idx': 2, 'prated': 250000, 'phase': 'C', 'eff': 0.975 * 0.86, 'ratedE': 500000, 'SoC': 0.465}
 
         SolarPVs = {}
         bindings = sparql_mgr.pv_query()
@@ -410,9 +410,9 @@ class CompetingApp(GridAPPSD):
             # print('SolarPV name: ' + name + ', kW: ' + str(SolarPVs[name]['kW']) + ', kVar: ' + str(SolarPVs[name]['kVar']), flush=True)
 
         # SHIVA HACK for 123 model testing
-        SolarPVs['65'] = {'p': 120, 'phase': 'A'}
-        SolarPVs['52'] = {'p': 100, 'phase': 'B'}
-        SolarPVs['76'] = {'p': 165, 'phase': 'C'}
+        SolarPVs['65'] = {'p': 120000, 'phase': 'A'}
+        SolarPVs['52'] = {'p': 100000, 'phase': 'B'}
+        SolarPVs['76'] = {'p': 165000, 'phase': 'C'}
 
         # GARY STARTED HERE
         vnom = sparql_mgr.vnom_export()
@@ -496,13 +496,21 @@ class CompetingApp(GridAPPSD):
         bindings = sparql_mgr.regulator_combine_query()
         print('\nCount of Combine Regulators: ' + str(len(bindings)), flush=True)
         Regulators = {}
+        reg_idx = 0
         for obj in bindings:
             pname = obj['pname']['value']
+            if 'phs' in obj:
+                phases = obj['phs']['value']
+            else:
+                phases = 'ABC'
             if 'tname' in obj:
                 tname = obj['tname']['value']
-                Regulators[tname] = pname
+                # Regulators[tname] = pname
+                Regulators[tname] = {'pname': pname, 'idx': reg_idx, 'phases': phases}
             else:
-                Regulators[pname] = pname
+                # Regulators[pname] = pname
+                Regulators[pname] = {'pname': pname, 'idx': reg_idx, 'phases': phases}
+            reg_idx += 1
         print('Regulators: ' + str(Regulators), flush=True)
 
         bindings = sparql_mgr.power_transformer_connectivity_query()
@@ -538,7 +546,7 @@ class CompetingApp(GridAPPSD):
             print('TankTransformer name: ' + name + ', bus: ' + bus + ', phase: ' + phase, flush=True)
             #print(obj)
 
-            pname = Regulators[name]
+            pname = Regulators[name]['pname']
             if pname not in branch_info:
                 branch_info[pname] = {}
                 branch_info[pname]['idx'] = idx
@@ -627,40 +635,47 @@ class CompetingApp(GridAPPSD):
 
         # Optimization problem formulation
         # decision variables
-        p_flow_A = LpVariable.dicts("p_flow_A", (i for i in range(len(branch_info))), lowBound=-10000, upBound=10000, cat='Continuous')
-        p_flow_B = LpVariable.dicts("p_flow_B", (i for i in range(len(branch_info))), lowBound=-10000, upBound=10000, cat='Continuous')
-        p_flow_C = LpVariable.dicts("p_flow_C", (i for i in range(len(branch_info))), lowBound=-10000, upBound=10000, cat='Continuous')
+        flow_max, flow_min = 5e6, -5e6
+        p_flow_A = LpVariable.dicts("p_flow_A", (i for i in range(len(branch_info))), lowBound=flow_min, upBound=flow_max, cat='Continuous')
+        p_flow_B = LpVariable.dicts("p_flow_B", (i for i in range(len(branch_info))), lowBound=flow_min, upBound=flow_max, cat='Continuous')
+        p_flow_C = LpVariable.dicts("p_flow_C", (i for i in range(len(branch_info))), lowBound=flow_min, upBound=flow_max, cat='Continuous')
 
-        q_flow_A = LpVariable.dicts("q_flow_A", (i for i in range(len(branch_info))), lowBound=-10000, upBound=10000,
+        q_flow_A = LpVariable.dicts("q_flow_A", (i for i in range(len(branch_info))), lowBound=flow_min, upBound=flow_max,
                                     cat='Continuous')
-        q_flow_B = LpVariable.dicts("q_flow_B", (i for i in range(len(branch_info))), lowBound=-10000, upBound=10000,
+        q_flow_B = LpVariable.dicts("q_flow_B", (i for i in range(len(branch_info))), lowBound=flow_min, upBound=flow_max,
                                     cat='Continuous')
-        q_flow_C = LpVariable.dicts("q_flow_C", (i for i in range(len(branch_info))), lowBound=-10000, upBound=10000,
+        q_flow_C = LpVariable.dicts("q_flow_C", (i for i in range(len(branch_info))), lowBound=flow_min, upBound=flow_max,
                                     cat='Continuous')
-
-        p_batt = LpVariable.dicts("p_batt", (i for i in range(len(Batteries))), lowBound=-250, upBound=250, cat='Continuous')
-        p_batt_c = LpVariable.dicts("p_batt_c", (i for i in range(len(Batteries))), lowBound=-250, upBound=250,
+        p_rated = 250e3
+        p_batt = LpVariable.dicts("p_batt", (i for i in range(len(Batteries))), lowBound=-p_rated, upBound=p_rated, cat='Continuous')
+        p_batt_c = LpVariable.dicts("p_batt_c", (i for i in range(len(Batteries))), lowBound=-p_rated, upBound=p_rated,
                                   cat='Continuous')
-        p_batt_d = LpVariable.dicts("p_batt_d", (i for i in range(len(Batteries))), lowBound=-250, upBound=250,
+        p_batt_d = LpVariable.dicts("p_batt_d", (i for i in range(len(Batteries))), lowBound=-p_rated, upBound=p_rated,
                                   cat='Continuous')
         soc = LpVariable.dicts("soc", (i for i in range(len(Batteries))), lowBound=0.2, upBound=0.9,
                                   cat='Continuous')
         lamda_c = LpVariable.dicts("lamda_c", (i for i in range(len(Batteries))), lowBound=0, upBound=1, cat='Binary')
         lamda_d = LpVariable.dicts("lamda_d", (i for i in range(len(Batteries))), lowBound=0, upBound=1, cat='Binary')
 
-        v_A = LpVariable.dicts("v_A", (i for i in range(len(bus_info))), lowBound=-10000, upBound=10000, cat='Continuous')
-        v_B = LpVariable.dicts("v_B", (i for i in range(len(bus_info))), lowBound=-10000, upBound=10000, cat='Continuous')
-        v_C = LpVariable.dicts("v_C", (i for i in range(len(bus_info))), lowBound=-10000, upBound=10000, cat='Continuous')
+        v_max, v_min = (1.05 * 2401.77) ** 2, (0.95 * 2401.77) ** 2
+        # v_max, v_min = 1e9, 1e9
+        v_A = LpVariable.dicts("v_A", (i for i in range(len(bus_info))), lowBound=v_min, upBound=v_max, cat='Continuous')
+        v_B = LpVariable.dicts("v_B", (i for i in range(len(bus_info))), lowBound=v_min, upBound=v_max, cat='Continuous')
+        v_C = LpVariable.dicts("v_C", (i for i in range(len(bus_info))), lowBound=v_min, upBound=v_max, cat='Continuous')
+
+        reg_taps = LpVariable.dicts("reg_tap", [(i, tap) for i in range(len(Regulators)) for tap in range(32)],
+                                    lowBound=0, upBound=1, cat='Binary')
+        b_i = np.arange(0.9, 1.1, 0.00625)
 
         # objective
 
         # Decarbonization
-        # prob = LpProblem("Min_Sub_Flow", LpMinimize)
-        # prob += p_flow_A[118] + p_flow_B[118] + p_flow_C[118]
+        prob = LpProblem("Min_Sub_Flow", LpMinimize)
+        prob += p_flow_A[118] + p_flow_B[118] + p_flow_C[118]
 
         # Resilience
-        prob = LpProblem("Max_Reserve", LpMinimize)
-        prob += lpSum(-soc[i] for i in range(len(Batteries)))
+        # prob = LpProblem("Max_Reserve", LpMinimize)
+        # prob += lpSum(-soc[i] for i in range(len(Batteries)))
 
         # constraints
         for bus in bus_info:
@@ -743,8 +758,8 @@ class CompetingApp(GridAPPSD):
             prob += soc[idx] == Batteries[name]['SoC'] + \
                     Batteries[name]['eff'] * p_batt_c[idx] * deltaT / Batteries[name]['ratedE'] + \
                     1 / Batteries[name]['eff'] * p_batt_d[idx] * deltaT / Batteries[name]['ratedE']
-            prob += p_batt_c[idx] <= lamda_c[idx] * 250
-            prob += p_batt_d[idx] >= - lamda_d[idx] * 250
+            prob += p_batt_c[idx] <= lamda_c[idx] * p_rated
+            prob += p_batt_d[idx] >= - lamda_d[idx] * p_rated
             prob += p_batt[idx] == p_batt_c[idx] + p_batt_d[idx]
             prob += lamda_c[idx] + lamda_d[idx] <= 1
 
@@ -795,11 +810,59 @@ class CompetingApp(GridAPPSD):
             idx = branch_info[branch]['idx']
             hfsqrt3 = math.sqrt(3.0)/2.0
 
-            prob += v_A[to_bus_idx] == v_A[fr_bus_idx] - 2.0*(p_flow_A[idx]*z_aa.real + q_flow_A[idx]*z_aa.imag + p_flow_B[idx]*(-0.5*z_ab.real + hfsqrt3*z_ab.imag) + q_flow_B[idx]*(-0.5*z_ab.imag - hfsqrt3*z_ab.real) + p_flow_C[idx]*(-0.5*z_ac.real - hfsqrt3*z_ac.imag) + q_flow_C[idx]*(-0.5*z_ac.imag + hfsqrt3*z_ac.real))
+            # if branch == 'reg1a':
+            if branch_info[branch]['type'] == 'regulator':
+                M = 1e9
+                if 'A' in branch_info[branch]['phases']:
+                    for reg in Regulators:
+                        if branch == Regulators[reg]['pname'] and 'A' in Regulators[reg]['phases']:
+                            reg_idx = Regulators[reg]['idx']
+                            break
 
-            prob += v_B[to_bus_idx] == v_B[fr_bus_idx] - 2.0*(p_flow_B[idx]*z_bb.real + q_flow_B[idx]*z_bb.imag + p_flow_A[idx]*(-0.5*z_ab.real - hfsqrt3*z_ab.imag) + q_flow_A[idx]*(-0.5*z_ab.imag + hfsqrt3*z_ab.real) + p_flow_C[idx]*(-0.5*z_bc.real + hfsqrt3*z_bc.imag) + q_flow_C[idx]*(-0.5*z_bc.imag - hfsqrt3*z_bc.real))
+                    for k in range(32):
+                        prob += v_A[branch_info[branch]['to_bus_idx']] - \
+                                b_i[k] ** 2 * v_A[branch_info[branch]['from_bus_idx']] - M * (1 - reg_taps[(reg_idx, k)]) <= 0
+                        prob += v_A[branch_info[branch]['to_bus_idx']] - \
+                                b_i[k] ** 2 * v_A[branch_info[branch]['from_bus_idx']] + M * (1 - reg_taps[(reg_idx, k)]) >= 0
 
-            prob += v_C[to_bus_idx] == v_C[fr_bus_idx] - 2.0*(p_flow_C[idx]*z_cc.real + q_flow_C[idx]*z_cc.imag + p_flow_A[idx]*(-0.5*z_ac.real + hfsqrt3*z_ac.imag) + q_flow_A[idx]*(-0.5*z_ac.imag - hfsqrt3*z_ac.real) + p_flow_B[idx]*(-0.5*z_bc.real - hfsqrt3*z_bc.imag) + q_flow_B[idx]*(-0.5*z_bc.imag + hfsqrt3*z_bc.real))
+                if 'B' in branch_info[branch]['phases']:
+                    for reg in Regulators:
+                        if branch == Regulators[reg]['pname'] and 'B' in Regulators[reg]['phases']:
+                            reg_idx = Regulators[reg]['idx']
+                            break
+
+                    for k in range(32):
+                        prob += v_B[branch_info[branch]['to_bus_idx']] - \
+                                b_i[k] ** 2 * v_B[branch_info[branch]['from_bus_idx']] - M * (1 - reg_taps[(reg_idx, k)]) <= 0
+                        prob += v_B[branch_info[branch]['to_bus_idx']] - \
+                                b_i[k] ** 2 * v_B[branch_info[branch]['from_bus_idx']] + M * (1 - reg_taps[(reg_idx, k)]) >= 0
+
+                if 'C' in branch_info[branch]['phases']:
+                    for reg in Regulators:
+                        if branch == Regulators[reg]['pname'] and 'C' in Regulators[reg]['phases']:
+                            reg_idx = Regulators[reg]['idx']
+                            break
+
+                    for k in range(32):
+                        prob += v_C[branch_info[branch]['to_bus_idx']] - \
+                                b_i[k] ** 2 * v_C[branch_info[branch]['from_bus_idx']] - M * (1 - reg_taps[(reg_idx, k)]) <= 0
+                        prob += v_C[branch_info[branch]['to_bus_idx']] - \
+                                b_i[k] ** 2 * v_C[branch_info[branch]['from_bus_idx']] + M * (1 - reg_taps[(reg_idx, k)]) >= 0
+
+            else:
+                prob += v_A[to_bus_idx] == v_A[fr_bus_idx] - 2.0*(p_flow_A[idx]*z_aa.real + q_flow_A[idx]*z_aa.imag + p_flow_B[idx]*(-0.5*z_ab.real + hfsqrt3*z_ab.imag) + q_flow_B[idx]*(-0.5*z_ab.imag - hfsqrt3*z_ab.real) + p_flow_C[idx]*(-0.5*z_ac.real - hfsqrt3*z_ac.imag) + q_flow_C[idx]*(-0.5*z_ac.imag + hfsqrt3*z_ac.real))
+
+                prob += v_B[to_bus_idx] == v_B[fr_bus_idx] - 2.0*(p_flow_B[idx]*z_bb.real + q_flow_B[idx]*z_bb.imag + p_flow_A[idx]*(-0.5*z_ab.real - hfsqrt3*z_ab.imag) + q_flow_A[idx]*(-0.5*z_ab.imag + hfsqrt3*z_ab.real) + p_flow_C[idx]*(-0.5*z_bc.real + hfsqrt3*z_bc.imag) + q_flow_C[idx]*(-0.5*z_bc.imag - hfsqrt3*z_bc.real))
+
+                prob += v_C[to_bus_idx] == v_C[fr_bus_idx] - 2.0*(p_flow_C[idx]*z_cc.real + q_flow_C[idx]*z_cc.imag + p_flow_A[idx]*(-0.5*z_ac.real + hfsqrt3*z_ac.imag) + q_flow_A[idx]*(-0.5*z_ac.imag - hfsqrt3*z_ac.real) + p_flow_B[idx]*(-0.5*z_bc.real - hfsqrt3*z_bc.imag) + q_flow_B[idx]*(-0.5*z_bc.imag + hfsqrt3*z_bc.real))
+
+        # Make source bus to 1.0
+        prob += v_A[bus_info['150']['idx']] == 2401.77 ** 2
+        prob += v_B[bus_info['150']['idx']] == 2401.77 ** 2
+        prob += v_C[bus_info['150']['idx']] == 2401.77 ** 2
+
+        for k in range(len(Regulators)):
+            prob += lpSum(reg_taps[(k, tap)] for tap in range(32)) == 1
 
         # solve
         prob.solve(PULP_CBC_CMD(msg=0))
@@ -815,21 +878,46 @@ class CompetingApp(GridAPPSD):
 
         print(tabulate(branch_flow, headers=['Line Name', 'from', 'to', 'P_A', 'P_B', 'P_C', 'Q_A', 'Q_B', 'Q_C'], tablefmt='psql'))
 
+        for idx in [118]:
+            print('P Flow line ' + str(idx) + ', A:', p_flow_A[idx].varValue/1000, ', B:', p_flow_B[idx].varValue/1000, ', C:',
+                  p_flow_C[idx].varValue/1000, flush=True)
+            print('Q Flow line ' + str(idx) + ', A:', q_flow_A[idx].varValue/1000, ', B:', q_flow_B[idx].varValue/1000, ', C:',
+                  q_flow_C[idx].varValue/1000, flush=True)
+        print('Total Real Power ' + ', A:', feeder_power['p']['A']/1000, ', B:', feeder_power['p']['B']/1000, ', C:',
+              feeder_power['p']['C']/1000, flush=True)
+        print('Total Reactive Power ' + ', A:', feeder_power['q']['A']/1000, ', B:', feeder_power['q']['B']/1000, ', C:',
+              feeder_power['q']['C']/1000, flush=True)
+
+        bus_voltage = []
+        v = []
+        for bus in bus_info:
+            idx = bus_info[bus]['idx']
+            bus_voltage.append([bus, math.sqrt(v_A[idx].varValue), math.sqrt(v_B[idx].varValue),
+                                math.sqrt(v_C[idx].varValue)])
+            v.append(math.sqrt(v_A[idx].varValue)/2401.77)
+            v.append(math.sqrt(v_B[idx].varValue) / 2401.77)
+            v.append(math.sqrt(v_C[idx].varValue) / 2401.77)
+
+        print(tabulate(bus_voltage, headers=['Bus', 'V_A', 'V_B', 'V_C'], tablefmt='psql'))
+
         p_batt_setpoint = []
         for name in Batteries:
             idx = Batteries[name]['idx']
-            p_batt_setpoint.append([name, p_batt[idx].varValue, soc[idx].varValue])
+            p_batt_setpoint.append([name, p_batt[idx].varValue/1000.0, soc[idx].varValue])
 
         print(tabulate(p_batt_setpoint, headers=['Battery', 'P_batt', 'Target SoC'], tablefmt='psql'))
-        for idx in [118]:
-            print('P Flow line ' + str(idx) + ', A:', p_flow_A[idx].varValue, ', B:', p_flow_B[idx].varValue, ', C:',
-                  p_flow_C[idx].varValue, flush=True)
-            print('Q Flow line ' + str(idx) + ', A:', q_flow_A[idx].varValue, ', B:', q_flow_B[idx].varValue, ', C:',
-                  q_flow_C[idx].varValue, flush=True)
-        print('Total Real Power ' + ', A:', feeder_power['p']['A'], ', B:', feeder_power['p']['B'], ', C:',
-              feeder_power['p']['C'], flush=True)
-        print('Total Reactive Power ' + ', A:', feeder_power['q']['A'], ', B:', feeder_power['q']['B'], ', C:',
-              feeder_power['q']['C'], flush=True)
+
+        regulator_taps = []
+        for reg in Regulators:
+            idx = Regulators[reg]['idx']
+            for k in range(32):
+                if reg_taps[(idx, k)].varValue >= 0.5:
+                    regulator_taps.append([reg, k-16, b_i[k]])
+
+        print(tabulate(regulator_taps, headers=['Regulator', 'Tap', 'b_i'], tablefmt='psql'))
+
+        print('Status: ', LpStatus[prob.status], flush=True)
+
         exit()
 
 

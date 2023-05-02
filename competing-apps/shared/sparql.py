@@ -201,7 +201,7 @@ class SPARQLManager:
          ?rtc c:TapChanger.initialDelay ?initDelay.
          ?rtc c:TapChanger.lowStep ?lowStep.
         }
-        ORDER BY ?pname ?tname ?rname ?wnum
+        ORDER BY ?pname ?tname ?rname ?phs ?wnum
         """% self.feeder_mrid
 
         results = self.gad.query_data(VALUES_QUERY)
