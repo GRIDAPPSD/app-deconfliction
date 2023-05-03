@@ -496,6 +496,7 @@ class CompetingApp(GridAPPSD):
         bindings = sparql_mgr.regulator_combine_query()
         print('\nCount of Combine Regulators: ' + str(len(bindings)), flush=True)
         Regulators = {}
+        RegIdx = {}
         reg_idx = 0
         for obj in bindings:
             pname = obj['pname']['value']
@@ -503,6 +504,7 @@ class CompetingApp(GridAPPSD):
                 phases = obj['phs']['value']
             else:
                 phases = 'ABC'
+
             if 'tname' in obj:
                 tname = obj['tname']['value']
                 # Regulators[tname] = pname
@@ -510,8 +512,13 @@ class CompetingApp(GridAPPSD):
             else:
                 # Regulators[pname] = pname
                 Regulators[pname] = {'pname': pname, 'idx': reg_idx, 'phases': phases}
+
+            for char in phases:
+                RegIdx[pname+'.'+char] = reg_idx
+
             reg_idx += 1
         print('Regulators: ' + str(Regulators), flush=True)
+        print('RegIdx: ' + str(RegIdx), flush=True)
 
         bindings = sparql_mgr.power_transformer_connectivity_query()
         print('\nCount of PowerTransformers: ' + str(len(bindings)), flush=True)
@@ -802,10 +809,7 @@ class CompetingApp(GridAPPSD):
             if branch_info[branch]['type'] == 'regulator':
                 M = 1e9
                 if 'A' in branch_info[branch]['phases']:
-                    for reg in Regulators:
-                        if branch == Regulators[reg]['pname'] and 'A' in Regulators[reg]['phases']:
-                            reg_idx = Regulators[reg]['idx']
-                            break
+                    reg_idx = RegIdx[branch+'.A']
 
                     for k in range(32):
                         prob += v_A[branch_info[branch]['to_bus_idx']] - \
@@ -814,10 +818,7 @@ class CompetingApp(GridAPPSD):
                                 b_i[k] ** 2 * v_A[branch_info[branch]['from_bus_idx']] + M * (1 - reg_taps[(reg_idx, k)]) >= 0
 
                 if 'B' in branch_info[branch]['phases']:
-                    for reg in Regulators:
-                        if branch == Regulators[reg]['pname'] and 'B' in Regulators[reg]['phases']:
-                            reg_idx = Regulators[reg]['idx']
-                            break
+                    reg_idx = RegIdx[branch+'.B']
 
                     for k in range(32):
                         prob += v_B[branch_info[branch]['to_bus_idx']] - \
@@ -826,10 +827,7 @@ class CompetingApp(GridAPPSD):
                                 b_i[k] ** 2 * v_B[branch_info[branch]['from_bus_idx']] + M * (1 - reg_taps[(reg_idx, k)]) >= 0
 
                 if 'C' in branch_info[branch]['phases']:
-                    for reg in Regulators:
-                        if branch == Regulators[reg]['pname'] and 'C' in Regulators[reg]['phases']:
-                            reg_idx = Regulators[reg]['idx']
-                            break
+                    reg_idx = RegIdx[branch+'.C']
 
                     for k in range(32):
                         prob += v_C[branch_info[branch]['to_bus_idx']] - \
