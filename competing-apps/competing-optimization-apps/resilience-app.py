@@ -1,8 +1,5 @@
 #!/usr/bin/env python3
 
-#0000000011111111112222222222333333333344444444445555555555666666666677777777778
-#2345678901234567890123456789012345678901234567890123456789012345678901234567890
-
 # Copyright (c) 2023, Battelle Memorial Institute All rights reserved.
 # Battelle Memorial Institute (hereinafter Battelle) hereby grants permission to any person or entity
 # lawfully obtaining a copy of this software and associated documentation files (hereinafter the
@@ -66,6 +63,9 @@ from matplotlib import dates as md
 from datetime import datetime
 from tabulate import tabulate
 
+# 80 column ruler for continuation lines
+#0000000011111111112222222222333333333344444444445555555555666666666677777777778
+#2345678901234567890123456789012345678901234567890123456789012345678901234567890
 
 class CompetingApp(GridAPPSD):
 
