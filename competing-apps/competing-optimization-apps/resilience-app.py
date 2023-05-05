@@ -350,10 +350,10 @@ class CompetingApp(GridAPPSD):
       phases = obj['phases']['value']
       if phases == '':
         pval = float(obj['p']['value']) / 3.0
+        qval = float(obj['q']['value']) / 3.0
         EnergyConsumers[bus]['kW']['A'] = pval
         EnergyConsumers[bus]['kW']['B'] = pval
         EnergyConsumers[bus]['kW']['C'] = pval
-        qval = float(obj['q']['value']) / 3.0
         EnergyConsumers[bus]['kVar']['A'] = qval
         EnergyConsumers[bus]['kVar']['B'] = qval
         EnergyConsumers[bus]['kVar']['C'] = qval
@@ -364,10 +364,12 @@ class CompetingApp(GridAPPSD):
         feeder_power['q']['B'] += qval
         feeder_power['q']['C'] += qval
       else:
-        EnergyConsumers[bus]['kW'][phases] = float(obj['p']['value'])
-        EnergyConsumers[bus]['kVar'][phases] = float(obj['q']['value'])
-        feeder_power['p'][phases] += float(obj['p']['value'])
-        feeder_power['q'][phases] += float(obj['q']['value'])
+        pval = float(obj['p']['value'])
+        qval = float(obj['q']['value'])
+        EnergyConsumers[bus]['kW'][phases] = pval
+        EnergyConsumers[bus]['kVar'][phases] = qval
+        feeder_power['p'][phases] += pval
+        feeder_power['q'][phases] += qval
 
     #print('EnergyConsumers[65]: ' + str(EnergyConsumers['65']), flush=True)
     #print('EnergyConsumers[47]: ' + str(EnergyConsumers['47']), flush=True)
@@ -467,7 +469,6 @@ class CompetingApp(GridAPPSD):
     SolarPVs['52'] = {'p': 100000, 'phase': 'B'}
     SolarPVs['76'] = {'p': 165000, 'phase': 'C'}
 
-    # GARY STARTED HERE
     vnom = sparql_mgr.vnom_export()
 
     print('Processing Vnom...', flush=True)
@@ -865,53 +866,6 @@ class CompetingApp(GridAPPSD):
       prob += lamda_c[idx] + lamda_d[idx] <= 1
 
     for branch in branch_info:
-      zprim = branch_info[branch]['zprim']
-      phases = branch_info[branch]['phases']
-      z_aa = z_bb = z_cc = z_ab = z_ac = z_bc = complex(0.0, 0.0)
-
-      if zprim.size == 1:
-        if phases == 'A':
-          z_aa = zprim[0,0]
-        elif phases == 'B':
-          z_bb = zprim[0,0]
-        elif phases == 'C':
-          z_cc = zprim[0,0]
-        else:
-          print('*** Unrecognized single phase for branch: ' + branch +
-                ', phase: ' + phases, flush=True)
-
-      elif zprim.size == 4:
-        if 'A' in phases and 'B' in phases:
-          z_aa = zprim[0,0]
-          z_bb = zprim[1,1]
-          z_ab = zprim[0,1]
-        elif 'A' in phases and 'C' in phases:
-          z_aa = zprim[0,0]
-          z_cc = zprim[1,1]
-          z_ac = zprim[0,1]
-        elif 'B' in phases and 'C' in phases:
-          z_bb = zprim[0,0]
-          z_cc = zprim[1,1]
-          z_bc = zprim[0,1]
-        else:
-          print('*** Unrecognized two phases for branch: ' + branch + ', phases: ' + phases, flush=True)
-
-      elif zprim.size == 9:
-        z_aa = zprim[0,0]
-        z_bb = zprim[1,1]
-        z_cc = zprim[2,2]
-        z_ab = zprim[0,1]
-        z_ac = zprim[0,2]
-        z_bc = zprim[1,2]
-
-      else:
-        print('*** Unrecognized zprim size for branch: ' + branch + ', size: ' + str(zprim.size), flush=True)
-
-      fr_bus_idx = branch_info[branch]['from_bus_idx']
-      to_bus_idx = branch_info[branch]['to_bus_idx']
-      idx = branch_info[branch]['idx']
-      hfsqrt3 = math.sqrt(3.0)/2.0
-
       # if branch == 'reg1a':
       if branch_info[branch]['type'] == 'regulator':
         M = 1e9
@@ -949,6 +903,53 @@ class CompetingApp(GridAPPSD):
                     M * (1 - reg_taps[(reg_idx, k)]) >= 0
 
       else:
+        zprim = branch_info[branch]['zprim']
+        phases = branch_info[branch]['phases']
+        z_aa = z_bb = z_cc = z_ab = z_ac = z_bc = complex(0.0, 0.0)
+
+        if zprim.size == 1:
+          if phases == 'A':
+            z_aa = zprim[0,0]
+          elif phases == 'B':
+            z_bb = zprim[0,0]
+          elif phases == 'C':
+            z_cc = zprim[0,0]
+          else:
+            print('*** Unrecognized single phase for branch: ' + branch +
+                  ', phase: ' + phases, flush=True)
+
+        elif zprim.size == 4:
+          if 'A' in phases and 'B' in phases:
+            z_aa = zprim[0,0]
+            z_bb = zprim[1,1]
+            z_ab = zprim[0,1]
+          elif 'A' in phases and 'C' in phases:
+            z_aa = zprim[0,0]
+            z_cc = zprim[1,1]
+            z_ac = zprim[0,1]
+          elif 'B' in phases and 'C' in phases:
+            z_bb = zprim[0,0]
+            z_cc = zprim[1,1]
+            z_bc = zprim[0,1]
+          else:
+            print('*** Unrecognized two phases for branch: ' + branch + ', phases: ' + phases, flush=True)
+
+        elif zprim.size == 9:
+          z_aa = zprim[0,0]
+          z_bb = zprim[1,1]
+          z_cc = zprim[2,2]
+          z_ab = zprim[0,1]
+          z_ac = zprim[0,2]
+          z_bc = zprim[1,2]
+
+        else:
+          print('*** Unrecognized zprim size for branch: ' + branch + ', size: ' + str(zprim.size), flush=True)
+
+        fr_bus_idx = branch_info[branch]['from_bus_idx']
+        to_bus_idx = branch_info[branch]['to_bus_idx']
+        idx = branch_info[branch]['idx']
+        hfsqrt3 = math.sqrt(3.0)/2.0
+
         prob += v_A[to_bus_idx] == v_A[fr_bus_idx] - \
                 2.0*(p_flow_A[idx]*z_aa.real + q_flow_A[idx]*z_aa.imag + \
                 p_flow_B[idx]*(-0.5*z_ab.real + hfsqrt3*z_ab.imag) + \
