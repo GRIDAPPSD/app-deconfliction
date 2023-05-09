@@ -69,264 +69,6 @@ from tabulate import tabulate
 
 class CompetingApp(GridAPPSD):
 
-  def on_message(self, headers, message):
-    reply_to = headers['reply-to']
-
-    if message['requestType'] == 'GET_SNAPSHOT_YBUS':
-      # hold up responses until we know the ybus reflects the regulator
-      # tap positions for the simulation
-      while not self.simRap.ybusInitFlag:
-        time.sleep(0.1)
-
-      lowerUncomplex = self.simRap.lowerUncomplex(self.simRap.Ybus)
-      message = {
-          'feeder_id': self.simRap.feeder_mrid,
-          'simulation_id': self.simRap.simulation_id,
-          'timestamp': self.simRap.timestamp,
-          'ybus': lowerUncomplex
-      }
-      print('Sending Ybus snapshot response for timestamp: ' +
-            str(self.simRap.timestamp), flush=True)
-      self.simRap.gapps.send(reply_to, message)
-
-    else:
-      message = "No valid requestType specified"
-      self.simRap.gapps.send(reply_to, message)
-
-
-  def resiliency(self, EnergyConsumers, SynchronousMachines, Batteries,
-                 SolarPVs, time, load_mult, pv_mult, price, deltaT,
-                 emergencyState):
-
-    P_load = 0.0
-    for name in EnergyConsumers:
-      P_load += load_mult * EnergyConsumers[name]['kW']
-
-    P_ren = 0.0
-    for name in SolarPVs:
-      P_ren += pv_mult * SolarPVs[name]['kW']
-
-    print('time: ' + str(time), flush=True)
-    print('Total EnergyConsumers P_load: ' + str(round(P_load, 4)), flush=True)
-    print('Total SolarPVs P_ren: ' + str(round(P_ren, 4)), flush=True)
-
-    # Implement simple PuLP optimization for resilience
-    # Objective function: Max: SoC of the Battery
-    n_batt = len(Batteries)
-    soc = LpVariable.dicts("soc", (i for i in range(n_batt)),
-                           lowBound=0.2, upBound=0.9, cat='Continuous')
-    pbatt_c = LpVariable.dicts("pbatt_c", (i for i in range(n_batt)),
-                               lowBound=0, upBound=250, cat='Continuous')
-    pbatt_d = LpVariable.dicts("pbatt_d", (i for i in range(n_batt)),
-                               lowBound=-250, upBound=0, cat='Continuous')
-    lamda_c = LpVariable.dicts("lamda_c", (i for i in range(n_batt)),
-                               lowBound=0, upBound=1, cat='Binary')
-    lamda_d = LpVariable.dicts("lamda_d", (i for i in range(n_batt)),
-                               lowBound=0, upBound=1, cat='Binary')
-    P_load_v = LpVariable("P_load_v", lowBound=0, upBound=P_load,
-                          cat='Continuous')
-    Psub = LpVariable("Psub", lowBound=-10000, upBound=10000,
-                      cat='Continuous')
-
-    prob = LpProblem("Energy_Stored", LpMinimize)
-    if 72 < time < 84:
-      prob += lpSum(soc[n] for n in range(n_batt))
-      prob += P_load_v <= P_load
-      prob += Psub == 0
-    else:
-      # prob += lpSum(-P_load_v)
-      prob += lpSum(- soc[n] for n in range(n_batt))
-      prob += P_load_v == P_load
-
-    # SoC constraints of the battery
-    idx = 0
-    for name in Batteries:
-      Batteries[name]['state'] = 'idling'
-      prob += soc[idx] == Batteries[name]['SoC'] + \
-              Batteries[name]['eff_c'] * pbatt_c[idx] * deltaT / \
-              Batteries[name]['ratedE'] + 1 / Batteries[name]['eff_d'] * \
-              pbatt_d[idx] * deltaT / Batteries[name]['ratedE']
-      prob += pbatt_c[idx] <= lamda_c[idx] * 250
-      prob += pbatt_d[idx] >= - lamda_d[idx] * 250
-      prob += lamda_c[idx] + lamda_d[idx] <= 1
-      idx += 1
-
-    # Energy Balance equations
-    prob += Psub == -P_ren + P_load_v + pbatt_c[0] + pbatt_c[1] + \
-                                        pbatt_d[0] + pbatt_d[1]
-
-    # print('Now solving the resilience application.......')
-    prob.solve(PULP_CBC_CMD(msg=0))
-    prob.writeLP('Resilience.lp')
-    # print('Status:', LpStatus[prob.status])
-    # print('Status:', LpStatus[prob.status])
-    # print('Batt Power:', pbatt_c[0].varValue, pbatt_c[1].varValue,
-    #       pbatt_d[0].varValue, pbatt_d[1].varValue)
-    # print('Soc: ', soc[0].varValue, soc[1].varValue)
-    idx = 0
-    for name in Batteries:
-      Batteries[name]['SoC'] = soc[idx].varValue
-      if pbatt_c[idx].varValue >= 0.01:
-        Batteries[name]['P_batt_c'] = pbatt_c[idx].varValue
-        Batteries[name]['state'] = 'charging'
-      if pbatt_d[idx].varValue <= - 0.01:
-        Batteries[name]['P_batt_d'] = - pbatt_d[idx].varValue
-        Batteries[name]['state'] = 'discharging'
-      idx += 1
-
-    return
-
-
-  def decarbonization(self, EnergyConsumers, SynchronousMachines, Batteries,
-                      SolarPVs, time, load_mult, pv_mult, profit, deltaT,
-                      emergencyState):
-
-    P_load = 0.0
-    for name in EnergyConsumers:
-      P_load += load_mult * EnergyConsumers[name]['kW']
-
-    P_ren = 0.0
-    for name in SolarPVs:
-      P_ren += pv_mult * SolarPVs[name]['kW']
-
-    print('time: ' + str(time), flush=True)
-    print('Total EnergyConsumers P_load: ' + str(round(P_load, 4)), flush=True)
-    print('Total SolarPVs P_ren: ' + str(round(P_ren, 4)), flush=True)
-
-    # Implement simple PuLP optimization for resilience
-    # Objective function: Max: SoC of the Battery
-    n_batt = len(Batteries)
-    soc = LpVariable.dicts("soc", (i for i in range(n_batt)),
-                           lowBound=0.2, upBound=0.9, cat='Continuous')
-    pbatt_c = LpVariable.dicts("pbatt_c", (i for i in range(n_batt)),
-                               lowBound=0, upBound=250, cat='Continuous')
-    pbatt_d = LpVariable.dicts("pbatt_d", (i for i in range(n_batt)),
-                               lowBound=-250, upBound=0, cat='Continuous')
-    lamda_c = LpVariable.dicts("lamda_c", (i for i in range(n_batt)),
-                               lowBound=0, upBound=1, cat='Binary')
-    lamda_d = LpVariable.dicts("lamda_d", (i for i in range(n_batt)),
-                               lowBound=0, upBound=1, cat='Binary')
-    Psub = LpVariable("Psub", lowBound=-10000, upBound=10000, cat='Continuous')
-    P_load_v = LpVariable("P_load_v", lowBound=0, upBound=P_load,
-                          cat='Continuous')
-    Psub_mod = LpVariable("Psub_mod", lowBound=-10000, upBound=10000,
-                          cat='Continuous')
-
-    prob = LpProblem("Dirty_Generations", LpMinimize)
-    if 72 < time < 84:
-      prob += lpSum(soc[n] for n in range(n_batt))
-      prob += P_load_v <= P_load
-      prob += Psub == 0
-    else:
-      prob += lpSum(Psub_mod)
-      prob += P_load_v == P_load
-
-    # SoC constraints of the battery
-    idx = 0
-    for name in Batteries:
-      Batteries[name]['state'] = 'idling'
-      prob += soc[idx] == Batteries[name]['SoC'] + \
-              Batteries[name]['eff_c'] * pbatt_c[idx] * deltaT / \
-              Batteries[name]['ratedE'] + 1 / Batteries[name]['eff_d'] * \
-              pbatt_d[idx] * deltaT / Batteries[name]['ratedE']
-      prob += pbatt_c[idx] <= lamda_c[idx] * 250
-      prob += pbatt_d[idx] >= - lamda_d[idx] * 250
-      prob += lamda_c[idx] + lamda_d[idx] <= 1
-      idx += 1
-
-    # Converting modulus to linear problem
-    prob += Psub_mod >= Psub
-    prob += Psub_mod >= - Psub
-
-    # Energy Balance equations
-    prob += Psub == -P_ren + P_load_v + pbatt_c[0] + pbatt_c[1] + \
-            pbatt_d[0] + pbatt_d[1]
-
-    # print('Now solving the decarbonization application.......')
-    prob.solve(PULP_CBC_CMD(msg=0))
-    prob.writeLP('Decarbonization.lp')
-    # print('Status:', LpStatus[prob.status])
-    # print('Batt Power:', pbatt_c[0].varValue, pbatt_c[1].varValue,
-    #       pbatt_d[0].varValue, pbatt_d[1].varValue)
-    # print('Soc: ', soc[0].varValue, soc[1].varValue)
-    idx = 0
-    for name in Batteries:
-      Batteries[name]['SoC'] = soc[idx].varValue
-      if pbatt_c[idx].varValue >= 0.01:
-        Batteries[name]['P_batt_c'] = pbatt_c[idx].varValue
-        Batteries[name]['state'] = 'charging'
-      if pbatt_d[idx].varValue <= -0.01:
-        Batteries[name]['P_batt_d'] = - pbatt_d[idx].varValue
-        Batteries[name]['state'] = 'discharging'
-      idx += 1
-
-    return
-
-
-  def to_datetime(self, time):
-    return datetime(1966, 8, 1, (time - 1) // 4, 15 * ((time - 1) % 4), 0)
-
-
-  def make_plots(self, title, prefix, Batteries, t_plot, p_batt_plot,
-                 soc_plot):
-    for name in Batteries:
-      plt.figure()
-      fig, ax = plt.subplots()
-      plt.title(title + ' P_batt:  ' + name, pad=15.0)
-      plt.plot(t_plot, p_batt_plot[name])
-      ax.xaxis.set_major_formatter(md.DateFormatter('%H:%M'))
-      plt.xlim([self.to_datetime(1), self.to_datetime(96)])
-      plt.xticks([self.to_datetime(1), self.to_datetime(25),
-                  self.to_datetime(49), self.to_datetime(73),
-                  self.to_datetime(96)])
-      plt.xlabel('Time')
-      plt.ylabel('P_batt  (kW)')
-      plt.savefig('output/' + prefix + '_p_batt_' + name + '.png')
-      # plot.show()
-
-      plt.figure()
-      fig, ax = plt.subplots()
-      plt.title(title + ' SoC:  ' + name, pad=15.0)
-      plt.plot(t_plot, soc_plot[name])
-      ax.xaxis.set_major_formatter(md.DateFormatter('%H:%M'))
-      plt.xlim([self.to_datetime(1), self.to_datetime(96)])
-      plt.xticks([self.to_datetime(1), self.to_datetime(25),
-                  self.to_datetime(49), self.to_datetime(73),
-                  self.to_datetime(96)])
-      plt.xlabel('Time')
-      plt.ylabel('Battery SoC')
-      plt.savefig('output/' + prefix + '_soc_' + name + '.png')
-      # plot.show()
-
-
-  def conflict_matrix(self, solution):
-    d_c = []
-    centroid = []
-    apps = {}
-    n_devices = len(solution.keys())
-    for device in solution:
-      n_apps = len(solution[device])
-      device_setpoints = []
-      for app in solution[device]:
-        if app not in apps:
-          apps[app] = []
-        apps[app].append((solution[device][app] + 250) / 500)
-        device_setpoints.append((solution[device][app] + 250) / 500)
-      # Find centroid
-      centroid.append(sum(device_setpoints) / n_apps)
-
-    # Distance matrix
-    for app in apps:
-      s = 0
-      for k in range(len(centroid)):
-        s += (centroid[k] - apps[app][k]) ** 2
-      d_c.append(math.sqrt(s))
-
-    conflict_metric = sum(d_c) / n_apps
-    conflict_metric = conflict_metric * 2 / math.sqrt(n_devices)
-    return conflict_metric
-
-
   def __init__(self, gapps, feeder_mrid, simulation_id, state):
     SPARQLManager = getattr(importlib.import_module('shared.sparql'),
                             'SPARQLManager')
@@ -732,9 +474,9 @@ class CompetingApp(GridAPPSD):
                         lowBound=-p_rated, upBound=p_rated, cat='Continuous')
     soc = LpVariable.dicts("soc", (i for i in range(len(Batteries))),
                         lowBound=0.2, upBound=0.9, cat='Continuous')
-    lamda_c = LpVariable.dicts("lamda_c", (i for i in range(len(Batteries))),
+    lambda_c = LpVariable.dicts("lambda_c", (i for i in range(len(Batteries))),
                         lowBound=0, upBound=1, cat='Binary')
-    lamda_d = LpVariable.dicts("lamda_d", (i for i in range(len(Batteries))),
+    lambda_d = LpVariable.dicts("lambda_d", (i for i in range(len(Batteries))),
                         lowBound=0, upBound=1, cat='Binary')
 
     v_max, v_min = (1.05 * 2401.77) ** 2, (0.95 * 2401.77) ** 2
@@ -751,119 +493,17 @@ class CompetingApp(GridAPPSD):
                           lowBound=0, upBound=1, cat='Binary')
     b_i = np.arange(0.9, 1.1, 0.00625)
 
+    # define base/static optimization problem that doesn't change with the
+    # time-series multiplier values
+
     # objective
     # Decarbonization
-    prob = LpProblem("Min_Sub_Flow", LpMinimize)
-    prob += p_flow_A[118] + p_flow_B[118] + p_flow_C[118]
-
+    #baseProb = LpProblem("Min_Sub_Flow", LpMinimize)
+    #baseProb += p_flow_A[118] + p_flow_B[118] + p_flow_C[118]
+    
     # Resilience
-    # prob = LpProblem("Max_Reserve", LpMinimize)
-    # prob += lpSum(-soc[i] for i in range(len(Batteries)))
-
-    # constraints
-    for bus in bus_info:
-    #for bus in ['106']:
-      bus_idx = bus_info[bus]['idx']
-
-      if bus_idx not in lines_in:
-        print('Source bus: ' + bus, flush=True)
-
-      if bus_idx not in lines_out:
-        lines_out[bus_idx] = {'A': [], 'B': [], 'C': []}
-
-      if bus_idx in lines_in: # check for source bus
-        if '1' in bus_info[bus]['phases']:
-          injection_p, injection_q = 0, 0
-          if bus in EnergyConsumers and 'A' in EnergyConsumers[bus]['kW']:
-            injection_p = EnergyConsumers[bus]['kW']['A']
-            injection_q = EnergyConsumers[bus]['kVar']['A']
-
-          if bus in SolarPVs and 'A' in SolarPVs[bus]['phase']:
-            injection_p -= SolarPVs[bus]['p']
-            print('SolarPVs A bus: ' + bus + ', injection_p: ' +
-                  str(injection_p), flush=True)
-
-          if bus in Batteries and 'A' in Batteries[bus]['phase']:
-            print('Batteries A bus: ' + bus, flush=True)
-            prob += lpSum(p_flow_A[idx] for idx in lines_in[bus_idx]['A']) - \
-                    p_batt[Batteries[bus]['idx']] - injection_p == \
-                    lpSum(p_flow_A[idx] for idx in lines_out[bus_idx]['A'])
-            prob += lpSum(q_flow_A[idx] for idx in lines_in[bus_idx]['A']) - \
-                    injection_q == lpSum(q_flow_A[idx] for idx in \
-                    lines_out[bus_idx]['A'])
-          else:
-            prob += lpSum(p_flow_A[idx] for idx in lines_in[bus_idx]['A']) - \
-                    injection_p == lpSum(p_flow_A[idx] for idx in \
-                    lines_out[bus_idx]['A'])
-            prob += lpSum(q_flow_A[idx] for idx in lines_in[bus_idx]['A']) - \
-                    injection_q == lpSum(q_flow_A[idx] for idx in \
-                    lines_out[bus_idx]['A'])
-
-        if '2' in bus_info[bus]['phases']:
-          injection_p, injection_q = 0, 0
-          if bus in EnergyConsumers and 'B' in EnergyConsumers[bus]['kW']:
-            injection_p = EnergyConsumers[bus]['kW']['B']
-            injection_q = EnergyConsumers[bus]['kVar']['B']
-
-          if bus in SolarPVs and 'B' in SolarPVs[bus]['phase']:
-            injection_p -= SolarPVs[bus]['p']
-            print('SolarPVs B bus: ' + bus + ', injection_p: ' +
-                  str(injection_p), flush=True)
-
-          if bus in Batteries and 'B' in Batteries[bus]['phase']:
-            print('Batteries B bus: ' + bus, flush=True)
-            prob += lpSum(p_flow_B[idx] for idx in lines_in[bus_idx]['B']) - \
-                    p_batt[Batteries[bus]['idx']] - injection_p == \
-                    lpSum(p_flow_B[idx] for idx in lines_out[bus_idx]['B'])
-            prob += lpSum(q_flow_B[idx] for idx in lines_in[bus_idx]['B']) - \
-                    injection_q == lpSum(q_flow_B[idx] for idx in \
-                    lines_out[bus_idx]['B'])
-          else:
-            prob += lpSum(p_flow_B[idx] for idx in lines_in[bus_idx]['B']) - \
-                    injection_p == lpSum(p_flow_B[idx] for idx in \
-                    lines_out[bus_idx]['B'])
-            prob += lpSum(q_flow_B[idx] for idx in lines_in[bus_idx]['B']) - \
-                    injection_q == lpSum(q_flow_B[idx] for idx in \
-                    lines_out[bus_idx]['B'])
-
-        if '3' in bus_info[bus]['phases']:
-          injection_p, injection_q = 0, 0
-          if bus in EnergyConsumers and 'C' in EnergyConsumers[bus]['kW']:
-            injection_p = EnergyConsumers[bus]['kW']['C']
-            injection_q = EnergyConsumers[bus]['kVar']['C']
-
-          if bus in SolarPVs and 'C' in SolarPVs[bus]['phase']:
-            injection_p -= SolarPVs[bus]['p']
-            print('SolarPVs C bus: ' + bus + ', injection_p: ' +
-                  str(injection_p), flush=True)
-
-          if bus in Batteries and 'C' in Batteries[bus]['phase']:
-            print('Batteries C bus: ' + bus, flush=True)
-            prob += lpSum(p_flow_C[idx] for idx in lines_in[bus_idx]['C']) - \
-                    p_batt[Batteries[bus]['idx']] - injection_p == \
-                    lpSum(p_flow_C[idx] for idx in lines_out[bus_idx]['C'])
-            prob += lpSum(q_flow_C[idx] for idx in lines_in[bus_idx]['C']) - \
-                    injection_q == lpSum(q_flow_C[idx] for idx in \
-                    lines_out[bus_idx]['C'])
-          else:
-            prob += lpSum(p_flow_C[idx] for idx in lines_in[bus_idx]['C']) - \
-                    injection_p == lpSum(p_flow_C[idx] for idx in \
-                    lines_out[bus_idx]['C'])
-            prob += lpSum(q_flow_C[idx] for idx in lines_in[bus_idx]['C']) - \
-                    injection_q == lpSum(q_flow_C[idx] for idx in \
-                    lines_out[bus_idx]['C'])
-
-    for name in Batteries:
-      Batteries[name]['state'] = 'idling'
-      idx = Batteries[name]['idx']
-      prob += soc[idx] == Batteries[name]['SoC'] + Batteries[name]['eff'] * \
-              p_batt_c[idx] * deltaT / Batteries[name]['ratedE'] + \
-              1 / Batteries[name]['eff'] * p_batt_d[idx] * \
-              deltaT / Batteries[name]['ratedE']
-      prob += p_batt_c[idx] <= lamda_c[idx] * p_rated
-      prob += p_batt_d[idx] >= - lamda_d[idx] * p_rated
-      prob += p_batt[idx] == p_batt_c[idx] + p_batt_d[idx]
-      prob += lamda_c[idx] + lamda_d[idx] <= 1
+    baseProb = LpProblem("Max_Reserve", LpMinimize)
+    baseProb += lpSum(-soc[i] for i in range(len(Batteries)))
 
     for branch in branch_info:
       # if branch == 'reg1a':
@@ -873,10 +513,10 @@ class CompetingApp(GridAPPSD):
           reg_idx = RegIdx[branch+'.A']
 
           for k in range(32):
-            prob += v_A[branch_info[branch]['to_bus_idx']] - \
+            baseProb += v_A[branch_info[branch]['to_bus_idx']] - \
                     b_i[k] ** 2 * v_A[branch_info[branch]['from_bus_idx']] - \
                     M * (1 - reg_taps[(reg_idx, k)]) <= 0
-            prob += v_A[branch_info[branch]['to_bus_idx']] - \
+            baseProb += v_A[branch_info[branch]['to_bus_idx']] - \
                     b_i[k] ** 2 * v_A[branch_info[branch]['from_bus_idx']] + \
                     M * (1 - reg_taps[(reg_idx, k)]) >= 0
 
@@ -884,10 +524,10 @@ class CompetingApp(GridAPPSD):
           reg_idx = RegIdx[branch+'.B']
 
           for k in range(32):
-            prob += v_B[branch_info[branch]['to_bus_idx']] - \
+            baseProb += v_B[branch_info[branch]['to_bus_idx']] - \
                     b_i[k] ** 2 * v_B[branch_info[branch]['from_bus_idx']] - \
                     M * (1 - reg_taps[(reg_idx, k)]) <= 0
-            prob += v_B[branch_info[branch]['to_bus_idx']] - \
+            baseProb += v_B[branch_info[branch]['to_bus_idx']] - \
                     b_i[k] ** 2 * v_B[branch_info[branch]['from_bus_idx']] + \
                     M * (1 - reg_taps[(reg_idx, k)]) >= 0
 
@@ -895,10 +535,10 @@ class CompetingApp(GridAPPSD):
           reg_idx = RegIdx[branch+'.C']
 
           for k in range(32):
-            prob += v_C[branch_info[branch]['to_bus_idx']] - \
+            baseProb += v_C[branch_info[branch]['to_bus_idx']] - \
                     b_i[k] ** 2 * v_C[branch_info[branch]['from_bus_idx']] - \
                     M * (1 - reg_taps[(reg_idx, k)]) <= 0
-            prob += v_C[branch_info[branch]['to_bus_idx']] - \
+            baseProb += v_C[branch_info[branch]['to_bus_idx']] - \
                     b_i[k] ** 2 * v_C[branch_info[branch]['from_bus_idx']] + \
                     M * (1 - reg_taps[(reg_idx, k)]) >= 0
 
@@ -950,21 +590,21 @@ class CompetingApp(GridAPPSD):
         idx = branch_info[branch]['idx']
         hfsqrt3 = math.sqrt(3.0)/2.0
 
-        prob += v_A[to_bus_idx] == v_A[fr_bus_idx] - \
+        baseProb += v_A[to_bus_idx] == v_A[fr_bus_idx] - \
                 2.0*(p_flow_A[idx]*z_aa.real + q_flow_A[idx]*z_aa.imag + \
                 p_flow_B[idx]*(-0.5*z_ab.real + hfsqrt3*z_ab.imag) + \
                 q_flow_B[idx]*(-0.5*z_ab.imag - hfsqrt3*z_ab.real) + \
                 p_flow_C[idx]*(-0.5*z_ac.real - hfsqrt3*z_ac.imag) + \
                 q_flow_C[idx]*(-0.5*z_ac.imag + hfsqrt3*z_ac.real))
 
-        prob += v_B[to_bus_idx] == v_B[fr_bus_idx] - \
+        baseProb += v_B[to_bus_idx] == v_B[fr_bus_idx] - \
                 2.0*(p_flow_B[idx]*z_bb.real + q_flow_B[idx]*z_bb.imag + \
                 p_flow_A[idx]*(-0.5*z_ab.real - hfsqrt3*z_ab.imag) + \
                 q_flow_A[idx]*(-0.5*z_ab.imag + hfsqrt3*z_ab.real) + \
                 p_flow_C[idx]*(-0.5*z_bc.real + hfsqrt3*z_bc.imag) + \
                 q_flow_C[idx]*(-0.5*z_bc.imag - hfsqrt3*z_bc.real))
 
-        prob += v_C[to_bus_idx] == v_C[fr_bus_idx] - \
+        baseProb += v_C[to_bus_idx] == v_C[fr_bus_idx] - \
                 2.0*(p_flow_C[idx]*z_cc.real + q_flow_C[idx]*z_cc.imag + \
                 p_flow_A[idx]*(-0.5*z_ac.real + hfsqrt3*z_ac.imag) + \
                 q_flow_A[idx]*(-0.5*z_ac.imag - hfsqrt3*z_ac.real) + \
@@ -972,179 +612,211 @@ class CompetingApp(GridAPPSD):
                 q_flow_B[idx]*(-0.5*z_bc.imag + hfsqrt3*z_bc.real))
 
     # Make source bus to 1.0
-    prob += v_A[bus_info['150']['idx']] == 2401.77 ** 2
-    prob += v_B[bus_info['150']['idx']] == 2401.77 ** 2
-    prob += v_C[bus_info['150']['idx']] == 2401.77 ** 2
+    baseProb += v_A[bus_info['150']['idx']] == 2401.77 ** 2
+    baseProb += v_B[bus_info['150']['idx']] == 2401.77 ** 2
+    baseProb += v_C[bus_info['150']['idx']] == 2401.77 ** 2
 
     for k in range(len(Regulators)):
-      prob += lpSum(reg_taps[(k, tap)] for tap in range(32)) == 1
+      baseProb += lpSum(reg_taps[(k, tap)] for tap in range(32)) == 1
+    # done defining base problem
 
-    # solve
-    prob.solve(PULP_CBC_CMD(msg=0))
-    prob.writeLP('Resilience.lp')
-    print('Status: ', LpStatus[prob.status], flush=True)
-    #for idx in range(len(branch_info)):
-    branch_flow = []
-    for branch in branch_info:
-      idx = branch_info[branch]['idx']
-      branch_flow.append([branch, branch_info[branch]['from_bus'],
-                  branch_info[branch]['to_bus'], p_flow_A[idx].varValue,
-                  p_flow_B[idx].varValue, p_flow_C[idx].varValue,
-                  q_flow_A[idx].varValue, q_flow_B[idx].varValue,
-                  q_flow_C[idx].varValue])
-
-    print(tabulate(branch_flow, headers=['Line Name', 'from', 'to',
-                  'P_A', 'P_B', 'P_C', 'Q_A', 'Q_B', 'Q_C'], tablefmt='psql'))
-
-    for idx in [118]:
-      print('P Flow line ' + str(idx) + ', A:', p_flow_A[idx].varValue/1000,
-            ', B:', p_flow_B[idx].varValue/1000,
-            ', C:', p_flow_C[idx].varValue/1000, flush=True)
-      print('Q Flow line ' + str(idx) + ', A:', q_flow_A[idx].varValue/1000,
-            ', B:', q_flow_B[idx].varValue/1000,
-            ', C:', q_flow_C[idx].varValue/1000, flush=True)
-
-    print('Total Real Power ' + ', A:', feeder_power['p']['A']/1000,
-          ', B:', feeder_power['p']['B']/1000,
-          ', C:', feeder_power['p']['C']/1000, flush=True)
-    print('Total Reactive Power ' + ', A:', feeder_power['q']['A']/1000,
-          ', B:', feeder_power['q']['B']/1000,
-          ', C:', feeder_power['q']['C']/1000, flush=True)
-
-    bus_voltage = []
-    v = []
-    for bus in bus_info:
-      idx = bus_info[bus]['idx']
-      bus_voltage.append([bus, math.sqrt(v_A[idx].varValue),
-                  math.sqrt(v_B[idx].varValue), math.sqrt(v_C[idx].varValue)])
-      v.append(math.sqrt(v_A[idx].varValue) / 2401.77)
-      v.append(math.sqrt(v_B[idx].varValue) / 2401.77)
-      v.append(math.sqrt(v_C[idx].varValue) / 2401.77)
-
-    print(tabulate(bus_voltage, headers=['Bus', 'V_A', 'V_B', 'V_C'],
-                   tablefmt='psql'))
-
-    p_batt_setpoint = []
-    for name in Batteries:
-      idx = Batteries[name]['idx']
-      p_batt_setpoint.append([name, p_batt[idx].varValue/1000.0,
-                              soc[idx].varValue])
-
-    print(tabulate(p_batt_setpoint, headers=['Battery', 'P_batt',
-                   'Target SoC'], tablefmt='psql'))
-
-    regulator_taps = []
-    for reg in Regulators:
-      idx = Regulators[reg]['idx']
-      for k in range(32):
-        if reg_taps[(idx, k)].varValue >= 0.5:
-          regulator_taps.append([reg, k-16, b_i[k]])
-
-    print(tabulate(regulator_taps, headers=['Regulator', 'Tap', 'b_i'],
-                   tablefmt='psql'))
-
-    print('Status: ', LpStatus[prob.status], flush=True)
-
-    exit()
-
-
-    # make sure output directory exists since that's where results go
-    if not os.path.isdir('output'):
-      os.makedirs('output')
-
-    # Invoke Competing Apps
-    solution = {}
     with open('../sim-starter/time-series.csv', 'r') as f:
       reader = csv.reader(f)
       next(reader)  # skip header
 
-      deltaT = 0.25  # timestamp interval in fractional hours, 0.25 = 15 min.
-
-      for name in Batteries:
-        Batteries[name]['initial_soc'] = Batteries[name]['SoC']
-
       for row in reader:
         time = int(row[0])
-        # loadshape = float(row[1])
-        # solar = float(row[2])
-        loadshape = 0.1728
-        solar = 0.951665
+        #load_mult = 0.1728
+        #pv_mult = 0.951665
+        load_mult = float(row[1])
+        pv_mult = float(row[2])
         price = float(row[3])
-        # time = 73
-        # Resilience App
-        print('Resilience App...', flush=True)
-        self.resiliency(EnergyConsumers, SynchronousMachines, Batteries,
-                SolarPVs, time, loadshape, solar, price, deltaT, emergencyState)
+
+        print('Timestamp: ' + str(time), end='', flush=True)
+
+        # copy the base LpProblem that doesn't depend on time-series data
+        # as a starting point to then add the time-series dependent part on
+        prob = LpProblem.deepcopy(baseProb)
+
+        # note that deepcopy assigns references for LpVariables so if any of
+        # these are changed with the time-series data then I should google
+        # python pulp deepcopy and look at the stackoverflow link for that
+    
+        # constraints
+        for bus in bus_info:
+        #for bus in ['106']:
+          bus_idx = bus_info[bus]['idx']
+    
+          #if bus_idx not in lines_in:
+          #  print('Source bus: ' + bus, flush=True)
+    
+          if bus_idx not in lines_out:
+            lines_out[bus_idx] = {'A': [], 'B': [], 'C': []}
+    
+          if bus_idx in lines_in: # check for source bus
+            if '1' in bus_info[bus]['phases']:
+              injection_p, injection_q = 0, 0
+              if bus in EnergyConsumers and 'A' in EnergyConsumers[bus]['kW']:
+                injection_p = load_mult*EnergyConsumers[bus]['kW']['A']
+                injection_q = load_mult*EnergyConsumers[bus]['kVar']['A']
+    
+              if bus in SolarPVs and 'A' in SolarPVs[bus]['phase']:
+                injection_p -= pv_mult*SolarPVs[bus]['p']
+                #print('SolarPVs A bus: ' + bus + ', value: ' +
+                #      str(pv_mult*SolarPVs[bus]['p']), flush=True)
+    
+              if bus in Batteries and 'A' in Batteries[bus]['phase']:
+                #print('Batteries A bus: ' + bus, flush=True)
+                prob += lpSum(p_flow_A[idx] for idx in lines_in[bus_idx]['A'])-\
+                        p_batt[Batteries[bus]['idx']] - injection_p == \
+                        lpSum(p_flow_A[idx] for idx in lines_out[bus_idx]['A'])
+                prob += lpSum(q_flow_A[idx] for idx in lines_in[bus_idx]['A'])-\
+                        injection_q == lpSum(q_flow_A[idx] for idx in \
+                        lines_out[bus_idx]['A'])
+              else:
+                prob += lpSum(p_flow_A[idx] for idx in lines_in[bus_idx]['A'])-\
+                        injection_p == lpSum(p_flow_A[idx] for idx in \
+                        lines_out[bus_idx]['A'])
+                prob += lpSum(q_flow_A[idx] for idx in lines_in[bus_idx]['A'])-\
+                        injection_q == lpSum(q_flow_A[idx] for idx in \
+                        lines_out[bus_idx]['A'])
+    
+            if '2' in bus_info[bus]['phases']:
+              injection_p, injection_q = 0, 0
+              if bus in EnergyConsumers and 'B' in EnergyConsumers[bus]['kW']:
+                injection_p = load_mult*EnergyConsumers[bus]['kW']['B']
+                injection_q = load_mult*EnergyConsumers[bus]['kVar']['B']
+    
+              if bus in SolarPVs and 'B' in SolarPVs[bus]['phase']:
+                injection_p -= pv_mult*SolarPVs[bus]['p']
+                #print('SolarPVs B bus: ' + bus + ', value: ' +
+                #      str(pv_mult*SolarPVs[bus]['p']), flush=True)
+
+              if bus in Batteries and 'B' in Batteries[bus]['phase']:
+                #print('Batteries B bus: ' + bus, flush=True)
+                prob += lpSum(p_flow_B[idx] for idx in lines_in[bus_idx]['B'])-\
+                        p_batt[Batteries[bus]['idx']] - injection_p == \
+                        lpSum(p_flow_B[idx] for idx in lines_out[bus_idx]['B'])
+                prob += lpSum(q_flow_B[idx] for idx in lines_in[bus_idx]['B'])-\
+                        injection_q == lpSum(q_flow_B[idx] for idx in \
+                        lines_out[bus_idx]['B'])
+              else:
+                prob += lpSum(p_flow_B[idx] for idx in lines_in[bus_idx]['B'])-\
+                        injection_p == lpSum(p_flow_B[idx] for idx in \
+                        lines_out[bus_idx]['B'])
+                prob += lpSum(q_flow_B[idx] for idx in lines_in[bus_idx]['B'])-\
+                        injection_q == lpSum(q_flow_B[idx] for idx in \
+                        lines_out[bus_idx]['B'])
+    
+            if '3' in bus_info[bus]['phases']:
+              injection_p, injection_q = 0, 0
+              if bus in EnergyConsumers and 'C' in EnergyConsumers[bus]['kW']:
+                injection_p = load_mult*EnergyConsumers[bus]['kW']['C']
+                injection_q = load_mult*EnergyConsumers[bus]['kVar']['C']
+    
+              if bus in SolarPVs and 'C' in SolarPVs[bus]['phase']:
+                injection_p -= pv_mult*SolarPVs[bus]['p']
+                #print('SolarPVs C bus: ' + bus + ', value: ' +
+                #      str(pv_mult*SolarPVs[bus]['p']), flush=True)
+    
+              if bus in Batteries and 'C' in Batteries[bus]['phase']:
+                #print('Batteries C bus: ' + bus, flush=True)
+                prob += lpSum(p_flow_C[idx] for idx in lines_in[bus_idx]['C'])-\
+                        p_batt[Batteries[bus]['idx']] - injection_p == \
+                        lpSum(p_flow_C[idx] for idx in lines_out[bus_idx]['C'])
+                prob += lpSum(q_flow_C[idx] for idx in lines_in[bus_idx]['C'])-\
+                        injection_q == lpSum(q_flow_C[idx] for idx in \
+                        lines_out[bus_idx]['C'])
+              else:
+                prob += lpSum(p_flow_C[idx] for idx in lines_in[bus_idx]['C'])-\
+                        injection_p == lpSum(p_flow_C[idx] for idx in \
+                        lines_out[bus_idx]['C'])
+                prob += lpSum(q_flow_C[idx] for idx in lines_in[bus_idx]['C'])-\
+                        injection_q == lpSum(q_flow_C[idx] for idx in \
+                        lines_out[bus_idx]['C'])
 
         for name in Batteries:
-          solution[name] = {}
-          if Batteries[name]['state'] == 'charging':
-            print('Battery name: ' + name +
-                  ', ratedkW: ' + str(round(Batteries[name]['ratedkW'], 4)) +
-                  ', P_batt_c: ' + str(round(Batteries[name]['P_batt_c'], 4)) +
-                  ', updated SoC: ' + str(round(Batteries[name]['SoC'], 4)),
-                  flush=True)
-            solution[name]['resilience'] = Batteries[name]['P_batt_c']
-          elif Batteries[name]['state'] == 'discharging':
-            print('Battery name: ' + name +
-                  ', ratedkW: ' + str(round(Batteries[name]['ratedkW'], 4)) +
-                  ', P_batt_d: ' + str(round(Batteries[name]['P_batt_d'], 4)) +
-                  ', updated SoC: ' + str(round(Batteries[name]['SoC'], 4)),
-                  flush=True)
-            solution[name]['resilience'] = -Batteries[name]['P_batt_d']
-          else:
-            print('Battery name: ' + name +
-                  ', P_batt_c = P_batt_d = 0.0, updated SoC: ' +
-                  str(round(Batteries[name]['SoC'], 4)), flush=True)
-            solution[name]['resilience'] = 0.0
+          Batteries[name]['state'] = 'idling'
+          idx = Batteries[name]['idx']
+          prob += soc[idx] == Batteries[name]['SoC'] + Batteries[name]['eff'] *\
+                  p_batt_c[idx] * deltaT / Batteries[name]['ratedE'] + \
+                  1 / Batteries[name]['eff'] * p_batt_d[idx] * \
+                  deltaT / Batteries[name]['ratedE']
+          prob += p_batt_c[idx] >= 0
+          prob += p_batt_d[idx] <= 0
+          prob += p_batt_c[idx] <= lambda_c[idx] * p_rated
+          prob += p_batt_d[idx] >= - lambda_d[idx] * p_rated
+          prob += p_batt[idx] == p_batt_c[idx] + p_batt_d[idx]
+          prob += lambda_c[idx] + lambda_d[idx] <= 1
 
-        # To make sure batteries start with same initial conditions for
-        # decarbonization app
+
+        # solve
+        prob.solve(PULP_CBC_CMD(msg=0))
+        prob.writeLP('Resilience.lp')
+        print(', status:', LpStatus[prob.status], flush=True)
+        #for idx in range(len(branch_info)):
+        branch_flow = []
+        for branch in branch_info:
+          idx = branch_info[branch]['idx']
+          branch_flow.append([branch, branch_info[branch]['from_bus'],
+                      branch_info[branch]['to_bus'], p_flow_A[idx].varValue,
+                      p_flow_B[idx].varValue, p_flow_C[idx].varValue,
+                      q_flow_A[idx].varValue, q_flow_B[idx].varValue,
+                      q_flow_C[idx].varValue])
+    
+        '''
+        print(tabulate(branch_flow, headers=['Line Name', 'from', 'to',
+                      'P_A', 'P_B', 'P_C', 'Q_A', 'Q_B', 'Q_C'], tablefmt='psql'))
+    
+        for idx in [118]:
+          print('P Flow line ' + str(idx) + ', A:', p_flow_A[idx].varValue/1000,
+                ', B:', p_flow_B[idx].varValue/1000,
+                ', C:', p_flow_C[idx].varValue/1000, flush=True)
+          print('Q Flow line ' + str(idx) + ', A:', q_flow_A[idx].varValue/1000,
+                ', B:', q_flow_B[idx].varValue/1000,
+                ', C:', q_flow_C[idx].varValue/1000, flush=True)
+    
+        print('Total Real Power ' + ', A:', feeder_power['p']['A']/1000,
+              ', B:', feeder_power['p']['B']/1000,
+              ', C:', feeder_power['p']['C']/1000, flush=True)
+        print('Total Reactive Power ' + ', A:', feeder_power['q']['A']/1000,
+              ', B:', feeder_power['q']['B']/1000,
+              ', C:', feeder_power['q']['C']/1000, flush=True)
+    
+        bus_voltage = []
+        v = []
+        for bus in bus_info:
+          idx = bus_info[bus]['idx']
+          bus_voltage.append([bus, math.sqrt(v_A[idx].varValue),
+                      math.sqrt(v_B[idx].varValue), math.sqrt(v_C[idx].varValue)])
+          v.append(math.sqrt(v_A[idx].varValue) / 2401.77)
+          v.append(math.sqrt(v_B[idx].varValue) / 2401.77)
+          v.append(math.sqrt(v_C[idx].varValue) / 2401.77)
+    
+        print(tabulate(bus_voltage, headers=['Bus', 'V_A', 'V_B', 'V_C'],
+                       tablefmt='psql'))
+        '''
+    
+        p_batt_setpoint = []
         for name in Batteries:
-          Batteries[name]['SoC'] = Batteries[name]['initial_soc']
-
-        # Decarbonization App
-        print('\nDecarbonization App...', flush=True)
-        self.decarbonization(EnergyConsumers, SynchronousMachines, Batteries,
-                SolarPVs, time, loadshape, solar, price, deltaT, emergencyState)
-
-        for name in Batteries:
-          if Batteries[name]['state'] == 'charging':
-            print('Battery name: ' + name +
-                  ', ratedkW: ' + str(round(Batteries[name]['ratedkW'], 4)) +
-                  ', P_batt_c: ' + str(round(Batteries[name]['P_batt_c'], 4)) +
-                  ', updated SoC: ' + str(round(Batteries[name]['SoC'], 4)),
-                  flush=True)
-            solution[name]['decarbonization'] = Batteries[name]['P_batt_c']
-          elif Batteries[name]['state'] == 'discharging':
-            print('Battery name: ' + name +
-                  ', ratedkW: ' + str(round(Batteries[name]['ratedkW'], 4)) +
-                  ', P_batt_d: ' + str(round(Batteries[name]['P_batt_d'], 4)) +
-                  ', updated SoC: ' + str(round(Batteries[name]['SoC'], 4)),
-                  flush=True)
-            solution[name]['decarbonization'] = -Batteries[name]['P_batt_d']
-          else:
-            print('Battery name: ' + name +
-                  ', P_batt_c = P_batt_d = 0.0, updated SoC: ' +
-                 str(round(Batteries[name]['SoC'], 4)), flush=True)
-            solution[name]['decarbonization'] = 0.0
-
-        print('\nSolution from apps', solution)
-        # Quantify the conflict. Can be useful for incentive-based scheme
-        conflict_metric = self.conflict_matrix(solution)
-        print('\nConflict Metric: ', conflict_metric, flush=True)
-
-        # Invoke cooperative solution here....
-        exit()
-
-      # json_fp = open('output/' + 'resilience' + '_solution.json', 'w')
-      # json.dump(resilience_solution, json_fp, indent=2)
-      # json_fp.close()
-
-      # json_fp = open('output/' + 'resilience' + '_solution.json', 'w')
-      # json.dump(resilience_solution, json_fp, indent=2)
-      # json_fp.close()
-
+          idx = Batteries[name]['idx']
+          Batteries[name]['SoC'] = soc[idx].varValue
+          p_batt_setpoint.append([name, p_batt[idx].varValue/1000.0,
+                                  soc[idx].varValue])
+    
+        print(tabulate(p_batt_setpoint, headers=['Battery', 'P_batt',
+                       'Target SoC'], tablefmt='psql'))
+    
+        regulator_taps = []
+        for reg in Regulators:
+          idx = Regulators[reg]['idx']
+          for k in range(32):
+            if reg_taps[(idx, k)].varValue >= 0.5:
+              regulator_taps.append([reg, k-16, b_i[k]])
+    
+        print(tabulate(regulator_taps, headers=['Regulator', 'Tap', 'b_i'],
+                       tablefmt='psql'), '\n')
+    
     return
 
 
