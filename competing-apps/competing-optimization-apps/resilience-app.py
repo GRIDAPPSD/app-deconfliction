@@ -149,14 +149,11 @@ class CompetingApp(GridAPPSD):
     Batteries = self.AppUtil.getBatteries(sparql_mgr)
 
     # SHIVA HACK for 123 model testing
-    #Batteries['BatteryUnit:65'] = {'idx': 0, 'prated': 250000, 'phase': 'A',
-    Batteries['65'] = {'idx': 0, 'prated': 250000, 'phase': 'A',
+    Batteries['BatteryUnit:65'] = {'idx': 0, 'prated': 250000, 'phase': 'A',
                        'eff': 0.975 * 0.86, 'ratedE': 500000, 'SoC': 0.35}
-    #Batteries['BatteryUnit:52'] = {'idx': 1, 'prated': 250000, 'phase': 'B',
-    Batteries['52'] = {'idx': 1, 'prated': 250000, 'phase': 'B',
+    Batteries['BatteryUnit:52'] = {'idx': 1, 'prated': 250000, 'phase': 'B',
                        'eff': 0.975 * 0.86, 'ratedE': 500000, 'SoC': 0.275}
-    #Batteries['BatteryUnit:76'] = {'idx': 2, 'prated': 250000, 'phase': 'C',
-    Batteries['76'] = {'idx': 2, 'prated': 250000, 'phase': 'C',
+    Batteries['BatteryUnit:76'] = {'idx': 2, 'prated': 250000, 'phase': 'C',
                        'eff': 0.975 * 0.86, 'ratedE': 500000, 'SoC': 0.465}
 
     SolarPVs = self.AppUtil.getSolarPVs(sparql_mgr)
@@ -608,6 +605,7 @@ class CompetingApp(GridAPPSD):
           if bus_idx not in lines_out:
             lines_out[bus_idx] = {'A': [], 'B': [], 'C': []}
     
+          batname = 'BatteryUnit:' + bus
           if bus_idx in lines_in: # check for source bus
             if '1' in bus_info[bus]['phases']:
               injection_p, injection_q = 0, 0
@@ -620,10 +618,10 @@ class CompetingApp(GridAPPSD):
                 #print('SolarPVs A bus: ' + bus + ', value: ' +
                 #      str(pv_mult*SolarPVs[bus]['p']), flush=True)
     
-              if bus in Batteries and 'A' in Batteries[bus]['phase']:
+              if batname in Batteries and 'A' in Batteries[batname]['phase']:
                 #print('Batteries A bus: ' + bus, flush=True)
                 prob += lpSum(p_flow_A[idx] for idx in lines_in[bus_idx]['A'])-\
-                        p_batt[Batteries[bus]['idx']] - injection_p == \
+                        p_batt[Batteries[batname]['idx']] - injection_p == \
                         lpSum(p_flow_A[idx] for idx in lines_out[bus_idx]['A'])
                 prob += lpSum(q_flow_A[idx] for idx in lines_in[bus_idx]['A'])-\
                         injection_q == lpSum(q_flow_A[idx] for idx in \
@@ -647,10 +645,10 @@ class CompetingApp(GridAPPSD):
                 #print('SolarPVs B bus: ' + bus + ', value: ' +
                 #      str(pv_mult*SolarPVs[bus]['p']), flush=True)
 
-              if bus in Batteries and 'B' in Batteries[bus]['phase']:
+              if batname in Batteries and 'B' in Batteries[batname]['phase']:
                 #print('Batteries B bus: ' + bus, flush=True)
                 prob += lpSum(p_flow_B[idx] for idx in lines_in[bus_idx]['B'])-\
-                        p_batt[Batteries[bus]['idx']] - injection_p == \
+                        p_batt[Batteries[batname]['idx']] - injection_p == \
                         lpSum(p_flow_B[idx] for idx in lines_out[bus_idx]['B'])
                 prob += lpSum(q_flow_B[idx] for idx in lines_in[bus_idx]['B'])-\
                         injection_q == lpSum(q_flow_B[idx] for idx in \
@@ -674,10 +672,10 @@ class CompetingApp(GridAPPSD):
                 #print('SolarPVs C bus: ' + bus + ', value: ' +
                 #      str(pv_mult*SolarPVs[bus]['p']), flush=True)
     
-              if bus in Batteries and 'C' in Batteries[bus]['phase']:
+              if batname in Batteries and 'C' in Batteries[batname]['phase']:
                 #print('Batteries C bus: ' + bus, flush=True)
                 prob += lpSum(p_flow_C[idx] for idx in lines_in[bus_idx]['C'])-\
-                        p_batt[Batteries[bus]['idx']] - injection_p == \
+                        p_batt[Batteries[batname]['idx']] - injection_p == \
                         lpSum(p_flow_C[idx] for idx in lines_out[bus_idx]['C'])
                 prob += lpSum(q_flow_C[idx] for idx in lines_in[bus_idx]['C'])-\
                         injection_q == lpSum(q_flow_C[idx] for idx in \
