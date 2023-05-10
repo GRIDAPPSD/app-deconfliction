@@ -70,6 +70,10 @@ from tabulate import tabulate
 class CompetingApp(GridAPPSD):
 
   def __init__(self, gapps, feeder_mrid, simulation_id, state):
+    self.gapps = gapps
+
+    self.AppUtil = getattr(importlib.import_module('shared.apputil'), 'AppUtil')
+
     SPARQLManager = getattr(importlib.import_module('shared.sparql'),
                             'SPARQLManager')
     sparql_mgr = SPARQLManager(gapps, feeder_mrid, simulation_id)
@@ -117,7 +121,6 @@ class CompetingApp(GridAPPSD):
     #print('EnergyConsumers[47]: ' + str(EnergyConsumers['47']), flush=True)
     #print('EnergyConsumers[99]: ' + str(EnergyConsumers['99']), flush=True)
 
-
     # objs = sparql_mgr.obj_meas_export('EnergyConsumer')
     # print('Count of EnergyConsumers Meas: ' + str(len(objs)), flush=True)
     # for item in objs:
@@ -141,70 +144,22 @@ class CompetingApp(GridAPPSD):
     # for item in objs:
     #   print('LinearShuntCompensator: ' + str(item), flush=True)
 
-    SynchronousMachines = {}
-    objs = sparql_mgr.obj_dict_export('SynchronousMachine')
-    print('Count of SynchronousMachines Dict: ' + str(len(objs)),flush=True)
-    for item in objs:
-      name = item['IdentifiedObject.name']
-      SynchronousMachines[name] = {}
-      SynchronousMachines[name]['kW'] = \
-                         float(item['SynchronousMachine.p']) / 1000.0
-      SynchronousMachines[name]['kVar'] = \
-                         float(item['SynchronousMachine.q']) / 1000.0
-      SynchronousMachines[name]['ratedS'] = \
-                         float(item['SynchronousMachine.ratedS']) / 1000.0
-      print('SynchronousMachine name: ' + name + ', kW: ' +
-            str(round(SynchronousMachines[name]['kW'], 4)) + ', kVar: ' +
-            str(round(SynchronousMachines[name]['kVar'], 4)), flush=True)
+    SynchronousMachines = self.AppUtil.getSynchronousMachines(sparql_mgr)
 
-    objs = sparql_mgr.obj_meas_export('SynchronousMachine')
-    # print('Count of SynchronousMachines Meas: ' + str(len(objs)),
-    #        flush=True)
-    # for item in objs:
-    #   print('SynchronousMachine: ' + str(item), flush=True)
-
-    Batteries = {}
-    bindings = sparql_mgr.battery_query()
-    print('Count of Batteries: ' + str(len(bindings)), flush=True)
-    for obj in bindings:
-      name = obj['name']['value']
-      # bus = obj['bus']['value'].upper()
-      Batteries[name] = {}
-      Batteries[name]['ratedkW'] = float(obj['ratedS']['value']) / 1000.0
-      Batteries[name]['ratedE'] = float(obj['ratedE']['value']) / 1000.0
-      # Shiva HACK
-      Batteries[name]['SoC'] = 0.5
-      # Batteries[name]['SoC'] = float(obj['storedE']['value']) / \
-      #                          float(obj['ratedE']['value'])
-      # eff_c and eff_d don't come from the query, but they are used throughout
-      # and this is a convenient point to assign them with query results
-      Batteries[name]['eff_c'] = 0.975 * 0.86
-      Batteries[name]['eff_d'] = 0.975 * 0.86
-      print('Battery name: ' + name + ', ratedE: ' +
-            str(round(Batteries[name]['ratedE'], 4)) + ', SoC: ' +
-            str(round(Batteries[name]['SoC'], 4)), flush=True)
+    Batteries = self.AppUtil.getBatteries(sparql_mgr)
 
     # SHIVA HACK for 123 model testing
+    #Batteries['BatteryUnit:65'] = {'idx': 0, 'prated': 250000, 'phase': 'A',
     Batteries['65'] = {'idx': 0, 'prated': 250000, 'phase': 'A',
                        'eff': 0.975 * 0.86, 'ratedE': 500000, 'SoC': 0.35}
+    #Batteries['BatteryUnit:52'] = {'idx': 1, 'prated': 250000, 'phase': 'B',
     Batteries['52'] = {'idx': 1, 'prated': 250000, 'phase': 'B',
                        'eff': 0.975 * 0.86, 'ratedE': 500000, 'SoC': 0.275}
+    #Batteries['BatteryUnit:76'] = {'idx': 2, 'prated': 250000, 'phase': 'C',
     Batteries['76'] = {'idx': 2, 'prated': 250000, 'phase': 'C',
                        'eff': 0.975 * 0.86, 'ratedE': 500000, 'SoC': 0.465}
 
-    SolarPVs = {}
-    bindings = sparql_mgr.pv_query()
-    print('Count of SolarPV: ' + str(len(bindings)), flush=True)
-    for obj in bindings:
-      name = obj['name']['value']
-      # bus = obj['bus']['value'].upper()
-      # ratedS = float(obj['ratedS']['value'])
-      # ratedU = float(obj['ratedU']['value'])
-      SolarPVs[name] = {}
-      SolarPVs[name]['kW'] = float(obj['p']['value']) / 1000.0
-      SolarPVs[name]['kVar'] = float(obj['q']['value']) / 1000.0
-      # print('SolarPV name: ' + name + ', kW: ' + str(SolarPVs[name]['kW']) +
-      #       ', kVar: ' + str(SolarPVs[name]['kVar']), flush=True)
+    SolarPVs = self.AppUtil.getSolarPVs(sparql_mgr)
 
     # SHIVA HACK for 123 model testing
     SolarPVs['65'] = {'p': 120000, 'phase': 'A'}
