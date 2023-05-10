@@ -113,8 +113,8 @@ class DeconflictionPipeline(GridAPPSD):
     if conflictFlag:
       newResolutionVector = self.decon_method.deconflict()
 
-    # If there is no conflict, then the new resolution is simply the last resolution
-    # with the new set-points added in
+    # If there is no conflict, then the new resolution is simply the last
+    # resolution with the new set-points added in
     else:
       newResolutionVector = copy.deepcopy(self.ResolutionVector)
       for device, value in set_points.items():
@@ -136,34 +136,39 @@ class DeconflictionPipeline(GridAPPSD):
           (self.ResolutionVector['timestamps'][device]!=timestamp or \
            self.ResolutionVector['setpoints'][device]!=value)):
 
-        # determine if a resolution for this device for this timestamp has
-        # already been sent
-        if device in self.ResolutionVector['timestamps'] and \
-           self.ResolutionVector['timestamps'][device]==timestamp:
-          # rollback the previous contribution to SoC as the new one overrides
-          backval = self.ResolutionVector['setpoints'][device]
-          if backval > 0:
-            self.Batteries[device]['SoC'] -= self.AppUtil.charge_SoC(backval,
+        if device.startswith('BatteryUnit:'):
+          # determine if a resolution for this device for this timestamp has
+          # already been sent
+          if device in self.ResolutionVector['timestamps'] and \
+             self.ResolutionVector['timestamps'][device]==timestamp:
+            # rollback the previous contribution to SoC as the new one overrides
+            backval = self.ResolutionVector['setpoints'][device]
+            if backval > 0:
+              self.Batteries[device]['SoC'] -= self.AppUtil.charge_SoC(backval,
                                             device, self.Batteries, self.deltaT)
-          elif backval < 0:
-            self.Batteries[device]['SoC'] -= self.AppUtil.discharge_SoC(backval,
-                                            device, self.Batteries, self.deltaT)
-          print('*** Revised projected SoC for device: ' + device + ', SoC: ' + str(self.Batteries[device]['SoC']), flush=True)
+            elif backval < 0:
+              self.Batteries[device]['SoC'] -= self.AppUtil.discharge_SoC(
+                                   backval, device, self.Batteries, self.deltaT)
+            print('*** Revised projected SoC for device: ' + device + ', SoC: ' + str(self.Batteries[device]['SoC']), flush=True)
 
-        # update battery SoC
-        if value > 0: # charging
-          self.Batteries[device]['SoC'] += self.AppUtil.charge_SoC(value,
+          # update battery SoC
+          if value > 0: # charging
+            self.Batteries[device]['SoC'] += self.AppUtil.charge_SoC(value,
                                             device, self.Batteries, self.deltaT)
-        elif value < 0: # discharging
-          self.Batteries[device]['SoC'] += self.AppUtil.discharge_SoC(value,
+          elif value < 0: # discharging
+            self.Batteries[device]['SoC'] += self.AppUtil.discharge_SoC(value,
                                             device, self.Batteries, self.deltaT)
 
-        # for message back to competing apps
-        revised_socs[device] = self.Batteries[device]['SoC']
+          # for message back to competing apps
+          revised_socs[device] = self.Batteries[device]['SoC']
 
-        print('==> Dispatching value to device: ' + device + ', value: ' +
-              str(value) + ' (projected SoC: ' +
-              str(revised_socs[device]) + ')', flush=True)
+          print('==> Dispatching value to device: ' + device + ', value: ' +
+                str(value) + ' (projected SoC: ' +
+                str(revised_socs[device]) + ')', flush=True)
+
+        else: # not a battery
+          print('==> Dispatching value to device: ' + device + ', value: ' +
+                str(value), flush=True)
 
     # it's also possible a device from the last resolution does not appear
     # in the new resolution.  In this case it's a "don't care" for the new
@@ -190,7 +195,7 @@ class DeconflictionPipeline(GridAPPSD):
       print('Sending revised-socs message: ' + str(socs_message), flush=True)
       self.gapps.send(self.publish_topic, socs_message)
 
-    print(flush=True) # blank line
+    print(flush=True) # tidy up output with blank line
 
 
   def on_message(self, headers, message):
@@ -232,13 +237,16 @@ class DeconflictionPipeline(GridAPPSD):
     if datetime not in self.t_plot:
       self.t_plot.append(datetime)
       for name in self.ResolutionVector['setpoints']:
-        self.p_batt_plot[name].append(self.ResolutionVector['setpoints'][name])
-        self.soc_plot[name].append(self.Batteries[name]['SoC'])
+        if name.startswith('BatteryUnit:'):
+          self.p_batt_plot[name].append(
+                                 self.ResolutionVector['setpoints'][name])
+          self.soc_plot[name].append(self.Batteries[name]['SoC'])
     else:
       # replacing last list item is equivalent to rollback
       for name in self.ResolutionVector['setpoints']:
-        self.p_batt_plot[name][-1] = self.ResolutionVector['setpoints'][name]
-        self.soc_plot[name][-1] = self.Batteries[name]['SoC']
+        if name.startswith('BatteryUnit:'):
+          self.p_batt_plot[name][-1] = self.ResolutionVector['setpoints'][name]
+          self.soc_plot[name][-1] = self.Batteries[name]['SoC']
 
     return
 

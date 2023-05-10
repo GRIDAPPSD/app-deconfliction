@@ -31,7 +31,10 @@ class DeconflictionMethod:
           timestamp = max(timestamp, self.ConflictMatrix['timestamps'][app])
 
       if count > 0:
-        ResolutionVector['setpoints'][device] = total/count
+        if device.startswith('RatioTapChanger:'):
+          ResolutionVector['setpoints'][device] = round(total/count)
+        else:
+          ResolutionVector['setpoints'][device] = total/count
         ResolutionVector['timestamps'][device] = timestamp
 
     return ResolutionVector

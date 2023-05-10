@@ -47,7 +47,7 @@ class AppUtil:
     bindings = sparql_mgr.battery_query()
     print('Count of Batteries: ' + str(len(bindings)), flush=True)
     for obj in bindings:
-      name = obj['name']['value']
+      name = 'BatteryUnit:' + obj['name']['value']
       #bus = obj['bus']['value'].upper()
       Batteries[name] = {}
       Batteries[name]['ratedkW'] = float(obj['ratedS']['value'])/1000.0
@@ -217,28 +217,29 @@ class AppUtil:
 
   def make_plots(title, prefix, Batteries, t_plot, p_batt_plot, soc_plot):
     for name in Batteries:
+      batname = name[12:] # extract just the name for tidier plots
       plt.figure()
       fig, ax = plt.subplots()
-      plt.title(title + ' P_batt:  ' + name, pad=15.0)
+      plt.title(title + ' P_batt:  ' + batname, pad=15.0)
       plt.plot(t_plot, p_batt_plot[name])
       ax.xaxis.set_major_formatter(md.DateFormatter('%H:%M'))
       plt.xlim([AppUtil.to_datetime(1), AppUtil.to_datetime(96)])
       plt.xticks([AppUtil.to_datetime(1), AppUtil.to_datetime(25), AppUtil.to_datetime(49), AppUtil.to_datetime(73), AppUtil.to_datetime(96)])
       plt.xlabel('Time')
       plt.ylabel('P_batt  (kW)')
-      plt.savefig('output/' + prefix + '_p_batt_' + name + '.png')
+      plt.savefig('output/' + prefix + '_p_batt_' + batname + '.png')
       #plot.show()
 
       plt.figure()
       fig, ax = plt.subplots()
-      plt.title(title + ' SoC:  ' + name, pad=15.0)
+      plt.title(title + ' SoC:  ' + batname, pad=15.0)
       plt.plot(t_plot, soc_plot[name])
       ax.xaxis.set_major_formatter(md.DateFormatter('%H:%M'))
       plt.xlim([AppUtil.to_datetime(1), AppUtil.to_datetime(96)])
       plt.xticks([AppUtil.to_datetime(1), AppUtil.to_datetime(25), AppUtil.to_datetime(49), AppUtil.to_datetime(73), AppUtil.to_datetime(96)])
       plt.xlabel('Time')
       plt.ylabel('Battery SoC')
-      plt.savefig('output/' + prefix + '_soc_' + name + '.png')
+      plt.savefig('output/' + prefix + '_soc_' + batname + '.png')
       #plot.show()
 
 
