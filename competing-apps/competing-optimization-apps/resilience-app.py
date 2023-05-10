@@ -258,11 +258,9 @@ class CompetingApp(GridAPPSD):
 
       if 'tname' in obj:
         tname = obj['tname']['value']
-        # Regulators[tname] = pname
-        Regulators[tname] = {'pname': pname, 'idx': reg_idx, 'phases': phases}
+        Regulators['RatioTapChanger:'+tname] = {'pname': pname, 'idx': reg_idx, 'phases': phases}
       else:
-        # Regulators[pname] = pname
-        Regulators[pname] = {'pname': pname, 'idx': reg_idx, 'phases': phases}
+        Regulators['RatioTapChanger:'+pname] = {'pname': pname, 'idx': reg_idx, 'phases': phases}
 
       for char in phases:
         RegIdx[pname+'.'+char] = reg_idx
@@ -284,7 +282,7 @@ class CompetingApp(GridAPPSD):
         branch_info[name] = {}
         branch_info[name]['idx'] = idx
         branch_info[name]['phases'] = 'ABC'
-        if name in Regulators:
+        if 'RatioTapChanger:'+name in Regulators:
           branch_info[name]['type'] = 'regulator'
         else:
           branch_info[name]['type'] = 'transformer'
@@ -306,7 +304,7 @@ class CompetingApp(GridAPPSD):
               phase, flush=True)
         #print(obj)
 
-        pname = Regulators[name]['pname']
+        pname = Regulators['RatioTapChanger:'+name]['pname']
         if pname not in branch_info:
           branch_info[pname] = {}
           branch_info[pname]['idx'] = idx
