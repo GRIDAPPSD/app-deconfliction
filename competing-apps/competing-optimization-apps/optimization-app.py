@@ -69,7 +69,7 @@ from tabulate import tabulate
 
 class CompetingApp(GridAPPSD):
 
-  def __init__(self, gapps, feeder_mrid, simulation_id, state):
+  def __init__(self, gapps, opt_type, feeder_mrid, simulation_id, state):
     self.gapps = gapps
 
     self.AppUtil = getattr(importlib.import_module('shared.apputil'), 'AppUtil')
@@ -447,13 +447,18 @@ class CompetingApp(GridAPPSD):
     # time-series multiplier values
 
     # objective
-    # Decarbonization
-    #baseProb = LpProblem("Min_Sub_Flow", LpMinimize)
-    #baseProb += p_flow_A[118] + p_flow_B[118] + p_flow_C[118]
-    
-    # Resilience
-    baseProb = LpProblem("Max_Reserve", LpMinimize)
-    baseProb += lpSum(-soc[i] for i in range(len(Batteries)))
+    if opt_type.startswith('d') or opt_type.startswith('D'):
+      # Decarbonization
+      baseProb = LpProblem("Min_Sub_Flow", LpMinimize)
+      baseProb += p_flow_A[118] + p_flow_B[118] + p_flow_C[118]
+    elif opt_type.startswith('r') or opt_type.startswith('R'):
+      # Resilience
+      baseProb = LpProblem("Max_Reserve", LpMinimize)
+      baseProb += lpSum(-soc[i] for i in range(len(Batteries)))
+    else:
+      print('*** Exiting due to unrecognized optimization type: ' + opt_type,
+            flush=True)
+      exit()
 
     for branch in branch_info:
       # if branch == 'reg1a':
@@ -792,6 +797,15 @@ def _main():
   simulation_id = 0.0
   state = 'a'
 
+  parser = argparse.ArgumentParser()
+  parser.add_argument("type", help="Competing App Type")
+  parser.add_argument("simulation_id", help="Simulation ID")
+  parser.add_argument("request", help="Simulation Request")
+  parser.add_argument("state", nargs="?", default="Alert",
+                      help="Alert or Emergency State")
+  parser.add_argument("--outage", "--out", "-o", type=int, nargs=2)
+  opts = parser.parse_args()
+
   # authenticate with GridAPPS-D Platform
   os.environ['GRIDAPPSD_APPLICATION_ID'] = 'gridappsd-competing-app'
   os.environ['GRIDAPPSD_APPLICATION_STATUS'] = 'STARTED'
@@ -801,7 +815,8 @@ def _main():
   gapps = GridAPPSD(simulation_id)
   assert gapps.connected
 
-  competing_app = CompetingApp(gapps, feeder_mrid, simulation_id, state)
+  competing_app = CompetingApp(gapps, opts.type, feeder_mrid, simulation_id,
+                               state)
 
 
 if __name__ == "__main__":
