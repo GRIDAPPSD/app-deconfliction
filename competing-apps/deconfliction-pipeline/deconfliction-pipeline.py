@@ -166,7 +166,9 @@ class DeconflictionPipeline(GridAPPSD):
                 str(value) + ' (projected SoC: ' +
                 str(revised_socs[device]) + ')', flush=True)
 
-        else: # not a battery
+        # not a battery so only dispatch value if it's changed
+        elif device in self.ResolutionVector['setpoints'] and \
+             self.ResolutionVector['setpoints'][device] != value:
           print('==> Dispatching value to device: ' + device + ', value: ' +
                 str(value), flush=True)
 
