@@ -131,12 +131,12 @@ class DeconflictionPipeline(GridAPPSD):
     # different or new values
     revised_socs = {}
     for device, value in newResolutionVector['setpoints'].items():
-      if device not in self.ResolutionVector['setpoints'] or \
-         (newResolutionVector['timestamps'][device]==timestamp and \
-          (self.ResolutionVector['timestamps'][device]!=timestamp or \
-           self.ResolutionVector['setpoints'][device]!=value)):
+      if device.startswith('BatteryUnit:'):
+        if device not in self.ResolutionVector['setpoints'] or \
+           (newResolutionVector['timestamps'][device]==timestamp and \
+            (self.ResolutionVector['timestamps'][device]!=timestamp or \
+             self.ResolutionVector['setpoints'][device]!=value)):
 
-        if device.startswith('BatteryUnit:'):
           # determine if a resolution for this device for this timestamp has
           # already been sent
           if device in self.ResolutionVector['timestamps'] and \
@@ -166,11 +166,12 @@ class DeconflictionPipeline(GridAPPSD):
                 str(value) + ' (projected SoC: ' +
                 str(revised_socs[device]) + ')', flush=True)
 
-        # not a battery so only dispatch value if it's changed
-        elif device in self.ResolutionVector['setpoints'] and \
-             self.ResolutionVector['setpoints'][device] != value:
-          print('==> Dispatching value to device: ' + device + ', value: ' +
-                str(value), flush=True)
+      # not a battery so only dispatch value if it's changed or if it's
+      # never been dispatched before
+      elif device not in self.ResolutionVector['setpoints'] or \
+           self.ResolutionVector['setpoints'][device]!=value:
+        print('==> Dispatching value to device: ' + device + ', value: ' +
+              str(value), flush=True)
 
     # it's also possible a device from the last resolution does not appear
     # in the new resolution.  In this case it's a "don't care" for the new
