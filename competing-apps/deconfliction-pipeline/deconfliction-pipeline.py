@@ -251,7 +251,7 @@ class DeconflictionPipeline(GridAPPSD):
     return
 
 
-  def __init__(self, gapps, feeder_mrid, simulation_id, method):
+  def __init__(self, gapps, method, feeder_mrid, simulation_id):
     self.AppUtil = getattr(importlib.import_module('shared.apputil'), 'AppUtil')
 
     SPARQLManager = getattr(importlib.import_module('shared.sparql'),
@@ -259,6 +259,24 @@ class DeconflictionPipeline(GridAPPSD):
     sparql_mgr = SPARQLManager(gapps, feeder_mrid, simulation_id)
 
     self.Batteries = self.AppUtil.getBatteries(sparql_mgr)
+
+    # SHIVA HACK for 123 model testing
+    if feeder_mrid == '_C1C3E687-6FFD-C753-582B-632A27E28507':
+      self.Batteries['BatteryUnit:65'] = {'idx': 0, 'prated': 250000,
+            'phase': 'A', 'eff': 0.975 * 0.86, 'ratedE': 500000, 'SoC': 0.35}
+      self.Batteries['BatteryUnit:65']['eff_c'] = \
+                                   self.Batteries['BatteryUnit:65']['eff_d'] = \
+                                   self.Batteries['BatteryUnit:65']['eff']
+      self.Batteries['BatteryUnit:52'] = {'idx': 1, 'prated': 250000,
+            'phase': 'B', 'eff': 0.975 * 0.86, 'ratedE': 500000, 'SoC': 0.275}
+      self.Batteries['BatteryUnit:52']['eff_c'] = \
+                                   self.Batteries['BatteryUnit:52']['eff_d'] = \
+                                   self.Batteries['BatteryUnit:52']['eff']
+      self.Batteries['BatteryUnit:76'] = {'idx': 2, 'prated': 250000,
+            'phase': 'C', 'eff': 0.975 * 0.86, 'ratedE': 500000, 'SoC': 0.465}
+      self.Batteries['BatteryUnit:76']['eff_c'] = \
+                                   self.Batteries['BatteryUnit:76']['eff_d'] = \
+                                   self.Batteries['BatteryUnit:76']['eff']
 
     self.deltaT = 0.25 # timestamp interval in fractional hours, 0.25 = 15 min
 
@@ -295,7 +313,7 @@ class DeconflictionPipeline(GridAPPSD):
     gapps.subscribe(service_output_topic('gridappsd-competing-app',
                                          simulation_id), self)
 
-    print('Initialized deconfliction pipeline and now waiting for set-points messages...\n', flush=True)
+    print('Initialized deconfliction pipeline, waiting for set-points messages...\n', flush=True)
 
     self.gapps = gapps
 
@@ -328,9 +346,9 @@ def _main():
     sys.path.append('/gridappsd/services/app-deconfliction/competing-apps')
 
   parser = argparse.ArgumentParser()
+  parser.add_argument("method", help="Deconfliction Methodology")
   parser.add_argument("simulation_id", help="Simulation ID")
   parser.add_argument("request", help="Simulation Request")
-  parser.add_argument("method", help="Deconfliction Methodology")
   opts = parser.parse_args()
 
   sim_request = json.loads(opts.request.replace("\'",""))
@@ -345,7 +363,7 @@ def _main():
   gapps = GridAPPSD(opts.simulation_id)
   assert gapps.connected
 
-  DeconflictionPipeline(gapps, feeder_mrid, opts.simulation_id, opts.method)
+  DeconflictionPipeline(gapps, opts.method, feeder_mrid, opts.simulation_id)
 
 
 if __name__ == "__main__":
