@@ -224,7 +224,7 @@ class CompetingApp(GridAPPSD):
       self.dynamicProb += self.lambda_c[idx] + self.lambda_d[idx] <= 1
 
 
-  def doOptimization(self):
+  def doOptimization(self, time):
         # solve
         self.dynamicProb.solve(PULP_CBC_CMD(msg=0))
         #self.dynamicProb.writeLP('Optimization.lp')
@@ -274,10 +274,12 @@ class CompetingApp(GridAPPSD):
         '''
 
         p_batt_setpoints = []
+        set_points = {}
         for name in self.Batteries:
           idx = self.Batteries[name]['idx']
           self.Batteries[name]['SoC'] = self.soc[idx].varValue
-          p_batt_setpoints.append([name, self.p_batt[idx].varValue/1000.0,
+          set_points[name] = self.p_batt[idx].varValue/1000.0
+          p_batt_setpoints.append([name, set_points[name],
                                    self.soc[idx].varValue])
 
         print(tabulate(p_batt_setpoints, headers=['Battery', 'P_batt',
@@ -288,10 +290,19 @@ class CompetingApp(GridAPPSD):
           idx = self.Regulators[reg]['idx']
           for k in range(32):
             if self.reg_taps[(idx, k)].varValue >= 0.5:
+              set_points[reg] = k-16
               regulator_taps.append([reg, k-16, self.b_i[k]])
 
         print(tabulate(regulator_taps, headers=['Regulator', 'Tap', 'b_i'],
                        tablefmt='psql'), '\n', flush=True)
+
+        out_message = {
+          'app_name': self.appname,
+          'timestamp': time,
+          'set_points': set_points
+        }
+        print('Sending message: ' + str(out_message), flush=True)
+        self.gapps.send(self.publish_topic, out_message)
 
 
   def on_message(self, headers, in_message):
@@ -322,7 +333,7 @@ class CompetingApp(GridAPPSD):
 
     self.defineOptimizationDynamicProblem(time, loadshape, solar)
 
-    self.doOptimization()
+    self.doOptimization(time)
 
 
   def defineOptimizationVariables(self, len_branch_info, len_bus_info,
@@ -392,11 +403,13 @@ class CompetingApp(GridAPPSD):
     # objective
     if opt_type.startswith('d') or opt_type.startswith('D'):
       # Decarbonization
+      self.appname = 'decarbonization-app'
       self.staticProb = LpProblem("Min_Sub_Flow", LpMinimize)
       self.staticProb += self.p_flow_A[118] + self.p_flow_B[118] + \
                          self.p_flow_C[118]
     elif opt_type.startswith('r') or opt_type.startswith('R'):
       # Resilience
+      self.appname = 'resilience-app'
       self.staticProb = LpProblem("Max_Reserve", LpMinimize)
       self.staticProb += lpSum(-self.soc[i] for i in range(len_Batteries))
     else:
