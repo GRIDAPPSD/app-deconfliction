@@ -19,9 +19,9 @@ class DeconflictionMethod:
 
       for app in self.ConflictMatrix['setpoints'][device]:
         if app == 'resilience-app':
-          ResolutionVector['setpoints'][device] =
+          ResolutionVector['setpoints'][device] = \
                                    self.ConflictMatrix['setpoints'][device][app]
-          ResolutionVector['timestamps'][device] =
+          ResolutionVector['timestamps'][device] = \
                                    self.ConflictMatrix['timestamps'][app]
           count = 0
           break
