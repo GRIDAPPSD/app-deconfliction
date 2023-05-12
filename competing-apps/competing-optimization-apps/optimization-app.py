@@ -278,11 +278,11 @@ class CompetingApp(GridAPPSD):
         for name in self.Batteries:
           idx = self.Batteries[name]['idx']
           self.Batteries[name]['SoC'] = self.soc[idx].varValue
-          set_points[name] = self.p_batt[idx].varValue/1000.0
-          p_batt_setpoints.append([name, set_points[name],
+          set_points[name] = self.p_batt[idx].varValue
+          p_batt_setpoints.append([name, set_points[name]/1000,
                                    self.soc[idx].varValue])
 
-        print(tabulate(p_batt_setpoints, headers=['Battery', 'P_batt',
+        print(tabulate(p_batt_setpoints, headers=['Battery', 'P_batt (kW)',
                        'Target SoC'], tablefmt='psql'), flush=True)
 
         regulator_taps = []
