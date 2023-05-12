@@ -263,17 +263,17 @@ class DeconflictionPipeline(GridAPPSD):
     # SHIVA HACK for 123 model testing
     if feeder_mrid == '_C1C3E687-6FFD-C753-582B-632A27E28507':
       self.Batteries['BatteryUnit:65'] = {'idx': 0, 'prated': 250000,
-            'phase': 'A', 'eff': 0.975 * 0.86, 'ratedE': 500000, 'SoC': 0.35}
+            'phase': 'A', 'eff': 0.975 * 0.86, 'ratedE': 500.000, 'SoC': 0.35}
       self.Batteries['BatteryUnit:65']['eff_c'] = \
                                    self.Batteries['BatteryUnit:65']['eff_d'] = \
                                    self.Batteries['BatteryUnit:65']['eff']
       self.Batteries['BatteryUnit:52'] = {'idx': 1, 'prated': 250000,
-            'phase': 'B', 'eff': 0.975 * 0.86, 'ratedE': 500000, 'SoC': 0.275}
+            'phase': 'B', 'eff': 0.975 * 0.86, 'ratedE': 500.000, 'SoC': 0.275}
       self.Batteries['BatteryUnit:52']['eff_c'] = \
                                    self.Batteries['BatteryUnit:52']['eff_d'] = \
                                    self.Batteries['BatteryUnit:52']['eff']
       self.Batteries['BatteryUnit:76'] = {'idx': 2, 'prated': 250000,
-            'phase': 'C', 'eff': 0.975 * 0.86, 'ratedE': 500000, 'SoC': 0.465}
+            'phase': 'C', 'eff': 0.975 * 0.86, 'ratedE': 500.000, 'SoC': 0.465}
       self.Batteries['BatteryUnit:76']['eff_c'] = \
                                    self.Batteries['BatteryUnit:76']['eff_d'] = \
                                    self.Batteries['BatteryUnit:76']['eff']
