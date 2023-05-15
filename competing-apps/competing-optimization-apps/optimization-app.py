@@ -227,7 +227,8 @@ class CompetingApp(GridAPPSD):
   def doOptimization(self, time):
         # solve
         self.dynamicProb.solve(PULP_CBC_CMD(msg=0))
-        #self.dynamicProb.writeLP('Optimization.lp')
+        self.dynamicProb.writeLP('output/' + self.opt_type + '_' +
+                                 str(time) + '.lp')
         print('Optimization status:', LpStatus[self.dynamicProb.status],
               flush=True)
 
@@ -297,7 +298,7 @@ class CompetingApp(GridAPPSD):
                        tablefmt='psql'), '\n', flush=True)
 
         out_message = {
-          'app_name': self.appname,
+          'app_name': self.opt_type+'-app',
           'timestamp': time,
           'set_points': set_points
         }
@@ -395,27 +396,19 @@ class CompetingApp(GridAPPSD):
                           lowBound=0, upBound=1, cat='Binary')
 
 
-  def defineOptimizationStaticProblem(self, opt_type, branch_info, RegIdx,
+  def defineOptimizationStaticProblem(self, branch_info, RegIdx,
                                       len_Batteries, len_Regulators):
     # define base/static optimization problem that doesn't change with the
     # time-series multiplier values
 
     # objective
-    if opt_type.startswith('d') or opt_type.startswith('D'):
-      # Decarbonization
-      self.appname = 'decarbonization-app'
+    if self.opt_type == 'decarbonization':
       self.staticProb = LpProblem("Min_Sub_Flow", LpMinimize)
       self.staticProb += self.p_flow_A[118] + self.p_flow_B[118] + \
                          self.p_flow_C[118]
-    elif opt_type.startswith('r') or opt_type.startswith('R'):
-      # Resilience
-      self.appname = 'resilience-app'
+    elif self.opt_type == 'resilience':
       self.staticProb = LpProblem("Max_Reserve", LpMinimize)
       self.staticProb += lpSum(-self.soc[i] for i in range(len_Batteries))
-    else:
-      print('*** Exiting due to unrecognized optimization type: ' + opt_type,
-            flush=True)
-      exit()
 
     for branch in branch_info:
       if branch_info[branch]['type'] == 'regulator':
@@ -864,10 +857,19 @@ class CompetingApp(GridAPPSD):
 
     self.b_i = np.arange(0.9, 1.1, 0.00625)
 
+    if opt_type.startswith('d') or opt_type.startswith('D'):
+      self.opt_type = 'decarbonization'
+    elif opt_type.startswith('r') or opt_type.startswith('R'):
+      self.opt_type = 'resilience'
+    else:
+      print('*** Exiting due to unrecognized optimization type: ' + opt_type,
+            flush=True)
+      exit()
+
     self.defineOptimizationVariables(len(branch_info), len(self.bus_info),
                                      len(self.Batteries), len(self.Regulators))
 
-    self.defineOptimizationStaticProblem(opt_type, branch_info, RegIdx,
+    self.defineOptimizationStaticProblem(branch_info, RegIdx,
                                      len(self.Batteries), len(self.Regulators))
 
     # topic for sending out set_points messages
