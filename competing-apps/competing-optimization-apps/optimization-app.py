@@ -408,7 +408,11 @@ class CompetingApp(GridAPPSD):
                          self.p_flow_C[118]
     elif self.opt_type == 'resilience':
       self.staticProb = LpProblem("Max_Reserve", LpMinimize)
-      self.staticProb += lpSum(-self.soc[i] for i in range(len_Batteries))
+      # SHIVA magic scaling factor for SoC that causes the optmization to
+      # come up with the correct results where -self.soc[i] doesn't.
+      # Shiva will be investigating why this happens since we don't want
+      # to be dependent on magic
+      self.staticProb += lpSum(-100 * self.soc[i] for i in range(len_Batteries))
 
     for branch in branch_info:
       if branch_info[branch]['type'] == 'regulator':
