@@ -274,6 +274,17 @@ class CompetingApp(GridAPPSD):
                        tablefmt='psql'))
         '''
 
+        regulator_taps = []
+        for reg in self.Regulators:
+          idx = self.Regulators[reg]['idx']
+          for k in range(32):
+            if self.reg_taps[(idx, k)].varValue >= 0.5:
+              set_points[reg] = k-16
+              regulator_taps.append([reg, k-16, self.b_i[k]])
+
+        print(tabulate(regulator_taps, headers=['Regulator', 'Tap', 'b_i'],
+                       tablefmt='psql'), '\n', flush=True)
+
         p_batt_setpoints = []
         set_points = {}
         for name in self.Batteries:
@@ -285,17 +296,6 @@ class CompetingApp(GridAPPSD):
 
         print(tabulate(p_batt_setpoints, headers=['Battery', 'P_batt (kW)',
                        'Target SoC'], tablefmt='psql'), flush=True)
-
-        regulator_taps = []
-        for reg in self.Regulators:
-          idx = self.Regulators[reg]['idx']
-          for k in range(32):
-            if self.reg_taps[(idx, k)].varValue >= 0.5:
-              set_points[reg] = k-16
-              regulator_taps.append([reg, k-16, self.b_i[k]])
-
-        print(tabulate(regulator_taps, headers=['Regulator', 'Tap', 'b_i'],
-                       tablefmt='psql'), '\n', flush=True)
 
         out_message = {
           'app_name': self.opt_type+'-app',
