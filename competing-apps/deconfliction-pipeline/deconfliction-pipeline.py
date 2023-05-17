@@ -155,16 +155,17 @@ class DeconflictionPipeline(GridAPPSD):
           if value > 0: # charging
             self.Batteries[device]['SoC'] += self.AppUtil.charge_SoC(value,
                                             device, self.Batteries, self.deltaT)
+            revised_socs[device] = self.Batteries[device]['SoC']
           elif value < 0: # discharging
             self.Batteries[device]['SoC'] += self.AppUtil.discharge_SoC(value,
                                             device, self.Batteries, self.deltaT)
+            revised_socs[device] = self.Batteries[device]['SoC']
 
           # for message back to competing apps
-          revised_socs[device] = self.Batteries[device]['SoC']
 
           print('==> Dispatching value to device: ' + device + ', value: ' +
                 str(value) + ' (projected SoC: ' +
-                str(revised_socs[device]) + ')', flush=True)
+                str(self.Batteries[device]['SoC']) + ')', flush=True)
 
       # not a battery so only dispatch value if it's changed or if it's
       # never been dispatched before
@@ -198,7 +199,7 @@ class DeconflictionPipeline(GridAPPSD):
       print('Sending revised-socs message: ' + str(socs_message), flush=True)
       self.gapps.send(self.publish_topic, socs_message)
 
-    print(flush=True) # tidy up output with blank line
+    print(flush=True) # tidy output with blank line
 
 
   def on_message(self, headers, message):
