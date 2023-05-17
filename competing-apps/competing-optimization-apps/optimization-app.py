@@ -275,6 +275,7 @@ class CompetingApp(GridAPPSD):
         '''
 
         regulator_taps = []
+        set_points = {}
         for reg in self.Regulators:
           idx = self.Regulators[reg]['idx']
           for k in range(32):
@@ -286,7 +287,6 @@ class CompetingApp(GridAPPSD):
                        tablefmt='psql'), '\n', flush=True)
 
         p_batt_setpoints = []
-        set_points = {}
         for name in self.Batteries:
           idx = self.Batteries[name]['idx']
           self.Batteries[name]['SoC'] = self.soc[idx].varValue
