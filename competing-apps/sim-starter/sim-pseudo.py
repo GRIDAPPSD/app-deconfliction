@@ -18,6 +18,8 @@ class RepeatedTimer(object):
       self.next_call = time.time()
       self.start()
     else:
+      print('hit return to send first message...', end='', flush=True)
+      input()
       while function(*args, **kwargs):
         print('hit return to send another message...', end='', flush=True)
         input()
