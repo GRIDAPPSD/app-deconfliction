@@ -80,7 +80,9 @@ class DeconflictionPipeline(GridAPPSD):
     for device, value in set_points.items():
       #print('device: ' + device + ', value: ' + str(value), flush=True)
       if device.startswith('BatteryUnit:'):
-        print('++> setpoints from app: ' + app_name + ', device: ' + device + ', value: ' + str(value), flush=True)
+        print('~~> setpoints from app: ' + app_name +
+              ', timestamp: ' + str(timestamp) +
+              ', device: ' + device + ', value: ' + str(value), flush=True)
 
       if device not in self.ConflictMatrix['setpoints']:
         self.ConflictMatrix['setpoints'][device] = {}
@@ -167,16 +169,17 @@ class DeconflictionPipeline(GridAPPSD):
 
           # for message back to competing apps
 
-          print('++> Dispatching value to device: ' + device + ', value: ' +
-                str(value) + ' (projected SoC: ' +
-                str(self.Batteries[device]['SoC']) + ')', flush=True)
+          print('~~> Dispatching to device: ' + device + ', timestamp: ' +
+                str(timestamp) + ', value: ' + str(value) +
+                ' (projected SoC: ' + str(self.Batteries[device]['SoC']) + ')',
+                flush=True)
 
       # not a battery so only dispatch value if it's changed or if it's
       # never been dispatched before
       elif device not in self.ResolutionVector['setpoints'] or \
            self.ResolutionVector['setpoints'][device]!=value:
-        print('==> Dispatching value to device: ' + device + ', value: ' +
-              str(value), flush=True)
+        print('==> Dispatching to device: ' + device + ', timestamp: ' +
+              str(timestamp) + ', value: ' + str(value), flush=True)
 
     # it's also possible a device from the last resolution does not appear
     # in the new resolution.  In this case it's a "don't care" for the new
@@ -200,10 +203,11 @@ class DeconflictionPipeline(GridAPPSD):
         'timestamp': timestamp,
         'SoC': revised_socs
       }
-      print('Sending revised-socs message: ' + str(socs_message) + ' (driven by set-points from ' + app_name + ')', flush=True)
+      print('~~> Sending revised-socs message: ' + str(socs_message) +
+            ' (driven by set-points from ' + app_name + ')', flush=True)
       self.gapps.send(self.publish_topic, socs_message)
 
-    print(flush=True) # tidy output with blank line
+    print('~', flush=True) # tidy output with "blank" line
 
 
   def on_message(self, headers, message):
