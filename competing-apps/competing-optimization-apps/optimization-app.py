@@ -74,9 +74,8 @@ class CompetingApp(GridAPPSD):
   def updateSoC(self, SoC):
     for device, value in SoC.items():
       self.Batteries[device]['SoC'] = value
-      print('Battery name: ' + device +
-            ', Deconflictor sent revised projected SoC: ' +
-            str(round(value, 4)), flush=True)
+      print('Deconflictor sent revised projection for: ' + device +
+            ', SoC: ' + str(round(value, 4)), flush=True)
 
 
   def defineOptimizationDynamicProblem(self, time, load_mult, pv_mult):
