@@ -96,10 +96,10 @@ class DeconflictionPipeline(GridAPPSD):
            (set_points[device]!=self.ConflictMatrix['setpoints'][device][app] \
             or timestamp!=self.ConflictMatrix['timestamps'][app]):
           conflictFlag = True
-          break # breaking out of nested loops courtesy of Stack Overflow
-        else:
-          continue # only executed if the inner loop did not break
-      break # only executed if the inner loop did break
+          break # breaking out of inner for loop
+      # check if we should break out of the outer for loop as well
+      if conflictFlag:
+        break
 
     #conflictFlag = True # just override it to always call deconflict method
     print('conflictFlag: ' + str(conflictFlag), flush=True)
@@ -146,10 +146,11 @@ class DeconflictionPipeline(GridAPPSD):
             if backval > 0:
               self.Batteries[device]['SoC'] -= self.AppUtil.charge_SoC(backval,
                                             device, self.Batteries, self.deltaT)
+              revised_socs[device] = self.Batteries[device]['SoC']
             elif backval < 0:
               self.Batteries[device]['SoC'] -= self.AppUtil.discharge_SoC(
                                    backval, device, self.Batteries, self.deltaT)
-            print('*** Revised projected SoC for device: ' + device + ', SoC: ' + str(self.Batteries[device]['SoC']), flush=True)
+              revised_socs[device] = self.Batteries[device]['SoC']
 
           # update battery SoC
           if value > 0: # charging
@@ -186,7 +187,7 @@ class DeconflictionPipeline(GridAPPSD):
     return revised_socs
 
 
-  def AppFeedback(self, timestamp, revised_socs):
+  def AppFeedback(self, app_name, timestamp, revised_socs):
     # If running from a GridLAB-D simulation where Deconflictor Pipeline
     # updates devices in simulation, this feedback would come to apps through
     # simulation measurement messages and there would be no need to explicitly
@@ -196,7 +197,7 @@ class DeconflictionPipeline(GridAPPSD):
         'timestamp': timestamp,
         'SoC': revised_socs
       }
-      print('Sending revised-socs message: ' + str(socs_message), flush=True)
+      print('Sending revised-socs message: ' + str(socs_message) + ' (driven by set-points from ' + app_name + ')', flush=True)
       self.gapps.send(self.publish_topic, socs_message)
 
     print(flush=True) # tidy output with blank line
@@ -229,7 +230,7 @@ class DeconflictionPipeline(GridAPPSD):
 
     # Feedback loop with competing apps through revised SoC values so they
     # can make new set-point requests based on actual changes
-    self.AppFeedback(timestamp, revised_socs)
+    self.AppFeedback(app_name, timestamp, revised_socs)
 
     # Update the current resolution to the new resolution to be ready for the
     # next set-points message
