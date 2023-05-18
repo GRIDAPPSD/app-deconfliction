@@ -79,6 +79,9 @@ class DeconflictionPipeline(GridAPPSD):
     # now add the new set-points for app_name
     for device, value in set_points.items():
       #print('device: ' + device + ', value: ' + str(value), flush=True)
+      if device.startswith('BatteryUnit:'):
+        print('++> setpoints from app: ' + app_name + ', device: ' + device + ', value: ' + str(value), flush=True)
+
       if device not in self.ConflictMatrix['setpoints']:
         self.ConflictMatrix['setpoints'][device] = {}
 
@@ -164,7 +167,7 @@ class DeconflictionPipeline(GridAPPSD):
 
           # for message back to competing apps
 
-          print('==> Dispatching value to device: ' + device + ', value: ' +
+          print('++> Dispatching value to device: ' + device + ', value: ' +
                 str(value) + ' (projected SoC: ' +
                 str(self.Batteries[device]['SoC']) + ')', flush=True)
 
