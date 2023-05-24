@@ -140,7 +140,7 @@ class DeconflictionPipeline(GridAPPSD):
   P_battOlder = {}
   SoCOlder = {}
 
-  def updateSoC(self, name, P_batt, timestamp):
+  def updateSoC(self, name, P_batt, timestamp, revised_soxs):
     if name not in self.timestampOld:
       self.timestampOlder[name] = self.timestampOld[name] = timestamp
       self.P_battOlder[name] = self.P_battOld[name] = P_batt
@@ -163,9 +163,15 @@ class DeconflictionPipeline(GridAPPSD):
     projected = self.AppUtil.contrib_SoC(P_batt, 1, self.Batteries[name],
              self.deltaT)
 
-    self.Batteries[name]['SoX'] = self.SoCOlder[name] + actual + projected
+    newSoC = self.SoCOlder[name] + actual + projected
 
-    print('~SOC updateSoC magic for device: ' + name + ', start SoC: ' + str(self.SoCOlder[name]) + ', actual SoC contrib: ' + str(actual) + ', projected SoC contrib: ' + str(projected) + ', new SoC: ' + str(self.Batteries[name]['SoX']), flush=True)
+    print('~SOC updateSoC magic for device: ' + name + ', start SoC: ' + str(self.SoCOlder[name]) + ', actual SoC contrib: ' + str(actual) + ', projected SoC contrib: ' + str(projected) + ', new SoC: ' + str(newSoC), end='')
+
+    if newSoC != self.Batteries[name]['SoX']:
+      revised_soxs[name] = self.Batteries[name]['SoX'] = newSoC
+      print(' (revised)', flush=True)
+    else:
+      print(' (not revised)', flush=True)
 
     if timestamp > self.timestampOld[name]:
       self.timestampOlder[name] = self.timestampOld[name]
@@ -213,6 +219,7 @@ class DeconflictionPipeline(GridAPPSD):
     # Iterate over resolution and send set-points to devices that have
     # different or new values
     revised_socs = {}
+    revised_soxs = {}
     for device, value in newResolutionVector['setpoints'].items():
       if device.startswith('BatteryUnit:'):
         if device not in self.ResolutionVector['setpoints'] or \
@@ -220,7 +227,7 @@ class DeconflictionPipeline(GridAPPSD):
             (self.ResolutionVector['timestamps'][device]!=timestamp or \
              self.ResolutionVector['setpoints'][device]!=value)):
 
-          self.updateSoC(device, value, timestamp)
+          self.updateSoC(device, value, timestamp, revised_soxs)
 
           self.oldUpdateSoC(device, value, timestamp, revised_socs)
 
