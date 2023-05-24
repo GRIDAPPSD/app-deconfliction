@@ -276,7 +276,7 @@ class DeconflictionPipeline(GridAPPSD):
     print('Received set-points message: ' + str(message), flush=True)
 
     app_name = message['app_name']
-    timestamp = int(message['timestamp'])
+    timestamp = message['timestamp']
     set_points = message['set_points']
 
     # Step 1: Setpoint Processor
