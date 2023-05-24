@@ -110,6 +110,49 @@ class AppUtil:
     #  print('SynchronousMachine: ' + str(item), flush=True)
 
 
+  def contrib_SoC(P_batt, timeDiff, Battery, deltaT):
+    if P_batt >= 0:
+      return Battery['eff_c']*P_batt*timeDiff*deltaT/Battery['ratedE']
+    else:
+      return 1/Battery['eff_d']*P_batt*timeDiff*deltaT/Battery['ratedE']
+
+
+  timestampOld = {}
+  P_battOld = {}
+  SoCOld = {}
+  timestampOlder = {}
+  P_battOlder = {}
+  SoCOlder = {}
+
+  def new_SoC(name, P_batt, timestamp, Batteries, deltaT):
+    if name not in AppUtil.timestampOld:
+      AppUtil.timestampOlder[name] = AppUtil.timestampOld[name] = timestamp
+      AppUtil.P_battOlder[name] = AppUtil.P_battOld[name] = P_batt
+      AppUtil.SoCOlder[name] = AppUtil.SoCOld[name] = Batteries[name]['SoX']
+
+    #print('\n~ZZZ new_SoC for device: ' + name + ', timestamp: ' + str(timestamp) + ', P_batt: ' + str(P_batt) + ', SoX: ' + str(Batteries[name]['SoX']), flush=True)
+    #print('~ZZZ new_SoC for device: ' + name + ', timestampOld: ' + str(AppUtil.timestampOld[name]) + ', timestampOlder: ' + str(AppUtil.timestampOlder[name]), flush=True)
+    #print('~ZZZ new_SoC for device: ' + name + ', P_battOld: ' + str(AppUtil.P_battOld[name]) + ', P_battOlder: ' + str(AppUtil.P_battOlder[name]), flush=True)
+    #print('~ZZZ new_SoC for device: ' + name + ', SoCOld: ' + str(AppUtil.SoCOld[name]) + ', SoCOlder: ' + str(AppUtil.SoCOlder[name]), flush=True)
+
+    actual = AppUtil.contrib_SoC(AppUtil.P_battOld[name], timestamp-AppUtil.timestampOld[name], Batteries[name], deltaT)
+
+    projected = AppUtil.contrib_SoC(P_batt, 1, Batteries[name], deltaT)
+
+    Batteries[name]['SoX'] = AppUtil.SoCOlder[name] + actual + projected
+
+    print('~ZZZ new_SoC magic for device: ' + name + ', start SoC: ' + str(AppUtil.SoCOlder[name]) + ', actual SoC contrib: ' + str(actual) + ', projected SoC contrib: ' + str(projected) + ', new SoC: ' + str(Batteries[name]['SoX']), flush=True)
+
+    if timestamp > AppUtil.timestampOld[name]:
+      AppUtil.timestampOlder[name] = AppUtil.timestampOld[name]
+      AppUtil.P_battOlder[name] = AppUtil.P_battOld[name]
+      AppUtil.SoCOlder[name] = AppUtil.SoCOld[name]
+
+    AppUtil.timestampOld[name] = timestamp
+    AppUtil.P_battOld[name] = P_batt
+    AppUtil.SoCOld[name] = Batteries[name]['SoX']
+
+
   def discharge_SoC(value, name, Batteries, deltaT):
     return 1/Batteries[name]['eff_d']*value*deltaT/Batteries[name]['ratedE']
 

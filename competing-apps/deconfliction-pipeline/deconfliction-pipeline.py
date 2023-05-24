@@ -90,6 +90,8 @@ class DeconflictionPipeline(GridAPPSD):
       self.ConflictMatrix['setpoints'][device][app_name] = value
 
     print('ConflictMatrix: ' + str(self.ConflictMatrix), flush=True)
+    # for Alex
+    #pprint.pprint(self.ConflictMatrix)
 
 
   def ConflictIdentification(self, app_name, timestamp, set_points):
@@ -142,12 +144,16 @@ class DeconflictionPipeline(GridAPPSD):
             (self.ResolutionVector['timestamps'][device]!=timestamp or \
              self.ResolutionVector['setpoints'][device]!=value)):
 
+          self.AppUtil.new_SoC(device, value, timestamp, self.Batteries, self.deltaT)
+
           # determine if a resolution for this device for this timestamp has
           # already been sent
           if device in self.ResolutionVector['timestamps'] and \
              self.ResolutionVector['timestamps'][device]==timestamp:
+
             # rollback the previous contribution to SoC as the new one overrides
             backval = self.ResolutionVector['setpoints'][device]
+            #print('~XXX need to rollback SoC for device: ' + device + ', value: ' + str(backval) + ', pre-rollback SoC: ' + str(self.Batteries[device]['SoC']), flush=True)
             if backval > 0:
               self.Batteries[device]['SoC'] -= self.AppUtil.charge_SoC(backval,
                                             device, self.Batteries, self.deltaT)
@@ -156,8 +162,10 @@ class DeconflictionPipeline(GridAPPSD):
               self.Batteries[device]['SoC'] -= self.AppUtil.discharge_SoC(
                                    backval, device, self.Batteries, self.deltaT)
               revised_socs[device] = self.Batteries[device]['SoC']
+            #print('~XXX done with rollback for device: ' + device + ', value: ' + str(backval) + ', post-rollback SoC: ' + str(self.Batteries[device]['SoC']), flush=True)
 
           # update battery SoC
+          #print('~XXX need to compute new SoC for device: ' + device + ', value: ' + str(value) + ', pre-compute SoC: ' + str(self.Batteries[device]['SoC']), flush=True)
           if value > 0: # charging
             self.Batteries[device]['SoC'] += self.AppUtil.charge_SoC(value,
                                             device, self.Batteries, self.deltaT)
@@ -166,6 +174,7 @@ class DeconflictionPipeline(GridAPPSD):
             self.Batteries[device]['SoC'] += self.AppUtil.discharge_SoC(value,
                                             device, self.Batteries, self.deltaT)
             revised_socs[device] = self.Batteries[device]['SoC']
+          #print('~XXX done computing new SoC for device: ' + device + ', value: ' + str(value) + ', post-compute SoC: ' + str(self.Batteries[device]['SoC']), flush=True)
 
           # for message back to competing apps
 
@@ -275,17 +284,17 @@ class DeconflictionPipeline(GridAPPSD):
     # SHIVA HACK for 123 model testing
     if feeder_mrid == '_C1C3E687-6FFD-C753-582B-632A27E28507':
       self.Batteries['BatteryUnit:65'] = {'idx': 0, 'prated': 250000,
-            'phase': 'A', 'eff': 0.975 * 0.86, 'ratedE': 500000, 'SoC': 0.35}
+            'phase': 'A', 'eff': 0.975 * 0.86, 'ratedE': 500000, 'SoC': 0.35, 'SoX': 0.35}
       self.Batteries['BatteryUnit:65']['eff_c'] = \
                                    self.Batteries['BatteryUnit:65']['eff_d'] = \
                                    self.Batteries['BatteryUnit:65']['eff']
       self.Batteries['BatteryUnit:52'] = {'idx': 1, 'prated': 250000,
-            'phase': 'B', 'eff': 0.975 * 0.86, 'ratedE': 500000, 'SoC': 0.275}
+            'phase': 'B', 'eff': 0.975 * 0.86, 'ratedE': 500000, 'SoC': 0.275, 'SoX': 0.275}
       self.Batteries['BatteryUnit:52']['eff_c'] = \
                                    self.Batteries['BatteryUnit:52']['eff_d'] = \
                                    self.Batteries['BatteryUnit:52']['eff']
       self.Batteries['BatteryUnit:76'] = {'idx': 2, 'prated': 250000,
-            'phase': 'C', 'eff': 0.975 * 0.86, 'ratedE': 500000, 'SoC': 0.465}
+            'phase': 'C', 'eff': 0.975 * 0.86, 'ratedE': 500000, 'SoC': 0.465, 'SoX': 0.465}
       self.Batteries['BatteryUnit:76']['eff_c'] = \
                                    self.Batteries['BatteryUnit:76']['eff_d'] = \
                                    self.Batteries['BatteryUnit:76']['eff']
