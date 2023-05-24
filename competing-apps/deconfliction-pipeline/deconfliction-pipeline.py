@@ -140,7 +140,7 @@ class DeconflictionPipeline(GridAPPSD):
   P_battOlder = {}
   SoCOlder = {}
 
-  def updateSoCs(self, name, P_batt, timestamp):
+  def updateSoC(self, name, P_batt, timestamp):
     if name not in self.timestampOld:
       self.timestampOlder[name] = self.timestampOld[name] = timestamp
       self.P_battOlder[name] = self.P_battOld[name] = P_batt
@@ -182,7 +182,7 @@ class DeconflictionPipeline(GridAPPSD):
             (self.ResolutionVector['timestamps'][device]!=timestamp or \
              self.ResolutionVector['setpoints'][device]!=value)):
 
-          self.updateSoCs(device, value, timestamp)
+          self.updateSoC(device, value, timestamp)
 
           # determine if a resolution for this device for this timestamp has
           # already been sent
