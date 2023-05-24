@@ -133,6 +133,44 @@ class DeconflictionPipeline(GridAPPSD):
     return newResolutionVector
 
 
+  timestampOld = {}
+  P_battOld = {}
+  SoCOld = {}
+  timestampOlder = {}
+  P_battOlder = {}
+  SoCOlder = {}
+
+  def updateSoCs(self, name, P_batt, timestamp):
+    if name not in self.timestampOld:
+      self.timestampOlder[name] = self.timestampOld[name] = timestamp
+      self.P_battOlder[name] = self.P_battOld[name] = P_batt
+      self.SoCOlder[name] = self.SoCOld[name] = self.Batteries[name]['SoX']
+
+    #print('\n~ZZZ new_SoC for device: ' + name + ', timestamp: ' + str(timestamp) + ', P_batt: ' + str(P_batt) + ', SoX: ' + str(self.Batteries[name]['SoX']), flush=True)
+    #print('~ZZZ new_SoC for device: ' + name + ', timestampOld: ' + str(self.timestampOld[name]) + ', timestampOlder: ' + str(self.timestampOlder[name]), flush=True)
+    #print('~ZZZ new_SoC for device: ' + name + ', P_battOld: ' + str(self.P_battOld[name]) + ', P_battOlder: ' + str(self.P_battOlder[name]), flush=True)
+    #print('~ZZZ new_SoC for device: ' + name + ', SoCOld: ' + str(self.SoCOld[name]) + ', SoCOlder: ' + str(self.SoCOlder[name]), flush=True)
+
+    actual = self.AppUtil.contrib_SoC(self.P_battOld[name],
+             timestamp-self.timestampOld[name],self.Batteries[name],self.deltaT)
+
+    projected = self.AppUtil.contrib_SoC(P_batt, 1, self.Batteries[name],
+             self.deltaT)
+
+    self.Batteries[name]['SoX'] = self.SoCOlder[name] + actual + projected
+
+    print('~ZZZ new_SoC magic for device: ' + name + ', start SoC: ' + str(self.SoCOlder[name]) + ', actual SoC contrib: ' + str(actual) + ', projected SoC contrib: ' + str(projected) + ', new SoC: ' + str(self.Batteries[name]['SoX']), flush=True)
+
+    if timestamp > self.timestampOld[name]:
+      self.timestampOlder[name] = self.timestampOld[name]
+      self.P_battOlder[name] = self.P_battOld[name]
+      self.SoCOlder[name] = self.SoCOld[name]
+
+    self.timestampOld[name] = timestamp
+    self.P_battOld[name] = P_batt
+    self.SoCOld[name] = self.Batteries[name]['SoX']
+
+
   def DeviceDispatcher(self, timestamp, newResolutionVector):
     # Iterate over resolution and send set-points to devices that have
     # different or new values
@@ -144,7 +182,7 @@ class DeconflictionPipeline(GridAPPSD):
             (self.ResolutionVector['timestamps'][device]!=timestamp or \
              self.ResolutionVector['setpoints'][device]!=value)):
 
-          self.AppUtil.new_SoC(device, value, timestamp, self.Batteries, self.deltaT)
+          self.updateSoCs(device, value, timestamp)
 
           # determine if a resolution for this device for this timestamp has
           # already been sent
