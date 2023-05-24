@@ -146,20 +146,26 @@ class DeconflictionPipeline(GridAPPSD):
       self.P_battOlder[name] = self.P_battOld[name] = P_batt
       self.SoCOlder[name] = self.SoCOld[name] = self.Batteries[name]['SoX']
 
-    #print('\n~ZZZ new_SoC for device: ' + name + ', timestamp: ' + str(timestamp) + ', P_batt: ' + str(P_batt) + ', SoX: ' + str(self.Batteries[name]['SoX']), flush=True)
-    #print('~ZZZ new_SoC for device: ' + name + ', timestampOld: ' + str(self.timestampOld[name]) + ', timestampOlder: ' + str(self.timestampOlder[name]), flush=True)
-    #print('~ZZZ new_SoC for device: ' + name + ', P_battOld: ' + str(self.P_battOld[name]) + ', P_battOlder: ' + str(self.P_battOlder[name]), flush=True)
-    #print('~ZZZ new_SoC for device: ' + name + ', SoCOld: ' + str(self.SoCOld[name]) + ', SoCOlder: ' + str(self.SoCOlder[name]), flush=True)
+    #print('\n~SOC updateSoC for device: ' + name + ', timestamp: ' + str(timestamp) + ', P_batt: ' + str(P_batt) + ', SoX: ' + str(self.Batteries[name]['SoX']), flush=True)
+    #print('~SOC updateSoC for device: ' + name + ', timestampOld: ' + str(self.timestampOld[name]) + ', timestampOlder: ' + str(self.timestampOlder[name]), flush=True)
+    #print('~SOC updateSoC for device: ' + name + ', P_battOld: ' + str(self.P_battOld[name]) + ', P_battOlder: ' + str(self.P_battOlder[name]), flush=True)
+    #print('~SOC updateSoC for device: ' + name + ', SoCOld: ' + str(self.SoCOld[name]) + ', SoCOlder: ' + str(self.SoCOlder[name]), flush=True)
 
-    actual = self.AppUtil.contrib_SoC(self.P_battOld[name],
-             timestamp-self.timestampOld[name],self.Batteries[name],self.deltaT)
+    actual = 0.0
+    if timestamp > self.timestampOld[name]:
+      actual = self.AppUtil.contrib_SoC(self.P_battOld[name],
+           timestamp-self.timestampOld[name], self.Batteries[name], self.deltaT)
+    elif timestamp < self.timestampOld[name]:
+      # consider going back in time the same as equal timestamps other than
+      # reporting it
+      print('*** WARNING: time has gone backwards with set-points message for device: ' + name + ', timestamp: ' + str(timestamp) + ', last timestamp: ' + str(self.timestampOld[name]), flush=True)
 
     projected = self.AppUtil.contrib_SoC(P_batt, 1, self.Batteries[name],
              self.deltaT)
 
     self.Batteries[name]['SoX'] = self.SoCOlder[name] + actual + projected
 
-    print('~ZZZ new_SoC magic for device: ' + name + ', start SoC: ' + str(self.SoCOlder[name]) + ', actual SoC contrib: ' + str(actual) + ', projected SoC contrib: ' + str(projected) + ', new SoC: ' + str(self.Batteries[name]['SoX']), flush=True)
+    print('~SOC updateSoC magic for device: ' + name + ', start SoC: ' + str(self.SoCOlder[name]) + ', actual SoC contrib: ' + str(actual) + ', projected SoC contrib: ' + str(projected) + ', new SoC: ' + str(self.Batteries[name]['SoX']), flush=True)
 
     if timestamp > self.timestampOld[name]:
       self.timestampOlder[name] = self.timestampOld[name]
@@ -169,6 +175,38 @@ class DeconflictionPipeline(GridAPPSD):
     self.timestampOld[name] = timestamp
     self.P_battOld[name] = P_batt
     self.SoCOld[name] = self.Batteries[name]['SoX']
+
+
+  def oldUpdateSoC(self, name, P_batt, timestamp, revised_socs):
+    # determine if a resolution for this device for this timestamp has
+    # already been sent
+    if name in self.ResolutionVector['timestamps'] and \
+       self.ResolutionVector['timestamps'][name]==timestamp:
+
+      # rollback the previous contribution to SoC as the new one overrides
+      backval = self.ResolutionVector['setpoints'][name]
+      #print('~SOC need to rollback SoC for device: ' + name + ', P_batt: ' + str(backval) + ', pre-rollback SoC: ' + str(self.Batteries[name]['SoC']), flush=True)
+      if backval > 0:
+        self.Batteries[name]['SoC'] -= self.AppUtil.charge_SoC(backval,
+                                      name, self.Batteries, self.deltaT)
+        revised_socs[name] = self.Batteries[name]['SoC']
+      elif backval < 0:
+        self.Batteries[name]['SoC'] -= self.AppUtil.discharge_SoC(
+                             backval, name, self.Batteries, self.deltaT)
+        revised_socs[name] = self.Batteries[name]['SoC']
+      #print('~SOC done with rollback for device: ' + name + ', P_batt: ' + str(backval) + ', post-rollback SoC: ' + str(self.Batteries[name]['SoC']), flush=True)
+
+    # update battery SoC
+    #print('~SOC need to compute new SoC for device: ' + name + ', P_batt: ' + str(P_batt) + ', pre-compute SoC: ' + str(self.Batteries[name]['SoC']), flush=True)
+    if P_batt > 0: # charging
+      self.Batteries[name]['SoC'] += self.AppUtil.charge_SoC(P_batt,
+                                      name, self.Batteries, self.deltaT)
+      revised_socs[name] = self.Batteries[name]['SoC']
+    elif P_batt < 0: # discharging
+      self.Batteries[name]['SoC'] += self.AppUtil.discharge_SoC(P_batt,
+                                      name, self.Batteries, self.deltaT)
+      revised_socs[name] = self.Batteries[name]['SoC']
+    #print('~SOC done computing new SoC for device: ' + name + ', P_batt: ' + str(P_batt) + ', post-compute SoC: ' + str(self.Batteries[name]['SoC']), flush=True)
 
 
   def DeviceDispatcher(self, timestamp, newResolutionVector):
@@ -184,37 +222,7 @@ class DeconflictionPipeline(GridAPPSD):
 
           self.updateSoC(device, value, timestamp)
 
-          # determine if a resolution for this device for this timestamp has
-          # already been sent
-          if device in self.ResolutionVector['timestamps'] and \
-             self.ResolutionVector['timestamps'][device]==timestamp:
-
-            # rollback the previous contribution to SoC as the new one overrides
-            backval = self.ResolutionVector['setpoints'][device]
-            #print('~XXX need to rollback SoC for device: ' + device + ', value: ' + str(backval) + ', pre-rollback SoC: ' + str(self.Batteries[device]['SoC']), flush=True)
-            if backval > 0:
-              self.Batteries[device]['SoC'] -= self.AppUtil.charge_SoC(backval,
-                                            device, self.Batteries, self.deltaT)
-              revised_socs[device] = self.Batteries[device]['SoC']
-            elif backval < 0:
-              self.Batteries[device]['SoC'] -= self.AppUtil.discharge_SoC(
-                                   backval, device, self.Batteries, self.deltaT)
-              revised_socs[device] = self.Batteries[device]['SoC']
-            #print('~XXX done with rollback for device: ' + device + ', value: ' + str(backval) + ', post-rollback SoC: ' + str(self.Batteries[device]['SoC']), flush=True)
-
-          # update battery SoC
-          #print('~XXX need to compute new SoC for device: ' + device + ', value: ' + str(value) + ', pre-compute SoC: ' + str(self.Batteries[device]['SoC']), flush=True)
-          if value > 0: # charging
-            self.Batteries[device]['SoC'] += self.AppUtil.charge_SoC(value,
-                                            device, self.Batteries, self.deltaT)
-            revised_socs[device] = self.Batteries[device]['SoC']
-          elif value < 0: # discharging
-            self.Batteries[device]['SoC'] += self.AppUtil.discharge_SoC(value,
-                                            device, self.Batteries, self.deltaT)
-            revised_socs[device] = self.Batteries[device]['SoC']
-          #print('~XXX done computing new SoC for device: ' + device + ', value: ' + str(value) + ', post-compute SoC: ' + str(self.Batteries[device]['SoC']), flush=True)
-
-          # for message back to competing apps
+          self.oldUpdateSoC(device, value, timestamp, revised_socs)
 
           print('~~> Dispatching to device: ' + device + ', timestamp: ' +
                 str(timestamp) + ', value: ' + str(value) +
