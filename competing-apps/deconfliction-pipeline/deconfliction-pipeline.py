@@ -140,19 +140,22 @@ class DeconflictionPipeline(GridAPPSD):
   P_battOlder = {}
   SoCOlder = {}
 
-  def updateSoC(self, name, P_batt, timestamp, revised_soxs):
+  def updateSoC(self, name, P_batt, timestamp, revised_socs):
     if name not in self.timestampOld:
       self.timestampOlder[name] = self.timestampOld[name] = timestamp
       self.P_battOlder[name] = self.P_battOld[name] = P_batt
-      self.SoCOlder[name] = self.SoCOld[name] = self.Batteries[name]['SoX']
+      self.SoCOlder[name] = self.SoCOld[name] = self.Batteries[name]['SoC']
 
-    #print('\n~SOC updateSoC for device: ' + name + ', timestamp: ' + str(timestamp) + ', P_batt: ' + str(P_batt) + ', SoX: ' + str(self.Batteries[name]['SoX']), flush=True)
+    #print('\n~SOC updateSoC for device: ' + name + ', timestamp: ' + str(timestamp) + ', P_batt: ' + str(P_batt) + ', SoC: ' + str(self.Batteries[name]['SoC']), flush=True)
     #print('~SOC updateSoC for device: ' + name + ', timestampOld: ' + str(self.timestampOld[name]) + ', timestampOlder: ' + str(self.timestampOlder[name]), flush=True)
     #print('~SOC updateSoC for device: ' + name + ', P_battOld: ' + str(self.P_battOld[name]) + ', P_battOlder: ' + str(self.P_battOlder[name]), flush=True)
     #print('~SOC updateSoC for device: ' + name + ', SoCOld: ' + str(self.SoCOld[name]) + ', SoCOlder: ' + str(self.SoCOlder[name]), flush=True)
 
+    start = self.SoCOlder[name]
+
     actual = 0.0
     if timestamp > self.timestampOld[name]:
+      #print('ZZZZ actual contrib based on P_batt: ' + str(self.P_battOld[name]) + ', current timestamp: ' + str(timestamp) + ', old timestamp: ' + str(self.timestampOld[name]), flush=True)
       actual = self.AppUtil.contrib_SoC(self.P_battOld[name],
            timestamp-self.timestampOld[name], self.Batteries[name], self.deltaT)
     elif timestamp < self.timestampOld[name]:
@@ -160,15 +163,17 @@ class DeconflictionPipeline(GridAPPSD):
       # reporting it
       print('*** WARNING: time has gone backwards with set-points message for device: ' + name + ', timestamp: ' + str(timestamp) + ', last timestamp: ' + str(self.timestampOld[name]), flush=True)
 
+    #print('ZZZZ projected contrib based on P_batt: ' + str(P_batt) + ', over 1 timestamp', flush=True)
     projected = self.AppUtil.contrib_SoC(P_batt, 1, self.Batteries[name],
-             self.deltaT)
+                                         self.deltaT)
 
-    newSoC = self.SoCOlder[name] + actual + projected
+    #print('ZZZZ start is SoCOlder: ' + str(self.SoCOlder[name]) + ', but could be SoCOld: ' + str(self.SoCOld[name]), flush=True)
+    newSoC = start + actual + projected
 
-    print('~SOC updateSoC magic for device: ' + name + ', start SoC: ' + str(self.SoCOlder[name]) + ', actual SoC contrib: ' + str(actual) + ', projected SoC contrib: ' + str(projected) + ', new SoC: ' + str(newSoC), end='')
+    print('~SOC updateSoC magic for device: ' + name + ', start SoC: ' + str(start) + ', actual SoC contrib: ' + str(actual) + ', projected SoC contrib: ' + str(projected) + ', new SoC: ' + str(newSoC), end='')
 
-    if newSoC != self.Batteries[name]['SoX']:
-      revised_soxs[name] = self.Batteries[name]['SoX'] = newSoC
+    if newSoC != self.Batteries[name]['SoC']:
+      revised_socs[name] = self.Batteries[name]['SoC'] = newSoC
       print(' (revised)', flush=True)
     else:
       print(' (not revised)', flush=True)
@@ -180,7 +185,7 @@ class DeconflictionPipeline(GridAPPSD):
 
     self.timestampOld[name] = timestamp
     self.P_battOld[name] = P_batt
-    self.SoCOld[name] = self.Batteries[name]['SoX']
+    self.SoCOld[name] = self.Batteries[name]['SoC']
 
 
   def oldUpdateSoC(self, name, P_batt, timestamp, revised_socs):
@@ -191,35 +196,35 @@ class DeconflictionPipeline(GridAPPSD):
 
       # rollback the previous contribution to SoC as the new one overrides
       backval = self.ResolutionVector['setpoints'][name]
-      #print('~SOC need to rollback SoC for device: ' + name + ', P_batt: ' + str(backval) + ', pre-rollback SoC: ' + str(self.Batteries[name]['SoC']), flush=True)
+      #print('~SOC need to rollback SoC for device: ' + name + ', P_batt: ' + str(backval) + ', pre-rollback SoC: ' + str(self.Batteries[name]['OldSoC']), flush=True)
       if backval > 0:
-        self.Batteries[name]['SoC'] -= self.AppUtil.charge_SoC(backval,
+        self.Batteries[name]['OldSoC'] -= self.AppUtil.charge_SoC(backval,
                                       name, self.Batteries, self.deltaT)
-        revised_socs[name] = self.Batteries[name]['SoC']
+        revised_socs[name] = self.Batteries[name]['OldSoC']
       elif backval < 0:
-        self.Batteries[name]['SoC'] -= self.AppUtil.discharge_SoC(
+        self.Batteries[name]['OldSoC'] -= self.AppUtil.discharge_SoC(
                              backval, name, self.Batteries, self.deltaT)
-        revised_socs[name] = self.Batteries[name]['SoC']
-      #print('~SOC done with rollback for device: ' + name + ', P_batt: ' + str(backval) + ', post-rollback SoC: ' + str(self.Batteries[name]['SoC']), flush=True)
+        revised_socs[name] = self.Batteries[name]['OldSoC']
+      #print('~SOC done with rollback for device: ' + name + ', P_batt: ' + str(backval) + ', post-rollback SoC: ' + str(self.Batteries[name]['OldSoC']), flush=True)
 
     # update battery SoC
-    #print('~SOC need to compute new SoC for device: ' + name + ', P_batt: ' + str(P_batt) + ', pre-compute SoC: ' + str(self.Batteries[name]['SoC']), flush=True)
+    #print('~SOC need to compute new SoC for device: ' + name + ', P_batt: ' + str(P_batt) + ', pre-compute SoC: ' + str(self.Batteries[name]['OldSoC']), flush=True)
     if P_batt > 0: # charging
-      self.Batteries[name]['SoC'] += self.AppUtil.charge_SoC(P_batt,
+      self.Batteries[name]['OldSoC'] += self.AppUtil.charge_SoC(P_batt,
                                       name, self.Batteries, self.deltaT)
-      revised_socs[name] = self.Batteries[name]['SoC']
+      revised_socs[name] = self.Batteries[name]['OldSoC']
     elif P_batt < 0: # discharging
-      self.Batteries[name]['SoC'] += self.AppUtil.discharge_SoC(P_batt,
+      self.Batteries[name]['OldSoC'] += self.AppUtil.discharge_SoC(P_batt,
                                       name, self.Batteries, self.deltaT)
-      revised_socs[name] = self.Batteries[name]['SoC']
-    #print('~SOC done computing new SoC for device: ' + name + ', P_batt: ' + str(P_batt) + ', post-compute SoC: ' + str(self.Batteries[name]['SoC']), flush=True)
+      revised_socs[name] = self.Batteries[name]['OldSoC']
+    #print('~SOC done computing new SoC for device: ' + name + ', P_batt: ' + str(P_batt) + ', post-compute SoC: ' + str(self.Batteries[name]['OldSoC']), flush=True)
 
 
   def DeviceDispatcher(self, timestamp, newResolutionVector):
     # Iterate over resolution and send set-points to devices that have
     # different or new values
     revised_socs = {}
-    revised_soxs = {}
+    old_revised_socs = {}
     for device, value in newResolutionVector['setpoints'].items():
       if device.startswith('BatteryUnit:'):
         if device not in self.ResolutionVector['setpoints'] or \
@@ -227,9 +232,11 @@ class DeconflictionPipeline(GridAPPSD):
             (self.ResolutionVector['timestamps'][device]!=timestamp or \
              self.ResolutionVector['setpoints'][device]!=value)):
 
-          self.updateSoC(device, value, timestamp, revised_soxs)
+          self.updateSoC(device, value, timestamp, revised_socs)
 
-          self.oldUpdateSoC(device, value, timestamp, revised_socs)
+          self.oldUpdateSoC(device, value, timestamp, old_revised_socs)
+
+          print('*** ' + device + ' SoC New: ' + str(self.Batteries[device]['SoC']) + ', Soc Old: ' + str(self.Batteries[device]['OldSoC']), flush=True)
 
           print('~~> Dispatching to device: ' + device + ', timestamp: ' +
                 str(timestamp) + ', value: ' + str(value) +
@@ -337,20 +344,24 @@ class DeconflictionPipeline(GridAPPSD):
     # SHIVA HACK for 123 model testing
     if feeder_mrid == '_C1C3E687-6FFD-C753-582B-632A27E28507':
       self.Batteries['BatteryUnit:65'] = {'idx': 0, 'prated': 250000,
-            'phase': 'A', 'eff': 0.975 * 0.86, 'ratedE': 500000, 'SoC': 0.35, 'SoX': 0.35}
+            'phase': 'A', 'eff': 0.975 * 0.86, 'ratedE': 500000, 'SoC': 0.35}
       self.Batteries['BatteryUnit:65']['eff_c'] = \
                                    self.Batteries['BatteryUnit:65']['eff_d'] = \
                                    self.Batteries['BatteryUnit:65']['eff']
       self.Batteries['BatteryUnit:52'] = {'idx': 1, 'prated': 250000,
-            'phase': 'B', 'eff': 0.975 * 0.86, 'ratedE': 500000, 'SoC': 0.275, 'SoX': 0.275}
+            'phase': 'B', 'eff': 0.975 * 0.86, 'ratedE': 500000, 'SoC': 0.275}
       self.Batteries['BatteryUnit:52']['eff_c'] = \
                                    self.Batteries['BatteryUnit:52']['eff_d'] = \
                                    self.Batteries['BatteryUnit:52']['eff']
       self.Batteries['BatteryUnit:76'] = {'idx': 2, 'prated': 250000,
-            'phase': 'C', 'eff': 0.975 * 0.86, 'ratedE': 500000, 'SoC': 0.465, 'SoX': 0.465}
+            'phase': 'C', 'eff': 0.975 * 0.86, 'ratedE': 500000, 'SoC': 0.465}
       self.Batteries['BatteryUnit:76']['eff_c'] = \
                                    self.Batteries['BatteryUnit:76']['eff_d'] = \
                                    self.Batteries['BatteryUnit:76']['eff']
+
+    # to support the old way of updating SoC for testing
+    for name in self.Batteries:
+      self.Batteries[name]['OldSoC'] = self.Batteries[name]['SoC']
 
     self.deltaT = 0.25 # timestamp interval in fractional hours, 0.25 = 15 min
 
