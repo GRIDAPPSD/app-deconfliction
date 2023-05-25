@@ -215,9 +215,9 @@ class CompetingApp(GridAPPSD):
       self.dynamicProb += self.p_batt_c[idx] >= 0
       self.dynamicProb += self.p_batt_d[idx] <= 0
       self.dynamicProb += self.p_batt_c[idx] <= \
-              self.lambda_c[idx] * self.p_rated
+              self.lambda_c[idx] * self.Batteries[name]['prated']
       self.dynamicProb += self.p_batt_d[idx] >= \
-              -self.lambda_d[idx] * self.p_rated
+              -self.lambda_d[idx] * self.Batteries[name]['prated']
       self.dynamicProb += self.p_batt[idx] == \
               self.p_batt_c[idx] + self.p_batt_d[idx]
       self.dynamicProb += self.lambda_c[idx] + self.lambda_d[idx] <= 1
@@ -403,8 +403,8 @@ class CompetingApp(GridAPPSD):
     # objective
     if self.opt_type == 'decarbonization':
       self.staticProb = LpProblem("Min_Sub_Flow", LpMinimize)
-      self.staticProb += self.p_flow_A[118] + self.p_flow_B[118] + \
-                         self.p_flow_C[118]
+      self.staticProb += self.p_flow_A[120] + self.p_flow_B[120] + \
+                         self.p_flow_C[120]
     elif self.opt_type == 'resilience':
       self.staticProb = LpProblem("Max_Reserve", LpMinimize)
       # SHIVA magic scaling factor for SoC that causes the optmization to
@@ -612,19 +612,19 @@ class CompetingApp(GridAPPSD):
     self.Batteries = self.AppUtil.getBatteries(sparql_mgr)
 
     # SHIVA HACK for 123 model testing
-    self.Batteries['BatteryUnit:65'] = {'idx': 0, 'prated': 250000,
-              'phase': 'A', 'eff': 0.975 * 0.86, 'ratedE': 500000, 'SoC': 0.35}
-    self.Batteries['BatteryUnit:52'] = {'idx': 1, 'prated': 250000,
-              'phase': 'B', 'eff': 0.975 * 0.86, 'ratedE': 500000, 'SoC': 0.275}
-    self.Batteries['BatteryUnit:76'] = {'idx': 2, 'prated': 250000,
-              'phase': 'C', 'eff': 0.975 * 0.86, 'ratedE': 500000, 'SoC': 0.465}
+    # self.Batteries['BatteryUnit:65'] = {'idx': 0, 'prated': 250000,
+    #           'phase': 'A', 'eff': 0.975 * 0.86, 'ratedE': 500000, 'SoC': 0.35}
+    # self.Batteries['BatteryUnit:52'] = {'idx': 1, 'prated': 250000,
+    #           'phase': 'B', 'eff': 0.975 * 0.86, 'ratedE': 500000, 'SoC': 0.275}
+    # self.Batteries['BatteryUnit:76'] = {'idx': 2, 'prated': 250000,
+    #           'phase': 'C', 'eff': 0.975 * 0.86, 'ratedE': 500000, 'SoC': 0.465}
 
     self.SolarPVs = self.AppUtil.getSolarPVs(sparql_mgr)
 
     # SHIVA HACK for 123 model testing
-    self.SolarPVs['65'] = {'p': 120000, 'phase': 'A'}
-    self.SolarPVs['52'] = {'p': 100000, 'phase': 'B'}
-    self.SolarPVs['76'] = {'p': 165000, 'phase': 'C'}
+    # self.SolarPVs['65'] = {'p': 120000, 'phase': 'A'}
+    # self.SolarPVs['52'] = {'p': 100000, 'phase': 'B'}
+    # self.SolarPVs['76'] = {'p': 165000, 'phase': 'C'}
 
     vnom = sparql_mgr.vnom_export()
 
