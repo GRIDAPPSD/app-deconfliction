@@ -341,6 +341,7 @@ class DeconflictionPipeline(GridAPPSD):
 
     self.Batteries = self.AppUtil.getBatteries(sparql_mgr)
 
+    '''
     # SHIVA HACK for 123 model testing
     if feeder_mrid == '_C1C3E687-6FFD-C753-582B-632A27E28507':
       self.Batteries['BatteryUnit:65'] = {'idx': 0, 'prated': 250000,
@@ -358,6 +359,7 @@ class DeconflictionPipeline(GridAPPSD):
       self.Batteries['BatteryUnit:76']['eff_c'] = \
                                    self.Batteries['BatteryUnit:76']['eff_d'] = \
                                    self.Batteries['BatteryUnit:76']['eff']
+    '''
 
     # to support the old way of updating SoC for testing
     for name in self.Batteries:
