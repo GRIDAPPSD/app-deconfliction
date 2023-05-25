@@ -413,10 +413,6 @@ class CompetingApp(GridAPPSD):
       self.staticProb += self.Psub == self.p_flow_A[sub_flow_idx] + self.p_flow_B[sub_flow_idx] + \
                          self.p_flow_C[sub_flow_idx]
 
-      # self.staticProb += self.p_flow_A[120] + self.p_flow_B[120] + \
-      #                    self.p_flow_C[120]
-      # self.staticProb += lpSum((self.v_A[i] + self.v_B[i] + self.v_C[i]) for i in range(len(self.bus_info)))
-
     elif self.opt_type == 'resilience':
       self.staticProb = LpProblem("Max_Reserve", LpMinimize)
       # SHIVA magic scaling factor for SoC that causes the optmization to
@@ -424,6 +420,10 @@ class CompetingApp(GridAPPSD):
       # Shiva will be investigating why this happens since we don't want
       # to be dependent on magic
       self.staticProb += lpSum(-100 * self.soc[i] for i in range(len_Batteries))
+
+    elif self.opt_type == 'profit_cvr':
+      self.staticProb = LpProblem("Min_Load_Demand", LpMinimize)
+      self.staticProb += lpSum((self.v_A[i] + self.v_B[i] + self.v_C[i]) for i in range(len(self.bus_info)))
 
     for branch in branch_info:
       if branch_info[branch]['type'] == 'regulator':
@@ -886,6 +886,8 @@ class CompetingApp(GridAPPSD):
       self.opt_type = 'decarbonization'
     elif opt_type.startswith('r') or opt_type.startswith('R'):
       self.opt_type = 'resilience'
+    elif opt_type.startswith('p') or opt_type.startswith('P'):
+      self.opt_type = 'profit_cvr'
     else:
       print('*** Exiting due to unrecognized optimization type: ' + opt_type,
             flush=True)
