@@ -359,6 +359,9 @@ class CompetingApp(GridAPPSD):
                           (i for i in range(len_branch_info)),
                           lowBound=flow_min, upBound=flow_max, cat='Continuous')
 
+    self.Psub = LpVariable("P_sub", lowBound=flow_min, upBound=flow_max, cat='Continuous')
+    self.Psub_mod = LpVariable("P_sub_mod", lowBound=flow_min, upBound=flow_max, cat='Continuous')
+
     self.p_rated = 250e3
     self.p_batt = LpVariable.dicts("p_batt",
                         (i for i in range(len_Batteries)),
@@ -403,8 +406,14 @@ class CompetingApp(GridAPPSD):
     # objective
     if self.opt_type == 'decarbonization':
       self.staticProb = LpProblem("Min_Sub_Flow", LpMinimize)
-      self.staticProb += self.p_flow_A[120] + self.p_flow_B[120] + \
+      self.staticProb += self.Psub_mod
+      self.staticProb += self.Psub_mod >= self.Psub
+      self.staticProb += self.Psub_mod >= -self.Psub
+      self.staticProb += self.Psub == self.p_flow_A[120] + self.p_flow_B[120] + \
                          self.p_flow_C[120]
+
+      # self.staticProb += self.p_flow_A[120] + self.p_flow_B[120] + \
+      #                    self.p_flow_C[120]
     elif self.opt_type == 'resilience':
       self.staticProb = LpProblem("Max_Reserve", LpMinimize)
       # SHIVA magic scaling factor for SoC that causes the optmization to
