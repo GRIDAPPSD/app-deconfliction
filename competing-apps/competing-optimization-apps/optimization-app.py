@@ -406,14 +406,17 @@ class CompetingApp(GridAPPSD):
     # objective
     if self.opt_type == 'decarbonization':
       self.staticProb = LpProblem("Min_Sub_Flow", LpMinimize)
+      sub_flow_idx = self.EnergySource['flow_idx']
       self.staticProb += self.Psub_mod
       self.staticProb += self.Psub_mod >= self.Psub
       self.staticProb += self.Psub_mod >= -self.Psub
-      self.staticProb += self.Psub == self.p_flow_A[120] + self.p_flow_B[120] + \
-                         self.p_flow_C[120]
+      self.staticProb += self.Psub == self.p_flow_A[sub_flow_idx] + self.p_flow_B[sub_flow_idx] + \
+                         self.p_flow_C[sub_flow_idx]
 
       # self.staticProb += self.p_flow_A[120] + self.p_flow_B[120] + \
       #                    self.p_flow_C[120]
+      # self.staticProb += lpSum((self.v_A[i] + self.v_B[i] + self.v_C[i]) for i in range(len(self.bus_info)))
+
     elif self.opt_type == 'resilience':
       self.staticProb = LpProblem("Max_Reserve", LpMinimize)
       # SHIVA magic scaling factor for SoC that causes the optmization to
@@ -530,9 +533,11 @@ class CompetingApp(GridAPPSD):
             self.q_flow_B[idx]*(-0.5*z_bc.imag + hfsqrt3*z_bc.real))
 
     # fix source bus at 1.0
-    self.staticProb += self.v_A[self.bus_info['150']['idx']] == 2401.77 ** 2
-    self.staticProb += self.v_B[self.bus_info['150']['idx']] == 2401.77 ** 2
-    self.staticProb += self.v_C[self.bus_info['150']['idx']] == 2401.77 ** 2
+    sourcebus = self.EnergySource['bus']
+    v_source = self.EnergySource['basev'] / math.sqrt(3)
+    self.staticProb += self.v_A[self.bus_info[sourcebus]['idx']] == v_source ** 2
+    self.staticProb += self.v_B[self.bus_info[sourcebus]['idx']] == v_source ** 2
+    self.staticProb += self.v_C[self.bus_info[sourcebus]['idx']] == v_source ** 2
 
     for k in range(len_Regulators):
       self.staticProb += lpSum(self.reg_taps[(k, tap)] for tap in range(32))==1
@@ -634,6 +639,8 @@ class CompetingApp(GridAPPSD):
     # self.SolarPVs['65'] = {'p': 120000, 'phase': 'A'}
     # self.SolarPVs['52'] = {'p': 100000, 'phase': 'B'}
     # self.SolarPVs['76'] = {'p': 165000, 'phase': 'C'}
+
+    self.EnergySource = self.AppUtil.getEnergySource(sparql_mgr)
 
     vnom = sparql_mgr.vnom_export()
 
@@ -837,6 +844,12 @@ class CompetingApp(GridAPPSD):
         if char not in n_line_phase:
           n_line_phase[char] = 0
         n_line_phase[char] += 1
+
+      # Idenytify the line emerging out from the source bus.
+      if branch_info[branch]['from_bus'] == self.EnergySource['bus']:
+        self.EnergySource['flow_idx'] = branch_info[branch]['idx']
+      if branch_info[branch]['to_bus'] == self.EnergySource['bus']:
+        self.EnergySource['flow_idx'] = branch_info[branch]['idx']
 
       if branch_info[branch]['type'] == 'line':
         fr_bus = branch_info[branch]['from_bus']

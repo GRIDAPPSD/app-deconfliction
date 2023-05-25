@@ -87,6 +87,17 @@ class AppUtil:
 
     return SolarPVs
 
+  def getEnergySource(sparql_mgr):
+    EnergySource = {}
+    bindings = sparql_mgr.energysource_query()
+    for obj in bindings:
+      EnergySource['name'] = obj['name']['value']
+      EnergySource['bus'] = obj['bus']['value'].upper()
+      EnergySource['basev'] = float(obj['basev']['value'])
+      EnergySource['nomv'] = float(obj['basev']['value'])
+
+    return EnergySource
+
 
   def getKitchenSink(sparql_mgr):
     pass
