@@ -389,7 +389,15 @@ class DeconflictionPipeline(GridAPPSD):
     if method.endswith('.py'):
       method = method[:-3] # allow full python file name
 
-    DeconflictionMethod = getattr(importlib.import_module(method),
+    dirname = os.path.dirname(method)
+    if dirname != '':
+      sys.path.append(dirname)
+
+    basename = os.path.basename(method)
+    print('Importing DeconflictionMethod class from module: ' + basename,
+           flush=True)
+
+    DeconflictionMethod = getattr(importlib.import_module(basename),
                                   'DeconflictionMethod')
     self.decon_method = DeconflictionMethod(self.ConflictMatrix)
 
