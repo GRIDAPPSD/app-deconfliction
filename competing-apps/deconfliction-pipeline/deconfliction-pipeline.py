@@ -142,22 +142,22 @@ class DeconflictionPipeline(GridAPPSD):
       self.Batteries[name]['refSoC'] = self.Batteries[name]['SoC']
       self.Batteries[name]['runSoC'] = self.Batteries[name]['SoC']
 
-    #print('\n~YYY updateSoC for device: ' + name + ', timestamp: ' + str(timestamp) + ', P_batt: ' + str(P_batt) + ', SoC: ' + str(self.Batteries[name]['SoC']), flush=True)
-    #print('~YYY updateSoC for device: ' + name + ', refTimestamp: ' + str(self.Batteries[name]['refTimestamp']) + ', runTimestamp: ' + str(self.Batteries[name]['runTimestamp']), flush=True)
-    #print('~YYY updateSoC for device: ' + name + ', refP_batt: ' + str(self.Batteries[name]['refP_batt']) + ', runP_batt: ' + str(self.Batteries[name]['runP_batt']), flush=True)
-    #print('~YYY updateSoC for device: ' + name + ', refSoC: ' + str(self.Batteries[name]['refSoC']) + ', runSoC: ' + str(self.Batteries[name]['runSoC']), flush=True)
+    ##print('\n~YYY updateSoC for device: ' + name + ', timestamp: ' + str(timestamp) + ', P_batt: ' + str(P_batt) + ', SoC: ' + str(self.Batteries[name]['SoC']), flush=True)
+    ##print('~YYY updateSoC for device: ' + name + ', refTimestamp: ' + str(self.Batteries[name]['refTimestamp']) + ', runTimestamp: ' + str(self.Batteries[name]['runTimestamp']), flush=True)
+    ##print('~YYY updateSoC for device: ' + name + ', refP_batt: ' + str(self.Batteries[name]['refP_batt']) + ', runP_batt: ' + str(self.Batteries[name]['runP_batt']), flush=True)
+    ##print('~YYY updateSoC for device: ' + name + ', refSoC: ' + str(self.Batteries[name]['refSoC']) + ', runSoC: ' + str(self.Batteries[name]['runSoC']), flush=True)
 
     if timestamp > self.Batteries[name]['runTimestamp']:
-      #print('~YYY updateSoC for device: ' + name + ', updating refSoC and refTimestamp to run values', flush=True)
+      ##print('~YYY updateSoC for device: ' + name + ', updating refSoC and refTimestamp to run values', flush=True)
       self.Batteries[name]['refTimestamp'] = \
                                        self.Batteries[name]['runTimestamp']
       self.Batteries[name]['refP_batt'] = self.Batteries[name]['runP_batt']
       self.Batteries[name]['refSoC'] = self.Batteries[name]['runSoC']
 
-    #print('~YYY updateSoC for device: ' + name + ', timestamp: ' + str(timestamp) + ', refTimestamp: ' + str(self.Batteries[name]['refTimestamp']) + ', runTimestamp: ' + str(self.Batteries[name]['runTimestamp']), flush=True)
+    ##print('~YYY updateSoC for device: ' + name + ', timestamp: ' + str(timestamp) + ', refTimestamp: ' + str(self.Batteries[name]['refTimestamp']) + ', runTimestamp: ' + str(self.Batteries[name]['runTimestamp']), flush=True)
     actContrib = 0.0
     if timestamp > self.Batteries[name]['refTimestamp']:
-      #print('~YYY actual contrib based on P_batt: ' + str(self.Batteries[name]['refP_batt']) + ', current timestamp: ' + str(timestamp) + ', reference timestamp: ' + str(self.Batteries[name]['refTimestamp']), flush=True)
+      ##print('~YYY actual contrib based on P_batt: ' + str(self.Batteries[name]['refP_batt']) + ', current timestamp: ' + str(timestamp) + ', reference timestamp: ' + str(self.Batteries[name]['refTimestamp']), flush=True)
       actContrib = self.AppUtil.contrib_SoC(self.Batteries[name]['refP_batt'],
                                  timestamp-self.Batteries[name]['refTimestamp'],
                                  self.Batteries[name], self.deltaT)
@@ -196,16 +196,16 @@ class DeconflictionPipeline(GridAPPSD):
       self.P_battOld[name] = P_batt
       self.SoCOlder[name] = self.SoCOld[name] = self.Batteries[name]['ZZZSoC']
 
-    #print('\n~ZZZ updateSoC for device: ' + name + ', timestamp: ' + str(timestamp) + ', P_batt: ' + str(P_batt) + ', SoC: ' + str(self.Batteries[name]['ZZZSoC']), flush=True)
-    #print('~ZZZ updateSoC for device: ' + name + ', timestampOld: ' + str(self.timestampOld[name]), flush=True)
-    #print('~ZZZ updateSoC for device: ' + name + ', P_battOld: ' + str(self.P_battOld[name]), flush=True)
-    #print('~ZZZ updateSoC for device: ' + name + ', SoCOld: ' + str(self.SoCOld[name]) + ', SoCOlder: ' + str(self.SoCOlder[name]), flush=True)
+    ##print('\n~ZZZ updateSoC for device: ' + name + ', timestamp: ' + str(timestamp) + ', P_batt: ' + str(P_batt) + ', SoC: ' + str(self.Batteries[name]['ZZZSoC']), flush=True)
+    ##print('~ZZZ updateSoC for device: ' + name + ', timestampOld: ' + str(self.timestampOld[name]), flush=True)
+    ##print('~ZZZ updateSoC for device: ' + name + ', P_battOld: ' + str(self.P_battOld[name]), flush=True)
+    ##print('~ZZZ updateSoC for device: ' + name + ', SoCOld: ' + str(self.SoCOld[name]) + ', SoCOlder: ' + str(self.SoCOlder[name]), flush=True)
 
     start = self.SoCOlder[name]
 
     actual = 0.0
     if timestamp > self.timestampOld[name]:
-      #print('~ZZZ actual contrib based on P_batt: ' + str(self.P_battOld[name]) + ', current timestamp: ' + str(timestamp) + ', old timestamp: ' + str(self.timestampOld[name]), flush=True)
+      ##print('~ZZZ actual contrib based on P_batt: ' + str(self.P_battOld[name]) + ', current timestamp: ' + str(timestamp) + ', old timestamp: ' + str(self.timestampOld[name]), flush=True)
       actual = self.AppUtil.contrib_SoC(self.P_battOld[name],
            timestamp-self.timestampOld[name], self.Batteries[name], self.deltaT)
     elif timestamp < self.timestampOld[name]:
@@ -213,23 +213,24 @@ class DeconflictionPipeline(GridAPPSD):
       # reporting it
       print('*** WARNING: time has gone backwards with set-points message for device: ' + name + ', timestamp: ' + str(timestamp) + ', last timestamp: ' + str(self.timestampOld[name]), flush=True)
 
-    #print('~ZZZ projected contrib based on P_batt: ' + str(P_batt) + ', over 1 timestamp', flush=True)
+    ##print('~ZZZ projected contrib based on P_batt: ' + str(P_batt) + ', over 1 timestamp', flush=True)
     projected = self.AppUtil.contrib_SoC(P_batt, 1, self.Batteries[name],
                                          self.deltaT)
 
     newSoC = start + actual + projected
 
-    print('~SOC zzzUpdateSoC magic for device: ' + name + ', start SoC: ' + str(start) + ', actual SoC contrib: ' + str(actual) + ', projected SoC contrib: ' + str(projected) + ', new SoC: ' + str(newSoC), end='')
+    #print('~SOC zzzUpdateSoC magic for device: ' + name + ', start SoC: ' + str(start) + ', actual SoC contrib: ' + str(actual) + ', projected SoC contrib: ' + str(projected) + ', new SoC: ' + str(newSoC), end='')
 
     if newSoC != self.Batteries[name]['ZZZSoC']:
       revised_socs[name] = self.Batteries[name]['ZZZSoC'] = newSoC
-      print(' (revised)', flush=True)
+      #print(' (revised)', flush=True)
     else:
-      print(' (not revised)', flush=True)
+      pass
+      #print(' (not revised)', flush=True)
 
     if timestamp > self.timestampOld[name]:
       self.SoCOlder[name] = self.SoCOld[name]
-      #print('~ZZZ updateSoC SoCOlder updated to: ' + str(self.SoCOlder[name]), flush=True)
+      ##print('~ZZZ updateSoC SoCOlder updated to: ' + str(self.SoCOlder[name]), flush=True)
 
     self.timestampOld[name] = timestamp
     self.P_battOld[name] = P_batt
