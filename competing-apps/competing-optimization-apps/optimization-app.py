@@ -225,11 +225,38 @@ class CompetingApp(GridAPPSD):
 
   def doOptimization(self, time):
         # solve
-        self.dynamicProb.solve(PULP_CBC_CMD(msg=0))
-        self.dynamicProb.writeLP('output/' + self.opt_type + '_' +
-                                 str(time) + '.lp')
+        self.dynamicProb.solve(PULP_CBC_CMD(msg=0, fracGap=0.01))
         print('Optimization status:', LpStatus[self.dynamicProb.status],
               flush=True)
+
+        # Second stage for the decarbonization app
+        if self.opt_type =='decarbonization':
+          bus_idx_batt = {'A': [], 'B': [], 'C': []}
+          for name in self.Batteries:
+            idx = self.Batteries[name]['idx']
+            self.dynamicProb += self.p_batt[idx] == self.p_batt[idx].varValue
+            bus = name.split(':')[1]
+            if 'A' in self.Batteries[name]['phase']:
+              bus_idx_batt['A'].append(self.bus_info[bus]['idx'])
+            elif 'B' in self.Batteries[name]['phase']:
+              bus_idx_batt['B'].append(self.bus_info[bus]['idx'])
+            else:
+              bus_idx_batt['C'].append(self.bus_info[bus]['idx'])
+
+          self.dynamicProb += self.dynamicProb.objective-self.Psub_mod + \
+                              lpSum(-self.v_A[i] for i in bus_idx_batt['A']) + \
+                              lpSum(-self.v_B[i] for i in bus_idx_batt['B']) + \
+                              lpSum(-self.v_C[i] for i in bus_idx_batt['C'])
+          self.dynamicProb.solve(GLPK_CMD(msg=0, options=['--mipgap', '0.01']))
+          print('Optimization Stage II:', LpStatus[self.dynamicProb.status],
+                flush=True)
+        data = self.dynamicProb.to_dict()
+        json_opt = open('output/' + self.opt_type + '_' +
+                                 str(time) + '.json', 'w')
+        json.dump(data, json_opt, indent=4)
+        json_opt.close()
+        # self.dynamicProb.writeLP('output/' + self.opt_type + '_' +
+        #                          str(time) + '.lp')
 
         '''
         branch_flow = []

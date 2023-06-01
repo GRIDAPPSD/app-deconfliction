@@ -209,7 +209,7 @@ class CompetingApp(GridAPPSD):
 
         # Converting modulus to linear problem
         prob += Psub_mod >= Psub
-        prob += Psub_mod >= - Psub
+        prob += Psub_mod <= - Psub
 
         # Energy Balance equations
         prob += Psub == -P_ren + P_load_v + pbatt_c[0] + pbatt_c[1] + pbatt_d[0] + pbatt_d[1]
@@ -217,9 +217,9 @@ class CompetingApp(GridAPPSD):
         # print('Now solving the decarbonization application.......')
         prob.solve(PULP_CBC_CMD(msg=0))
         prob.writeLP('Decarbonization.lp')
-        # print('Status:', LpStatus[prob.status])
-        # print('Batt Power:', pbatt_c[0].varValue, pbatt_c[1].varValue, pbatt_d[0].varValue, pbatt_d[1].varValue)
-        # print('Soc: ', soc[0].varValue, soc[1].varValue)
+        print('Status:', LpStatus[prob.status])
+        print('Batt Power:', pbatt_c[0].varValue, pbatt_c[1].varValue, pbatt_d[0].varValue, pbatt_d[1].varValue)
+        print('Soc: ', soc[0].varValue, soc[1].varValue)
         idx = 0
         for name in Batteries:
             Batteries[name]['SoC'] = soc[idx].varValue
@@ -437,7 +437,7 @@ class CompetingApp(GridAPPSD):
                 print('\nDecarbonization App...', flush=True)
                 self.decarbonization(EnergyConsumers, SynchronousMachines, Batteries, SolarPVs, time, loadshape, solar,
                                      price, deltaT, emergencyState)
-
+                # exit()
                 for name in Batteries:
                     if Batteries[name]['state'] == 'charging':
                         print('Battery name: ' + name + ', ratedkW: ' + str(
