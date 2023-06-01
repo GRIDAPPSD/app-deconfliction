@@ -213,7 +213,7 @@ class CompetingApp(GridAPPSD):
 
     out_message = {
       'app_name': 'resilience-app',
-      'timestamp': in_message['timestamp'],
+      'timestamp': time,
       'set_points': set_points
     }
     print('Sending message: ' + str(out_message), flush=True)
