@@ -225,7 +225,7 @@ class CompetingApp(GridAPPSD):
 
   def doOptimization(self, time):
         # solve
-        self.dynamicProb.solve(PULP_CBC_CMD(msg=0, fracGap=0.01))
+        self.dynamicProb.solve(PULP_CBC_CMD(msg=0, gapRel=0.01))
         print('Optimization status:', LpStatus[self.dynamicProb.status],
               flush=True)
 
