@@ -6,7 +6,7 @@ import pandas as pd
 
 
 # Direct the DSS files
-dss.run_command('Redirect 123Bus/Run_IEEE123Bus.dss')
+dss.run_command('Redirect /home/vale/git/app-deconfliction/competing-apps/deconfliction-pipeline/rbdm/123Bus/Run_IEEE123Bus.dss')
 dss.run_command('Compile Run_IEEE123Bus.dss')
 dss.run_command('set loadmult = 1.0')
 

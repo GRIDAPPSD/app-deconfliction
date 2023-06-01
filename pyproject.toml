@@ -1,0 +1,16 @@
+[tool.poetry]
+name = "app-deconfliction"
+version = "0.1.0"
+description = ""
+authors = ["afisher1 <4552674+afisher1@users.noreply.github.com>"]
+readme = "README.md"
+packages = [{include = "app_deconfliction"}]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+opendssdirect-py = {extras = ["extras"], version = "^0.8.2"}
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
