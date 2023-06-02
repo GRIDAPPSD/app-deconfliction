@@ -120,6 +120,22 @@ class DeconflictionPipeline(GridAPPSD):
     if conflictFlag:
       newResolutionVector = self.decon_method.deconflict()
 
+      # GDB 6/2/23 The logic that updates the conflict matrix below is flawed
+      # in that updates effectively indicate that apps are happy with the
+      # resolution set-points when really they may not be, which will impact
+      # subsequent resolutions in ways that may not be valid
+      '''
+      # Update conflict matrix with resolution vector setpoint values so the
+      # deconfliction methodologies don't need to resolve the same conflicts
+      # each time in addition to new conflicts from the latest set-points
+      for device, value in newResolutionVector['setpoints'].items():
+        for app in self.ConflictMatrix['setpoints'][device]:
+          self.ConflictMatrix['setpoints'][device][app] = value
+          self.ConflictMatrix['timestamps'][app] = \
+                              max(newResolutionVector['timestamps'][device],
+                                  self.ConflictMatrix['timestamps'][app])
+      '''
+
     # If there is no conflict, then the new resolution is simply the last
     # resolution with the new set-points added in
     else:
