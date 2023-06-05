@@ -96,29 +96,41 @@ class DeconflictionPipeline(GridAPPSD):
 
   def ConflictIdentification(self, app_name, timestamp, set_points):
     # Determine if there is a new conflict
-    conflictFlag = False
+    self.ConflictOnlyMatrix['setpoints'].clear()
+    self.ConflictOnlyMatrix['timestamps'].clear()
     for device in set_points:
-      for app in self.ConflictMatrix['setpoints'][device]:
-        if app!=app_name and \
-           (set_points[device]!=self.ConflictMatrix['setpoints'][device][app] \
-            or timestamp!=self.ConflictMatrix['timestamps'][app]):
-          conflictFlag = True
-          break # breaking out of inner for loop
-      # check if we should break out of the outer for loop as well
-      if conflictFlag:
-        break
+      for app1 in self.ConflictMatrix['setpoints'][device]:
+        if app1!=app_name and \
+           (set_points[device]!=self.ConflictMatrix['setpoints'][device][app1] \
+            or timestamp!=self.ConflictMatrix['timestamps'][app1]):
 
-    #conflictFlag = True # just override it to always call deconflict method
-    print('conflictFlag: ' + str(conflictFlag), flush=True)
+          if device not in self.ConflictOnlyMatrix['setpoints']:
+            self.ConflictOnlyMatrix['setpoints'][device] = {}
 
-    return conflictFlag
+          self.ConflictOnlyMatrix['setpoints'][device][app_name] = \
+                                   set_points[device]
+          self.ConflictOnlyMatrix['timestamps'][app_name] = timestamp
+
+          # once a conflict is found, add all apps for this device into
+          # ConflictOnlyMatrix
+          for app2 in self.ConflictMatrix['setpoints'][device]:
+            if app2 != app_name:
+              self.ConflictOnlyMatrix['setpoints'][device][app2] = \
+                                  self.ConflictMatrix['setpoints'][device][app2]
+              self.ConflictOnlyMatrix['timestamps'][app2] = \
+                                  self.ConflictMatrix['timestamps'][app2]
+
+          # skip to next device since all apps for this one are in matrix
+          break
+
+    print('ConflictOnlyMatrix: ' + str(self.ConflictOnlyMatrix), flush=True)
 
 
-  def DeconflictionToResolution(self, timestamp, set_points, conflictFlag):
+  def DeconflictionToResolution(self, timestamp, set_points):
     # If there is a conflict, then the call the deconflict method for the given
     # methodology to produce a resolution
-    if conflictFlag:
-      newResolutionVector = self.decon_method.deconflict()
+    if len(self.ConflictOnlyMatrix['setpoints']) > 0:
+      fullResolutionFlag, newResolutionVector = self.decon_method.deconflict()
 
       # GDB 6/2/23 The logic that updates the conflict matrix below is flawed
       # in that updates effectively indicate that apps are happy with the
@@ -136,17 +148,34 @@ class DeconflictionPipeline(GridAPPSD):
                                   self.ConflictMatrix['timestamps'][app])
       '''
 
+      if fullResolutionFlag:
+        print('ResolutionVector (from full): ' + str(newResolutionVector),
+              flush=True)
+        return newResolutionVector
+
+    # start with a copy of the previous resolution for the new resolution
+    newResVector = copy.deepcopy(self.ResolutionVector)
+
     # If there is no conflict, then the new resolution is simply the last
     # resolution with the new set-points added in
-    else:
-      newResolutionVector = copy.deepcopy(self.ResolutionVector)
+    if len(self.ConflictOnlyMatrix['setpoints']) == 0:
       for device, value in set_points.items():
-        newResolutionVector['setpoints'][device] = value
-        newResolutionVector['timestamps'][device] = timestamp
+        newResVector['setpoints'][device] = value
+        newResVector['timestamps'][device] = timestamp
+      print('ResolutionVector (no conflict): ' + str(newResVector),
+            flush=True)
 
-    print('ResolutionVector: ' + str(newResolutionVector), flush=True)
+    # if there were conflicts, then the new resolution is partial and the
+    # previous resolution must be augmented with the new resolution
+    else:
+      for device in newResolutionVector['setpoints']:
+        newResVector['setpoints'][device] = \
+                                       newResolutionVector['setpoints'][device]
+        newResVector['timestamps'][device] = \
+                                       newResolutionVector['timestamps'][device]
+      print('ResolutionVector (from partial): ' + str(newResVector), flush=True)
 
-    return newResolutionVector
+    return newResVector
 
 
   def updateSoC(self, name, P_batt, timestamp, revised_socs):
@@ -364,11 +393,10 @@ class DeconflictionPipeline(GridAPPSD):
 
     # Step 3: Deconflictor
     # Step 3.1: Conflict Identification
-    conflictFlag = self.ConflictIdentification(app_name, timestamp, set_points)
+    self.ConflictIdentification(app_name, timestamp, set_points)
 
     # Steps 3.2 and 3.3: Deconfliction Solution and Resolution
-    newResolutionVector = self.DeconflictionToResolution(timestamp, set_points,
-                                                         conflictFlag)
+    newResolutionVector = self.DeconflictionToResolution(timestamp, set_points)
 
     # Step 4: Setpoint Validator -- not implemented for prototype
 
@@ -450,6 +478,10 @@ class DeconflictionPipeline(GridAPPSD):
     self.ConflictMatrix['setpoints'] = {}
     self.ConflictMatrix['timestamps'] = {}
 
+    self.ConflictOnlyMatrix = {}
+    self.ConflictOnlyMatrix['setpoints'] = {}
+    self.ConflictOnlyMatrix['timestamps'] = {}
+
     self.ResolutionVector = {}
     self.ResolutionVector['setpoints'] = {}
     self.ResolutionVector['timestamps'] = {}
@@ -470,7 +502,8 @@ class DeconflictionPipeline(GridAPPSD):
 
     DeconflictionMethod = getattr(importlib.import_module(basename),
                                   'DeconflictionMethod')
-    self.decon_method = DeconflictionMethod(self.ConflictMatrix)
+    self.decon_method = DeconflictionMethod(self.ConflictMatrix,
+                                            self.ConflictOnlyMatrix, False)
 
     self.publish_topic = service_output_topic(
                                  'gridappsd-deconfliction-pipeline', '0')
