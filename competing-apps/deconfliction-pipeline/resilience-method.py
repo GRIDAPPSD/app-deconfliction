@@ -3,8 +3,14 @@
 
 class DeconflictionMethod:
 
-  def __init__(self, ConflictMatrix):
-    self.ConflictMatrix= ConflictMatrix
+  def __init__(self, ConflictMatrix, ConflictOnlyMatrix,
+               fullResolutionFlag=True):
+    if fullResolutionFlag:
+      self.ConflictMatrix = ConflictMatrix
+    else:
+      self.ConflictMatrix = ConflictOnlyMatrix
+
+    self.fullResolutionFlag = fullResolutionFlag
 
 
   def deconflict(self):
@@ -37,5 +43,5 @@ class DeconflictionMethod:
           ResolutionVector['setpoints'][device] = total/count
         ResolutionVector['timestamps'][device] = timestamp
 
-    return ResolutionVector
+    return self.fullResolutionFlag, ResolutionVector
 
