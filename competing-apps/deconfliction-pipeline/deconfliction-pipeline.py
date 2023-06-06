@@ -161,8 +161,11 @@ class DeconflictionPipeline(GridAPPSD):
     # which handles any devices where there was no conflict and if there
     # is conflict, we are counting on newResolutionVector to override those
     for device, value in set_points.items():
-      fullResolutionVector['setpoints'][device] = value
-      fullResolutionVector['timestamps'][device] = timestamp
+      # uncomment the following line to only include batteries in resolution
+      # for testing
+      #if device.startswith('BatteryUnit:'):
+        fullResolutionVector['setpoints'][device] = value
+        fullResolutionVector['timestamps'][device] = timestamp
 
     # finally, if there were conflicts, then overlay the resolution to those
     if len(self.ConflictOnlyMatrix['setpoints']) > 0:
