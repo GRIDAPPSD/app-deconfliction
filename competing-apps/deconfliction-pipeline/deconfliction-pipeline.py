@@ -153,29 +153,31 @@ class DeconflictionPipeline(GridAPPSD):
               flush=True)
         return newResolutionVector
 
-    # start with a copy of the previous resolution for the new resolution
-    newResVector = copy.deepcopy(self.ResolutionVector)
+    # to create a full resolution vector from a partial one, start with
+    # a copy of the previous resolution
+    fullResolutionVector = copy.deepcopy(self.ResolutionVector)
 
-    # If there is no conflict, then the new resolution is simply the last
-    # resolution with the new set-points added in
-    if len(self.ConflictOnlyMatrix['setpoints']) == 0:
-      for device, value in set_points.items():
-        newResVector['setpoints'][device] = value
-        newResVector['timestamps'][device] = timestamp
-      print('ResolutionVector (no conflict): ' + str(newResVector),
+    # next copy the new set-points over top of the previous resolution
+    # which handles any devices where there was no conflict and if there
+    # is conflict, we are counting on newResolutionVector to override those
+    for device, value in set_points.items():
+      fullResolutionVector['setpoints'][device] = value
+      fullResolutionVector['timestamps'][device] = timestamp
+
+    # finally, if there were conflicts, then overlay the resolution to those
+    if len(self.ConflictOnlyMatrix['setpoints']) > 0:
+      for device in newResolutionVector['setpoints']:
+        fullResolutionVector['setpoints'][device] = \
+                                       newResolutionVector['setpoints'][device]
+        fullResolutionVector['timestamps'][device] = \
+                                       newResolutionVector['timestamps'][device]
+      print('ResolutionVector (from partial): ' + str(fullResolutionVector),
+            flush=True)
+    else:
+      print('ResolutionVector (no conflict): ' + str(fullResolutionVector),
             flush=True)
 
-    # if there were conflicts, then the new resolution is partial and the
-    # previous resolution must be augmented with the new resolution
-    else:
-      for device in newResolutionVector['setpoints']:
-        newResVector['setpoints'][device] = \
-                                       newResolutionVector['setpoints'][device]
-        newResVector['timestamps'][device] = \
-                                       newResolutionVector['timestamps'][device]
-      print('ResolutionVector (from partial): ' + str(newResVector), flush=True)
-
-    return newResVector
+    return fullResolutionVector
 
 
   def updateSoC(self, name, P_batt, timestamp, revised_socs):
