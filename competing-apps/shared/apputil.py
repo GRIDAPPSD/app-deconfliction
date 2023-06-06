@@ -48,10 +48,11 @@ class AppUtil:
     print('Count of Batteries: ' + str(len(bindings)), flush=True)
     idx = 0
     for obj in bindings:
-      name = 'BatteryUnit:' + obj['bus']['value']
+      name = 'BatteryUnit:' + obj['name']['value']
       #bus = obj['bus']['value'].upper()
       Batteries[name] = {}
       Batteries[name]['idx'] = idx
+      Batteries[name]['bus'] = obj['bus']['value']
       Batteries[name]['phase'] = obj['phases']['value']
       Batteries[name]['ratedkW'] = float(obj['ratedS']['value'])/1000.0
       Batteries[name]['prated'] = float(obj['ratedS']['value'])

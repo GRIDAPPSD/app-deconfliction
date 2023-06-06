@@ -97,7 +97,7 @@ class CompetingApp(GridAPPSD):
       if bus_idx not in self.lines_out:
         self.lines_out[bus_idx] = {'A': [], 'B': [], 'C': []}
 
-      batname = 'BatteryUnit:' + bus
+      # batname = 'BatteryUnit:' + bus
       if bus_idx in self.lines_in: # check for source bus
         if '1' in self.bus_info[bus]['phases']:
           injection_p, injection_q = 0, 0
@@ -111,9 +111,10 @@ class CompetingApp(GridAPPSD):
             #print('SolarPVs A bus: ' + bus + ', value: ' +
             #      str(pv_mult*self.SolarPVs[bus]['p']), flush=True)
 
-          if batname in self.Batteries and \
-             'A' in self.Batteries[batname]['phase']:
+          if bus in self.Batteries_obj and \
+             'A' in self.Batteries_obj[bus]['phase']:
             #print('Batteries A bus: ' + bus, flush=True)
+            batname = self.Batteries_obj[bus]['name']
             self.dynamicProb += lpSum(self.p_flow_A[idx] \
                  for idx in self.lines_in[bus_idx]['A']) - \
                self.p_batt[self.Batteries[batname]['idx']] - injection_p == \
@@ -146,9 +147,10 @@ class CompetingApp(GridAPPSD):
             #print('SolarPVs B bus: ' + bus + ', value: ' +
             #      str(pv_mult*self.SolarPVs[bus]['p']), flush=True)
 
-          if batname in self.Batteries and \
-             'B' in self.Batteries[batname]['phase']:
+          if bus in self.Batteries_obj and \
+             'B' in self.Batteries_obj[bus]['phase']:
             #print('Batteries B bus: ' + bus, flush=True)
+            batname = self.Batteries_obj[bus]['name']
             self.dynamicProb += lpSum(self.p_flow_B[idx] \
                  for idx in self.lines_in[bus_idx]['B']) - \
                self.p_batt[self.Batteries[batname]['idx']] - injection_p == \
@@ -181,9 +183,10 @@ class CompetingApp(GridAPPSD):
             #print('SolarPVs C bus: ' + bus + ', value: ' +
             #      str(pv_mult*self.SolarPVs[bus]['p']), flush=True)
 
-          if batname in self.Batteries and \
-             'C' in self.Batteries[batname]['phase']:
+          if bus in self.Batteries_obj and \
+             'C' in self.Batteries_obj[bus]['phase']:
             #print('Batteries C bus: ' + bus, flush=True)
+            batname = self.Batteries_obj[bus]['name']
             self.dynamicProb += lpSum(self.p_flow_C[idx] \
                  for idx in self.lines_in[bus_idx]['C']) - \
                self.p_batt[self.Batteries[batname]['idx']] - injection_p == \
@@ -230,12 +233,12 @@ class CompetingApp(GridAPPSD):
               flush=True)
 
         # Second stage for the decarbonization app
-        if self.opt_type =='decarbonization':
+        if self.opt_type == 'decarbonization':
           bus_idx_batt = {'A': [], 'B': [], 'C': []}
           for name in self.Batteries:
             idx = self.Batteries[name]['idx']
             self.dynamicProb += self.p_batt[idx] == self.p_batt[idx].varValue
-            bus = name.split(':')[1]
+            bus = self.Batteries[name]['bus']
             if 'A' in self.Batteries[name]['phase']:
               bus_idx_batt['A'].append(self.bus_info[bus]['idx'])
             elif 'B' in self.Batteries[name]['phase']:
@@ -651,7 +654,11 @@ class CompetingApp(GridAPPSD):
     #SynchronousMachines = self.AppUtil.getSynchronousMachines(sparql_mgr)
 
     self.Batteries = self.AppUtil.getBatteries(sparql_mgr)
-
+    self.Batteries_obj = {}
+    for batt in self.Batteries:
+      self.Batteries_obj[self.Batteries[batt]['bus']] = {}
+      self.Batteries_obj[self.Batteries[batt]['bus']]['name'] = batt
+      self.Batteries_obj[self.Batteries[batt]['bus']]['phase'] = self.Batteries[batt]['phase']
     # SHIVA HACK for 123 model testing
     # self.Batteries['BatteryUnit:65'] = {'idx': 0, 'prated': 250000,
     #           'phase': 'A', 'eff': 0.975 * 0.86, 'ratedE': 500000, 'SoC': 0.35}
