@@ -97,7 +97,7 @@ class CompetingApp(GridAPPSD):
       if bus_idx not in self.lines_out:
         self.lines_out[bus_idx] = {'A': [], 'B': [], 'C': []}
 
-      # batname = 'BatteryUnit:' + bus
+      # batname = 'BatteryUnit.' + bus
       if bus_idx in self.lines_in: # check for source bus
         if '1' in self.bus_info[bus]['phases']:
           injection_p, injection_q = 0, 0
@@ -660,11 +660,11 @@ class CompetingApp(GridAPPSD):
       self.Batteries_obj[self.Batteries[batt]['bus']]['name'] = batt
       self.Batteries_obj[self.Batteries[batt]['bus']]['phase'] = self.Batteries[batt]['phase']
     # SHIVA HACK for 123 model testing
-    # self.Batteries['BatteryUnit:65'] = {'idx': 0, 'prated': 250000,
+    # self.Batteries['BatteryUnit.65'] = {'idx': 0, 'prated': 250000,
     #           'phase': 'A', 'eff': 0.975 * 0.86, 'ratedE': 500000, 'SoC': 0.35}
-    # self.Batteries['BatteryUnit:52'] = {'idx': 1, 'prated': 250000,
+    # self.Batteries['BatteryUnit.52'] = {'idx': 1, 'prated': 250000,
     #           'phase': 'B', 'eff': 0.975 * 0.86, 'ratedE': 500000, 'SoC': 0.275}
-    # self.Batteries['BatteryUnit:76'] = {'idx': 2, 'prated': 250000,
+    # self.Batteries['BatteryUnit.76'] = {'idx': 2, 'prated': 250000,
     #           'phase': 'C', 'eff': 0.975 * 0.86, 'ratedE': 500000, 'SoC': 0.465}
 
     self.SolarPVs = self.AppUtil.getSolarPVs(sparql_mgr)
@@ -766,10 +766,10 @@ class CompetingApp(GridAPPSD):
 
       if 'tname' in obj:
         tname = obj['tname']['value']
-        self.Regulators['RatioTapChanger:'+tname] = \
+        self.Regulators['RatioTapChanger.'+tname] = \
                         {'pname': pname, 'idx': reg_idx, 'phases': phases}
       else:
-        self.Regulators['RatioTapChanger:'+pname] = \
+        self.Regulators['RatioTapChanger.'+pname] = \
                         {'pname': pname, 'idx': reg_idx, 'phases': phases}
 
       for char in phases:
@@ -792,7 +792,7 @@ class CompetingApp(GridAPPSD):
         branch_info[name] = {}
         branch_info[name]['idx'] = idx
         branch_info[name]['phases'] = 'ABC'
-        if 'RatioTapChanger:'+name in self.Regulators:
+        if 'RatioTapChanger.'+name in self.Regulators:
           branch_info[name]['type'] = 'regulator'
         else:
           branch_info[name]['type'] = 'transformer'
@@ -814,7 +814,7 @@ class CompetingApp(GridAPPSD):
               phase, flush=True)
         #print(obj)
 
-        pname = self.Regulators['RatioTapChanger:'+name]['pname']
+        pname = self.Regulators['RatioTapChanger.'+name]['pname']
         if pname not in branch_info:
           branch_info[pname] = {}
           branch_info[pname]['idx'] = idx

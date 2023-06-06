@@ -79,7 +79,7 @@ class DeconflictionPipeline(GridAPPSD):
     # now add the new set-points for app_name
     for device, value in set_points.items():
       #print('device: ' + device + ', value: ' + str(value), flush=True)
-      if device.startswith('BatteryUnit:'):
+      if device.startswith('BatteryUnit.'):
         print('~~> setpoints from app: ' + app_name +
               ', timestamp: ' + str(timestamp) +
               ', device: ' + device + ', value: ' + str(value), flush=True)
@@ -163,7 +163,7 @@ class DeconflictionPipeline(GridAPPSD):
     for device, value in set_points.items():
       # uncomment the following line to only include batteries in resolution
       # for testing
-      #if device.startswith('BatteryUnit:'):
+      #if device.startswith('BatteryUnit.'):
         fullResolutionVector['setpoints'][device] = value
         fullResolutionVector['timestamps'][device] = timestamp
 
@@ -326,7 +326,9 @@ class DeconflictionPipeline(GridAPPSD):
     zzz_revised_socs = {}
     old_revised_socs = {}
     for device, value in newResolutionVector['setpoints'].items():
-      if device.startswith('BatteryUnit:'):
+      if device.startswith('BatteryUnit.'):
+        # batteries dispatch values even if they are the same as the last time
+        # as long as the value is associated with the current timestamp
         if device not in self.ResolutionVector['setpoints'] or \
            (newResolutionVector['timestamps'][device]==timestamp and \
             (self.ResolutionVector['timestamps'][device]!=timestamp or \
@@ -422,14 +424,14 @@ class DeconflictionPipeline(GridAPPSD):
     if datetime not in self.t_plot:
       self.t_plot.append(datetime)
       for name in self.ResolutionVector['setpoints']:
-        if name.startswith('BatteryUnit:'):
+        if name.startswith('BatteryUnit.'):
           self.p_batt_plot[name].append(
                                  self.ResolutionVector['setpoints'][name])
           self.soc_plot[name].append(self.Batteries[name]['SoC'])
     else:
       # replacing last list item is equivalent to rollback
       for name in self.ResolutionVector['setpoints']:
-        if name.startswith('BatteryUnit:'):
+        if name.startswith('BatteryUnit.'):
           self.p_batt_plot[name][-1] = self.ResolutionVector['setpoints'][name]
           self.soc_plot[name][-1] = self.Batteries[name]['SoC']
 
@@ -448,21 +450,21 @@ class DeconflictionPipeline(GridAPPSD):
     '''
     # SHIVA HACK for 123 model testing
     if feeder_mrid == '_C1C3E687-6FFD-C753-582B-632A27E28507':
-      self.Batteries['BatteryUnit:65'] = {'idx': 0, 'prated': 250000,
+      self.Batteries['BatteryUnit.65'] = {'idx': 0, 'prated': 250000,
             'phase': 'A', 'eff': 0.975 * 0.86, 'ratedE': 500000, 'SoC': 0.35}
-      self.Batteries['BatteryUnit:65']['eff_c'] = \
-                                   self.Batteries['BatteryUnit:65']['eff_d'] = \
-                                   self.Batteries['BatteryUnit:65']['eff']
-      self.Batteries['BatteryUnit:52'] = {'idx': 1, 'prated': 250000,
+      self.Batteries['BatteryUnit.65']['eff_c'] = \
+                                   self.Batteries['BatteryUnit.65']['eff_d'] = \
+                                   self.Batteries['BatteryUnit.65']['eff']
+      self.Batteries['BatteryUnit.52'] = {'idx': 1, 'prated': 250000,
             'phase': 'B', 'eff': 0.975 * 0.86, 'ratedE': 500000, 'SoC': 0.275}
-      self.Batteries['BatteryUnit:52']['eff_c'] = \
-                                   self.Batteries['BatteryUnit:52']['eff_d'] = \
-                                   self.Batteries['BatteryUnit:52']['eff']
-      self.Batteries['BatteryUnit:76'] = {'idx': 2, 'prated': 250000,
+      self.Batteries['BatteryUnit.52']['eff_c'] = \
+                                   self.Batteries['BatteryUnit.52']['eff_d'] = \
+                                   self.Batteries['BatteryUnit.52']['eff']
+      self.Batteries['BatteryUnit.76'] = {'idx': 2, 'prated': 250000,
             'phase': 'C', 'eff': 0.975 * 0.86, 'ratedE': 500000, 'SoC': 0.465}
-      self.Batteries['BatteryUnit:76']['eff_c'] = \
-                                   self.Batteries['BatteryUnit:76']['eff_d'] = \
-                                   self.Batteries['BatteryUnit:76']['eff']
+      self.Batteries['BatteryUnit.76']['eff_c'] = \
+                                   self.Batteries['BatteryUnit.76']['eff_d'] = \
+                                   self.Batteries['BatteryUnit.76']['eff']
     '''
 
     # to support the old way of updating SoC for testing

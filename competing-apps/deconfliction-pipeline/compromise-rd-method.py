@@ -46,7 +46,7 @@ class DeconflictionMethod:
         # uncomment the first line under the else block, then repeat those
         # steps under the elif below
         ResolutionVector['timestamps'][device] = compTimestamp
-        if device.startswith('RatioTapChanger:'):
+        if device.startswith('RatioTapChanger.'):
           ResolutionVector['setpoints'][device] = round(compTotal/compCount)
           pass
         else:
@@ -54,7 +54,7 @@ class DeconflictionMethod:
           ResolutionVector['setpoints'][device] = compTotal/compCount
       elif otherCount > 0:
         ResolutionVector['timestamps'][device] = otherTimestamp
-        if device.startswith('RatioTapChanger:'):
+        if device.startswith('RatioTapChanger.'):
           ResolutionVector['setpoints'][device] = round(otherTotal/otherCount)
           pass
         else:

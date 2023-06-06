@@ -42,13 +42,13 @@ class DeconflictionMethod:
                                self.ConflictMatrix['timestamps'][app])
 
       if compCount > 0:
-        if device.startswith('RatioTapChanger:'):
+        if device.startswith('RatioTapChanger.'):
           ResolutionVector['setpoints'][device] = round(compTotal/compCount)
         else:
           ResolutionVector['setpoints'][device] = compTotal/compCount
         ResolutionVector['timestamps'][device] = compTimestamp
       elif otherCount > 0:
-        if device.startswith('RatioTapChanger:'):
+        if device.startswith('RatioTapChanger.'):
           ResolutionVector['setpoints'][device] = round(otherTotal/otherCount)
         else:
           ResolutionVector['setpoints'][device] = otherTotal/otherCount

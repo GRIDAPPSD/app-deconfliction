@@ -48,7 +48,7 @@ class AppUtil:
     print('Count of Batteries: ' + str(len(bindings)), flush=True)
     idx = 0
     for obj in bindings:
-      name = 'BatteryUnit:' + obj['name']['value']
+      name = 'BatteryUnit.' + obj['name']['value']
       #bus = obj['bus']['value'].upper()
       Batteries[name] = {}
       Batteries[name]['idx'] = idx
