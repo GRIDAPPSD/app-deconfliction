@@ -323,8 +323,9 @@ class DeconflictionPipeline(GridAPPSD):
     # Iterate over resolution and send set-points to devices that have
     # different or new values
     revised_socs = {}
-    old_revised_socs = {}
-    rollback_revised_socs = {}
+    if self.testUpdateSoCFlag:
+      old_revised_socs = {}
+      rollback_revised_socs = {}
     for device, value in newResolutionVector['setpoints'].items():
       if device.startswith('BatteryUnit.'):
         # batteries dispatch values even if they are the same as the last time
@@ -336,16 +337,18 @@ class DeconflictionPipeline(GridAPPSD):
 
           self.updateSoC(device, value, timestamp, revised_socs)
 
-          self.oldUpdateSoC(device, value, timestamp, old_revised_socs)
+          if self.testUpdateSoCFlag:
+            self.oldUpdateSoC(device, value, timestamp, old_revised_socs)
 
-          self.rollbackUpdateSoC(device, value, timestamp, rollback_revised_socs)
+            self.rollbackUpdateSoC(device, value, timestamp,
+                                   rollback_revised_socs)
 
-          print('*** ' + device + ' SoC: ' + str(self.Batteries[device]['SoC']) + ', SoC Old: ' + str(self.Batteries[device]['OldSoC']) + ', SoC Rollback: ' + str(self.Batteries[device]['RollbackSoC']), flush=True)
-          if abs(self.Batteries[device]['SoC'] - self.Batteries[device]['RollbackSoC'])>1e-6:
-            print('!!!!!!!!!!!!!!!!!!!!!!!!! ROLLBACK DIFF !!!!!!!!!!!!!!!!!!!!!!!!!!!!', flush=True)
-          if abs(self.Batteries[device]['SoC'] - self.Batteries[device]['OldSoC'])>1e-6:
-            print('!!!!!!!!!!!!!!!!!!!!!!!!! NEW VS. OLD DIFF !!!!!!!!!!!!!!!!!!!!!!!!!!!!', flush=True)
-            exit()
+            print('*** ' + device + ' SoC: ' + str(self.Batteries[device]['SoC']) + ', SoC Old: ' + str(self.Batteries[device]['OldSoC']) + ', SoC Rollback: ' + str(self.Batteries[device]['RollbackSoC']), flush=True)
+            if abs(self.Batteries[device]['SoC'] - self.Batteries[device]['RollbackSoC'])>1e-6:
+              print('!!!!!!!!!!!!!!!!!!!!!!!!! ROLLBACK DIFF !!!!!!!!!!!!!!!!!!!!!!!!!!!!', flush=True)
+            if abs(self.Batteries[device]['SoC'] - self.Batteries[device]['OldSoC'])>1e-6:
+              print('!!!!!!!!!!!!!!!!!!!!!!!!! NEW VS. OLD DIFF !!!!!!!!!!!!!!!!!!!!!!!!!!!!', flush=True)
+              exit()
 
           print('~~> Dispatching to device: ' + device + ', timestamp: ' +
                 str(timestamp) + ', value: ' + str(value) +
@@ -441,6 +444,10 @@ class DeconflictionPipeline(GridAPPSD):
 
 
   def __init__(self, gapps, method, feeder_mrid, simulation_id):
+    # test/debug flags that should be set to False otherwise
+    self.testUpdateSoCFlag = False
+    self.testPartialResFlag = False
+
     self.AppUtil = getattr(importlib.import_module('shared.apputil'), 'AppUtil')
 
     SPARQLManager = getattr(importlib.import_module('shared.sparql'),
