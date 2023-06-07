@@ -176,6 +176,39 @@ class DeconflictionPipeline(GridAPPSD):
                                        newResolutionVector['timestamps'][device]
       print('ResolutionVector (from partial): ' + str(fullResolutionVector),
             flush=True)
+
+      if self.testPartialResFlag:
+        testResolutionFlag, testResolutionVector = \
+                                          self.decon_method_test.deconflict()
+
+        testDiffFlag = False
+        for device in fullResolutionVector['setpoints']:
+          if device not in testResolutionVector['setpoints'] or \
+             device not in testResolutionVector['timestamps']:
+            testDiffFlag = True
+            break
+
+          if device.startswith('BatteryUnit.'):
+            if abs(fullResolutionVector['setpoints'][device] - \
+                   testResolutionVector['setpoints'][device]) > 1e-6:
+              testDiffFlag = True
+              break
+          else:
+            if fullResolutionVector['setpoints'][device] != \
+               testResolutionVector['setpoints'][device]:
+              testDiffFlag = True
+              break
+
+          if fullResolutionVector['timestamps'][device] != \
+             testResolutionVector['timestamps'][device]:
+            testDiffFlag = True
+            break
+
+        if testDiffFlag:
+          print('!!!!!!!!!!!!!!!!!!!!!!!!! DIFF ResolutionVector (from full): '+
+                str(testResolutionVector), flush=True)
+          exit()
+
     else:
       print('ResolutionVector (no conflict): ' + str(fullResolutionVector),
             flush=True)
@@ -518,8 +551,13 @@ class DeconflictionPipeline(GridAPPSD):
 
     DeconflictionMethod = getattr(importlib.import_module(basename),
                                   'DeconflictionMethod')
+    doPartialResFlag = True
     self.decon_method = DeconflictionMethod(self.SetpointMatrix,
-                                            self.ConflictMatrix, False)
+                                      self.ConflictMatrix, not doPartialResFlag)
+
+    if self.testPartialResFlag and doPartialResFlag:
+      self.decon_method_test = DeconflictionMethod(self.SetpointMatrix,
+                                                   self.ConflictMatrix, True)
 
     self.publish_topic = service_output_topic(
                                  'gridappsd-deconfliction-pipeline', '0')
