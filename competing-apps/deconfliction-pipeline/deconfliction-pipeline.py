@@ -67,70 +67,153 @@ from time import sleep
 class DeconflictionPipeline(GridAPPSD):
 
   def SetpointProcessor(self, app_name, timestamp, set_points):
-    # Update conflict matrix with newly provided set-points
-    self.ConflictMatrix['timestamps'][app_name] = timestamp
+    # Update SetpointMatrix with newly provided set-points
+    self.SetpointMatrix['timestamps'][app_name] = timestamp
 
     # delete any existing matches for app_name so there are no stragglers
     # from past timestamps
-    for device in self.ConflictMatrix['setpoints']:
-      if app_name in self.ConflictMatrix['setpoints'][device]:
-        self.ConflictMatrix['setpoints'][device].pop(app_name)
+    for device in self.SetpointMatrix['setpoints']:
+      if app_name in self.SetpointMatrix['setpoints'][device]:
+        self.SetpointMatrix['setpoints'][device].pop(app_name)
 
     # now add the new set-points for app_name
     for device, value in set_points.items():
       #print('device: ' + device + ', value: ' + str(value), flush=True)
-      if device.startswith('BatteryUnit:'):
+      if device.startswith('BatteryUnit.'):
         print('~~> setpoints from app: ' + app_name +
               ', timestamp: ' + str(timestamp) +
               ', device: ' + device + ', value: ' + str(value), flush=True)
 
-      if device not in self.ConflictMatrix['setpoints']:
-        self.ConflictMatrix['setpoints'][device] = {}
+      if device not in self.SetpointMatrix['setpoints']:
+        self.SetpointMatrix['setpoints'][device] = {}
 
-      self.ConflictMatrix['setpoints'][device][app_name] = value
+      self.SetpointMatrix['setpoints'][device][app_name] = value
 
-    print('ConflictMatrix: ' + str(self.ConflictMatrix), flush=True)
+    print('SetpointMatrix: ' + str(self.SetpointMatrix), flush=True)
     # for Alex
-    #pprint.pprint(self.ConflictMatrix)
+    #pprint.pprint(self.SetpointMatrix)
 
 
   def ConflictIdentification(self, app_name, timestamp, set_points):
     # Determine if there is a new conflict
-    conflictFlag = False
+    self.ConflictMatrix['setpoints'].clear()
+    self.ConflictMatrix['timestamps'].clear()
     for device in set_points:
-      for app in self.ConflictMatrix['setpoints'][device]:
-        if app!=app_name and \
-           (set_points[device]!=self.ConflictMatrix['setpoints'][device][app] \
-            or timestamp!=self.ConflictMatrix['timestamps'][app]):
-          conflictFlag = True
-          break # breaking out of inner for loop
-      # check if we should break out of the outer for loop as well
-      if conflictFlag:
-        break
+      for app1 in self.SetpointMatrix['setpoints'][device]:
+        if app1!=app_name and \
+           (set_points[device]!=self.SetpointMatrix['setpoints'][device][app1] \
+            or timestamp!=self.SetpointMatrix['timestamps'][app1]):
 
-    #conflictFlag = True # just override it to always call deconflict method
-    print('conflictFlag: ' + str(conflictFlag), flush=True)
+          if device not in self.ConflictMatrix['setpoints']:
+            self.ConflictMatrix['setpoints'][device] = {}
 
-    return conflictFlag
+          self.ConflictMatrix['setpoints'][device][app_name] = \
+                                   set_points[device]
+          self.ConflictMatrix['timestamps'][app_name] = timestamp
+
+          # once a conflict is found, add all apps for this device into
+          # ConflictMatrix
+          for app2 in self.SetpointMatrix['setpoints'][device]:
+            if app2 != app_name:
+              self.ConflictMatrix['setpoints'][device][app2] = \
+                                  self.SetpointMatrix['setpoints'][device][app2]
+              self.ConflictMatrix['timestamps'][app2] = \
+                                  self.SetpointMatrix['timestamps'][app2]
+
+          # skip to next device since all apps for this one are in matrix
+          break
+
+    print('ConflictMatrix: ' + str(self.ConflictMatrix), flush=True)
 
 
-  def DeconflictionToResolution(self, timestamp, set_points, conflictFlag):
+  def DeconflictionToResolution(self, timestamp, set_points):
     # If there is a conflict, then the call the deconflict method for the given
     # methodology to produce a resolution
-    if conflictFlag:
-      newResolutionVector = self.decon_method.deconflict()
+    if len(self.ConflictMatrix['setpoints']) > 0:
+      fullResolutionFlag, newResolutionVector = self.decon_method.deconflict()
 
-    # If there is no conflict, then the new resolution is simply the last
-    # resolution with the new set-points added in
+      # GDB 6/2/23 The logic that updates SetpointMatrix below is flawed
+      # in that updates effectively indicate that apps are happy with the
+      # resolution set-points when really they may not be, which will impact
+      # subsequent resolutions in ways that are likely not valid
+      '''
+      # Update SetpointMatrix with resolution vector setpoint values so the
+      # deconfliction methodologies don't need to resolve the same conflicts
+      # each time in addition to new conflicts from the latest set-points
+      for device, value in newResolutionVector['setpoints'].items():
+        for app in self.SetpointMatrix['setpoints'][device]:
+          self.SetpointMatrix['setpoints'][device][app] = value
+          self.SetpointMatrix['timestamps'][app] = \
+                              max(newResolutionVector['timestamps'][device],
+                                  self.SetpointMatrix['timestamps'][app])
+      '''
+
+      if fullResolutionFlag:
+        print('ResolutionVector (from full): ' + str(newResolutionVector),
+              flush=True)
+        return newResolutionVector
+
+    # to create a full resolution vector from a partial one, start with
+    # a copy of the previous resolution
+    fullResolutionVector = copy.deepcopy(self.ResolutionVector)
+
+    # next copy the new set-points over top of the previous resolution
+    # which handles any devices where there was no conflict and if there
+    # is conflict, we are counting on newResolutionVector to override those
+    for device, value in set_points.items():
+      # uncomment the following line to only include batteries in resolution
+      # for testing
+      #if device.startswith('BatteryUnit.'):
+        fullResolutionVector['setpoints'][device] = value
+        fullResolutionVector['timestamps'][device] = timestamp
+
+    # finally, if there were conflicts, then overlay the resolution to those
+    if len(self.ConflictMatrix['setpoints']) > 0:
+      for device in newResolutionVector['setpoints']:
+        fullResolutionVector['setpoints'][device] = \
+                                       newResolutionVector['setpoints'][device]
+        fullResolutionVector['timestamps'][device] = \
+                                       newResolutionVector['timestamps'][device]
+      print('ResolutionVector (from partial): ' + str(fullResolutionVector),
+            flush=True)
+
+      if self.testPartialResFlag:
+        testResolutionFlag, testResolutionVector = \
+                                          self.decon_method_test.deconflict()
+
+        testDiffFlag = False
+        for device in fullResolutionVector['setpoints']:
+          if device not in testResolutionVector['setpoints'] or \
+             device not in testResolutionVector['timestamps']:
+            testDiffFlag = True
+            break
+
+          if device.startswith('BatteryUnit.'):
+            if abs(fullResolutionVector['setpoints'][device] - \
+                   testResolutionVector['setpoints'][device]) > 1e-6:
+              testDiffFlag = True
+              break
+          else:
+            if fullResolutionVector['setpoints'][device] != \
+               testResolutionVector['setpoints'][device]:
+              testDiffFlag = True
+              break
+
+          if fullResolutionVector['timestamps'][device] != \
+             testResolutionVector['timestamps'][device]:
+            testDiffFlag = True
+            break
+
+        if testDiffFlag:
+          print('!!!!!!!!!!!!!!!!!!!!!!!!! DIFF ResolutionVector (from full): '+
+                str(testResolutionVector), flush=True)
+          exit()
+
     else:
-      newResolutionVector = copy.deepcopy(self.ResolutionVector)
-      for device, value in set_points.items():
-        newResolutionVector['setpoints'][device] = value
-        newResolutionVector['timestamps'][device] = timestamp
+      print('ResolutionVector (no conflict): ' + str(fullResolutionVector),
+            flush=True)
 
-    print('ResolutionVector: ' + str(newResolutionVector), flush=True)
-
-    return newResolutionVector
+    return fullResolutionVector
 
 
   def updateSoC(self, name, P_batt, timestamp, revised_socs):
@@ -175,7 +258,8 @@ class DeconflictionPipeline(GridAPPSD):
     print('~SOC updateSoC magic for device: ' + name + ', reference SoC: ' + str(self.Batteries[name]['refSoC']) + ', actual SoC contrib: ' + str(actContrib) + ', projected SoC contrib: ' + str(projContrib) + ', projected SoC: ' + str(projSoC), end='')
 
     if projSoC != self.Batteries[name]['SoC']:
-      revised_socs[name] = self.Batteries[name]['SoC'] = projSoC
+      revised_socs[name] = self.Batteries[name]['SoC'] = \
+                           self.BatterySoC[name] = projSoC
       print(' (revised)', flush=True)
     else:
       print(' (not revised)', flush=True)
@@ -190,22 +274,22 @@ class DeconflictionPipeline(GridAPPSD):
   SoCOld = {}
   SoCOlder = {}
 
-  def zzzUpdateSoC(self, name, P_batt, timestamp, revised_socs):
+  def oldUpdateSoC(self, name, P_batt, timestamp, revised_socs):
     if name not in self.timestampOld:
       self.timestampOld[name] = timestamp
       self.P_battOld[name] = P_batt
-      self.SoCOlder[name] = self.SoCOld[name] = self.Batteries[name]['ZZZSoC']
+      self.SoCOlder[name] = self.SoCOld[name] = self.Batteries[name]['OldSoC']
 
-    ##print('\n~ZZZ updateSoC for device: ' + name + ', timestamp: ' + str(timestamp) + ', P_batt: ' + str(P_batt) + ', SoC: ' + str(self.Batteries[name]['ZZZSoC']), flush=True)
-    ##print('~ZZZ updateSoC for device: ' + name + ', timestampOld: ' + str(self.timestampOld[name]), flush=True)
-    ##print('~ZZZ updateSoC for device: ' + name + ', P_battOld: ' + str(self.P_battOld[name]), flush=True)
-    ##print('~ZZZ updateSoC for device: ' + name + ', SoCOld: ' + str(self.SoCOld[name]) + ', SoCOlder: ' + str(self.SoCOlder[name]), flush=True)
+    ##print('\n~OLD updateSoC for device: ' + name + ', timestamp: ' + str(timestamp) + ', P_batt: ' + str(P_batt) + ', SoC: ' + str(self.Batteries[name]['OldSoC']), flush=True)
+    ##print('~OLD updateSoC for device: ' + name + ', timestampOld: ' + str(self.timestampOld[name]), flush=True)
+    ##print('~OLD updateSoC for device: ' + name + ', P_battOld: ' + str(self.P_battOld[name]), flush=True)
+    ##print('~OLD updateSoC for device: ' + name + ', SoCOld: ' + str(self.SoCOld[name]) + ', SoCOlder: ' + str(self.SoCOlder[name]), flush=True)
 
     start = self.SoCOlder[name]
 
     actual = 0.0
     if timestamp > self.timestampOld[name]:
-      ##print('~ZZZ actual contrib based on P_batt: ' + str(self.P_battOld[name]) + ', current timestamp: ' + str(timestamp) + ', old timestamp: ' + str(self.timestampOld[name]), flush=True)
+      ##print('~OLD actual contrib based on P_batt: ' + str(self.P_battOld[name]) + ', current timestamp: ' + str(timestamp) + ', old timestamp: ' + str(self.timestampOld[name]), flush=True)
       actual = self.AppUtil.contrib_SoC(self.P_battOld[name],
            timestamp-self.timestampOld[name], self.Batteries[name], self.deltaT)
     elif timestamp < self.timestampOld[name]:
@@ -213,16 +297,16 @@ class DeconflictionPipeline(GridAPPSD):
       # reporting it
       print('*** WARNING: time has gone backwards with set-points message for device: ' + name + ', timestamp: ' + str(timestamp) + ', last timestamp: ' + str(self.timestampOld[name]), flush=True)
 
-    ##print('~ZZZ projected contrib based on P_batt: ' + str(P_batt) + ', over 1 timestamp', flush=True)
+    ##print('~OLD projected contrib based on P_batt: ' + str(P_batt) + ', over 1 timestamp', flush=True)
     projected = self.AppUtil.contrib_SoC(P_batt, 1, self.Batteries[name],
                                          self.deltaT)
 
     newSoC = start + actual + projected
 
-    #print('~SOC zzzUpdateSoC magic for device: ' + name + ', start SoC: ' + str(start) + ', actual SoC contrib: ' + str(actual) + ', projected SoC contrib: ' + str(projected) + ', new SoC: ' + str(newSoC), end='')
+    #print('~OLD SOC oldUpdateSoC magic for device: ' + name + ', start SoC: ' + str(start) + ', actual SoC contrib: ' + str(actual) + ', projected SoC contrib: ' + str(projected) + ', new SoC: ' + str(newSoC), end='')
 
-    if newSoC != self.Batteries[name]['ZZZSoC']:
-      revised_socs[name] = self.Batteries[name]['ZZZSoC'] = newSoC
+    if newSoC != self.Batteries[name]['OldSoC']:
+      revised_socs[name] = self.Batteries[name]['OldSoC'] = newSoC
       #print(' (revised)', flush=True)
     else:
       pass
@@ -230,14 +314,14 @@ class DeconflictionPipeline(GridAPPSD):
 
     if timestamp > self.timestampOld[name]:
       self.SoCOlder[name] = self.SoCOld[name]
-      ##print('~ZZZ updateSoC SoCOlder updated to: ' + str(self.SoCOlder[name]), flush=True)
+      ##print('~OLD updateSoC SoCOlder updated to: ' + str(self.SoCOlder[name]), flush=True)
 
     self.timestampOld[name] = timestamp
     self.P_battOld[name] = P_batt
-    self.SoCOld[name] = self.Batteries[name]['ZZZSoC']
+    self.SoCOld[name] = self.Batteries[name]['OldSoC']
 
 
-  def oldUpdateSoC(self, name, P_batt, timestamp, revised_socs):
+  def rollbackUpdateSoC(self, name, P_batt, timestamp, revised_socs):
     # determine if a resolution for this device for this timestamp has
     # already been sent
     if name in self.ResolutionVector['timestamps'] and \
@@ -245,38 +329,41 @@ class DeconflictionPipeline(GridAPPSD):
 
       # rollback the previous contribution to SoC as the new one overrides
       backval = self.ResolutionVector['setpoints'][name]
-      #print('~SOC need to rollback SoC for device: ' + name + ', P_batt: ' + str(backval) + ', pre-rollback SoC: ' + str(self.Batteries[name]['OldSoC']), flush=True)
+      #print('~ROLLBACK SOC need to rollback SoC for device: ' + name + ', P_batt: ' + str(backval) + ', pre-rollback SoC: ' + str(self.Batteries[name]['RollbackSoC']), flush=True)
       if backval > 0:
-        self.Batteries[name]['OldSoC'] -= self.AppUtil.charge_SoC(backval,
+        self.Batteries[name]['RollbackSoC'] -= self.AppUtil.charge_SoC(backval,
                                       name, self.Batteries, self.deltaT)
-        revised_socs[name] = self.Batteries[name]['OldSoC']
+        revised_socs[name] = self.Batteries[name]['RollbackSoC']
       elif backval < 0:
-        self.Batteries[name]['OldSoC'] -= self.AppUtil.discharge_SoC(
+        self.Batteries[name]['RollbackSoC'] -= self.AppUtil.discharge_SoC(
                              backval, name, self.Batteries, self.deltaT)
-        revised_socs[name] = self.Batteries[name]['OldSoC']
-      #print('~SOC done with rollback for device: ' + name + ', P_batt: ' + str(backval) + ', post-rollback SoC: ' + str(self.Batteries[name]['OldSoC']), flush=True)
+        revised_socs[name] = self.Batteries[name]['RollbackSoC']
+      #print('~ROLLBACK SOC done with rollback for device: ' + name + ', P_batt: ' + str(backval) + ', post-rollback SoC: ' + str(self.Batteries[name]['RollbackSoC']), flush=True)
 
     # update battery SoC
-    #print('~SOC need to compute new SoC for device: ' + name + ', P_batt: ' + str(P_batt) + ', pre-compute SoC: ' + str(self.Batteries[name]['OldSoC']), flush=True)
+    #print('~ROLLBACK SOC need to compute new SoC for device: ' + name + ', P_batt: ' + str(P_batt) + ', pre-compute SoC: ' + str(self.Batteries[name]['RollbackSoC']), flush=True)
     if P_batt > 0: # charging
-      self.Batteries[name]['OldSoC'] += self.AppUtil.charge_SoC(P_batt,
+      self.Batteries[name]['RollbackSoC'] += self.AppUtil.charge_SoC(P_batt,
                                       name, self.Batteries, self.deltaT)
-      revised_socs[name] = self.Batteries[name]['OldSoC']
+      revised_socs[name] = self.Batteries[name]['RollbackSoC']
     elif P_batt < 0: # discharging
-      self.Batteries[name]['OldSoC'] += self.AppUtil.discharge_SoC(P_batt,
+      self.Batteries[name]['RollbackSoC'] += self.AppUtil.discharge_SoC(P_batt,
                                       name, self.Batteries, self.deltaT)
-      revised_socs[name] = self.Batteries[name]['OldSoC']
-    #print('~SOC done computing new SoC for device: ' + name + ', P_batt: ' + str(P_batt) + ', post-compute SoC: ' + str(self.Batteries[name]['OldSoC']), flush=True)
+      revised_socs[name] = self.Batteries[name]['RollbackSoC']
+    #print('~ROLLBACK SOC done computing new SoC for device: ' + name + ', P_batt: ' + str(P_batt) + ', post-compute SoC: ' + str(self.Batteries[name]['RollbackSoC']), flush=True)
 
 
   def DeviceDispatcher(self, timestamp, newResolutionVector):
     # Iterate over resolution and send set-points to devices that have
     # different or new values
     revised_socs = {}
-    zzz_revised_socs = {}
-    old_revised_socs = {}
+    if self.testUpdateSoCFlag:
+      old_revised_socs = {}
+      rollback_revised_socs = {}
     for device, value in newResolutionVector['setpoints'].items():
-      if device.startswith('BatteryUnit:'):
+      if device.startswith('BatteryUnit.'):
+        # batteries dispatch values even if they are the same as the last time
+        # as long as the value is associated with the current timestamp
         if device not in self.ResolutionVector['setpoints'] or \
            (newResolutionVector['timestamps'][device]==timestamp and \
             (self.ResolutionVector['timestamps'][device]!=timestamp or \
@@ -284,14 +371,18 @@ class DeconflictionPipeline(GridAPPSD):
 
           self.updateSoC(device, value, timestamp, revised_socs)
 
-          self.zzzUpdateSoC(device, value, timestamp, zzz_revised_socs)
+          if self.testUpdateSoCFlag:
+            self.oldUpdateSoC(device, value, timestamp, old_revised_socs)
 
-          self.oldUpdateSoC(device, value, timestamp, old_revised_socs)
+            self.rollbackUpdateSoC(device, value, timestamp,
+                                   rollback_revised_socs)
 
-          print('*** ' + device + ' SoC: ' + str(self.Batteries[device]['SoC']) + ', SoC ZZZ: ' + str(self.Batteries[device]['ZZZSoC']) + ', SoC Old: ' + str(self.Batteries[device]['OldSoC']), flush=True)
-          if abs(self.Batteries[device]['SoC'] - self.Batteries[device]['ZZZSoC'])>1e-6 or abs(self.Batteries[device]['SoC'] - self.Batteries[device]['OldSoC'])>1e-6:
-            print('!!!!!!!!!!!!!!!!!!!!!!!!! DIFF !!!!!!!!!!!!!!!!!!!!!!!!!!!!', flush=True)
-            exit()
+            print('*** ' + device + ' SoC: ' + str(self.Batteries[device]['SoC']) + ', SoC Old: ' + str(self.Batteries[device]['OldSoC']) + ', SoC Rollback: ' + str(self.Batteries[device]['RollbackSoC']), flush=True)
+            if abs(self.Batteries[device]['SoC'] - self.Batteries[device]['RollbackSoC'])>1e-6:
+              print('!!!!!!!!!!!!!!!!!!!!!!!!! ROLLBACK DIFF !!!!!!!!!!!!!!!!!!!!!!!!!!!!', flush=True)
+            if abs(self.Batteries[device]['SoC'] - self.Batteries[device]['OldSoC'])>1e-6:
+              print('!!!!!!!!!!!!!!!!!!!!!!!!! NEW VS. OLD DIFF !!!!!!!!!!!!!!!!!!!!!!!!!!!!', flush=True)
+              exit()
 
           print('~~> Dispatching to device: ' + device + ', timestamp: ' +
                 str(timestamp) + ', value: ' + str(value) +
@@ -348,11 +439,10 @@ class DeconflictionPipeline(GridAPPSD):
 
     # Step 3: Deconflictor
     # Step 3.1: Conflict Identification
-    conflictFlag = self.ConflictIdentification(app_name, timestamp, set_points)
+    self.ConflictIdentification(app_name, timestamp, set_points)
 
     # Steps 3.2 and 3.3: Deconfliction Solution and Resolution
-    newResolutionVector = self.DeconflictionToResolution(timestamp, set_points,
-                                                         conflictFlag)
+    newResolutionVector = self.DeconflictionToResolution(timestamp, set_points)
 
     # Step 4: Setpoint Validator -- not implemented for prototype
 
@@ -373,14 +463,14 @@ class DeconflictionPipeline(GridAPPSD):
     if datetime not in self.t_plot:
       self.t_plot.append(datetime)
       for name in self.ResolutionVector['setpoints']:
-        if name.startswith('BatteryUnit:'):
+        if name.startswith('BatteryUnit.'):
           self.p_batt_plot[name].append(
                                  self.ResolutionVector['setpoints'][name])
           self.soc_plot[name].append(self.Batteries[name]['SoC'])
     else:
       # replacing last list item is equivalent to rollback
       for name in self.ResolutionVector['setpoints']:
-        if name.startswith('BatteryUnit:'):
+        if name.startswith('BatteryUnit.'):
           self.p_batt_plot[name][-1] = self.ResolutionVector['setpoints'][name]
           self.soc_plot[name][-1] = self.Batteries[name]['SoC']
 
@@ -388,6 +478,10 @@ class DeconflictionPipeline(GridAPPSD):
 
 
   def __init__(self, gapps, method, feeder_mrid, simulation_id):
+    # test/debug flags that should be set to False otherwise
+    self.testUpdateSoCFlag = False
+    self.testPartialResFlag = False
+
     self.AppUtil = getattr(importlib.import_module('shared.apputil'), 'AppUtil')
 
     SPARQLManager = getattr(importlib.import_module('shared.sparql'),
@@ -399,26 +493,32 @@ class DeconflictionPipeline(GridAPPSD):
     '''
     # SHIVA HACK for 123 model testing
     if feeder_mrid == '_C1C3E687-6FFD-C753-582B-632A27E28507':
-      self.Batteries['BatteryUnit:65'] = {'idx': 0, 'prated': 250000,
+      self.Batteries['BatteryUnit.65'] = {'idx': 0, 'prated': 250000,
             'phase': 'A', 'eff': 0.975 * 0.86, 'ratedE': 500000, 'SoC': 0.35}
-      self.Batteries['BatteryUnit:65']['eff_c'] = \
-                                   self.Batteries['BatteryUnit:65']['eff_d'] = \
-                                   self.Batteries['BatteryUnit:65']['eff']
-      self.Batteries['BatteryUnit:52'] = {'idx': 1, 'prated': 250000,
+      self.Batteries['BatteryUnit.65']['eff_c'] = \
+                                   self.Batteries['BatteryUnit.65']['eff_d'] = \
+                                   self.Batteries['BatteryUnit.65']['eff']
+      self.Batteries['BatteryUnit.52'] = {'idx': 1, 'prated': 250000,
             'phase': 'B', 'eff': 0.975 * 0.86, 'ratedE': 500000, 'SoC': 0.275}
-      self.Batteries['BatteryUnit:52']['eff_c'] = \
-                                   self.Batteries['BatteryUnit:52']['eff_d'] = \
-                                   self.Batteries['BatteryUnit:52']['eff']
-      self.Batteries['BatteryUnit:76'] = {'idx': 2, 'prated': 250000,
+      self.Batteries['BatteryUnit.52']['eff_c'] = \
+                                   self.Batteries['BatteryUnit.52']['eff_d'] = \
+                                   self.Batteries['BatteryUnit.52']['eff']
+      self.Batteries['BatteryUnit.76'] = {'idx': 2, 'prated': 250000,
             'phase': 'C', 'eff': 0.975 * 0.86, 'ratedE': 500000, 'SoC': 0.465}
-      self.Batteries['BatteryUnit:76']['eff_c'] = \
-                                   self.Batteries['BatteryUnit:76']['eff_d'] = \
-                                   self.Batteries['BatteryUnit:76']['eff']
+      self.Batteries['BatteryUnit.76']['eff_c'] = \
+                                   self.Batteries['BatteryUnit.76']['eff_d'] = \
+                                   self.Batteries['BatteryUnit.76']['eff']
     '''
 
-    # to support the old way of updating SoC for testing
+    # initialize BatterySoC dictionary for deconflict method usage
+    self.BatterySoC = {}
     for name in self.Batteries:
-      self.Batteries[name]['OldSoC'] = self.Batteries[name]['ZZZSoC'] = self.Batteries[name]['SoC']
+      self.BatterySoC[name] = self.Batteries[name]['SoC']
+
+    # to support the old way of updating SoC for testing
+    if self.testUpdateSoCFlag:
+      for name in self.Batteries:
+        self.Batteries[name]['RollbackSoC'] = self.Batteries[name]['OldSoC'] = self.Batteries[name]['SoC']
 
     self.deltaT = 0.25 # timestamp interval in fractional hours, 0.25 = 15 min
 
@@ -429,6 +529,10 @@ class DeconflictionPipeline(GridAPPSD):
     for name in self.Batteries:
       self.soc_plot[name] = []
       self.p_batt_plot[name] = []
+
+    self.SetpointMatrix = {}
+    self.SetpointMatrix['setpoints'] = {}
+    self.SetpointMatrix['timestamps'] = {}
 
     self.ConflictMatrix = {}
     self.ConflictMatrix['setpoints'] = {}
@@ -454,7 +558,13 @@ class DeconflictionPipeline(GridAPPSD):
 
     DeconflictionMethod = getattr(importlib.import_module(basename),
                                   'DeconflictionMethod')
-    self.decon_method = DeconflictionMethod(self.ConflictMatrix)
+    doPartialResFlag = True
+    self.decon_method = DeconflictionMethod(self.SetpointMatrix,
+                     self.ConflictMatrix, self.BatterySoC, not doPartialResFlag)
+
+    if self.testPartialResFlag and doPartialResFlag:
+      self.decon_method_test = DeconflictionMethod(self.SetpointMatrix,
+                                     self.ConflictMatrix, self.BatterySoC, True)
 
     self.publish_topic = service_output_topic(
                                  'gridappsd-deconfliction-pipeline', '0')

@@ -3,8 +3,16 @@
 
 class DeconflictionMethod:
 
-  def __init__(self, ConflictMatrix):
-    self.ConflictMatrix = ConflictMatrix
+  def __init__(self, SetpointMatrix, ConflictMatrix, BatterySoC,
+               fullResolutionFlag=True):
+    if fullResolutionFlag:
+      self.ConflictMatrix = SetpointMatrix
+    else:
+      self.ConflictMatrix = ConflictMatrix
+
+    self.BatterySoC = BatterySoC
+
+    self.fullResolutionFlag = fullResolutionFlag
 
 
   def deconflict(self):
@@ -35,17 +43,25 @@ class DeconflictionMethod:
                                self.ConflictMatrix['timestamps'][app])
 
       if compCount > 0:
-        if device.startswith('RatioTapChanger:'):
-          ResolutionVector['setpoints'][device] = round(compTotal/compCount)
-        else:
-          ResolutionVector['setpoints'][device] = compTotal/compCount
+        # for resolution with only batteries comment out the next line,
+        # comment out the first line under the RatioTapChanger if block,
+        # uncomment the first line under the else block, then repeat those
+        # steps under the elif below
         ResolutionVector['timestamps'][device] = compTimestamp
-      elif otherCount > 0:
-        if device.startswith('RatioTapChanger:'):
-          ResolutionVector['setpoints'][device] = round(otherTotal/otherCount)
+        if device.startswith('RatioTapChanger.'):
+          ResolutionVector['setpoints'][device] = round(compTotal/compCount)
+          pass
         else:
-          ResolutionVector['setpoints'][device] = otherTotal/otherCount
+          #ResolutionVector['timestamps'][device] = compTimestamp
+          ResolutionVector['setpoints'][device] = compTotal/compCount
+      elif otherCount > 0:
         ResolutionVector['timestamps'][device] = otherTimestamp
+        if device.startswith('RatioTapChanger.'):
+          ResolutionVector['setpoints'][device] = round(otherTotal/otherCount)
+          pass
+        else:
+          #ResolutionVector['timestamps'][device] = otherTimestamp
+          ResolutionVector['setpoints'][device] = otherTotal/otherCount
 
-    return ResolutionVector
+    return self.fullResolutionFlag, ResolutionVector
 
