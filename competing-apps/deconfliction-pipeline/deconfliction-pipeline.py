@@ -258,7 +258,8 @@ class DeconflictionPipeline(GridAPPSD):
     print('~SOC updateSoC magic for device: ' + name + ', reference SoC: ' + str(self.Batteries[name]['refSoC']) + ', actual SoC contrib: ' + str(actContrib) + ', projected SoC contrib: ' + str(projContrib) + ', projected SoC: ' + str(projSoC), end='')
 
     if projSoC != self.Batteries[name]['SoC']:
-      revised_socs[name] = self.Batteries[name]['SoC'] = projSoC
+      revised_socs[name] = self.Batteries[name]['SoC'] = \
+                           self.BatterySoC[name] = projSoC
       print(' (revised)', flush=True)
     else:
       print(' (not revised)', flush=True)
@@ -509,9 +510,15 @@ class DeconflictionPipeline(GridAPPSD):
                                    self.Batteries['BatteryUnit.76']['eff']
     '''
 
-    # to support the old way of updating SoC for testing
+    # initialize BatterySoC dictionary for deconflict method usage
+    self.BatterySoC = {}
     for name in self.Batteries:
-      self.Batteries[name]['RollbackSoC'] = self.Batteries[name]['OldSoC'] = self.Batteries[name]['SoC']
+      self.BatterySoC[name] = self.Batteries[name]['SoC']
+
+    # to support the old way of updating SoC for testing
+    if self.testUpdateSoCFlag:
+      for name in self.Batteries:
+        self.Batteries[name]['RollbackSoC'] = self.Batteries[name]['OldSoC'] = self.Batteries[name]['SoC']
 
     self.deltaT = 0.25 # timestamp interval in fractional hours, 0.25 = 15 min
 
@@ -553,11 +560,11 @@ class DeconflictionPipeline(GridAPPSD):
                                   'DeconflictionMethod')
     doPartialResFlag = True
     self.decon_method = DeconflictionMethod(self.SetpointMatrix,
-                                      self.ConflictMatrix, not doPartialResFlag)
+                     self.ConflictMatrix, self.BatterySoC, not doPartialResFlag)
 
     if self.testPartialResFlag and doPartialResFlag:
       self.decon_method_test = DeconflictionMethod(self.SetpointMatrix,
-                                                   self.ConflictMatrix, True)
+                                     self.ConflictMatrix, self.BatterySoC, True)
 
     self.publish_topic = service_output_topic(
                                  'gridappsd-deconfliction-pipeline', '0')
