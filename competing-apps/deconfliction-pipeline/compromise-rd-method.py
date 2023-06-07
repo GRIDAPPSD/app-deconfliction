@@ -3,12 +3,11 @@
 
 class DeconflictionMethod:
 
-  def __init__(self, ConflictMatrix, ConflictOnlyMatrix,
-               fullResolutionFlag=True):
+  def __init__(self, SetpointMatrix, ConflictMatrix, fullResolutionFlag=True):
     if fullResolutionFlag:
-      self.ConflictMatrix = ConflictMatrix
+      self.ConflictMatrix = SetpointMatrix
     else:
-      self.ConflictMatrix = ConflictOnlyMatrix
+      self.ConflictMatrix = ConflictMatrix
 
     self.fullResolutionFlag = fullResolutionFlag
 

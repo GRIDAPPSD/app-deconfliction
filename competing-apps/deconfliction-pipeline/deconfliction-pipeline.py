@@ -67,14 +67,14 @@ from time import sleep
 class DeconflictionPipeline(GridAPPSD):
 
   def SetpointProcessor(self, app_name, timestamp, set_points):
-    # Update conflict matrix with newly provided set-points
-    self.ConflictMatrix['timestamps'][app_name] = timestamp
+    # Update SetpointMatrix with newly provided set-points
+    self.SetpointMatrix['timestamps'][app_name] = timestamp
 
     # delete any existing matches for app_name so there are no stragglers
     # from past timestamps
-    for device in self.ConflictMatrix['setpoints']:
-      if app_name in self.ConflictMatrix['setpoints'][device]:
-        self.ConflictMatrix['setpoints'][device].pop(app_name)
+    for device in self.SetpointMatrix['setpoints']:
+      if app_name in self.SetpointMatrix['setpoints'][device]:
+        self.SetpointMatrix['setpoints'][device].pop(app_name)
 
     # now add the new set-points for app_name
     for device, value in set_points.items():
@@ -84,68 +84,68 @@ class DeconflictionPipeline(GridAPPSD):
               ', timestamp: ' + str(timestamp) +
               ', device: ' + device + ', value: ' + str(value), flush=True)
 
-      if device not in self.ConflictMatrix['setpoints']:
-        self.ConflictMatrix['setpoints'][device] = {}
+      if device not in self.SetpointMatrix['setpoints']:
+        self.SetpointMatrix['setpoints'][device] = {}
 
-      self.ConflictMatrix['setpoints'][device][app_name] = value
+      self.SetpointMatrix['setpoints'][device][app_name] = value
 
-    print('ConflictMatrix: ' + str(self.ConflictMatrix), flush=True)
+    print('SetpointMatrix: ' + str(self.SetpointMatrix), flush=True)
     # for Alex
-    #pprint.pprint(self.ConflictMatrix)
+    #pprint.pprint(self.SetpointMatrix)
 
 
   def ConflictIdentification(self, app_name, timestamp, set_points):
     # Determine if there is a new conflict
-    self.ConflictOnlyMatrix['setpoints'].clear()
-    self.ConflictOnlyMatrix['timestamps'].clear()
+    self.ConflictMatrix['setpoints'].clear()
+    self.ConflictMatrix['timestamps'].clear()
     for device in set_points:
-      for app1 in self.ConflictMatrix['setpoints'][device]:
+      for app1 in self.SetpointMatrix['setpoints'][device]:
         if app1!=app_name and \
-           (set_points[device]!=self.ConflictMatrix['setpoints'][device][app1] \
-            or timestamp!=self.ConflictMatrix['timestamps'][app1]):
+           (set_points[device]!=self.SetpointMatrix['setpoints'][device][app1] \
+            or timestamp!=self.SetpointMatrix['timestamps'][app1]):
 
-          if device not in self.ConflictOnlyMatrix['setpoints']:
-            self.ConflictOnlyMatrix['setpoints'][device] = {}
+          if device not in self.ConflictMatrix['setpoints']:
+            self.ConflictMatrix['setpoints'][device] = {}
 
-          self.ConflictOnlyMatrix['setpoints'][device][app_name] = \
+          self.ConflictMatrix['setpoints'][device][app_name] = \
                                    set_points[device]
-          self.ConflictOnlyMatrix['timestamps'][app_name] = timestamp
+          self.ConflictMatrix['timestamps'][app_name] = timestamp
 
           # once a conflict is found, add all apps for this device into
-          # ConflictOnlyMatrix
-          for app2 in self.ConflictMatrix['setpoints'][device]:
+          # ConflictMatrix
+          for app2 in self.SetpointMatrix['setpoints'][device]:
             if app2 != app_name:
-              self.ConflictOnlyMatrix['setpoints'][device][app2] = \
-                                  self.ConflictMatrix['setpoints'][device][app2]
-              self.ConflictOnlyMatrix['timestamps'][app2] = \
-                                  self.ConflictMatrix['timestamps'][app2]
+              self.ConflictMatrix['setpoints'][device][app2] = \
+                                  self.SetpointMatrix['setpoints'][device][app2]
+              self.ConflictMatrix['timestamps'][app2] = \
+                                  self.SetpointMatrix['timestamps'][app2]
 
           # skip to next device since all apps for this one are in matrix
           break
 
-    print('ConflictOnlyMatrix: ' + str(self.ConflictOnlyMatrix), flush=True)
+    print('ConflictMatrix: ' + str(self.ConflictMatrix), flush=True)
 
 
   def DeconflictionToResolution(self, timestamp, set_points):
     # If there is a conflict, then the call the deconflict method for the given
     # methodology to produce a resolution
-    if len(self.ConflictOnlyMatrix['setpoints']) > 0:
+    if len(self.ConflictMatrix['setpoints']) > 0:
       fullResolutionFlag, newResolutionVector = self.decon_method.deconflict()
 
-      # GDB 6/2/23 The logic that updates the conflict matrix below is flawed
+      # GDB 6/2/23 The logic that updates SetpointMatrix below is flawed
       # in that updates effectively indicate that apps are happy with the
       # resolution set-points when really they may not be, which will impact
-      # subsequent resolutions in ways that may not be valid
+      # subsequent resolutions in ways that are likely not valid
       '''
-      # Update conflict matrix with resolution vector setpoint values so the
+      # Update SetpointMatrix with resolution vector setpoint values so the
       # deconfliction methodologies don't need to resolve the same conflicts
       # each time in addition to new conflicts from the latest set-points
       for device, value in newResolutionVector['setpoints'].items():
-        for app in self.ConflictMatrix['setpoints'][device]:
-          self.ConflictMatrix['setpoints'][device][app] = value
-          self.ConflictMatrix['timestamps'][app] = \
+        for app in self.SetpointMatrix['setpoints'][device]:
+          self.SetpointMatrix['setpoints'][device][app] = value
+          self.SetpointMatrix['timestamps'][app] = \
                               max(newResolutionVector['timestamps'][device],
-                                  self.ConflictMatrix['timestamps'][app])
+                                  self.SetpointMatrix['timestamps'][app])
       '''
 
       if fullResolutionFlag:
@@ -168,7 +168,7 @@ class DeconflictionPipeline(GridAPPSD):
         fullResolutionVector['timestamps'][device] = timestamp
 
     # finally, if there were conflicts, then overlay the resolution to those
-    if len(self.ConflictOnlyMatrix['setpoints']) > 0:
+    if len(self.ConflictMatrix['setpoints']) > 0:
       for device in newResolutionVector['setpoints']:
         fullResolutionVector['setpoints'][device] = \
                                        newResolutionVector['setpoints'][device]
@@ -483,13 +483,13 @@ class DeconflictionPipeline(GridAPPSD):
       self.soc_plot[name] = []
       self.p_batt_plot[name] = []
 
+    self.SetpointMatrix = {}
+    self.SetpointMatrix['setpoints'] = {}
+    self.SetpointMatrix['timestamps'] = {}
+
     self.ConflictMatrix = {}
     self.ConflictMatrix['setpoints'] = {}
     self.ConflictMatrix['timestamps'] = {}
-
-    self.ConflictOnlyMatrix = {}
-    self.ConflictOnlyMatrix['setpoints'] = {}
-    self.ConflictOnlyMatrix['timestamps'] = {}
 
     self.ResolutionVector = {}
     self.ResolutionVector['setpoints'] = {}
@@ -511,8 +511,8 @@ class DeconflictionPipeline(GridAPPSD):
 
     DeconflictionMethod = getattr(importlib.import_module(basename),
                                   'DeconflictionMethod')
-    self.decon_method = DeconflictionMethod(self.ConflictMatrix,
-                                            self.ConflictOnlyMatrix, False)
+    self.decon_method = DeconflictionMethod(self.SetpointMatrix,
+                                            self.ConflictMatrix, False)
 
     self.publish_topic = service_output_topic(
                                  'gridappsd-deconfliction-pipeline', '0')
