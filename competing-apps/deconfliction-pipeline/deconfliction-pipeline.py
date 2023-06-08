@@ -64,6 +64,18 @@ from datetime import datetime
 
 from time import sleep
 
+# for loading shared modules
+if (os.path.isdir('shared')):
+  sys.path.append('./shared')
+elif (os.path.isdir('../shared')):
+  sys.path.append('../shared')
+elif (os.path.isdir('app-deconfliction/competing-apps/shared')):
+  sys.path.append('app-deconfliction/competing-apps/shared')
+else:
+  sys.path.append('/gridappsd/services/app-deconfliction/competing-apps/shared')
+
+import MethodUtil
+
 class DeconflictionPipeline(GridAPPSD):
 
   def SetpointProcessor(self, app_name, timestamp, set_points):
@@ -96,41 +108,41 @@ class DeconflictionPipeline(GridAPPSD):
 
   def ConflictIdentification(self, app_name, timestamp, set_points):
     # Determine if there is a new conflict
-    self.MethodUtil.ConflictSubMatrix['setpoints'].clear()
-    self.MethodUtil.ConflictSubMatrix['timestamps'].clear()
+    MethodUtil.ConflictSubMatrix['setpoints'].clear()
+    MethodUtil.ConflictSubMatrix['timestamps'].clear()
     for device in set_points:
       for app1 in self.ConflictMatrix['setpoints'][device]:
         if app1!=app_name and \
            (set_points[device]!=self.ConflictMatrix['setpoints'][device][app1] \
             or timestamp!=self.ConflictMatrix['timestamps'][app1]):
 
-          if device not in self.MethodUtil.ConflictSubMatrix['setpoints']:
-            self.MethodUtil.ConflictSubMatrix['setpoints'][device] = {}
+          if device not in MethodUtil.ConflictSubMatrix['setpoints']:
+            MethodUtil.ConflictSubMatrix['setpoints'][device] = {}
 
-          self.MethodUtil.ConflictSubMatrix['setpoints'][device][app_name] = \
-                                   set_points[device]
-          self.MethodUtil.ConflictSubMatrix['timestamps'][app_name] = timestamp
+          MethodUtil.ConflictSubMatrix['setpoints'][device][app_name] = \
+                                                            set_points[device]
+          MethodUtil.ConflictSubMatrix['timestamps'][app_name] = timestamp
 
           # once a conflict is found, add all apps for this device into
           # ConflictSubMatrix
           for app2 in self.ConflictMatrix['setpoints'][device]:
             if app2 != app_name:
-              self.MethodUtil.ConflictSubMatrix['setpoints'][device][app2] = \
+              MethodUtil.ConflictSubMatrix['setpoints'][device][app2] = \
                                   self.ConflictMatrix['setpoints'][device][app2]
-              self.MethodUtil.ConflictSubMatrix['timestamps'][app2] = \
+              MethodUtil.ConflictSubMatrix['timestamps'][app2] = \
                                   self.ConflictMatrix['timestamps'][app2]
 
           # skip to next device since all apps for this one are in matrix
           break
 
-    print('ConflictSubMatrix: ' + str(self.MethodUtil.ConflictSubMatrix),
+    print('ConflictSubMatrix: ' + str(MethodUtil.ConflictSubMatrix),
           flush=True)
 
 
   def DeconflictionToResolution(self, timestamp, set_points):
     # If there is a conflict, then the call the deconflict method for the given
     # methodology to produce a resolution
-    if len(self.MethodUtil.ConflictSubMatrix['setpoints']) > 0:
+    if len(MethodUtil.ConflictSubMatrix['setpoints']) > 0:
       fullResolutionFlag, newResolutionVector = self.decon_method.deconflict()
 
       # GDB 6/2/23 The logic that updates ConflictMatrix below is flawed
@@ -169,7 +181,7 @@ class DeconflictionPipeline(GridAPPSD):
         fullResolutionVector['timestamps'][device] = timestamp
 
     # finally, if there were conflicts, then overlay the resolution to those
-    if len(self.MethodUtil.ConflictSubMatrix['setpoints']) > 0:
+    if len(MethodUtil.ConflictSubMatrix['setpoints']) > 0:
       for device in newResolutionVector['setpoints']:
         fullResolutionVector['setpoints'][device] = \
                                        newResolutionVector['setpoints'][device]
@@ -260,7 +272,7 @@ class DeconflictionPipeline(GridAPPSD):
 
     if projSoC != self.Batteries[name]['SoC']:
       revised_socs[name] = self.Batteries[name]['SoC'] = \
-                           self.MethodUtil.BatterySoC[name] = projSoC
+                           MethodUtil.BatterySoC[name] = projSoC
       print(' (revised)', flush=True)
     else:
       print(' (not revised)', flush=True)
@@ -483,12 +495,9 @@ class DeconflictionPipeline(GridAPPSD):
     self.testUpdateSoCFlag = False
     self.testPartialResFlag = False
 
-    self.AppUtil = getattr(importlib.import_module('shared.apputil'), 'AppUtil')
+    self.AppUtil = getattr(importlib.import_module('apputil'), 'AppUtil')
 
-    self.MethodUtil = getattr(importlib.import_module('shared.methodutil'),
-                              'MethodUtil')
-
-    SPARQLManager = getattr(importlib.import_module('shared.sparql'),
+    SPARQLManager = getattr(importlib.import_module('sparql'),
                             'SPARQLManager')
     sparql_mgr = SPARQLManager(gapps, feeder_mrid, simulation_id)
 
@@ -515,10 +524,8 @@ class DeconflictionPipeline(GridAPPSD):
     '''
 
     # initialize BatterySoC dictionary for deconflict method usage
-    #self.BatterySoC = {}
     for name in self.Batteries:
-      self.MethodUtil.BatterySoC[name] = self.Batteries[name]['SoC']
-    #self.MethodUtil.setBatterySoC(self.BatterySoC)
+      MethodUtil.BatterySoC[name] = self.Batteries[name]['SoC']
 
     # to support the old way of updating SoC for testing
     if self.testUpdateSoCFlag:
@@ -562,13 +569,10 @@ class DeconflictionPipeline(GridAPPSD):
                                   'DeconflictionMethod')
 
     if self.testPartialResFlag:
-      self.decon_method = DeconflictionMethod(self.ConflictMatrix,
-                                              self.MethodUtil, False)
-      self.decon_method_test = DeconflictionMethod(self.ConflictMatrix,
-                                                   self.MethodUtil, True)
+      self.decon_method = DeconflictionMethod(self.ConflictMatrix, False)
+      self.decon_method_test = DeconflictionMethod(self.ConflictMatrix, True)
     else:
-      self.decon_method = DeconflictionMethod(self.ConflictMatrix,
-                                              self.MethodUtil)
+      self.decon_method = DeconflictionMethod(self.ConflictMatrix)
 
     self.publish_topic = service_output_topic(
                                  'gridappsd-deconfliction-pipeline', '0')
@@ -598,16 +602,6 @@ class DeconflictionPipeline(GridAPPSD):
 
 def _main():
   print('Starting deconfliction pipeline code...', flush=True)
-
-  # for loading modules
-  if (os.path.isdir('shared')):
-    sys.path.append('.')
-  elif (os.path.isdir('../shared')):
-    sys.path.append('..')
-  elif (os.path.isdir('app-deconfliction/competing-apps/shared')):
-    sys.path.append('app-deconfliction/competing-apps')
-  else:
-    sys.path.append('/gridappsd/services/app-deconfliction/competing-apps')
 
   parser = argparse.ArgumentParser()
   parser.add_argument("method", help="Deconfliction Methodology")
