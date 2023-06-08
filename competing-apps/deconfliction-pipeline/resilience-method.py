@@ -1,15 +1,28 @@
 
 # Resilience exclusivity deconfliction methodology
 
+import os, sys
+
+# find and add shared directory to path hopefully wherever it is from here
+if (os.path.isdir('../shared')):
+  sys.path.append('../shared')
+elif (os.path.isdir('../competing-apps/shared')):
+  sys.path.append('../competing-apps/shared')
+elif (os.path.isdir('../../competing-apps/shared')):
+  sys.path.append('../../competing-apps/shared')
+else:
+  sys.path.append('/gridappsd/services/app-deconfliction/competing-apps/shared')
+
+import MethodUtil  # shared directory needs to be in path to find this
+
+
 class DeconflictionMethod:
 
-  def __init__(self, ConflictMatrix, MethodUtil, fullResolutionFlag=True):
+  def __init__(self, ConflictMatrix, fullResolutionFlag=True):
     if fullResolutionFlag:
       self.ConflictMatrix = ConflictMatrix
     else:
-      self.ConflictMatrix = MethodUtil.getConflictSubMatrix()
-
-    self.BatterySoC = MethodUtil.getBatterySoC()
+      self.ConflictMatrix = MethodUtil.ConflictSubMatrix
 
     self.fullResolutionFlag = fullResolutionFlag
 
