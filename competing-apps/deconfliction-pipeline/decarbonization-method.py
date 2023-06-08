@@ -3,14 +3,13 @@
 
 class DeconflictionMethod:
 
-  def __init__(self, ConflictMatrix, ConflictSubMatrix, BatterySoC,
-               fullResolutionFlag=True):
+  def __init__(self, ConflictMatrix, MethodUtil, fullResolutionFlag=True):
     if fullResolutionFlag:
       self.ConflictMatrix = ConflictMatrix
     else:
-      self.ConflictMatrix = ConflictSubMatrix
+      self.ConflictMatrix = MethodUtil.getConflictSubMatrix()
 
-    self.BatterySoC = BatterySoC
+    self.BatterySoC = MethodUtil.getBatterySoC()
 
     self.fullResolutionFlag = fullResolutionFlag
 
