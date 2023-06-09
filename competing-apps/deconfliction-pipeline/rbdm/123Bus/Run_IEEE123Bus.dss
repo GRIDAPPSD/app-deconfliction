@@ -19,7 +19,7 @@ Buscoords BusCoords.dat   ! load in bus coordinates
 !Plot Profile
 !plot profile phases=all
 !Show taps                 ! shows the present regulator taps
-Redirect CircuitPlottingScripts.dss
+!Redirect CircuitPlottingScripts.dss
 
 
 !export cim100 fid=E3D03A27-B988-4D79-BFAB-F9D37FB289F7 substation=sub1 subgeo=subgeo1 geo=geo1 file=ieee123apps.xml
