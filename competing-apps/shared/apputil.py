@@ -42,6 +42,29 @@ class AppUtil:
     return SynchronousMachines
 
 
+  def getRegulators(sparql_mgr):
+    Regulators = {}
+    bindings = sparql_mgr.regulator_query()
+    for obj in bindings:
+      name = 'RatioTapChanger.' + obj['pname']['value']
+      if 'tname' in obj:
+        name = 'RatioTapChanger.' + obj['tname']['value']
+        Regulators[name] = {}
+      else:
+        Regulators[name] = {}
+      if 'phs' in obj:
+        phases = obj['phs']['value']
+      else:
+        phases = 'ABC'
+      Regulators[name]['phase'] = phases
+      Regulators[name]['step'] = float(obj['step']['value'])
+      Regulators[name]['highStep'] = float(obj['highStep']['value'])
+      Regulators[name]['lowStep'] = float(obj['lowStep']['value'])
+      Regulators[name]['increment'] = float(obj['incr']['value'])
+
+    return Regulators
+
+
   def getBatteries(sparql_mgr):
     Batteries = {}
     bindings = sparql_mgr.battery_query()
