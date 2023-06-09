@@ -64,17 +64,29 @@ from datetime import datetime
 
 from time import sleep
 
+# for loading shared modules
+if (os.path.isdir('shared')):
+  sys.path.append('./shared')
+elif (os.path.isdir('../shared')):
+  sys.path.append('../shared')
+elif (os.path.isdir('app-deconfliction/competing-apps/shared')):
+  sys.path.append('app-deconfliction/competing-apps/shared')
+else:
+  sys.path.append('/gridappsd/services/app-deconfliction/competing-apps/shared')
+
+import MethodUtil
+
 class DeconflictionPipeline(GridAPPSD):
 
   def SetpointProcessor(self, app_name, timestamp, set_points):
-    # Update SetpointMatrix with newly provided set-points
-    self.SetpointMatrix['timestamps'][app_name] = timestamp
+    # Update ConflictMatrix with newly provided set-points
+    self.ConflictMatrix['timestamps'][app_name] = timestamp
 
     # delete any existing matches for app_name so there are no stragglers
     # from past timestamps
-    for device in self.SetpointMatrix['setpoints']:
-      if app_name in self.SetpointMatrix['setpoints'][device]:
-        self.SetpointMatrix['setpoints'][device].pop(app_name)
+    for device in self.ConflictMatrix['setpoints']:
+      if app_name in self.ConflictMatrix['setpoints'][device]:
+        self.ConflictMatrix['setpoints'][device].pop(app_name)
 
     # now add the new set-points for app_name
     for device, value in set_points.items():
@@ -84,68 +96,115 @@ class DeconflictionPipeline(GridAPPSD):
               ', timestamp: ' + str(timestamp) +
               ', device: ' + device + ', value: ' + str(value), flush=True)
 
-      if device not in self.SetpointMatrix['setpoints']:
-        self.SetpointMatrix['setpoints'][device] = {}
+      if device not in self.ConflictMatrix['setpoints']:
+        self.ConflictMatrix['setpoints'][device] = {}
 
-      self.SetpointMatrix['setpoints'][device][app_name] = value
+      self.ConflictMatrix['setpoints'][device][app_name] = value
 
-    print('SetpointMatrix: ' + str(self.SetpointMatrix), flush=True)
+    print('ConflictMatrix: ' + str(self.ConflictMatrix), flush=True)
     # for Alex
-    #pprint.pprint(self.SetpointMatrix)
+    #pprint.pprint(self.ConflictMatrix)
+
+
+  def ConflictMetric(self, timestamp):
+    centroid = {}
+    apps = {}
+    n_devices = len(self.ConflictMatrix['setpoints'].keys())
+    for device in self.ConflictMatrix['setpoints']:
+      n_apps_device = len(self.ConflictMatrix['setpoints'][device])
+      device_setpoints = []
+      for app in self.ConflictMatrix['setpoints'][device]:
+        gamma_d_a = self.ConflictMatrix['setpoints'][device][app]
+        if app not in apps:
+          apps[app] = {}
+        if device.startswith('BatteryUnit.'):
+          # Normalize setpoints using max charge and discharge possible
+          sigma_d_a = (gamma_d_a + self.Batteries[device]['prated']) / (
+                  2 * self.Batteries[device]['prated'])
+          apps[app][device] = sigma_d_a
+          device_setpoints.append(sigma_d_a)
+        elif device.startswith('RatioTapChanger.'):
+          # Normalize setpoints using highStep and lowStep
+          sigma_d_a = (gamma_d_a + abs(self.Regulators[device]['highStep'])) / (
+                  self.Regulators[device]['highStep'] + abs(
+            self.Regulators[device]['lowStep']))
+          apps[app][device] = sigma_d_a
+          device_setpoints.append(sigma_d_a)
+      # Find centroid
+      centroid[device] = sum(device_setpoints) / n_apps_device
+
+    # Distance vector:
+    # Distance between  set points requested by each app to the centroid vector
+    dist_centroid = []
+    n_apps = len(apps.keys())
+    for app in apps:
+      sum_dist = 0
+      for device in centroid:
+        if device in apps[app]:
+          sum_dist += (centroid[device] - apps[app][device]) ** 2
+      dist_centroid.append(math.sqrt(sum_dist))
+
+    # Compute conflict metric: average distance
+    conflict_metric = sum(dist_centroid) / n_apps
+    # Ensuring 0 <= conflict_metric <= 1
+    conflict_metric = conflict_metric * 2 / math.sqrt(n_devices)
+    print('Conflict Metric: ' + str(conflict_metric) +
+          ', timestamp: ' + str(timestamp), flush=True)
 
 
   def ConflictIdentification(self, app_name, timestamp, set_points):
     # Determine if there is a new conflict
-    self.ConflictMatrix['setpoints'].clear()
-    self.ConflictMatrix['timestamps'].clear()
+    MethodUtil.ConflictSubMatrix['setpoints'].clear()
+    MethodUtil.ConflictSubMatrix['timestamps'].clear()
     for device in set_points:
-      for app1 in self.SetpointMatrix['setpoints'][device]:
+      for app1 in self.ConflictMatrix['setpoints'][device]:
         if app1!=app_name and \
-           (set_points[device]!=self.SetpointMatrix['setpoints'][device][app1] \
-            or timestamp!=self.SetpointMatrix['timestamps'][app1]):
+           (set_points[device]!=self.ConflictMatrix['setpoints'][device][app1] \
+            or timestamp!=self.ConflictMatrix['timestamps'][app1]):
 
-          if device not in self.ConflictMatrix['setpoints']:
-            self.ConflictMatrix['setpoints'][device] = {}
+          if device not in MethodUtil.ConflictSubMatrix['setpoints']:
+            MethodUtil.ConflictSubMatrix['setpoints'][device] = {}
 
-          self.ConflictMatrix['setpoints'][device][app_name] = \
-                                   set_points[device]
-          self.ConflictMatrix['timestamps'][app_name] = timestamp
+          MethodUtil.ConflictSubMatrix['setpoints'][device][app_name] = \
+                                                            set_points[device]
+          MethodUtil.ConflictSubMatrix['timestamps'][app_name] = timestamp
 
           # once a conflict is found, add all apps for this device into
-          # ConflictMatrix
-          for app2 in self.SetpointMatrix['setpoints'][device]:
+          # ConflictSubMatrix
+          for app2 in self.ConflictMatrix['setpoints'][device]:
             if app2 != app_name:
-              self.ConflictMatrix['setpoints'][device][app2] = \
-                                  self.SetpointMatrix['setpoints'][device][app2]
-              self.ConflictMatrix['timestamps'][app2] = \
-                                  self.SetpointMatrix['timestamps'][app2]
+              MethodUtil.ConflictSubMatrix['setpoints'][device][app2] = \
+                                  self.ConflictMatrix['setpoints'][device][app2]
+              MethodUtil.ConflictSubMatrix['timestamps'][app2] = \
+                                  self.ConflictMatrix['timestamps'][app2]
 
           # skip to next device since all apps for this one are in matrix
           break
 
-    print('ConflictMatrix: ' + str(self.ConflictMatrix), flush=True)
+    print('ConflictSubMatrix: ' + str(MethodUtil.ConflictSubMatrix),
+          flush=True)
 
 
   def DeconflictionToResolution(self, timestamp, set_points):
     # If there is a conflict, then the call the deconflict method for the given
     # methodology to produce a resolution
-    if len(self.ConflictMatrix['setpoints']) > 0:
+    if len(MethodUtil.ConflictSubMatrix['setpoints']) > 0:
       fullResolutionFlag, newResolutionVector = self.decon_method.deconflict()
 
-      # GDB 6/2/23 The logic that updates SetpointMatrix below is flawed
+      # GDB 6/2/23 The logic that updates ConflictMatrix below is flawed
       # in that updates effectively indicate that apps are happy with the
       # resolution set-points when really they may not be, which will impact
       # subsequent resolutions in ways that are likely not valid
       '''
-      # Update SetpointMatrix with resolution vector setpoint values so the
+      # Update ConflictMatrix with resolution vector setpoint values so the
       # deconfliction methodologies don't need to resolve the same conflicts
       # each time in addition to new conflicts from the latest set-points
       for device, value in newResolutionVector['setpoints'].items():
-        for app in self.SetpointMatrix['setpoints'][device]:
-          self.SetpointMatrix['setpoints'][device][app] = value
-          self.SetpointMatrix['timestamps'][app] = \
+        for app in self.ConflictMatrix['setpoints'][device]:
+          self.ConflictMatrix['setpoints'][device][app] = value
+          self.ConflictMatrix['timestamps'][app] = \
                               max(newResolutionVector['timestamps'][device],
-                                  self.SetpointMatrix['timestamps'][app])
+                                  self.ConflictMatrix['timestamps'][app])
       '''
 
       if fullResolutionFlag:
@@ -168,7 +227,7 @@ class DeconflictionPipeline(GridAPPSD):
         fullResolutionVector['timestamps'][device] = timestamp
 
     # finally, if there were conflicts, then overlay the resolution to those
-    if len(self.ConflictMatrix['setpoints']) > 0:
+    if len(MethodUtil.ConflictSubMatrix['setpoints']) > 0:
       for device in newResolutionVector['setpoints']:
         fullResolutionVector['setpoints'][device] = \
                                        newResolutionVector['setpoints'][device]
@@ -259,7 +318,7 @@ class DeconflictionPipeline(GridAPPSD):
 
     if projSoC != self.Batteries[name]['SoC']:
       revised_socs[name] = self.Batteries[name]['SoC'] = \
-                           self.BatterySoC[name] = projSoC
+                           MethodUtil.BatterySoC[name] = projSoC
       print(' (revised)', flush=True)
     else:
       print(' (not revised)', flush=True)
@@ -434,6 +493,7 @@ class DeconflictionPipeline(GridAPPSD):
 
     # Step 1: Setpoint Processor
     self.SetpointProcessor(app_name, timestamp, set_points)
+    self.ConflictMetric(timestamp)
 
     # Step 2: Feasibility Maintainer -- not implemented for prototype
 
@@ -482,13 +542,14 @@ class DeconflictionPipeline(GridAPPSD):
     self.testUpdateSoCFlag = False
     self.testPartialResFlag = False
 
-    self.AppUtil = getattr(importlib.import_module('shared.apputil'), 'AppUtil')
+    self.AppUtil = getattr(importlib.import_module('apputil'), 'AppUtil')
 
-    SPARQLManager = getattr(importlib.import_module('shared.sparql'),
+    SPARQLManager = getattr(importlib.import_module('sparql'),
                             'SPARQLManager')
     sparql_mgr = SPARQLManager(gapps, feeder_mrid, simulation_id)
 
     self.Batteries = self.AppUtil.getBatteries(sparql_mgr)
+    self.Regulators = self.AppUtil.getRegulators(sparql_mgr)
 
     '''
     # SHIVA HACK for 123 model testing
@@ -511,14 +572,14 @@ class DeconflictionPipeline(GridAPPSD):
     '''
 
     # initialize BatterySoC dictionary for deconflict method usage
-    self.BatterySoC = {}
     for name in self.Batteries:
-      self.BatterySoC[name] = self.Batteries[name]['SoC']
+      MethodUtil.BatterySoC[name] = self.Batteries[name]['SoC']
 
     # to support the old way of updating SoC for testing
     if self.testUpdateSoCFlag:
       for name in self.Batteries:
-        self.Batteries[name]['RollbackSoC'] = self.Batteries[name]['OldSoC'] = self.Batteries[name]['SoC']
+        self.Batteries[name]['RollbackSoC'] = self.Batteries[name]['OldSoC'] = \
+                                              self.Batteries[name]['SoC']
 
     self.deltaT = 0.25 # timestamp interval in fractional hours, 0.25 = 15 min
 
@@ -529,10 +590,6 @@ class DeconflictionPipeline(GridAPPSD):
     for name in self.Batteries:
       self.soc_plot[name] = []
       self.p_batt_plot[name] = []
-
-    self.SetpointMatrix = {}
-    self.SetpointMatrix['setpoints'] = {}
-    self.SetpointMatrix['timestamps'] = {}
 
     self.ConflictMatrix = {}
     self.ConflictMatrix['setpoints'] = {}
@@ -558,13 +615,12 @@ class DeconflictionPipeline(GridAPPSD):
 
     DeconflictionMethod = getattr(importlib.import_module(basename),
                                   'DeconflictionMethod')
-    doPartialResFlag = True
-    self.decon_method = DeconflictionMethod(self.SetpointMatrix,
-                     self.ConflictMatrix, self.BatterySoC, not doPartialResFlag)
 
-    if self.testPartialResFlag and doPartialResFlag:
-      self.decon_method_test = DeconflictionMethod(self.SetpointMatrix,
-                                     self.ConflictMatrix, self.BatterySoC, True)
+    if self.testPartialResFlag:
+      self.decon_method = DeconflictionMethod(self.ConflictMatrix, False)
+      self.decon_method_test = DeconflictionMethod(self.ConflictMatrix, True)
+    else:
+      self.decon_method = DeconflictionMethod(self.ConflictMatrix)
 
     self.publish_topic = service_output_topic(
                                  'gridappsd-deconfliction-pipeline', '0')
@@ -594,16 +650,6 @@ class DeconflictionPipeline(GridAPPSD):
 
 def _main():
   print('Starting deconfliction pipeline code...', flush=True)
-
-  # for loading modules
-  if (os.path.isdir('shared')):
-    sys.path.append('.')
-  elif (os.path.isdir('../shared')):
-    sys.path.append('..')
-  elif (os.path.isdir('app-deconfliction/competing-apps/shared')):
-    sys.path.append('app-deconfliction/competing-apps')
-  else:
-    sys.path.append('/gridappsd/services/app-deconfliction/competing-apps')
 
   parser = argparse.ArgumentParser()
   parser.add_argument("method", help="Deconfliction Methodology")
