@@ -18,21 +18,16 @@ import MethodUtil  # shared directory needs to be in path to find this
 
 class DeconflictionMethod:
 
-  def __init__(self, ConflictMatrix, fullResolutionFlag=True):
-    if fullResolutionFlag:
-      self.ConflictMatrix = ConflictMatrix
-    else:
-      self.ConflictMatrix = MethodUtil.ConflictSubMatrix
-
-    self.fullResolutionFlag = fullResolutionFlag
+  def __init__(self, ConflictMatrix):
+    self.ConflictSbuMatrix = MethodUtil.ConflictSubMatrix
 
 
   def deconflict(self):
-    ResolutionVector = {}
-    ResolutionVector['setpoints'] = {}
-    ResolutionVector['timestamps'] = {}
+    ResolutionSubVector = {}
+    ResolutionSubVector['setpoints'] = {}
+    ResolutionSubVector['timestamps'] = {}
 
-    for device in self.ConflictMatrix['setpoints']:
+    for device in self.ConflictSubMatrix['setpoints']:
       compCount = 0
       compTotal = 0.0
       compTimestamp = 0
@@ -40,33 +35,33 @@ class DeconflictionMethod:
       otherTotal = 0.0
       otherTimestamp = 0
 
-      for app in self.ConflictMatrix['setpoints'][device]:
+      for app in self.ConflictSubMatrix['setpoints'][device]:
         if app=='resilience-app' or app=='decarbonization-app' or \
            app=='profit_cvr-app':
           compCount += 1
-          compTotal += self.ConflictMatrix['setpoints'][device][app]
+          compTotal += self.ConflictSubMatrix['setpoints'][device][app]
           compTimestamp = max(compTimestamp,
-                              self.ConflictMatrix['timestamps'][app])
+                              self.ConflictSubMatrix['timestamps'][app])
           if compCount == 3:
             break
         else:
           otherCount += 1
-          otherTotal += self.ConflictMatrix['setpoints'][device][app]
+          otherTotal += self.ConflictSubMatrix['setpoints'][device][app]
           otherTimestamp = max(otherTimestamp,
-                               self.ConflictMatrix['timestamps'][app])
+                               self.ConflictSubMatrix['timestamps'][app])
 
       if compCount > 0:
         if device.startswith('RatioTapChanger.'):
-          ResolutionVector['setpoints'][device] = round(compTotal/compCount)
+          ResolutionSubVector['setpoints'][device] = round(compTotal/compCount)
         else:
-          ResolutionVector['setpoints'][device] = compTotal/compCount
-        ResolutionVector['timestamps'][device] = compTimestamp
+          ResolutionSubVector['setpoints'][device] = compTotal/compCount
+        ResolutionSubVector['timestamps'][device] = compTimestamp
       elif otherCount > 0:
         if device.startswith('RatioTapChanger.'):
-          ResolutionVector['setpoints'][device] = round(otherTotal/otherCount)
+          ResolutionSubVector['setpoints'][device] =round(otherTotal/otherCount)
         else:
-          ResolutionVector['setpoints'][device] = otherTotal/otherCount
-        ResolutionVector['timestamps'][device] = otherTimestamp
+          ResolutionSubVector['setpoints'][device] = otherTotal/otherCount
+        ResolutionSubVector['timestamps'][device] = otherTimestamp
 
-    return self.fullResolutionFlag, ResolutionVector
+    return (False, ResolutionSubVector)
 
