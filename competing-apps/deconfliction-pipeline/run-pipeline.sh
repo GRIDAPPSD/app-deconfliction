@@ -17,14 +17,17 @@ if [[ -z "$SIMREQ" ]]; then
     fi
 
     #read -d "\n" SIMID SIMREQ <<< $(../sim-starter/sim-starter.py $1)
-    read -d "\n" SIMREQ <<< $(../sim-starter/sim-starter.py $2 nosim)
+    read -d "\n" SIMREQ <<< $(../sim-starter/sim-starter.py $1 nosim)
     SIMID=0
-    METHOD=$1
+    METHOD=$2
+    METHOD_TEST=$3
 else
 #   invocation when simulation is already started from platform viz
     SIMID=$2
+    METHOD=$3
+    METHOD_TEST=$4
 fi
 
 mkdir -p output
-python3 deconfliction-pipeline.py $METHOD $SIMID "$SIMREQ" 2>&1 | tee output/deconfliction-pipeline.log
+python3 deconfliction-pipeline.py $SIMID "$SIMREQ" $METHOD $METHOD_TEST 2>&1 | tee output/deconfliction-pipeline.log
 

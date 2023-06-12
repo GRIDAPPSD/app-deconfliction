@@ -188,8 +188,14 @@ class DeconflictionPipeline(GridAPPSD):
   def DeconflictionToResolution(self, timestamp, set_points):
     # If there is a conflict, then the call the deconflict method for the given
     # methodology to produce a resolution
+    fullResolutionFlag = True
     if len(MethodUtil.ConflictSubMatrix['setpoints']) > 0:
-      fullResolutionFlag, newResolutionVector = self.decon_method.deconflict()
+      returned = self.decon_method.deconflict()
+      if type(returned) is tuple:
+        fullResolutionFlag = returned[0]
+        newResolutionVector = returned[1]
+      else:
+        newResolutionVector = returned
 
       # GDB 6/2/23 The logic that updates ConflictMatrix below is flawed
       # in that updates effectively indicate that apps are happy with the
@@ -208,69 +214,97 @@ class DeconflictionPipeline(GridAPPSD):
       '''
 
       if fullResolutionFlag:
-        print('ResolutionVector (from full): ' + str(newResolutionVector),
+        fullResolutionVector = newResolutionVector
+        print('ResolutionVector (from full): ' + str(fullResolutionVector),
               flush=True)
-        return newResolutionVector
 
-    # to create a full resolution vector from a partial one, start with
-    # a copy of the previous resolution
-    fullResolutionVector = copy.deepcopy(self.ResolutionVector)
+    if len(MethodUtil.ConflictSubMatrix['setpoints'])==0 or \
+       not fullResolutionFlag:
+      # to create a full resolution vector from a partial one, start with
+      # a copy of the previous resolution
+      fullResolutionVector = copy.deepcopy(self.ResolutionVector)
 
-    # next copy the new set-points over top of the previous resolution
-    # which handles any devices where there was no conflict and if there
-    # is conflict, we are counting on newResolutionVector to override those
-    for device, value in set_points.items():
-      # uncomment the following line to only include batteries in resolution
-      # for testing
-      #if device.startswith('BatteryUnit.'):
-        fullResolutionVector['setpoints'][device] = value
-        fullResolutionVector['timestamps'][device] = timestamp
+      # next copy the new set-points over top of the previous resolution
+      # which handles any devices where there was no conflict and if there
+      # is conflict, we are counting on newResolutionVector to override those
+      for device, value in set_points.items():
+        # uncomment the following line to only include batteries in resolution
+        # for testing
+        #if device.startswith('BatteryUnit.'):
+          fullResolutionVector['setpoints'][device] = value
+          fullResolutionVector['timestamps'][device] = timestamp
 
-    # finally, if there were conflicts, then overlay the resolution to those
-    if len(MethodUtil.ConflictSubMatrix['setpoints']) > 0:
-      for device in newResolutionVector['setpoints']:
-        fullResolutionVector['setpoints'][device] = \
+      # finally, if there were conflicts, then overlay the resolution to those
+      if len(MethodUtil.ConflictSubMatrix['setpoints']) > 0:
+        for device in newResolutionVector['setpoints']:
+          fullResolutionVector['setpoints'][device] = \
                                        newResolutionVector['setpoints'][device]
-        fullResolutionVector['timestamps'][device] = \
+          fullResolutionVector['timestamps'][device] = \
                                        newResolutionVector['timestamps'][device]
-      print('ResolutionVector (from partial): ' + str(fullResolutionVector),
-            flush=True)
+        print('ResolutionVector (from partial): ' + str(fullResolutionVector),
+              flush=True)
+      else:
+        print('ResolutionVector (no conflict): ' + str(fullResolutionVector),
+              flush=True)
 
-      if self.testPartialResFlag:
-        testResolutionFlag, testResolutionVector = \
-                                          self.decon_method_test.deconflict()
+    if self.testDeconMethodFlag:
+      testFullResolutionFlag = True
+      if len(MethodUtil.ConflictSubMatrix['setpoints']) > 0:
+        testReturned = self.decon_method_test.deconflict()
+        if type(testReturned) is tuple:
+          testFullResolutionFlag = returned[0]
+          testNewResolutionVector = returned[1]
+        else:
+          testNewResolutionVector = returned
 
-        testDiffFlag = False
-        for device in fullResolutionVector['setpoints']:
-          if device not in testResolutionVector['setpoints'] or \
-             device not in testResolutionVector['timestamps']:
+        if testFullResolutionFlag:
+          testFullResolutionVector = testNewResolutionVector
+
+      if len(MethodUtil.ConflictSubMatrix['setpoints'])==0 or \
+         not testFullResolutionFlag:
+        testFullResolutionVector = copy.deepcopy(self.ResolutionVector)
+
+        for device, value in set_points.items():
+          # uncomment the following line to only include batteries in resolution
+          # for testing
+          #if device.startswith('BatteryUnit.'):
+            testFullResolutionVector['setpoints'][device] = value
+            testFullResolutionVector['timestamps'][device] = timestamp
+
+        if len(MethodUtil.ConflictSubMatrix['setpoints']) > 0:
+          for device in testNewResolutionVector['setpoints']:
+            testFullResolutionVector['setpoints'][device] = \
+                                   testNewResolutionVector['setpoints'][device]
+            testFullResolutionVector['timestamps'][device] = \
+                                   testNewResolutionVector['timestamps'][device]
+
+      testDiffFlag = False
+      for device in fullResolutionVector['setpoints']:
+        if device not in testFullResolutionVector['setpoints'] or \
+           device not in testFullResolutionVector['timestamps']:
+          testDiffFlag = True
+          break
+
+        if device.startswith('BatteryUnit.'):
+          if abs(fullResolutionVector['setpoints'][device] - \
+                 testFullResolutionVector['setpoints'][device]) > 1e-6:
+            testDiffFlag = True
+            break
+        else:
+          if fullResolutionVector['setpoints'][device] != \
+             testFullResolutionVector['setpoints'][device]:
             testDiffFlag = True
             break
 
-          if device.startswith('BatteryUnit.'):
-            if abs(fullResolutionVector['setpoints'][device] - \
-                   testResolutionVector['setpoints'][device]) > 1e-6:
-              testDiffFlag = True
-              break
-          else:
-            if fullResolutionVector['setpoints'][device] != \
-               testResolutionVector['setpoints'][device]:
-              testDiffFlag = True
-              break
+        if fullResolutionVector['timestamps'][device] != \
+           testFullResolutionVector['timestamps'][device]:
+          testDiffFlag = True
+          break
 
-          if fullResolutionVector['timestamps'][device] != \
-             testResolutionVector['timestamps'][device]:
-            testDiffFlag = True
-            break
-
-        if testDiffFlag:
-          print('!!!!!!!!!!!!!!!!!!!!!!!!! DIFF ResolutionVector (from full): '+
-                str(testResolutionVector), flush=True)
-          exit()
-
-    else:
-      print('ResolutionVector (no conflict): ' + str(fullResolutionVector),
-            flush=True)
+      if testDiffFlag:
+        print('!!!!!!!!!!!!!!!!!!!!!!!!! DIFF TEST ResolutionVector: ' +
+              str(testFullResolutionVector), flush=True)
+        exit()
 
     return fullResolutionVector
 
@@ -537,10 +571,10 @@ class DeconflictionPipeline(GridAPPSD):
     return
 
 
-  def __init__(self, gapps, method, feeder_mrid, simulation_id):
+  def __init__(self, gapps, feeder_mrid, simulation_id, method, method_test):
     # test/debug flags that should be set to False otherwise
     self.testUpdateSoCFlag = False
-    self.testPartialResFlag = False
+    self.testDeconMethodFlag = method_test != None
 
     self.AppUtil = getattr(importlib.import_module('apputil'), 'AppUtil')
 
@@ -615,12 +649,23 @@ class DeconflictionPipeline(GridAPPSD):
 
     DeconflictionMethod = getattr(importlib.import_module(basename),
                                   'DeconflictionMethod')
+    self.decon_method = DeconflictionMethod(self.ConflictMatrix)
 
-    if self.testPartialResFlag:
-      self.decon_method = DeconflictionMethod(self.ConflictMatrix, False)
-      self.decon_method_test = DeconflictionMethod(self.ConflictMatrix, True)
-    else:
-      self.decon_method = DeconflictionMethod(self.ConflictMatrix)
+    if self.testDeconMethodFlag:
+      if method_test.endswith('.py'):
+        method_test = method_test[:-3] # allow full python file name
+
+      dirname_test = os.path.dirname(method_test)
+      if dirname_test!='' and dirname_test!=dirname:
+        sys.path.append(dirname_test)
+
+      basename_test = os.path.basename(method_test)
+      print('Importing DeconflictionMethod test class from module: ' +
+            basename_test, flush=True)
+
+      DeconflictionMethodTest = getattr(importlib.import_module(basename_test),
+                                        'DeconflictionMethod')
+      self.decon_method_test = DeconflictionMethod(self.ConflictMatrix)
 
     self.publish_topic = service_output_topic(
                                  'gridappsd-deconfliction-pipeline', '0')
@@ -652,9 +697,11 @@ def _main():
   print('Starting deconfliction pipeline code...', flush=True)
 
   parser = argparse.ArgumentParser()
-  parser.add_argument("method", help="Deconfliction Methodology")
   parser.add_argument("simulation_id", help="Simulation ID")
   parser.add_argument("request", help="Simulation Request")
+  parser.add_argument("method", help="Deconfliction Methodology")
+  parser.add_argument("method_test", nargs='?',
+                      help="Test Deconfliction Methodology")
   opts = parser.parse_args()
 
   sim_request = json.loads(opts.request.replace("\'",""))
@@ -669,7 +716,8 @@ def _main():
   gapps = GridAPPSD(opts.simulation_id)
   assert gapps.connected
 
-  DeconflictionPipeline(gapps, opts.method, feeder_mrid, opts.simulation_id)
+  DeconflictionPipeline(gapps, feeder_mrid, opts.simulation_id,
+                        opts.method, opts.method_test)
 
 
 if __name__ == "__main__":
