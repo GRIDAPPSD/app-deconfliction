@@ -19,7 +19,7 @@ import MethodUtil  # shared directory needs to be in path to find this
 class DeconflictionMethod:
 
   def __init__(self, ConflictMatrix):
-    self.ConflictSbuMatrix = MethodUtil.ConflictSubMatrix
+    self.ConflictSubMatrix = MethodUtil.ConflictSubMatrix
 
 
   def deconflict(self):
