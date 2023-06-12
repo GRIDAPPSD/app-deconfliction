@@ -106,6 +106,52 @@ class DeconflictionPipeline(GridAPPSD):
     #pprint.pprint(self.ConflictMatrix)
 
 
+  def ConflictMetric(self, timestamp):
+    centroid = {}
+    apps = {}
+    n_devices = len(self.ConflictMatrix['setpoints'].keys())
+    for device in self.ConflictMatrix['setpoints']:
+      n_apps_device = len(self.ConflictMatrix['setpoints'][device])
+      device_setpoints = []
+      for app in self.ConflictMatrix['setpoints'][device]:
+        gamma_d_a = self.ConflictMatrix['setpoints'][device][app]
+        if app not in apps:
+          apps[app] = {}
+        if device.startswith('BatteryUnit.'):
+          # Normalize setpoints using max charge and discharge possible
+          sigma_d_a = (gamma_d_a + self.Batteries[device]['prated']) / (
+                  2 * self.Batteries[device]['prated'])
+          apps[app][device] = sigma_d_a
+          device_setpoints.append(sigma_d_a)
+        elif device.startswith('RatioTapChanger.'):
+          # Normalize setpoints using highStep and lowStep
+          sigma_d_a = (gamma_d_a + abs(self.Regulators[device]['highStep'])) / (
+                  self.Regulators[device]['highStep'] + abs(
+            self.Regulators[device]['lowStep']))
+          apps[app][device] = sigma_d_a
+          device_setpoints.append(sigma_d_a)
+      # Find centroid
+      centroid[device] = sum(device_setpoints) / n_apps_device
+
+    # Distance vector:
+    # Distance between  set points requested by each app to the centroid vector
+    dist_centroid = []
+    n_apps = len(apps.keys())
+    for app in apps:
+      sum_dist = 0
+      for device in centroid:
+        if device in apps[app]:
+          sum_dist += (centroid[device] - apps[app][device]) ** 2
+      dist_centroid.append(math.sqrt(sum_dist))
+
+    # Compute conflict metric: average distance
+    conflict_metric = sum(dist_centroid) / n_apps
+    # Ensuring 0 <= conflict_metric <= 1
+    conflict_metric = conflict_metric * 2 / math.sqrt(n_devices)
+    print('Conflict Metric: ' + str(conflict_metric) +
+          ', timestamp: ' + str(timestamp), flush=True)
+
+
   def ConflictIdentification(self, app_name, timestamp, set_points):
     # Determine if there is a new conflict
     MethodUtil.ConflictSubMatrix['setpoints'].clear()
@@ -447,6 +493,7 @@ class DeconflictionPipeline(GridAPPSD):
 
     # Step 1: Setpoint Processor
     self.SetpointProcessor(app_name, timestamp, set_points)
+    self.ConflictMetric(timestamp)
 
     # Step 2: Feasibility Maintainer -- not implemented for prototype
 
@@ -502,6 +549,7 @@ class DeconflictionPipeline(GridAPPSD):
     sparql_mgr = SPARQLManager(gapps, feeder_mrid, simulation_id)
 
     self.Batteries = self.AppUtil.getBatteries(sparql_mgr)
+    self.Regulators = self.AppUtil.getRegulators(sparql_mgr)
 
     '''
     # SHIVA HACK for 123 model testing
