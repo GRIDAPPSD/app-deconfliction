@@ -116,16 +116,17 @@ class DeconflictionPipeline(GridAPPSD):
     # for Alex
     #pprint.pprint(self.ConflictMatrix)
 
-    if self.testDevice and self.testDevice in set_points:
-      print('~TEST: set-points message with ' + self.testDevice +
-            ' set-point: ' + str(set_points[self.testDevice]) +
-            ', app: ' + app_name +
-            ', timestamp: ' + str(timestamp), flush=True)
-      print('~TEST: ConflictMatrix[setpoints] for ' + self.testDevice + ': ' +
-            str(self.ConflictMatrix['setpoints'][self.testDevice]), flush=True)
-    else:
-      print('~TEST: set-points message does not contain ' + self.testDevice,
-            flush=True)
+    if self.testDevice:
+      if  self.testDevice in set_points:
+        print('~TEST: set-points message with ' + self.testDevice +
+              ' set-point: ' + str(set_points[self.testDevice]) +
+              ', app: ' + app_name +
+              ', timestamp: ' + str(timestamp), flush=True)
+        print('~TEST: ConflictMatrix[setpoints] for ' + self.testDevice + ': ' +
+             str(self.ConflictMatrix['setpoints'][self.testDevice]), flush=True)
+      else:
+        print('~TEST: set-points message does not contain ' + self.testDevice,
+              flush=True)
 
 
 
@@ -210,13 +211,14 @@ class DeconflictionPipeline(GridAPPSD):
     print('ConflictSubMatrix: ' + str(MethodUtil.ConflictSubMatrix),
           flush=True)
 
-    if self.testDevice and \
-       self.testDevice in MethodUtil.ConflictSubMatrix['setpoints']:
-      print('~TEST: ConflictSubMatrix[setpoints] for ' + self.testDevice + ': '+
-          str(self.ConflictSubMatrix['setpoints'][self.testDevice]), flush=True)
-    else:
-      print('~TEST: ConflictSubMatrix[setpoints] does not contain ' +
-            self.testDevice, flush=True)
+    if self.testDevice:
+      if self.testDevice in MethodUtil.ConflictSubMatrix['setpoints']:
+        print('~TEST: ConflictSubMatrix[setpoints] for ' + self.testDevice +
+              ': '+ str(self.ConflictSubMatrix['setpoints'][self.testDevice]),
+              flush=True)
+      else:
+        print('~TEST: ConflictSubMatrix[setpoints] does not contain ' +
+              self.testDevice, flush=True)
 
 
   def DeconflictionToResolution(self, timestamp, set_points):
@@ -251,6 +253,18 @@ class DeconflictionPipeline(GridAPPSD):
         fullResolutionVector = newResolutionVector
         print('ResolutionVector (from full): ' + str(fullResolutionVector),
               flush=True)
+
+        if self.testDevice:
+          if self.testDevice in fullResolutionVector['setpoints']:
+            print('~TEST: ResolutionVector (from full) for ' +
+                  self.testDevice + ' setpoints: ' +
+                  str(self.ResolutionVector['setpoints'][self.testDevice]) +
+                  ', timestamps: ' +
+                  str(self.ResolutionVector['timestamps'][self.testDevice]),
+                  flush=True)
+          else:
+            print('~TEST: ResolutionVector (from full) does not contain ' +
+                  self.testDevice, flush=True)
 
     if len(MethodUtil.ConflictSubMatrix['setpoints'])==0 or \
        not fullResolutionFlag:
@@ -516,12 +530,22 @@ class DeconflictionPipeline(GridAPPSD):
                 ' (projected SoC: ' + str(self.Batteries[device]['SoC']) + ')',
                 flush=True)
 
+          if self.testDevice and device==self.testDevice:
+            print('~TEST: Dispatching to device: ' + device + ', timestamp: ' +
+                  str(timestamp) + ', value: ' + str(value) +
+                  ' (projected SoC: ' + str(self.Batteries[device]['SoC']) +')',
+                  flush=True)
+
       # not a battery so only dispatch value if it's changed or if it's
       # never been dispatched before
       elif device not in self.ResolutionVector['setpoints'] or \
            self.ResolutionVector['setpoints'][device]!=value:
         print('==> Dispatching to device: ' + device + ', timestamp: ' +
               str(timestamp) + ', value: ' + str(value), flush=True)
+
+        if self.testDevice and device==self.testDevice:
+            print('~TEST: Dispatching to device: ' + device + ', timestamp: ' +
+                  str(timetstamp) + ', value: ' + str(value), flush=True)
 
     # it's also possible a device from the last resolution does not appear
     # in the new resolution.  In this case it's a "don't care" for the new
@@ -531,6 +555,9 @@ class DeconflictionPipeline(GridAPPSD):
       for device in self.ResolutionVector['setpoints']:
         if device not in newResolutionVector['setpoints']:
           print('==> Device deleted from resolution: ' + device, flush=True)
+
+          if self.testDevice and device==self.testDevice:
+            print('~TEST: Device deleted from resolution: ' + device,flush=True)
 
     return revised_socs
 
@@ -548,6 +575,11 @@ class DeconflictionPipeline(GridAPPSD):
       print('~~> Sending revised-socs message: ' + str(socs_message) +
             ' (driven by set-points from ' + app_name + ')', flush=True)
       self.gapps.send(self.publish_topic, socs_message)
+
+      if self.testDevice and self.testDevice in revised_socs:
+        print('~TEST: revised-socs message with device ' + self.testDevice +
+              ' SoC: ' + str(revised_socs[self.testDevice]) + ', timestamp: ' +
+              str(timestamp) + ', from app: ' + app_name, flush=True)
 
     print('~', flush=True) # tidy output with "blank" line
 
