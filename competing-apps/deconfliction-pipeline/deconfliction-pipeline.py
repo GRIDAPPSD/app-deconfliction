@@ -162,7 +162,7 @@ class DeconflictionPipeline(GridAPPSD):
     # Distance vector:
     # Distance between setpoints requested by each app to the centroid vector
     dist_centroid = []
-    n_apps = len(apps.keys())
+    n_apps = len(apps)
     for app in apps:
       sum_dist = 0
       for device in centroid:
