@@ -214,8 +214,8 @@ class DeconflictionPipeline(GridAPPSD):
     if self.testDevice:
       if self.testDevice in MethodUtil.ConflictSubMatrix['setpoints']:
         print('~TEST: ConflictSubMatrix[setpoints] for ' + self.testDevice +
-              ': '+ str(self.ConflictSubMatrix['setpoints'][self.testDevice]),
-              flush=True)
+          ': ' +str(MethodUtil.ConflictSubMatrix['setpoints'][self.testDevice]),
+          flush=True)
       else:
         print('~TEST: ConflictSubMatrix[setpoints] does not contain ' +
               self.testDevice, flush=True)
@@ -291,9 +291,34 @@ class DeconflictionPipeline(GridAPPSD):
                                        newResolutionVector['timestamps'][device]
         print('ResolutionVector (from partial): ' + str(fullResolutionVector),
               flush=True)
+
+        if self.testDevice:
+          if self.testDevice in fullResolutionVector['setpoints']:
+            print('~TEST: ResolutionVector (from partial) for ' +
+                  self.testDevice + ' setpoints: ' +
+                  str(fullResolutionVector['setpoints'][self.testDevice]) +
+                  ', timestamps: ' +
+                  str(fullResolutionVector['timestamps'][self.testDevice]),
+                  flush=True)
+          else:
+            print('~TEST: ResolutionVector (from partial) does not contain ' +
+                  self.testDevice, flush=True)
+
       else:
         print('ResolutionVector (no conflict): ' + str(fullResolutionVector),
               flush=True)
+
+        if self.testDevice:
+          if self.testDevice in fullResolutionVector['setpoints']:
+            print('~TEST: ResolutionVector (no conflict) for ' +
+                  self.testDevice + ' setpoints: ' +
+                  str(fullResolutionVector['setpoints'][self.testDevice]) +
+                  ', timestamps: ' +
+                  str(fullResolutionVector['timestamps'][self.testDevice]),
+                  flush=True)
+          else:
+            print('~TEST: ResolutionVector (no conflict) does not contain ' +
+                  self.testDevice, flush=True)
 
     if self.testDeconMethodFlag:
       testFullResolutionFlag = True
@@ -393,14 +418,16 @@ class DeconflictionPipeline(GridAPPSD):
     actContrib = 0.0
     if timestamp > self.Batteries[name]['refTimestamp']:
       if self.testDevice and name==self.testDevice:
-        print('~TEST actual contrib based on P_batt: ' +
+        print('~TEST updateSoC actual contrib based on P_batt: ' +
               str(self.Batteries[name]['refP_batt']) +
               ', current timestamp: ' + str(timestamp) +
               ', reference timestamp: ' +
               str(self.Batteries[name]['refTimestamp']), flush=True)
+
       actContrib = self.AppUtil.contrib_SoC(self.Batteries[name]['refP_batt'],
                                  timestamp-self.Batteries[name]['refTimestamp'],
                                  self.Batteries[name], self.deltaT)
+
     elif timestamp < self.Batteries[name]['refTimestamp']:
       # consider going back in time the same as equal timestamps other than
       # reporting it
