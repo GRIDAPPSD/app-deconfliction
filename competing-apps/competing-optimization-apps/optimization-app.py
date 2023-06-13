@@ -361,9 +361,20 @@ class CompetingApp(GridAPPSD):
     print('Time-series time: ' + str(time) + ', loadshape: ' + str(loadshape) +
           ', solar: ' + str(solar) + ', price: ' + str(price), flush=True)
 
-    self.defineOptimizationDynamicProblem(time, loadshape, solar)
+    interval = 1
+    # uncomment the following lines to adjust the frequency of messages
+    # based on the type of optimization
+    #if self.opt_type == 'resilience':
+    #  interval = 3
+    #elif self.opt_type == 'decarbonization':
+    #  interval = 4
+    #elif self.opt_type == 'profit_cvr':
+    #  interval = 5
 
-    self.doOptimization(time)
+    if time % interval == 0:
+      self.defineOptimizationDynamicProblem(time, loadshape, solar)
+
+      self.doOptimization(time)
 
 
   def defineOptimizationVariables(self, len_branch_info, len_bus_info,
