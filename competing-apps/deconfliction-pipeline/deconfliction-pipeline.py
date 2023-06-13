@@ -116,6 +116,18 @@ class DeconflictionPipeline(GridAPPSD):
     # for Alex
     #pprint.pprint(self.ConflictMatrix)
 
+    if self.testDevice and self.testDevice in set_points:
+      print('~TEST: set-points message with ' + self.testDevice +
+            ' set-point: ' + str(set_points[self.testDevice]) +
+            ', app: ' + app_name +
+            ', timestamp: ' + str(timestamp), flush=True)
+      print('~TEST: ConflictMatrix[setpoints] for ' + self.testDevice + ': ' +
+            str(self.ConflictMatrix['setpoints'][self.testDevice]), flush=True)
+    else:
+      print('~TEST: set-points message does not contain ' + self.testDevice,
+            flush=True)
+
+
 
   def ConflictMetric(self, timestamp):
     centroid = {}
@@ -197,6 +209,14 @@ class DeconflictionPipeline(GridAPPSD):
 
     print('ConflictSubMatrix: ' + str(MethodUtil.ConflictSubMatrix),
           flush=True)
+
+    if self.testDevice and \
+       self.testDevice in MethodUtil.ConflictSubMatrix['setpoints']:
+      print('~TEST: ConflictSubMatrix[setpoints] for ' + self.testDevice + ': '+
+          str(self.ConflictSubMatrix['setpoints'][self.testDevice]), flush=True)
+    else:
+      print('~TEST: ConflictSubMatrix[setpoints] does not contain ' +
+            self.testDevice, flush=True)
 
 
   def DeconflictionToResolution(self, timestamp, set_points):
@@ -538,11 +558,6 @@ class DeconflictionPipeline(GridAPPSD):
     app_name = message['app_name']
     timestamp = message['timestamp']
     set_points = message['set_points']
-
-    if self.testDevice:
-      print('~TEST: set-points message with ' + self.testDevice +
-            ' set-point: ' + str(set_points[self.testDevice]) +
-            ', timestamp: ' + str(timestamp), flush=True)
 
     # Step 1: Setpoint Processor
     self.SetpointProcessor(app_name, timestamp, set_points)
