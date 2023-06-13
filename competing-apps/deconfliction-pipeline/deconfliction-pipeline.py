@@ -1,38 +1,49 @@
 
 # Copyright (c) 2023, Battelle Memorial Institute All rights reserved.
-# Battelle Memorial Institute (hereinafter Battelle) hereby grants permission to any person or entity
-# lawfully obtaining a copy of this software and associated documentation files (hereinafter the
-# Software) to redistribute and use the Software in source and binary forms, with or without modification.
-# Such person or entity may use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
-# the Software, and may permit others to do so, subject to the following conditions:
-# Redistributions of source code must retain the above copyright notice, this list of conditions and the
-# following disclaimers.
-# Redistributions in binary form must reproduce the above copyright notice, this list of conditions and
-# the following disclaimer in the documentation and/or other materials provided with the distribution.
-# Other than as used herein, neither the name Battelle Memorial Institute or Battelle may be used in any
-# form whatsoever without the express written consent of Battelle.
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY
-# EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
-# MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL
-# BATTELLE OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY,
-# OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE
-# GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
-# AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
-# OF THE POSSIBILITY OF SUCH DAMAGE.
+# Battelle Memorial Institute (hereinafter Battelle) hereby grants permission
+# to any person or entity lawfully obtaining a copy of this software and
+# associated documentation files (hereinafter the Software) to redistribute and
+# use the Software in source and binary forms, with or without modification.
+# Such person or entity may use, copy, modify, merge, publish, distribute,
+# sublicense, and/or sell copies of the Software, and may permit others to do
+# so, subject to the following conditions:
+# Redistributions of source code must retain the above copyright notice, this
+# list of conditions and the following disclaimers.
+# Redistributions in binary form must reproduce the above copyright notice,
+# this list of conditions and the following disclaimer in the documentation
+# and/or other materials provided with the distribution.
+# Other than as used herein, neither the name Battelle Memorial Institute or
+# Battelle may be used in any form whatsoever without the express written
+# consent of Battelle.
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL BATTELLE OR CONTRIBUTORS BE LIABLE FOR ANY
+# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+# ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 # General disclaimer for use with OSS licenses
 #
-# This material was prepared as an account of work sponsored by an agency of the United States Government.
-# Neither the United States Government nor the United States Department of Energy, nor Battelle, nor any
-# of their employees, nor any jurisdiction or organization that has cooperated in the development of these
-# materials, makes any warranty, express or implied, or assumes any legal liability or responsibility for
-# the accuracy, completeness, or usefulness or any information, apparatus, product, software, or process
-# disclosed, or represents that its use would not infringe privately owned rights.
+# This material was prepared as an account of work sponsored by an agency of
+# the United States Government. Neither the United States Government nor the
+# United States Department of Energy, nor Battelle, nor any of their employees,
+# nor any jurisdiction or organization that has cooperated in the development
+# of these materials, makes any warranty, express or implied, or assumes any
+# legal liability or responsibility for the accuracy, completeness, or
+# usefulness or any information, apparatus, product, software, or process
+# disclosed, or represents that its use would not infringe privately owned
+# rights.
 #
-# Reference herein to any specific commercial product, process, or service by trade name, trademark, manufacturer,
-# or otherwise does not necessarily constitute or imply its endorsement, recommendation, or favoring by the United
-# States Government or any agency thereof, or Battelle Memorial Institute. The views and opinions of authors expressed
-# herein do not necessarily state or reflect those of the United States Government or any agency thereof.
+# Reference herein to any specific commercial product, process, or service by
+# trade name, trademark, manufacturer, or otherwise does not necessarily
+# constitute or imply its endorsement, recommendation, or favoring by the
+# United States Government or any agency thereof, or Battelle Memorial
+# Institute. The views and opinions of authors expressed herein do not
+# necessarily state or reflect those of the United States Government or any
+# agency thereof.
 #
 # PACIFIC NORTHWEST NATIONAL LABORATORY operated by BATTELLE for the
 # UNITED STATES DEPARTMENT OF ENERGY under Contract DE-AC05-76RL01830
@@ -109,32 +120,34 @@ class DeconflictionPipeline(GridAPPSD):
   def ConflictMetric(self, timestamp):
     centroid = {}
     apps = {}
-    n_devices = len(self.ConflictMatrix['setpoints'].keys())
+    n_devices = len(self.ConflictMatrix['setpoints'])
     for device in self.ConflictMatrix['setpoints']:
       n_apps_device = len(self.ConflictMatrix['setpoints'][device])
       device_setpoints = []
+
       for app in self.ConflictMatrix['setpoints'][device]:
         gamma_d_a = self.ConflictMatrix['setpoints'][device][app]
         if app not in apps:
           apps[app] = {}
         if device.startswith('BatteryUnit.'):
           # Normalize setpoints using max charge and discharge possible
-          sigma_d_a = (gamma_d_a + self.Batteries[device]['prated']) / (
-                  2 * self.Batteries[device]['prated'])
+          sigma_d_a = (gamma_d_a + self.Batteries[device]['prated']) /
+                      (2 * self.Batteries[device]['prated'])
           apps[app][device] = sigma_d_a
           device_setpoints.append(sigma_d_a)
         elif device.startswith('RatioTapChanger.'):
           # Normalize setpoints using highStep and lowStep
-          sigma_d_a = (gamma_d_a + abs(self.Regulators[device]['highStep'])) / (
-                  self.Regulators[device]['highStep'] + abs(
-            self.Regulators[device]['lowStep']))
+          sigma_d_a = (gamma_d_a + abs(self.Regulators[device]['highStep'])) /
+                      (self.Regulators[device]['highStep'] +
+                       abs(self.Regulators[device]['lowStep']))
           apps[app][device] = sigma_d_a
           device_setpoints.append(sigma_d_a)
+
       # Find centroid
       centroid[device] = sum(device_setpoints) / n_apps_device
 
     # Distance vector:
-    # Distance between  set points requested by each app to the centroid vector
+    # Distance between setpoints requested by each app to the centroid vector
     dist_centroid = []
     n_apps = len(apps.keys())
     for app in apps:
@@ -142,14 +155,15 @@ class DeconflictionPipeline(GridAPPSD):
       for device in centroid:
         if device in apps[app]:
           sum_dist += (centroid[device] - apps[app][device]) ** 2
+
       dist_centroid.append(math.sqrt(sum_dist))
 
     # Compute conflict metric: average distance
     conflict_metric = sum(dist_centroid) / n_apps
     # Ensuring 0 <= conflict_metric <= 1
     conflict_metric = conflict_metric * 2 / math.sqrt(n_devices)
-    print('Conflict Metric: ' + str(conflict_metric) +
-          ', timestamp: ' + str(timestamp), flush=True)
+    print('Conflict Metric: ' + str(conflict_metric) + ', timestamp: ' +
+          str(timestamp), flush=True)
 
 
   def ConflictIdentification(self, app_name, timestamp, set_points):
@@ -575,6 +589,9 @@ class DeconflictionPipeline(GridAPPSD):
     # test/debug flags that should be set to False otherwise
     self.testUpdateSoCFlag = False
     self.testDeconMethodFlag = method_test != None
+    # set this to the name of the device for detailed testing, e.g.,
+    # 'BatteryUnit.battery1'
+    self.testDevice = None
 
     self.AppUtil = getattr(importlib.import_module('apputil'), 'AppUtil')
 
@@ -583,6 +600,7 @@ class DeconflictionPipeline(GridAPPSD):
     sparql_mgr = SPARQLManager(gapps, feeder_mrid, simulation_id)
 
     self.Batteries = self.AppUtil.getBatteries(sparql_mgr)
+
     self.Regulators = self.AppUtil.getRegulators(sparql_mgr)
 
     '''
