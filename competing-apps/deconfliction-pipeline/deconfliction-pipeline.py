@@ -131,14 +131,14 @@ class DeconflictionPipeline(GridAPPSD):
           apps[app] = {}
         if device.startswith('BatteryUnit.'):
           # Normalize setpoints using max charge and discharge possible
-          sigma_d_a = (gamma_d_a + self.Batteries[device]['prated']) /
+          sigma_d_a = (gamma_d_a + self.Batteries[device]['prated']) / \
                       (2 * self.Batteries[device]['prated'])
           apps[app][device] = sigma_d_a
           device_setpoints.append(sigma_d_a)
         elif device.startswith('RatioTapChanger.'):
           # Normalize setpoints using highStep and lowStep
-          sigma_d_a = (gamma_d_a + abs(self.Regulators[device]['highStep'])) /
-                      (self.Regulators[device]['highStep'] +
+          sigma_d_a = (gamma_d_a + abs(self.Regulators[device]['highStep'])) / \
+                      (self.Regulators[device]['highStep'] + \
                        abs(self.Regulators[device]['lowStep']))
           apps[app][device] = sigma_d_a
           device_setpoints.append(sigma_d_a)
@@ -539,6 +539,11 @@ class DeconflictionPipeline(GridAPPSD):
     timestamp = message['timestamp']
     set_points = message['set_points']
 
+    if self.testDevice:
+      print('~TEST: set-points message with ' + self.testDevice +
+            ' set-point: ' + str(set_points[self.testDevice]) +
+            ', timestamp: ' + str(timestamp), flush=True)
+
     # Step 1: Setpoint Processor
     self.SetpointProcessor(app_name, timestamp, set_points)
     self.ConflictMetric(timestamp)
@@ -590,8 +595,9 @@ class DeconflictionPipeline(GridAPPSD):
     self.testUpdateSoCFlag = False
     self.testDeconMethodFlag = method_test != None
     # set this to the name of the device for detailed testing, e.g.,
-    # 'BatteryUnit.battery1'
+    # 'BatteryUnit.battery1', or None to omit test output
     self.testDevice = None
+    #self.testDevice = 'BatteryUnit.battery1'
 
     self.AppUtil = getattr(importlib.import_module('apputil'), 'AppUtil')
 
