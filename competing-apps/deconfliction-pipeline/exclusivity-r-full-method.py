@@ -4,7 +4,7 @@
 class DeconflictionMethod:
 
   def __init__(self, ConflictMatrix):
-    self.ConflictMatrix= ConflictMatrix
+    self.ConflictMatrix = ConflictMatrix
 
 
   def deconflict(self):
@@ -19,9 +19,9 @@ class DeconflictionMethod:
 
       for app in self.ConflictMatrix['setpoints'][device]:
         if app == 'resilience-app':
-          ResolutionVector['setpoints'][device] =
+          ResolutionVector['setpoints'][device] = \
                                    self.ConflictMatrix['setpoints'][device][app]
-          ResolutionVector['timestamps'][device] =
+          ResolutionVector['timestamps'][device] = \
                                    self.ConflictMatrix['timestamps'][app]
           count = 0
           break
@@ -31,7 +31,7 @@ class DeconflictionMethod:
           timestamp = max(timestamp, self.ConflictMatrix['timestamps'][app])
 
       if count > 0:
-        if device.startswith('RatioTapChanger:'):
+        if device.startswith('RatioTapChanger.'):
           ResolutionVector['setpoints'][device] = round(total/count)
         else:
           ResolutionVector['setpoints'][device] = total/count

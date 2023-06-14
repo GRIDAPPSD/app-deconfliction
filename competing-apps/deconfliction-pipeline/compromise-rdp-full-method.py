@@ -1,5 +1,5 @@
 
-# Resilience-Decarbonization compromise deconfliction methodology
+# Resilience-Decarbonization-Profit compromise deconfliction methodology
 
 class DeconflictionMethod:
 
@@ -21,12 +21,13 @@ class DeconflictionMethod:
       otherTimestamp = 0
 
       for app in self.ConflictMatrix['setpoints'][device]:
-        if app=='resilience-app' or app=='decarbonization-app':
+        if app=='resilience-app' or app=='decarbonization-app' or \
+           app=='profit_cvr-app':
           compCount += 1
           compTotal += self.ConflictMatrix['setpoints'][device][app]
           compTimestamp = max(compTimestamp,
                               self.ConflictMatrix['timestamps'][app])
-          if compCount == 2:
+          if compCount == 3:
             break
         else:
           otherCount += 1
@@ -35,13 +36,13 @@ class DeconflictionMethod:
                                self.ConflictMatrix['timestamps'][app])
 
       if compCount > 0:
-        if device.startswith('RatioTapChanger:'):
+        if device.startswith('RatioTapChanger.'):
           ResolutionVector['setpoints'][device] = round(compTotal/compCount)
         else:
           ResolutionVector['setpoints'][device] = compTotal/compCount
         ResolutionVector['timestamps'][device] = compTimestamp
       elif otherCount > 0:
-        if device.startswith('RatioTapChanger:'):
+        if device.startswith('RatioTapChanger.'):
           ResolutionVector['setpoints'][device] = round(otherTotal/otherCount)
         else:
           ResolutionVector['setpoints'][device] = otherTotal/otherCount

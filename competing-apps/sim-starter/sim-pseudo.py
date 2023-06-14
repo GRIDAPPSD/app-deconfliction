@@ -9,6 +9,9 @@ import time
 class RepeatedTimer(object):
   def __init__(self, interval, function, *args, **kwargs):
     if interval > 0:
+      print('hit return to start sending messages...', end='', flush=True)
+      input()
+
       self._timer = None
       self.interval = interval
       self.function = function
@@ -18,6 +21,9 @@ class RepeatedTimer(object):
       self.next_call = time.time()
       self.start()
     else:
+      print('hit return to send first message...', end='', flush=True)
+      input()
+
       while function(*args, **kwargs):
         print('hit return to send another message...', end='', flush=True)
         input()
@@ -92,9 +98,8 @@ def _main():
   reader = csv.reader(fp)
   next(reader) # skip header
 
-  #rt = RepeatedTimer(.5, send_message, gapps, publish_topic, reader)
   rt = RepeatedTimer(0, send_message, gapps, publish_topic, reader)
-  #rt = RepeatedTimer(1, send_message, gapps, publish_topic, reader)
+  #rt = RepeatedTimer(8, send_message, gapps, publish_topic, reader)
 
 
 if __name__ == "__main__":

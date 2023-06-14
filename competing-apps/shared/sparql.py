@@ -134,7 +134,7 @@ class SPARQLManager:
         VALUES_QUERY = """
         PREFIX r:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
         PREFIX c:  <http://iec.ch/TC57/CIM100#>
-        SELECT ?rname ?pname ?tname ?wnum ?phs ?step
+        SELECT ?rname ?pname ?tname ?wnum ?phs ?incr ?mode ?enabled ?highStep ?lowStep ?step
         WHERE {
         VALUES ?fdrid {"%s"}
          ?pxf c:Equipment.EquipmentContainer ?fdr.
@@ -392,6 +392,38 @@ class SPARQLManager:
         """% self.feeder_mrid
 
         results = self.gad.query_data(LOAD_QUERY)
+        bindings = results['data']['results']['bindings']
+        return bindings
+
+    def energysource_query(self):
+        """Get information on loads in the feeder."""
+        # Perform the query.
+        SOURCE_QUERY = """
+        PREFIX r:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+        PREFIX c:  <http://iec.ch/TC57/CIM100#>
+        SELECT ?name ?bus ?basev ?nomv ?vmag ?vang ?r1 ?x1 ?r0 ?x0 WHERE {
+        ?s r:type c:EnergySource.
+        VALUES ?fdrid {"%s"}
+        ?s c:Equipment.EquipmentContainer ?fdr.
+        ?fdr c:IdentifiedObject.mRID ?fdrid.
+        ?s c:IdentifiedObject.name ?name.
+        ?s c:ConductingEquipment.BaseVoltage ?bv.
+        ?bv c:BaseVoltage.nominalVoltage ?basev.
+        ?s c:EnergySource.nominalVoltage ?nomv. 
+        ?s c:EnergySource.voltageMagnitude ?vmag. 
+        ?s c:EnergySource.voltageAngle ?vang. 
+        ?s c:EnergySource.r ?r1. 
+        ?s c:EnergySource.x ?x1. 
+        ?s c:EnergySource.r0 ?r0. 
+        ?s c:EnergySource.x0 ?x0. 
+        ?t c:Terminal.ConductingEquipment ?s.
+        ?t c:Terminal.ConnectivityNode ?cn. 
+        ?cn c:IdentifiedObject.name ?bus
+        }
+        ORDER by ?name
+        """% self.feeder_mrid
+
+        results = self.gad.query_data(SOURCE_QUERY)
         bindings = results['data']['results']['bindings']
         return bindings
 

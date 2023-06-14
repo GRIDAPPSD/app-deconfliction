@@ -11,7 +11,7 @@
 if [[ -z "$SIMREQ" ]]; then
     # requires at least a reference to the type of simulation to use
     if [ "$#" -eq 0 ]; then
-        echo "Usage: ./run-resilience.sh #nodes"
+        echo "Usage: ./run-profit.sh #nodes"
         echo
         exit
     fi
@@ -26,6 +26,6 @@ else
 fi
 
 mkdir -p output
-python3 optimization-app.py resilience $SIMID "$SIMREQ" $STATE 2>&1 | tee output/optimization-app.log
-#python3 optimization-app.py resilience $SIMID "$SIMREQ" $STATE --outage 56 68 2>&1 | tee output/optimization-app.log
+python3 optimization-app.py profit_cvr $SIMID "$SIMREQ" $STATE 2>&1 | tee output/optimization-app.log
+#python3 optimization-app.py profit_cvr $SIMID "$SIMREQ" $STATE --outage 56 68 2>&1 | tee output/optimization-app.log
 
