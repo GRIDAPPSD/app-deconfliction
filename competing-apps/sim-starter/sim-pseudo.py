@@ -99,6 +99,9 @@ def _main():
   next(reader) # skip header
 
   rt = RepeatedTimer(0, send_message, gapps, publish_topic, reader)
+  # 3 seconds seems to be right for resilience and decarbonization
+  #rt = RepeatedTimer(3, send_message, gapps, publish_topic, reader)
+  # 8 seconds seems to be right for resilience, decarbonization, and profit
   #rt = RepeatedTimer(8, send_message, gapps, publish_topic, reader)
 
 
