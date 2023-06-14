@@ -1,38 +1,49 @@
 
 # Copyright (c) 2023, Battelle Memorial Institute All rights reserved.
-# Battelle Memorial Institute (hereinafter Battelle) hereby grants permission to any person or entity
-# lawfully obtaining a copy of this software and associated documentation files (hereinafter the
-# Software) to redistribute and use the Software in source and binary forms, with or without modification.
-# Such person or entity may use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
-# the Software, and may permit others to do so, subject to the following conditions:
-# Redistributions of source code must retain the above copyright notice, this list of conditions and the
-# following disclaimers.
-# Redistributions in binary form must reproduce the above copyright notice, this list of conditions and
-# the following disclaimer in the documentation and/or other materials provided with the distribution.
-# Other than as used herein, neither the name Battelle Memorial Institute or Battelle may be used in any
-# form whatsoever without the express written consent of Battelle.
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY
-# EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
-# MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL
-# BATTELLE OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY,
-# OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE
-# GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
-# AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
-# OF THE POSSIBILITY OF SUCH DAMAGE.
+# Battelle Memorial Institute (hereinafter Battelle) hereby grants permission
+# to any person or entity lawfully obtaining a copy of this software and
+# associated documentation files (hereinafter the Software) to redistribute and
+# use the Software in source and binary forms, with or without modification.
+# Such person or entity may use, copy, modify, merge, publish, distribute,
+# sublicense, and/or sell copies of the Software, and may permit others to do
+# so, subject to the following conditions:
+# Redistributions of source code must retain the above copyright notice, this
+# list of conditions and the following disclaimers.
+# Redistributions in binary form must reproduce the above copyright notice,
+# this list of conditions and the following disclaimer in the documentation
+# and/or other materials provided with the distribution.
+# Other than as used herein, neither the name Battelle Memorial Institute or
+# Battelle may be used in any form whatsoever without the express written
+# consent of Battelle.
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL BATTELLE OR CONTRIBUTORS BE LIABLE FOR ANY
+# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+# ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 # General disclaimer for use with OSS licenses
 #
-# This material was prepared as an account of work sponsored by an agency of the United States Government.
-# Neither the United States Government nor the United States Department of Energy, nor Battelle, nor any
-# of their employees, nor any jurisdiction or organization that has cooperated in the development of these
-# materials, makes any warranty, express or implied, or assumes any legal liability or responsibility for
-# the accuracy, completeness, or usefulness or any information, apparatus, product, software, or process
-# disclosed, or represents that its use would not infringe privately owned rights.
+# This material was prepared as an account of work sponsored by an agency of
+# the United States Government. Neither the United States Government nor the
+# United States Department of Energy, nor Battelle, nor any of their employees,
+# nor any jurisdiction or organization that has cooperated in the development
+# of these materials, makes any warranty, express or implied, or assumes any
+# legal liability or responsibility for the accuracy, completeness, or
+# usefulness or any information, apparatus, product, software, or process
+# disclosed, or represents that its use would not infringe privately owned
+# rights.
 #
-# Reference herein to any specific commercial product, process, or service by trade name, trademark, manufacturer,
-# or otherwise does not necessarily constitute or imply its endorsement, recommendation, or favoring by the United
-# States Government or any agency thereof, or Battelle Memorial Institute. The views and opinions of authors expressed
-# herein do not necessarily state or reflect those of the United States Government or any agency thereof.
+# Reference herein to any specific commercial product, process, or service by
+# trade name, trademark, manufacturer, or otherwise does not necessarily
+# constitute or imply its endorsement, recommendation, or favoring by the
+# United States Government or any agency thereof, or Battelle Memorial
+# Institute. The views and opinions of authors expressed herein do not
+# necessarily state or reflect those of the United States Government or any
+# agency thereof.
 #
 # PACIFIC NORTHWEST NATIONAL LABORATORY operated by BATTELLE for the
 # UNITED STATES DEPARTMENT OF ENERGY under Contract DE-AC05-76RL01830
@@ -105,51 +116,67 @@ class DeconflictionPipeline(GridAPPSD):
     # for Alex
     #pprint.pprint(self.ConflictMatrix)
 
+    if self.testDevice:
+      if  self.testDevice in set_points:
+        print('~TEST: set-points message with ' + self.testDevice +
+              ' set-point: ' + str(set_points[self.testDevice]) +
+              ', app: ' + app_name +
+              ', timestamp: ' + str(timestamp), flush=True)
+        print('~TEST: ConflictMatrix[setpoints] for ' + self.testDevice + ': ' +
+             str(self.ConflictMatrix['setpoints'][self.testDevice]), flush=True)
+      else:
+        print('~TEST: set-points message does not contain ' + self.testDevice,
+              flush=True)
+
+
 
   def ConflictMetric(self, timestamp):
     centroid = {}
     apps = {}
-    n_devices = len(self.ConflictMatrix['setpoints'].keys())
+    n_devices = len(self.ConflictMatrix['setpoints'])
     for device in self.ConflictMatrix['setpoints']:
       n_apps_device = len(self.ConflictMatrix['setpoints'][device])
       device_setpoints = []
+
       for app in self.ConflictMatrix['setpoints'][device]:
         gamma_d_a = self.ConflictMatrix['setpoints'][device][app]
         if app not in apps:
           apps[app] = {}
         if device.startswith('BatteryUnit.'):
           # Normalize setpoints using max charge and discharge possible
-          sigma_d_a = (gamma_d_a + self.Batteries[device]['prated']) / (
-                  2 * self.Batteries[device]['prated'])
+          sigma_d_a = (gamma_d_a + self.Batteries[device]['prated']) / \
+                      (2 * self.Batteries[device]['prated'])
           apps[app][device] = sigma_d_a
           device_setpoints.append(sigma_d_a)
         elif device.startswith('RatioTapChanger.'):
           # Normalize setpoints using highStep and lowStep
-          sigma_d_a = (gamma_d_a + abs(self.Regulators[device]['highStep'])) / (
-                  self.Regulators[device]['highStep'] + abs(
-            self.Regulators[device]['lowStep']))
+          sigma_d_a = (gamma_d_a + abs(self.Regulators[device]['highStep'])) / \
+                      (self.Regulators[device]['highStep'] + \
+                       abs(self.Regulators[device]['lowStep']))
           apps[app][device] = sigma_d_a
           device_setpoints.append(sigma_d_a)
+
       # Find centroid
       centroid[device] = sum(device_setpoints) / n_apps_device
 
     # Distance vector:
-    # Distance between  set points requested by each app to the centroid vector
+    # Distance between setpoints requested by each app to the centroid vector
     dist_centroid = []
-    n_apps = len(apps.keys())
+    n_apps = len(apps)
     for app in apps:
       sum_dist = 0
       for device in centroid:
         if device in apps[app]:
           sum_dist += (centroid[device] - apps[app][device]) ** 2
+
       dist_centroid.append(math.sqrt(sum_dist))
 
     # Compute conflict metric: average distance
     conflict_metric = sum(dist_centroid) / n_apps
     # Ensuring 0 <= conflict_metric <= 1
     conflict_metric = conflict_metric * 2 / math.sqrt(n_devices)
-    print('Conflict Metric: ' + str(conflict_metric) +
-          ', timestamp: ' + str(timestamp), flush=True)
+    print('Conflict Metric: ' + str(conflict_metric) + ', timestamp: ' +
+          str(timestamp), flush=True)
 
 
   def ConflictIdentification(self, app_name, timestamp, set_points):
@@ -183,6 +210,15 @@ class DeconflictionPipeline(GridAPPSD):
 
     print('ConflictSubMatrix: ' + str(MethodUtil.ConflictSubMatrix),
           flush=True)
+
+    if self.testDevice:
+      if self.testDevice in MethodUtil.ConflictSubMatrix['setpoints']:
+        print('~TEST: ConflictSubMatrix[setpoints] for ' + self.testDevice +
+          ': ' +str(MethodUtil.ConflictSubMatrix['setpoints'][self.testDevice]),
+          flush=True)
+      else:
+        print('~TEST: ConflictSubMatrix[setpoints] does not contain ' +
+              self.testDevice, flush=True)
 
 
   def DeconflictionToResolution(self, timestamp, set_points):
@@ -218,6 +254,18 @@ class DeconflictionPipeline(GridAPPSD):
         print('ResolutionVector (from full): ' + str(fullResolutionVector),
               flush=True)
 
+        if self.testDevice:
+          if self.testDevice in fullResolutionVector['setpoints']:
+            print('~TEST: ResolutionVector (from full) for ' +
+                  self.testDevice + ' setpoints: ' +
+                  str(self.ResolutionVector['setpoints'][self.testDevice]) +
+                  ', timestamps: ' +
+                  str(self.ResolutionVector['timestamps'][self.testDevice]),
+                  flush=True)
+          else:
+            print('~TEST: ResolutionVector (from full) does not contain ' +
+                  self.testDevice, flush=True)
+
     if len(MethodUtil.ConflictSubMatrix['setpoints'])==0 or \
        not fullResolutionFlag:
       # to create a full resolution vector from a partial one, start with
@@ -243,9 +291,34 @@ class DeconflictionPipeline(GridAPPSD):
                                        newResolutionVector['timestamps'][device]
         print('ResolutionVector (from partial): ' + str(fullResolutionVector),
               flush=True)
+
+        if self.testDevice:
+          if self.testDevice in fullResolutionVector['setpoints']:
+            print('~TEST: ResolutionVector (from partial) for ' +
+                  self.testDevice + ' setpoints: ' +
+                  str(fullResolutionVector['setpoints'][self.testDevice]) +
+                  ', timestamps: ' +
+                  str(fullResolutionVector['timestamps'][self.testDevice]),
+                  flush=True)
+          else:
+            print('~TEST: ResolutionVector (from partial) does not contain ' +
+                  self.testDevice, flush=True)
+
       else:
         print('ResolutionVector (no conflict): ' + str(fullResolutionVector),
               flush=True)
+
+        if self.testDevice:
+          if self.testDevice in fullResolutionVector['setpoints']:
+            print('~TEST: ResolutionVector (no conflict) for ' +
+                  self.testDevice + ' setpoints: ' +
+                  str(fullResolutionVector['setpoints'][self.testDevice]) +
+                  ', timestamps: ' +
+                  str(fullResolutionVector['timestamps'][self.testDevice]),
+                  flush=True)
+          else:
+            print('~TEST: ResolutionVector (no conflict) does not contain ' +
+                  self.testDevice, flush=True)
 
     if self.testDeconMethodFlag:
       testFullResolutionFlag = True
@@ -318,29 +391,54 @@ class DeconflictionPipeline(GridAPPSD):
       self.Batteries[name]['refSoC'] = self.Batteries[name]['SoC']
       self.Batteries[name]['runSoC'] = self.Batteries[name]['SoC']
 
-    ##print('\n~YYY updateSoC for device: ' + name + ', timestamp: ' + str(timestamp) + ', P_batt: ' + str(P_batt) + ', SoC: ' + str(self.Batteries[name]['SoC']), flush=True)
-    ##print('~YYY updateSoC for device: ' + name + ', refTimestamp: ' + str(self.Batteries[name]['refTimestamp']) + ', runTimestamp: ' + str(self.Batteries[name]['runTimestamp']), flush=True)
-    ##print('~YYY updateSoC for device: ' + name + ', refP_batt: ' + str(self.Batteries[name]['refP_batt']) + ', runP_batt: ' + str(self.Batteries[name]['runP_batt']), flush=True)
-    ##print('~YYY updateSoC for device: ' + name + ', refSoC: ' + str(self.Batteries[name]['refSoC']) + ', runSoC: ' + str(self.Batteries[name]['runSoC']), flush=True)
+    if self.testDevice and name==self.testDevice:
+      print('~TEST updateSoC for device: ' + name + ', timestamp: ' +
+            str(timestamp) + ', P_batt: ' + str(P_batt) +
+            ', SoC: ' + str(self.Batteries[name]['SoC']), flush=True)
+      print('~TEST updateSoC for device: ' + name + ', refTimestamp: ' +
+            str(self.Batteries[name]['refTimestamp']) + ', runTimestamp: ' +
+            str(self.Batteries[name]['runTimestamp']), flush=True)
+      print('~TEST updateSoC for device: ' + name + ', refP_batt: ' +
+            str(self.Batteries[name]['refP_batt']) + ', runP_batt: ' +
+            str(self.Batteries[name]['runP_batt']), flush=True)
+      print('~TEST updateSoC for device: ' + name + ', refSoC: ' +
+            str(self.Batteries[name]['refSoC']) + ', runSoC: ' +
+            str(self.Batteries[name]['runSoC']), flush=True)
 
     if timestamp > self.Batteries[name]['runTimestamp']:
-      ##print('~YYY updateSoC for device: ' + name + ', updating refSoC and refTimestamp to run values', flush=True)
+      if self.testDevice and name==self.testDevice:
+        print('~TEST updateSoC for device: ' + name +
+              ', updating refSoC and refTimestamp to run values', flush=True)
+
       self.Batteries[name]['refTimestamp'] = \
                                        self.Batteries[name]['runTimestamp']
       self.Batteries[name]['refP_batt'] = self.Batteries[name]['runP_batt']
       self.Batteries[name]['refSoC'] = self.Batteries[name]['runSoC']
 
-    ##print('~YYY updateSoC for device: ' + name + ', timestamp: ' + str(timestamp) + ', refTimestamp: ' + str(self.Batteries[name]['refTimestamp']) + ', runTimestamp: ' + str(self.Batteries[name]['runTimestamp']), flush=True)
     actContrib = 0.0
     if timestamp > self.Batteries[name]['refTimestamp']:
-      ##print('~YYY actual contrib based on P_batt: ' + str(self.Batteries[name]['refP_batt']) + ', current timestamp: ' + str(timestamp) + ', reference timestamp: ' + str(self.Batteries[name]['refTimestamp']), flush=True)
+      if self.testDevice and name==self.testDevice:
+        print('~TEST updateSoC actual contrib based on P_batt: ' +
+              str(self.Batteries[name]['refP_batt']) +
+              ', current timestamp: ' + str(timestamp) +
+              ', reference timestamp: ' +
+              str(self.Batteries[name]['refTimestamp']), flush=True)
+
       actContrib = self.AppUtil.contrib_SoC(self.Batteries[name]['refP_batt'],
                                  timestamp-self.Batteries[name]['refTimestamp'],
                                  self.Batteries[name], self.deltaT)
+
     elif timestamp < self.Batteries[name]['refTimestamp']:
       # consider going back in time the same as equal timestamps other than
       # reporting it
-      print('*** WARNING: time has gone backwards with set-points message for device: ' + name + ', timestamp: ' + str(timestamp) + ', last timestamp: ' + str(self.Batteries[name]['refTimestamp']), flush=True)
+      print('*** WARNING: time has gone backwards with set-points message for device: ' +
+            name + ', timestamp: ' + str(timestamp) + ', last timestamp: ' +
+            str(self.Batteries[name]['refTimestamp']), flush=True)
+
+      if self.testDevice and name==self.testDevice:
+        print('~TEST WARNING: time has gone backwards with set-points message for device: ' +
+              name + ', timestamp: ' + str(timestamp) + ', last timestamp: ' +
+              str(self.Batteries[name]['refTimestamp']), flush=True)
 
     self.Batteries[name]['runSoC'] = self.Batteries[name]['refSoC'] + actContrib
 
@@ -348,14 +446,40 @@ class DeconflictionPipeline(GridAPPSD):
                                            self.deltaT)
     projSoC = self.Batteries[name]['runSoC'] + projContrib
 
-    print('~SOC updateSoC magic for device: ' + name + ', reference SoC: ' + str(self.Batteries[name]['refSoC']) + ', actual SoC contrib: ' + str(actContrib) + ', projected SoC contrib: ' + str(projContrib) + ', projected SoC: ' + str(projSoC), end='')
+    print('~SOC updateSoC magic for device: ' + name + ', reference SoC: ' +
+          str(self.Batteries[name]['refSoC']) + ', actual SoC contrib: ' +
+          str(actContrib) + ', projected SoC contrib: ' + str(projContrib),
+          end='')
 
-    if projSoC != self.Batteries[name]['SoC']:
+    constrainedSoC = projSoC
+    if projSoC > 0.9:
+      constrainedSoC = 0.9
+    elif projSoC < 0.2:
+      constrainedSoC = 0.2
+
+    if constrainedSoC != projSoC:
+      print(', projected constrained SoC: ' + str(constrainedSoC), end='')
+    else:
+      print(', projected SoC: ' + str(projSoC), end='')
+
+    if constrainedSoC != self.Batteries[name]['SoC']:
       revised_socs[name] = self.Batteries[name]['SoC'] = \
-                           MethodUtil.BatterySoC[name] = projSoC
+                           MethodUtil.BatterySoC[name] = constrainedSoC
       print(' (revised)', flush=True)
     else:
       print(' (not revised)', flush=True)
+
+    if self.testDevice and name==self.testDevice:
+      if constrainedSoC != projSoC:
+        print('~TEST updateSoC magic for device: ' + name + ', reference SoC: '+
+              str(self.Batteries[name]['refSoC']) + ', actual SoC contrib: ' +
+              str(actContrib) + ', projected SoC contrib: ' + str(projContrib) +
+              ', projected constrained SoC: ' + str(constrainedSoC), flush=True)
+      else:
+        print('~TEST updateSoC magic for device: ' + name + ', reference SoC: '+
+              str(self.Batteries[name]['refSoC']) + ', actual SoC contrib: ' +
+              str(actContrib) + ', projected SoC contrib: ' + str(projContrib) +
+              ', projected SoC: ' + str(projSoC), flush=True)
 
     self.Batteries[name]['runTimestamp'] = max(timestamp,
                                            self.Batteries[name]['runTimestamp'])
@@ -482,12 +606,22 @@ class DeconflictionPipeline(GridAPPSD):
                 ' (projected SoC: ' + str(self.Batteries[device]['SoC']) + ')',
                 flush=True)
 
+          if self.testDevice and device==self.testDevice:
+            print('~TEST: Dispatching to device: ' + device + ', timestamp: ' +
+                  str(timestamp) + ', value: ' + str(value) +
+                  ' (projected SoC: ' + str(self.Batteries[device]['SoC']) +')',
+                  flush=True)
+
       # not a battery so only dispatch value if it's changed or if it's
       # never been dispatched before
       elif device not in self.ResolutionVector['setpoints'] or \
            self.ResolutionVector['setpoints'][device]!=value:
         print('==> Dispatching to device: ' + device + ', timestamp: ' +
               str(timestamp) + ', value: ' + str(value), flush=True)
+
+        if self.testDevice and device==self.testDevice:
+            print('~TEST: Dispatching to device: ' + device + ', timestamp: ' +
+                  str(timetstamp) + ', value: ' + str(value), flush=True)
 
     # it's also possible a device from the last resolution does not appear
     # in the new resolution.  In this case it's a "don't care" for the new
@@ -497,6 +631,9 @@ class DeconflictionPipeline(GridAPPSD):
       for device in self.ResolutionVector['setpoints']:
         if device not in newResolutionVector['setpoints']:
           print('==> Device deleted from resolution: ' + device, flush=True)
+
+          if self.testDevice and device==self.testDevice:
+            print('~TEST: Device deleted from resolution: ' + device,flush=True)
 
     return revised_socs
 
@@ -514,6 +651,11 @@ class DeconflictionPipeline(GridAPPSD):
       print('~~> Sending revised-socs message: ' + str(socs_message) +
             ' (driven by set-points from ' + app_name + ')', flush=True)
       self.gapps.send(self.publish_topic, socs_message)
+
+      if self.testDevice and self.testDevice in revised_socs:
+        print('~TEST: revised-socs message with device ' + self.testDevice +
+              ' SoC: ' + str(revised_socs[self.testDevice]) + ', timestamp: ' +
+              str(timestamp) + ', from app: ' + app_name, flush=True)
 
     print('~', flush=True) # tidy output with "blank" line
 
@@ -575,6 +717,10 @@ class DeconflictionPipeline(GridAPPSD):
     # test/debug flags that should be set to False otherwise
     self.testUpdateSoCFlag = False
     self.testDeconMethodFlag = method_test != None
+    # set this to the name of the device for detailed testing, e.g.,
+    # 'BatteryUnit.battery1', or None to omit test output
+    self.testDevice = None
+    #self.testDevice = 'BatteryUnit.battery1'
 
     self.AppUtil = getattr(importlib.import_module('apputil'), 'AppUtil')
 
@@ -583,6 +729,7 @@ class DeconflictionPipeline(GridAPPSD):
     sparql_mgr = SPARQLManager(gapps, feeder_mrid, simulation_id)
 
     self.Batteries = self.AppUtil.getBatteries(sparql_mgr)
+
     self.Regulators = self.AppUtil.getRegulators(sparql_mgr)
 
     '''

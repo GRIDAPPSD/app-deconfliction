@@ -7,7 +7,6 @@ class DeconflictionMethod:
     self.ConflictMatrix = ConflictMatrix
 
 
-
   def deconflict(self):
     ResolutionVector = {}
     ResolutionVector['setpoints'] = {}
