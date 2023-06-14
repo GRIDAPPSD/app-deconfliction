@@ -92,7 +92,7 @@ class DeconflictionMethod:
     def buildUMatrix(self, setpoints: List, setpointNames: List, index: int, simulationData: Dict):
         if len(setpoints) != len(setpointNames):
             raise RuntimeError("The number of setpoints does not match the number of setpoint names")
-        #TODO: update model with current measurements
+        #TODO: update model with current measurements not data from this csvfile.
         #-----------------------------------------------------------------------
         dss.run_command(f'BatchEdit PVsystem..* irradiance={simulationData["solar"]}')
         dss.run_command(f'set loadmult = {simulationData["load"]}')
@@ -245,8 +245,8 @@ class DeconflictionMethod:
             
     def deconflict(self) -> Dict:
         #TODO: call the opendss solver for each alternative setpoint Set and create the U matrix
-        for timeVal in self.conflictMatrix.get["timestamps"]:
-            self.conflictMatrix = max(self.conflictMatrix, timeVal)
+        for timeVal in self.conflictMatrix.get("timestamps",{}):
+            self.conflictTime = max(self.conflictTime, timeVal)
         self.setpointSetVector = self.buildSetpointsVector(self.conflictMatrix)
         self.numberOfSets = len(self.setpointSetVector.get("setpointSets",[]))
         self.uMatrix = np.empty((self.numberOfSets, DeconflictionMethod.numberOfMetrics))
@@ -273,7 +273,7 @@ class DeconflictionMethod:
         for i in range(len(resolutionSetpointSet)):
             resolutionVector["setpoints"][self.setpointSetVector["setpointIndexMap"][i]] = resolutionSetpointSet[i]
             resolutionVector["timestamps"][[self.setpointSetVector["setpointIndexMap"][i]]] = self.conflictTime
-        return resolutionVector
+        return (False, resolutionVector)
 
 
     
