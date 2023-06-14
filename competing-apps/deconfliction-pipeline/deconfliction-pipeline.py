@@ -113,8 +113,6 @@ class DeconflictionPipeline(GridAPPSD):
       self.ConflictMatrix['setpoints'][device][app_name] = value
 
     print('ConflictMatrix: ' + str(self.ConflictMatrix), flush=True)
-    # for Alex
-    #pprint.pprint(self.ConflictMatrix)
 
     if self.testDevice:
       if  self.testDevice in set_points:
@@ -671,6 +669,11 @@ class DeconflictionPipeline(GridAPPSD):
     self.SetpointProcessor(app_name, timestamp, set_points)
     self.ConflictMetric(timestamp)
 
+    # for Alex
+    #print('!!! ALEX ConflictMatrix START !!!', flush=True)
+    #pprint.pprint(self.ConflictMatrix)
+    #print('!!! ALEX ConflictMatrix FINISH !!!', flush=True)
+
     # Step 2: Feasibility Maintainer -- not implemented for prototype
 
     # Step 3: Deconflictor
@@ -693,6 +696,11 @@ class DeconflictionPipeline(GridAPPSD):
     # next set-points message
     self.ResolutionVector.clear()
     self.ResolutionVector = newResolutionVector
+
+    # for Alex
+    #print('!!! ALEX ResolutionVector START !!!', flush=True)
+    #pprint.pprint(self.ResolutionVector)
+    #print('!!! ALEX ResolutionVector FINISH !!!', flush=True)
 
     # For plotting
     datetime = self.AppUtil.to_datetime(timestamp)
