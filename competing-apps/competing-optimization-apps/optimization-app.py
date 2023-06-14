@@ -361,17 +361,7 @@ class CompetingApp(GridAPPSD):
     print('Time-series time: ' + str(time) + ', loadshape: ' + str(loadshape) +
           ', solar: ' + str(solar) + ', price: ' + str(price), flush=True)
 
-    interval = 1
-    # uncomment the following lines to adjust the frequency of messages
-    # based on the type of optimization
-    #if self.opt_type == 'resilience':
-    #  interval = 3
-    #elif self.opt_type == 'decarbonization':
-    #  interval = 4
-    #elif self.opt_type == 'profit_cvr':
-    #  interval = 5
-
-    if time % interval == 0:
+    if time % self.interval == 0:
       self.defineOptimizationDynamicProblem(time, loadshape, solar)
 
       self.doOptimization(time)
@@ -923,20 +913,26 @@ class CompetingApp(GridAPPSD):
 
     print('\nbranch_info phase count: ' + str(n_line_phase), flush=True)
 
-    self.deltaT = 0.25
-
-    self.b_i = np.arange(0.9, 1.1, 0.00625)
-
-    if opt_type.startswith('d') or opt_type.startswith('D'):
-      self.opt_type = 'decarbonization'
-    elif opt_type.startswith('r') or opt_type.startswith('R'):
+    self.interval = 1
+    # uncomment the self.interval lines below to adjust the deltaT period
+    # the optimization is based on per app and the frequency of messages
+    if opt_type.startswith('r') or opt_type.startswith('R'):
       self.opt_type = 'resilience'
+      #self.interval = 3
+    elif opt_type.startswith('d') or opt_type.startswith('D'):
+      self.opt_type = 'decarbonization'
+      #self.interval = 4
     elif opt_type.startswith('p') or opt_type.startswith('P'):
       self.opt_type = 'profit_cvr'
+      #self.interval = 5
     else:
       print('*** Exiting due to unrecognized optimization type: ' + opt_type,
             flush=True)
       exit()
+
+    self.deltaT = 0.25 * self.interval
+
+    self.b_i = np.arange(0.9, 1.1, 0.00625)
 
     self.defineOptimizationVariables(len(branch_info), len(self.bus_info),
                                      len(self.Batteries), len(self.Regulators))
