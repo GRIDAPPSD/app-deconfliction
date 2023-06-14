@@ -448,21 +448,38 @@ class DeconflictionPipeline(GridAPPSD):
 
     print('~SOC updateSoC magic for device: ' + name + ', reference SoC: ' +
           str(self.Batteries[name]['refSoC']) + ', actual SoC contrib: ' +
-          str(actContrib) + ', projected SoC contrib: ' + str(projContrib) +
-          ', projected SoC: ' + str(projSoC), end='')
+          str(actContrib) + ', projected SoC contrib: ' + str(projContrib),
+          end='')
 
-    if projSoC != self.Batteries[name]['SoC']:
+    constrainedSoC = projSoC
+    if projSoC > 0.9:
+      constrainedSoC = 0.9
+    elif projSoC < 0.2:
+      constrainedSoC = 0.2
+
+    if constrainedSoC != projSoC:
+      print(', projected constrained SoC: ' + str(constrainedSoC), end='')
+    else:
+      print(', projected SoC: ' + str(projSoC), end='')
+
+    if constrainedSoC != self.Batteries[name]['SoC']:
       revised_socs[name] = self.Batteries[name]['SoC'] = \
-                           MethodUtil.BatterySoC[name] = projSoC
+                           MethodUtil.BatterySoC[name] = constrainedSoC
       print(' (revised)', flush=True)
     else:
       print(' (not revised)', flush=True)
 
     if self.testDevice and name==self.testDevice:
-      print('~TEST updateSoC magic for device: ' + name + ', reference SoC: ' +
-            str(self.Batteries[name]['refSoC']) + ', actual SoC contrib: ' +
-            str(actContrib) + ', projected SoC contrib: ' + str(projContrib) +
-            ', projected SoC: ' + str(projSoC), flush=True)
+      if constrainedSoC != projSoC:
+        print('~TEST updateSoC magic for device: ' + name + ', reference SoC: '+
+              str(self.Batteries[name]['refSoC']) + ', actual SoC contrib: ' +
+              str(actContrib) + ', projected SoC contrib: ' + str(projContrib) +
+              ', projected constrained SoC: ' + str(constrainedSoC), flush=True)
+      else:
+        print('~TEST updateSoC magic for device: ' + name + ', reference SoC: '+
+              str(self.Batteries[name]['refSoC']) + ', actual SoC contrib: ' +
+              str(actContrib) + ', projected SoC contrib: ' + str(projContrib) +
+              ', projected SoC: ' + str(projSoC), flush=True)
 
     self.Batteries[name]['runTimestamp'] = max(timestamp,
                                            self.Batteries[name]['runTimestamp'])
