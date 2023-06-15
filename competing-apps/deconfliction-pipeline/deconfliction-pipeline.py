@@ -85,6 +85,7 @@ elif (os.path.isdir('app-deconfliction/competing-apps/shared')):
 else:
   sys.path.append('/gridappsd/services/app-deconfliction/competing-apps/shared')
 
+from AppUtil import AppUtil
 import MethodUtil
 
 class DeconflictionPipeline(GridAPPSD):
@@ -422,7 +423,7 @@ class DeconflictionPipeline(GridAPPSD):
               ', reference timestamp: ' +
               str(self.Batteries[name]['refTimestamp']), flush=True)
 
-      actContrib = self.AppUtil.contrib_SoC(self.Batteries[name]['refP_batt'],
+      actContrib = AppUtil.contrib_SoC(self.Batteries[name]['refP_batt'],
                                  timestamp-self.Batteries[name]['refTimestamp'],
                                  self.Batteries[name], self.deltaT)
 
@@ -440,8 +441,8 @@ class DeconflictionPipeline(GridAPPSD):
 
     self.Batteries[name]['runSoC'] = self.Batteries[name]['refSoC'] + actContrib
 
-    projContrib = self.AppUtil.contrib_SoC(P_batt, 1, self.Batteries[name],
-                                           self.deltaT)
+    projContrib = AppUtil.contrib_SoC(P_batt, 1, self.Batteries[name],
+                                      self.deltaT)
     projSoC = self.Batteries[name]['runSoC'] + projContrib
 
     print('~SOC updateSoC magic for device: ' + name + ', reference SoC: ' +
@@ -603,7 +604,7 @@ class DeconflictionPipeline(GridAPPSD):
     #print('!!! ALEX ResolutionVector FINISH !!!', flush=True)
 
     # For plotting
-    datetime = self.AppUtil.to_datetime(timestamp)
+    datetime = AppUtil.to_datetime(timestamp)
     if datetime not in self.t_plot:
       self.t_plot.append(datetime)
       for name in self.ResolutionVector['setpoints']:
@@ -629,15 +630,13 @@ class DeconflictionPipeline(GridAPPSD):
     self.testDevice = None
     #self.testDevice = 'BatteryUnit.battery1'
 
-    self.AppUtil = getattr(importlib.import_module('apputil'), 'AppUtil')
-
     SPARQLManager = getattr(importlib.import_module('sparql'),
                             'SPARQLManager')
     sparql_mgr = SPARQLManager(gapps, feeder_mrid, simulation_id)
 
-    self.Batteries = self.AppUtil.getBatteries(sparql_mgr)
+    self.Batteries = AppUtil.getBatteries(sparql_mgr)
 
-    self.Regulators = self.AppUtil.getRegulators(sparql_mgr)
+    self.Regulators = AppUtil.getRegulators(sparql_mgr)
 
     '''
     # SHIVA HACK for 123 model testing
@@ -735,7 +734,7 @@ class DeconflictionPipeline(GridAPPSD):
       if not os.path.isdir('output'):
         os.makedirs('output')
 
-      self.AppUtil.make_plots('Deconfliction Resolution', 'deconfliction',
+      AppUtil.make_plots('Deconfliction Resolution', 'deconfliction',
                    self.Batteries, self.t_plot, self.p_batt_plot, self.soc_plot)
 
     return

@@ -63,6 +63,18 @@ from datetime import datetime
 
 from time import sleep
 
+# find and add shared directory to path hopefully wherever it is from here
+if (os.path.isdir('../shared')):
+  sys.path.append('../shared')
+elif (os.path.isdir('../competing-apps/shared')):
+  sys.path.append('../competing-apps/shared')
+elif (os.path.isdir('../../competing-apps/shared')):
+  sys.path.append('../../competing-apps/shared')
+else:
+  sys.path.append('/gridappsd/services/app-deconfliction/competing-apps/shared')
+
+from AppUtil import AppUtil
+
 class CompetingApp(GridAPPSD):
 
   def make_compromise(self, solution,
@@ -126,19 +138,19 @@ class CompetingApp(GridAPPSD):
           if P_ren - P_load >= P_batt_total:
             # print('Charging from renewables', flush=True)
             # YES, Charge ESS
-            self.AppUtil.charge_batteries(Batteries, deltaT)
+            AppUtil.charge_batteries(Batteries, deltaT)
 
           else:
             # NO, Check P_sub
             if P_ren + P_sub > P_load:
               # print('P_ren<P_load Charging from renewable + substation', flush=True)
-              self.AppUtil.charge_batteries(Batteries, deltaT)
+              AppUtil.charge_batteries(Batteries, deltaT)
 
         else:
           # Check P_sub
           if P_ren + P_sub > P_load:
             # print('P_ren+P_sub>P_load Charging from renewable + substation', flush=True)
-            self.AppUtil.charge_batteries(Batteries, deltaT)
+            AppUtil.charge_batteries(Batteries, deltaT)
 
     else: # emergency state
       # Shiva HACK
@@ -164,9 +176,9 @@ class CompetingApp(GridAPPSD):
               Batteries[name]['P_batt_c'] *= P_surplus / P_batt_total
 
         if P_batt_total > 0.0:
-          self.AppUtil.charge_batteries(Batteries, deltaT)
+          AppUtil.charge_batteries(Batteries, deltaT)
       else:
-        self.AppUtil.dispatch_DGSs(Batteries, SynchronousMachines, deltaT, P_load, P_ren, P_sub)
+        AppUtil.dispatch_DGSs(Batteries, SynchronousMachines, deltaT, P_load, P_ren, P_sub)
 
     for name in Batteries:
       if Batteries[name]['state'] == 'charging':
@@ -221,10 +233,10 @@ class CompetingApp(GridAPPSD):
             Batteries[name]['P_batt_c'] *= P_surplus/P_batt_total
 
       if P_batt_total > 0.0:
-        self.AppUtil.charge_batteries(Batteries, deltaT)
+        AppUtil.charge_batteries(Batteries, deltaT)
 
     else:
-      self.AppUtil.dispatch_DGSs(Batteries, SynchronousMachines, deltaT, P_load, P_ren, P_sub)
+      AppUtil.dispatch_DGSs(Batteries, SynchronousMachines, deltaT, P_load, P_ren, P_sub)
 
     for name in Batteries:
       if Batteries[name]['state'] == 'charging':
@@ -254,7 +266,7 @@ class CompetingApp(GridAPPSD):
     price = float(in_message['price'])
     #print('time series time: ' + str(time) + ', loadshape: ' + str(loadshape) + ', solar: ' + str(solar) + ', price: ' + str(price), flush=True)
 
-    self.t_plot.append(self.AppUtil.to_datetime(time)) # plotting
+    self.t_plot.append(AppUtil.to_datetime(time)) # plotting
 
     for name in self.Batteries:
       self.Batteries[name]['initial_SoC'] = self.Batteries[name]['SoC']
@@ -265,7 +277,7 @@ class CompetingApp(GridAPPSD):
                     time, loadshape, solar, price)
 
     resilience_solution = {}
-    self.AppUtil.batt_to_solution(self.Batteries, resilience_solution)
+    AppUtil.batt_to_solution(self.Batteries, resilience_solution)
     for name in self.Batteries:
        self.Batteries[name]['SoC'] = self.Batteries[name]['initial_SoC']
 
@@ -274,7 +286,7 @@ class CompetingApp(GridAPPSD):
                          self.outage, time, loadshape, solar, price)
 
     decarbonization_solution = {}
-    self.AppUtil.batt_to_solution(self.Batteries, decarbonization_solution)
+    AppUtil.batt_to_solution(self.Batteries, decarbonization_solution)
     for name in self.Batteries:
        self.Batteries[name]['SoC'] = self.Batteries[name]['initial_SoC']
 
@@ -282,8 +294,8 @@ class CompetingApp(GridAPPSD):
     self.make_compromise(self.solution[time],
                          resilience_solution, decarbonization_solution)
 
-    self.AppUtil.charge_batteries(self.Batteries, self.deltaT)
-    self.AppUtil.discharge_batteries(self.Batteries, self.deltaT)
+    AppUtil.charge_batteries(self.Batteries, self.deltaT)
+    AppUtil.discharge_batteries(self.Batteries, self.deltaT)
 
     for name in self.Batteries:
       self.solution[time][name]['SoC'] = self.Batteries[name]['SoC']
@@ -311,8 +323,6 @@ class CompetingApp(GridAPPSD):
   def __init__(self, gapps, feeder_mrid, simulation_id, outage, state):
     self.gapps = gapps
 
-    self.AppUtil = getattr(importlib.import_module('shared.apputil'), 'AppUtil')
-
     SPARQLManager = getattr(importlib.import_module('shared.sparql'), 'SPARQLManager')
     sparql_mgr = SPARQLManager(gapps, feeder_mrid, simulation_id)
 
@@ -321,13 +331,13 @@ class CompetingApp(GridAPPSD):
     # only needed for resilience app
     self.emergencyState = state.startswith('e') or state.startswith('E')
 
-    self.EnergyConsumers = self.AppUtil.getEnergyConsumers(sparql_mgr)
+    self.EnergyConsumers = AppUtil.getEnergyConsumers(sparql_mgr)
 
-    self.SynchronousMachines = self.AppUtil.getSynchronousMachines(sparql_mgr)
+    self.SynchronousMachines = AppUtil.getSynchronousMachines(sparql_mgr)
 
-    self.Batteries = self.AppUtil.getBatteries(sparql_mgr)
+    self.Batteries = AppUtil.getBatteries(sparql_mgr)
 
-    self.SolarPVs = self.AppUtil.getSolarPVs(sparql_mgr)
+    self.SolarPVs = AppUtil.getSolarPVs(sparql_mgr)
 
     self.deltaT = 0.25 # timestamp interval in fractional hours, 0.25 = 15 min.
 
@@ -362,7 +372,7 @@ class CompetingApp(GridAPPSD):
     json.dump(self.solution, json_fp, indent=2)
     json_fp.close()
 
-    self.AppUtil.make_plots('Compromise', 'compromise', self.Batteries, self.t_plot, self.p_batt_plot, self.soc_plot)
+    AppUtil.make_plots('Compromise', 'compromise', self.Batteries, self.t_plot, self.p_batt_plot, self.soc_plot)
 
     return
 
