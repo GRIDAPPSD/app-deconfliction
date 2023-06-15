@@ -148,7 +148,7 @@ class CompetingApp(GridAPPSD):
 
     # handling both simulation and deconflictor feedback messages here so need
     # to figure out which it is
-    if 'deconfliction-pipeline' in headers['destination']:
+    if 'deconfliction-pipeline-socs' in headers['destination']:
       self.updateSoC(in_message['SoC'], self.Batteries)
       return
 
@@ -233,10 +233,11 @@ class CompetingApp(GridAPPSD):
                                          simulation_id), self)
 
     # subscribe to deconfliction pipeline feedback messages
-    gapps.subscribe(service_output_topic('gridappsd-deconfliction-pipeline',
-                                         simulation_id), self)
+    gapps.subscribe(service_output_topic(
+                  'gridappsd-deconfliction-pipeline-socs', simulation_id), self)
 
-    print('Initialized decarbonization app and now waiting for messages...', flush=True)
+    print('Initialized decarbonization app and now waiting for messages...',
+          flush=True)
 
     self.exit_flag = False
 

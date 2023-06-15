@@ -549,7 +549,7 @@ class DeconflictionPipeline(GridAPPSD):
       }
       print('~~> Sending revised-socs message: ' + str(socs_message) +
             ' (driven by set-points from ' + app_name + ')', flush=True)
-      self.gapps.send(self.publish_topic, socs_message)
+      self.gapps.send(self.publish_socs_topic, socs_message)
 
       if self.testDevice and self.testDevice in revised_socs:
         print('~TEST: revised-socs message with device ' + self.testDevice +
@@ -714,10 +714,13 @@ class DeconflictionPipeline(GridAPPSD):
                                         'DeconflictionMethod')
       self.decon_method_test = DeconflictionMethod(self.ConflictMatrix)
 
-    self.publish_topic = service_output_topic(
-                                 'gridappsd-deconfliction-pipeline', '0')
+    self.publish_socs_topic = service_output_topic(
+                               'gridappsd-deconfliction-pipeline-socs', '0')
 
-    # subscribe to simulation output messages
+    self.publish_dispatch_topic = service_output_topic(
+                               'gridappsd-deconfliction-pipeline-dispatch', '0')
+
+    # subscribe to competing app set-points messages
     gapps.subscribe(service_output_topic('gridappsd-competing-app',
                                          simulation_id), self)
 
