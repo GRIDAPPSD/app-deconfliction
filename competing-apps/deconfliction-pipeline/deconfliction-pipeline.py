@@ -488,6 +488,7 @@ class DeconflictionPipeline(GridAPPSD):
   def DeviceDispatcher(self, timestamp, newResolutionVector):
     # Iterate over resolution and send set-points to devices that have
     # different or new values
+    DevicesToDispatch ={}
     revised_socs = {}
     for device, value in newResolutionVector['setpoints'].items():
       if device.startswith('BatteryUnit.'):
@@ -497,6 +498,7 @@ class DeconflictionPipeline(GridAPPSD):
            (newResolutionVector['timestamps'][device]==timestamp and \
             (self.ResolutionVector['timestamps'][device]!=timestamp or \
              self.ResolutionVector['setpoints'][device]!=value)):
+          DevicesToDispatch[device] = value
 
           self.updateSoC(device, value, timestamp, revised_socs)
 
@@ -515,6 +517,8 @@ class DeconflictionPipeline(GridAPPSD):
       # never been dispatched before
       elif device not in self.ResolutionVector['setpoints'] or \
            self.ResolutionVector['setpoints'][device]!=value:
+        DevicesToDispatch[device] = value
+
         print('==> Dispatching to device: ' + device + ', timestamp: ' +
               str(timestamp) + ', value: ' + str(value), flush=True)
 
@@ -533,6 +537,17 @@ class DeconflictionPipeline(GridAPPSD):
 
           if self.testDevice and device==self.testDevice:
             print('~TEST: Device deleted from resolution: ' + device,flush=True)
+
+
+    if len(DevicesToDispatch) > 0:
+      dispatch_message = {
+        'timestamp': timestamp,
+        'dispatch': DevicesToDispatch
+      }
+      print('~~> Sending device dispatch message: ' + str(dispatch_message),
+            flush=True)
+      self.gapps.send(self.publish_dispatch_topic, dispatch_message)
+
 
     return revised_socs
 

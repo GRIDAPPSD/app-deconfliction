@@ -72,9 +72,9 @@ from AppUtil import AppUtil
 class SimSim(GridAPPSD):
 
   def on_message(self, headers, message):
-    #print('headers: ' + str(headers), flush=True)
-    #print('message: ' + str(message), flush=True)
     print('*** HIT ME! ***', flush=True)
+    #print('headers: ' + str(headers), flush=True)
+    print('message: ' + str(message), flush=True)
 
 
   def send_message(self):
@@ -104,8 +104,8 @@ class SimSim(GridAPPSD):
 
   def __init__(self, gapps, feeder_mrid, simulation_id):
     self.gapps = gapps
-    gapps.subscribe(service_output_topic('gridappsd-deconfliction-pipeline',
-                    simulation_id), self)
+    gapps.subscribe(service_output_topic(
+              'gridappsd-deconfliction-pipeline-dispatch', simulation_id), self)
 
     self.publish_topic = service_output_topic('gridappsd-pseudo-sim',
                                               simulation_id)
