@@ -3,6 +3,7 @@
 import csv
 import itertools
 import json
+import math
 import os
 from pathlib import Path
 import sys
@@ -90,54 +91,60 @@ class DeconflictionMethod:
     
 
     def buildUMatrix(self, setpoints: List, setpointNames: List, index: int, simulationData: Dict):
-        if len(setpoints) != len(setpointNames):
-            raise RuntimeError("The number of setpoints does not match the number of setpoint names")
-        #TODO: update model with current measurements not data from this csvfile.
-        #-----------------------------------------------------------------------
-        dss.run_command(f'BatchEdit PVsystem..* irradiance={simulationData["solar"]}')
-        dss.run_command(f'set loadmult = {simulationData["load"]}')
-        #-----------------------------------------------------------------------
-        #end model update with measurements
-        for i in range(setpoints):
-            setpointNameSplit = setpointNames[i].split(".")
-            if "BatteryUnit." in setpointNames[i]:
-                #TODO: Figure out opendss command to change storage ouptput
-                dss.run_command(f"Storage.{setpointNameSplit[1]}.kw={setpoints[i]}")
-            elif "RatioTapChanger." in setpointNames[i]:
-                reg = dss.Transformers.First()
-                while reg:
-                    if dss.Transformers.Name() == setpointNameSplit[1]:
-                        break
-                    else:
-                        dss.Transformers.Next()
-                regulationPerStep = (dss.Transformers.MaxTap() - dss.Transformers.MinTap()) / dss.Transformers.NumTaps()
-                tapStep = 1.0 + (setpoints[i]*regulationPerStep)
-                dss.Transformers.Tap(tapStep)
-        dss.Solution.SolveNoControl()
-        violations = False
-        bus_volt = dss.Circuit.AllBusMagPu()
-        print(min(bus_volt), max(bus_volt))
-        if min(bus_volt) < 0.95:
-            violations = True
-            print("violations!")
-        elif max(bus_volt) > 1.10:
-            violations = True
-            print("violations!")
+        def checkForViolations() -> bool:
+            bus_volt = dss.Circuit.AllBusMagPu()
+            print(min(bus_volt), max(bus_volt))
+            if min(bus_volt) < 0.95:
+                return True
+            elif max(bus_volt) > 1.10:
+                return True
+            sub = dss.Circuit.TotalPower()
+            sub_kva = math.sqrt((sub[0]*sub[0]) + (sub[1]*sub[1]))
+            if sub_kva > 5000:
+                return True
+            dss.Circuit.SetActiveClass('Transformer')
+            device = dss.Circuit.FirstElement()
+            while device:
+                a = dss.CktElement.CurrentsMagAng()
+                if a[0] > 668:
+                    return True
+                device = dss.Circuit.NextElement()
+            return False
+        
 
-        sub = dss.Circuit.TotalPower()
-        sub_kva = math.sqrt((sub[0]*sub[0]) + (sub[1]*sub[1]))
-        if sub_kva > 5000:
-            violations = True
-            
-        dss.Circuit.SetActiveClass('Transformer')
-        device = dss.Circuit.FirstElement()
-        while device:
-            a = dss.CktElement.CurrentsMagAng()
-            if a[0] > 668:
-                violations = True
-                
-            device = dss.Circuit.NextElement()
-        if not violations:
+        def runPowerFlowSnapshot(setpoints: List, setpointNames: List, simulationData: Dict):
+            if len(setpoints) != len(setpointNames):
+                raise RuntimeError("The number of setpoints does not match the number of setpoint names")
+            #TODO: update model with current measurements not data from this csvfile.
+            #-----------------------------------------------------------------------
+            dss.run_command(f'BatchEdit PVsystem..* irradiance={simulationData["solar"]}')
+            dss.run_command(f'set loadmult = {simulationData["load"]}')
+            #-----------------------------------------------------------------------
+            #end model update with measurements
+            for i in range(setpoints):
+                setpointNameSplit = setpointNames[i].split(".")
+                if "BatteryUnit." in setpointNames[i]:
+                    #TODO: Figure out opendss command to change storage ouptput
+                    dss.run_command(f"Storage.{setpointNameSplit[1]}.kw={setpoints[i]}")
+                elif "RatioTapChanger." in setpointNames[i]:
+                    reg = dss.Transformers.First()
+                    while reg:
+                        if dss.Transformers.Name() == setpointNameSplit[1]:
+                            break
+                        else:
+                            dss.Transformers.Next()
+                    regulationPerStep = (dss.Transformers.MaxTap() - dss.Transformers.MinTap()) / dss.Transformers.NumTaps()
+                    tapStep = 1.0 + (setpoints[i]*regulationPerStep)
+                    dss.Transformers.Tap(tapStep)
+            dss.Solution.SolveNoControl()
+        
+
+        def extractPowerLosses() -> float:
+            loss = dss.Circuit.Losses()
+            return loss[0]/1000
+        
+
+        def extractProfitAndEmissions() -> tuple:
             bus_shunt_p = {}
             total_load = 0
             total_pv = 0
@@ -146,8 +153,6 @@ class DeconflictionMethod:
             emissions = 0
             sub = dss.Circuit.TotalPower()
             p_sub = sub[0]
-            loss = dss.Circuit.Losses()
-            p_loss = loss[0]/1000
             dss.Circuit.SetActiveClass('Load')
             device = dss.Circuit.FirstElement()
             while device:
@@ -188,6 +193,10 @@ class DeconflictionMethod:
                     profit = profit + p*self.cost_retail
                 else:
                     profit = profit + p*self.cost_net_metering
+            return (profit, emissions)
+        
+
+        def extractBatteryOutput() -> float:
             dss.Circuit.SetActiveClass('Storage')
             device = dss.Circuit.FirstElement()
             total_batt = 0
@@ -195,6 +204,15 @@ class DeconflictionMethod:
                 output = dss.CktElement.TotalPowers()
                 total_batt = total_batt + output[0]
                 device = dss.Circuit.NextElement()
+            return total_batt
+
+
+        runPowerFlowSnapshot()
+        violations = checkForViolations()
+        if not violations:
+            p_loss = extractPowerLosses()
+            profit, emissions = extractProfitAndEmissions()
+            total_batt = extractBatteryOutput()
             self.uMatrix[index,0] = profit
             self.uMatrix[index,1] = -p_loss
             self.uMatrix[index,2] = -emissions
@@ -272,7 +290,7 @@ class DeconflictionMethod:
         }
         for i in range(len(resolutionSetpointSet)):
             resolutionVector["setpoints"][self.setpointSetVector["setpointIndexMap"][i]] = resolutionSetpointSet[i]
-            resolutionVector["timestamps"][[self.setpointSetVector["setpointIndexMap"][i]]] = self.conflictTime
+            resolutionVector["timestamps"][self.setpointSetVector["setpointIndexMap"][i]] = self.conflictTime
         return (False, resolutionVector)
 
 
