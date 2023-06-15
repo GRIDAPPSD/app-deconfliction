@@ -51,6 +51,7 @@ class RepeatedTimer(object):
 
 import os, sys
 import argparse
+import importlib
 import json
 import csv
 from gridappsd import GridAPPSD
@@ -72,9 +73,15 @@ from AppUtil import AppUtil
 class SimSim(GridAPPSD):
 
   def on_message(self, headers, message):
-    print('*** HIT ME! ***', flush=True)
     #print('headers: ' + str(headers), flush=True)
-    print('message: ' + str(message), flush=True)
+    #print('message: ' + str(message), flush=True)
+
+    DispatchedDevices = message['dispatch']
+    print('DispatchedDevices: ' + str(DispatchedDevices), flush=True)
+
+    for device, value in DispatchedDevices.items():
+      if device.startswith('BatteryUnit.'):
+        self.Batteries[device]['P_batt'] = value
 
 
   def send_message(self):
@@ -90,11 +97,23 @@ class SimSim(GridAPPSD):
       # returning False will exit from the timer-based calls
       ret = False
 
+    BatterySoC = {}
+    for device in self.Batteries:
+      if self.Batteries[device]['P_batt'] != 0.0:
+        # only send out SoC values that have been updated
+        contrib = AppUtil.contrib_SoC(self.Batteries[device]['P_batt'], 1,
+                                      self.Batteries[device], self.deltaT)
+        self.Batteries[device]['SoC'] += contrib
+        BatterySoC[device] = self.Batteries[device]['SoC']
+        print(device + ' new SoC contribution: ' + str(contrib) +
+              ', updated SoC: ' + str(BatterySoC[device]), flush=True)
+
     message = {
       'timestamp': row[0],
       'loadshape': row[1],
       'solar': row[2],
-      'price': row[3]
+      'price': row[3],
+      'BatterySoC': BatterySoC
     }
     self.gapps.send(self.publish_topic, message)
     print(time.time(), ': ', str(message), flush=True)
@@ -103,12 +122,28 @@ class SimSim(GridAPPSD):
 
 
   def __init__(self, gapps, feeder_mrid, simulation_id):
-    self.gapps = gapps
+    SPARQLManager = getattr(importlib.import_module('sparql'),
+                            'SPARQLManager')
+    sparql_mgr = SPARQLManager(gapps, feeder_mrid, simulation_id)
+
+    self.Batteries = AppUtil.getBatteries(sparql_mgr)
+
+    # initialize P_batt to 0 for all batteries so there is something to
+    # compute SoC from if there are no device dispatcher updates
+    for device in self.Batteries:
+      self.Batteries[device]['P_batt'] = 0.0
+
+    print(self.Batteries, flush=True)
+
+    self.deltaT = 0.25
+
     gapps.subscribe(service_output_topic(
               'gridappsd-deconfliction-pipeline-dispatch', simulation_id), self)
 
     self.publish_topic = service_output_topic('gridappsd-pseudo-sim',
                                               simulation_id)
+
+    self.gapps = gapps
 
     fp = open('time-series.csv', 'r')
     self.reader = csv.reader(fp)
