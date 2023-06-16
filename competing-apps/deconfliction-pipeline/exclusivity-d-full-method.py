@@ -7,7 +7,7 @@ class DeconflictionMethod:
     self.ConflictMatrix = ConflictMatrix
 
 
-  def deconflict(self):
+  def deconflict(self, timestamp):
     ResolutionVector = {}
     ResolutionVector['setpoints'] = {}
     ResolutionVector['timestamps'] = {}
