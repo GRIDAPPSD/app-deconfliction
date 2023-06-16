@@ -65,6 +65,18 @@ from matplotlib import dates as md
 from datetime import datetime
 from tabulate import tabulate
 
+# find and add shared directory to path hopefully wherever it is from here
+if (os.path.isdir('../shared')):
+  sys.path.append('../shared')
+elif (os.path.isdir('../competing-apps/shared')):
+  sys.path.append('../competing-apps/shared')
+elif (os.path.isdir('../../competing-apps/shared')):
+  sys.path.append('../../competing-apps/shared')
+else:
+  sys.path.append('/gridappsd/services/app-deconfliction/competing-apps/shared')
+
+from AppUtil import AppUtil
+
 # 80 column ruler for continuation lines
 #0000000011111111112222222222333333333344444444445555555555666666666677777777778
 #2345678901234567890123456789012345678901234567890123456789012345678901234567890
@@ -341,7 +353,7 @@ class CompetingApp(GridAPPSD):
 
     # handling both simulation and deconflictor feedback messages here so need
     # to figure out which it is
-    if 'deconfliction-pipeline' in headers['destination']:
+    if 'deconfliction-pipeline-socs' in headers['destination']:
       self.updateSoC(in_message['SoC'])
       return
 
@@ -577,8 +589,6 @@ class CompetingApp(GridAPPSD):
   def __init__(self, gapps, opt_type, feeder_mrid, simulation_id, outage,state):
     self.gapps = gapps
 
-    self.AppUtil = getattr(importlib.import_module('shared.apputil'), 'AppUtil')
-
     SPARQLManager = getattr(importlib.import_module('shared.sparql'),
                             'SPARQLManager')
     sparql_mgr = SPARQLManager(gapps, feeder_mrid, simulation_id)
@@ -652,9 +662,9 @@ class CompetingApp(GridAPPSD):
     # for item in objs:
     #   print('LinearShuntCompensator: ' + str(item), flush=True)
 
-    #SynchronousMachines = self.AppUtil.getSynchronousMachines(sparql_mgr)
+    #SynchronousMachines = AppUtil.getSynchronousMachines(sparql_mgr)
 
-    self.Batteries = self.AppUtil.getBatteries(sparql_mgr)
+    self.Batteries = AppUtil.getBatteries(sparql_mgr)
     self.Batteries_obj = {}
     for batt in self.Batteries:
       self.Batteries_obj[self.Batteries[batt]['bus']] = {}
@@ -668,14 +678,14 @@ class CompetingApp(GridAPPSD):
     # self.Batteries['BatteryUnit.76'] = {'idx': 2, 'prated': 250000,
     #           'phase': 'C', 'eff': 0.975 * 0.86, 'ratedE': 500000, 'SoC': 0.465}
 
-    self.SolarPVs = self.AppUtil.getSolarPVs(sparql_mgr)
+    self.SolarPVs = AppUtil.getSolarPVs(sparql_mgr)
 
     # SHIVA HACK for 123 model testing
     # self.SolarPVs['65'] = {'p': 120000, 'phase': 'A'}
     # self.SolarPVs['52'] = {'p': 100000, 'phase': 'B'}
     # self.SolarPVs['76'] = {'p': 165000, 'phase': 'C'}
 
-    self.EnergySource = self.AppUtil.getEnergySource(sparql_mgr)
+    self.EnergySource = AppUtil.getEnergySource(sparql_mgr)
 
     vnom = sparql_mgr.vnom_export()
 
@@ -948,8 +958,8 @@ class CompetingApp(GridAPPSD):
                                          simulation_id), self)
 
     # subscribe to deconfliction-pipeline feedback messages
-    gapps.subscribe(service_output_topic('gridappsd-deconfliction-pipeline',
-                                         simulation_id), self)
+    gapps.subscribe(service_output_topic(
+                  'gridappsd-deconfliction-pipeline-socs', simulation_id), self)
 
     print('\nInitialized ' + opt_type +
           ' optimization competing app, waiting for messages...\n',

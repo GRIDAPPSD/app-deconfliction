@@ -63,6 +63,19 @@ from datetime import datetime
 
 from time import sleep
 
+# find and add shared directory to path hopefully wherever it is from here
+if (os.path.isdir('../shared')):
+  sys.path.append('../shared')
+elif (os.path.isdir('../competing-apps/shared')):
+  sys.path.append('../competing-apps/shared')
+elif (os.path.isdir('../../competing-apps/shared')):
+  sys.path.append('../../competing-apps/shared')
+else:
+  sys.path.append('/gridappsd/services/app-deconfliction/competing-apps/shared')
+
+from AppUtil import AppUtil
+
+
 class CompetingApp(GridAPPSD):
 
   def decarbonization(self, EnergyConsumers, SynchronousMachines, Batteries,
@@ -107,10 +120,10 @@ class CompetingApp(GridAPPSD):
             Batteries[name]['P_batt_c'] *= P_surplus/P_batt_total
 
       if P_batt_total > 0.0:
-        self.AppUtil.charge_batteries(Batteries, deltaT)
+        AppUtil.charge_batteries(Batteries, deltaT)
 
     else:
-      self.AppUtil.dispatch_DGSs(Batteries, SynchronousMachines, deltaT, P_load, P_ren, P_sub)
+      AppUtil.dispatch_DGSs(Batteries, SynchronousMachines, deltaT, P_load, P_ren, P_sub)
 
     for name in Batteries:
       if Batteries[name]['state'] == 'charging':
@@ -135,7 +148,7 @@ class CompetingApp(GridAPPSD):
 
     # handling both simulation and deconflictor feedback messages here so need
     # to figure out which it is
-    if 'deconfliction-pipeline' in headers['destination']:
+    if 'deconfliction-pipeline-socs' in headers['destination']:
       self.updateSoC(in_message['SoC'], self.Batteries)
       return
 
@@ -154,14 +167,14 @@ class CompetingApp(GridAPPSD):
     price = float(in_message['price'])
     #print('time series time: ' + str(time) + ', loadshape: ' + str(loadshape) + ', solar: ' + str(solar) + ', price: ' + str(price), flush=True)
 
-    self.t_plot.append(self.AppUtil.to_datetime(time)) # plotting
+    self.t_plot.append(AppUtil.to_datetime(time)) # plotting
 
     self.decarbonization(self.EnergyConsumers, self.SynchronousMachines,
                          self.Batteries, self.SolarPVs, self.deltaT,
                          self.outage, time, loadshape, solar, price)
 
     self.solution[time] = {}
-    self.AppUtil.batt_to_solution(self.Batteries, self.solution[time])
+    AppUtil.batt_to_solution(self.Batteries, self.solution[time])
 
     for name in self.Batteries:
       self.p_batt_plot[name].append(self.solution[time][name]['P_batt'])
@@ -186,21 +199,19 @@ class CompetingApp(GridAPPSD):
   def __init__(self, gapps, feeder_mrid, simulation_id, outage):
     self.gapps = gapps
 
-    self.AppUtil = getattr(importlib.import_module('shared.apputil'), 'AppUtil')
-
     SPARQLManager = getattr(importlib.import_module('shared.sparql'),
                             'SPARQLManager')
     sparql_mgr = SPARQLManager(gapps, feeder_mrid, simulation_id)
 
     self.outage = outage
 
-    self.EnergyConsumers = self.AppUtil.getEnergyConsumers(sparql_mgr)
+    self.EnergyConsumers = AppUtil.getEnergyConsumers(sparql_mgr)
 
-    self.SynchronousMachines = self.AppUtil.getSynchronousMachines(sparql_mgr)
+    self.SynchronousMachines = AppUtil.getSynchronousMachines(sparql_mgr)
 
-    self.Batteries = self.AppUtil.getBatteries(sparql_mgr)
+    self.Batteries = AppUtil.getBatteries(sparql_mgr)
 
-    self.SolarPVs = self.AppUtil.getSolarPVs(sparql_mgr)
+    self.SolarPVs = AppUtil.getSolarPVs(sparql_mgr)
 
     self.deltaT = 0.25 # timestamp interval in fractional hours, 0.25 = 15 min.
 
@@ -222,10 +233,11 @@ class CompetingApp(GridAPPSD):
                                          simulation_id), self)
 
     # subscribe to deconfliction pipeline feedback messages
-    gapps.subscribe(service_output_topic('gridappsd-deconfliction-pipeline',
-                                         simulation_id), self)
+    gapps.subscribe(service_output_topic(
+                  'gridappsd-deconfliction-pipeline-socs', simulation_id), self)
 
-    print('Initialized decarbonization app and now waiting for messages...', flush=True)
+    print('Initialized decarbonization app and now waiting for messages...',
+          flush=True)
 
     self.exit_flag = False
 
@@ -240,7 +252,7 @@ class CompetingApp(GridAPPSD):
     json.dump(self.solution, json_fp, indent=2)
     json_fp.close()
 
-    self.AppUtil.make_plots('Decarbonization Exclusivity', 'decarbonization',
+    AppUtil.make_plots('Decarbonization Exclusivity', 'decarbonization',
                  self.Batteries, self.t_plot, self.p_batt_plot, self.soc_plot)
 
     return
