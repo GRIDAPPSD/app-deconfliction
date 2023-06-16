@@ -76,6 +76,10 @@ class SimSim(GridAPPSD):
     #print('headers: ' + str(headers), flush=True)
     #print('message: ' + str(message), flush=True)
 
+    timestamp = message['timestamp']
+    if timestamp != self.currentTimestamp:
+      print('*** DISPATCH FALLING BEHIND--current timestamp: ' + str(self.currentTimestamp) + ', dispatch timestamp: ' + str(timestamp), flush=True)
+
     DispatchedDevices = message['dispatch']
     print('DispatchedDevices: ' + str(DispatchedDevices), flush=True)
 
@@ -118,6 +122,9 @@ class SimSim(GridAPPSD):
     self.gapps.send(self.publish_topic, message)
     print(time.time(), ': ', str(message), flush=True)
 
+    if row[0] != '':
+      self.currentTimestamp = int(row[0])
+
     return ret
 
 
@@ -149,11 +156,11 @@ class SimSim(GridAPPSD):
     self.reader = csv.reader(fp)
     next(self.reader) # skip header
 
-    #rt = RepeatedTimer(0, self.send_message)
-    # 3 seconds seems to be right for resilience and decarbonization
-    #rt = RepeatedTimer(3, self.send_message)
+    rt = RepeatedTimer(0, self.send_message)
+    # 2 seconds seems to be right for resilience and decarbonization
+    #rt = RepeatedTimer(2, self.send_message)
     # 8 seconds seems to be right for resilience, decarbonization, and profit
-    rt = RepeatedTimer(8, self.send_message)
+    #rt = RepeatedTimer(8, self.send_message)
 
 
 def _main():
