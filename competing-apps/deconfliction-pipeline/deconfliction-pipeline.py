@@ -225,7 +225,7 @@ class DeconflictionPipeline(GridAPPSD):
     # methodology to produce a resolution
     fullResolutionFlag = True
     if len(MethodUtil.ConflictSubMatrix['setpoints']) > 0:
-      returned = self.decon_method.deconflict()
+      returned = self.decon_method.deconflict(timestamp)
       if type(returned) is tuple:
         fullResolutionFlag = returned[0]
         newResolutionVector = returned[1]
@@ -322,7 +322,7 @@ class DeconflictionPipeline(GridAPPSD):
     if self.testDeconMethodFlag:
       testFullResolutionFlag = True
       if len(MethodUtil.ConflictSubMatrix['setpoints']) > 0:
-        testReturned = self.decon_method_test.deconflict()
+        testReturned = self.decon_method_test.deconflict(timestamp)
         if type(testReturned) is tuple:
           testFullResolutionFlag = returned[0]
           testNewResolutionVector = returned[1]

@@ -22,7 +22,7 @@ class DeconflictionMethod:
     self.ConflictSubMatrix = MethodUtil.ConflictSubMatrix
 
 
-  def deconflict(self):
+  def deconflict(self, timestamp):
     # if needed, battery SoC values are in the MethodUtil.BatterySoC dictionary
 
     ResolutionSubVector = {}
