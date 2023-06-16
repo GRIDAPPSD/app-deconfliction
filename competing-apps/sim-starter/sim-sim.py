@@ -98,14 +98,14 @@ class SimSim(GridAPPSD):
       ret = False
 
     BatterySoC = {}
-    for device in self.Batteries:
-      if self.Batteries[device]['P_batt'] != 0.0:
+    for device, battery in self.Batteries.items():
+      if battery['P_batt'] != 0.0:
         # only send out SoC values that have been updated
-        contrib = AppUtil.contrib_SoC(self.Batteries[device]['P_batt'], 1,
-                                      self.Batteries[device], self.deltaT)
-        self.Batteries[device]['SoC'] += contrib
-        BatterySoC[device] = self.Batteries[device]['SoC']
-        print(device + ' new SoC contribution: ' + str(contrib) +
+        contrib = AppUtil.contrib_SoC(battery['P_batt'], 1, battery,self.deltaT)
+        battery['SoC'] += contrib
+        BatterySoC[device] = battery['SoC']
+        print(device + ' P_batt: ' + str(battery['P_batt']),
+              ', new SoC contribution: ' + str(contrib) +
               ', updated SoC: ' + str(BatterySoC[device]), flush=True)
 
     message = {
