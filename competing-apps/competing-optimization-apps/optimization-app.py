@@ -65,6 +65,10 @@ from matplotlib import dates as md
 from datetime import datetime
 from tabulate import tabulate
 
+# suppress warnings about overriding optimization function from decarbonization
+import warnings
+warnings.simplefilter('ignore', UserWarning)
+
 # find and add shared directory to path hopefully wherever it is from here
 if (os.path.isdir('../shared')):
   sys.path.append('../shared')
