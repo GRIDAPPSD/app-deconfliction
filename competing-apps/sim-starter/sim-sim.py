@@ -107,10 +107,12 @@ class SimSim(GridAPPSD):
         # only send out SoC values that have been updated
         contrib = AppUtil.contrib_SoC(battery['P_batt'], 1, battery,self.deltaT)
         battery['SoC'] += contrib
-        BatterySoC[device] = battery['SoC']
         print(device + ' P_batt: ' + str(battery['P_batt']),
               ', new SoC contribution: ' + str(contrib) +
-              ', updated SoC: ' + str(BatterySoC[device]), flush=True)
+              ', updated SoC: ' + str(battery['SoC']), flush=True)
+
+      # unchanged SoC values also must be sent to apps
+      BatterySoC[device] = battery['SoC']
 
     message = {
       'timestamp': row[0],
