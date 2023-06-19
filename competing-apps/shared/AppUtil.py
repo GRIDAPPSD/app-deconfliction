@@ -2,6 +2,7 @@
 import math
 import numpy as np
 
+import matplotlib
 from matplotlib import pyplot as plt
 from matplotlib import dates as md
 from datetime import datetime
@@ -266,6 +267,8 @@ class AppUtil:
 
 
   def make_plots(title, prefix, Batteries, t_plot, p_batt_plot, soc_plot):
+    matplotlib.use('agg')
+
     for name in Batteries:
       batname = name[12:] # extract just the name for tidier plots
       plt.figure()
