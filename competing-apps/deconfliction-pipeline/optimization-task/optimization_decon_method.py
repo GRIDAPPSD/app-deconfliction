@@ -24,13 +24,13 @@ else:
 import MethodUtil
 
 class DeconflictionMethod:
-    def __init__(self, conflictMatrix: Dict, fullResolutionFlag: bool = True):
-        self.conflictMatrix = MethodUtil.ConflictSubMatrix
-        self.setpointSetVector = None
-        self.numberOfSets = 0
-
-        self.constraintJSONFileName = f"output/resilience"
-        self.conflictTime = -1
+  def __init__(self, conflictMatrix: Dict, fullResolutionFlag: bool = True): 
+    self.conflictMatrix = MethodUtil.ConflictSubMatrix 
+    self.setpointSetVector = None 
+    self.numberOfSets = 0 
+    
+    self.constraintJSONFileName = f"output/resilience" 
+    self.conflictTime = -1
 
     def getDecarbonizationUtility(self):
        return 0
@@ -47,15 +47,13 @@ class DeconflictionMethod:
       opt_prob.solve() 
       return 0
 
-    def deconflict(self) -> Dict:
-        for timeVal in self.conflictMatrix.get("timestamps", {}):
-            self.conflictMatrix = max(self.conflictTime, timeVal)
-
-        self.setpointSetVector = self.buildSetpointsVector(self.conflictMatrix)
-        self.numberOfSets = len(self.setpointSetVector.get("setpointSets",[]))
-        self.uMatrix = np.empty((self.numberOfSets, DeconflictionMethod.numberOfMetrics))
-        resolutionVector = {
-            "setpoints": {},
-            "timestamps": {}
-        }
-        return resolutionVector
+    def deconflict(self, currentTimestamp) -> Dict: 
+      self.setpointSetVector = self.buildSetpointsVector(self.conflictMatrix) 
+      self.numberOfSets = len(self.setpointSetVector.get("setpointSets",[])) 
+      self.uMatrix = np.empty((self.numberOfSets, DeconflictionMethod.numberOfMetrics)) 
+      resolutionVector = { 
+        "setpoints": {}, 
+        "timestamps": {} 
+      } 
+      
+      return resolutionVector
