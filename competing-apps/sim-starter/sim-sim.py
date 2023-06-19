@@ -93,7 +93,7 @@ class SimSim(GridAPPSD):
 
     BatterySoC = {}
 
-    # next() will throw an exception on EOF
+    # next() will throw a StopIteration exception on EOF
     try:
       row = next(self.reader)
 
@@ -110,7 +110,22 @@ class SimSim(GridAPPSD):
         # unchanged SoC values also must be sent to apps
         BatterySoC[device] = battery['SoC']
 
+      # for plotting
+      datetime = AppUtil.to_datetime(row[0])
+      self.t_plot.append(datetime)
+      for device, battery in self.Batteries.items():
+        self.p_batt_plot[device].append(battery['P_batt'])
+        self.soc_plot[device].append(battery['SoC'])
+
     except StopIteration:
+      # for plotting
+      # make sure output directory exists since that's where results go
+      if not os.path.isdir('output'):
+        os.makedirs('output')
+
+      AppUtil.make_plots('Deconfliction Resolution', 'deconfliction',
+                   self.Batteries, self.t_plot, self.p_batt_plot, self.soc_plot)
+
       # send out one final message with end-of-data flag for timestamp
       row = ['', '', '', '']
 
@@ -148,6 +163,14 @@ class SimSim(GridAPPSD):
     print(self.Batteries, flush=True)
 
     self.deltaT = 0.25
+
+    # for plotting
+    self.t_plot = []
+    self.soc_plot = {}
+    self.p_batt_plot = {}
+    for name in self.Batteries:
+      self.soc_plot[name] = []
+      self.p_batt_plot[name] = []
 
     gapps.subscribe(service_output_topic(
               'gridappsd-deconfliction-pipeline-dispatch', simulation_id), self)

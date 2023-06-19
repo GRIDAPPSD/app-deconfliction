@@ -636,24 +636,6 @@ class DeconflictionPipeline(GridAPPSD):
     #pprint.pprint(self.ResolutionVector)
     #print('!!! ALEX ResolutionVector FINISH !!!', flush=True)
 
-    # For plotting
-    datetime = AppUtil.to_datetime(timestamp)
-    if datetime not in self.t_plot:
-      self.t_plot.append(datetime)
-      for name in self.ResolutionVector['setpoints']:
-        if name.startswith('BatteryUnit.'):
-          self.p_batt_plot[name].append(
-                                 self.ResolutionVector['setpoints'][name])
-          self.soc_plot[name].append(self.Batteries[name]['SoC'])
-    else:
-      # replacing last list item is equivalent to rollback
-      for name in self.ResolutionVector['setpoints']:
-        if name.startswith('BatteryUnit.'):
-          self.p_batt_plot[name][-1] = self.ResolutionVector['setpoints'][name]
-          self.soc_plot[name][-1] = self.Batteries[name]['SoC']
-
-    return
-
 
   def __init__(self, gapps, feeder_mrid, simulation_id, method, method_test):
     # test/debug settings
@@ -696,14 +678,6 @@ class DeconflictionPipeline(GridAPPSD):
       MethodUtil.BatterySoC[name] = self.Batteries[name]['SoC']
 
     self.deltaT = 0.25 # timestamp interval in fractional hours, 0.25 = 15 min
-
-    # for plotting
-    self.t_plot = []
-    self.soc_plot = {}
-    self.p_batt_plot = {}
-    for name in self.Batteries:
-      self.soc_plot[name] = []
-      self.p_batt_plot[name] = []
 
     self.ConflictMatrix = {}
     self.ConflictMatrix['setpoints'] = {}
@@ -761,20 +735,8 @@ class DeconflictionPipeline(GridAPPSD):
 
     self.gapps = gapps
 
-    try:
-      while True:
-        time.sleep(0.1)
-
-    except KeyboardInterrupt:
-      # for plotting
-      # make sure output directory exists since that's where results go
-      if not os.path.isdir('output'):
-        os.makedirs('output')
-
-      AppUtil.make_plots('Deconfliction Resolution', 'deconfliction',
-                   self.Batteries, self.t_plot, self.p_batt_plot, self.soc_plot)
-
-    return
+    while True:
+      time.sleep(0.1)
 
 
 def _main():
