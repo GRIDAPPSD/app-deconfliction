@@ -110,7 +110,7 @@ class SimSim(GridAPPSD):
         # unchanged SoC values also must be sent to apps
         BatterySoC[device] = battery['SoC']
 
-    except:
+    except StopIteration:
       # send out one final message with end-of-data flag for timestamp
       row = ['', '', '', '']
 

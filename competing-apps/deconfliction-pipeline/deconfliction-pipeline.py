@@ -69,8 +69,6 @@ import copy
 from gridappsd import GridAPPSD
 from gridappsd.topics import service_output_topic
 
-from matplotlib import pyplot as plt
-from matplotlib import dates as md
 from datetime import datetime
 
 from time import sleep
@@ -768,6 +766,7 @@ class DeconflictionPipeline(GridAPPSD):
         time.sleep(0.1)
 
     except KeyboardInterrupt:
+      # for plotting
       # make sure output directory exists since that's where results go
       if not os.path.isdir('output'):
         os.makedirs('output')
