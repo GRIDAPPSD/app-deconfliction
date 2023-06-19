@@ -83,11 +83,11 @@ from AppUtil import AppUtil
 
 class CompetingApp(GridAPPSD):
 
-  def updateSoC(self, SoC):
-    for device, value in SoC.items():
+  def updateSoC(self, BatterySoC):
+    for device, value in BatterySoC.items():
       self.Batteries[device]['SoC'] = value
-      print('Deconflictor sent revised projection for: ' + device +
-            ', SoC: ' + str(round(value, 4)), flush=True)
+      #print('Updated SoC for: ' + device + ' = ' + str(round(value, 4)),
+      #      flush=True)
 
 
   def defineOptimizationDynamicProblem(self, time, load_mult, pv_mult):
@@ -351,14 +351,6 @@ class CompetingApp(GridAPPSD):
     #print('headers: ' + str(headers), flush=True)
     #print('message: ' + str(in_message), flush=True)
 
-    # handling both simulation and deconflictor feedback messages here so need
-    # to figure out which it is
-    if 'deconfliction-pipeline-socs' in headers['destination']:
-      self.updateSoC(in_message['SoC'])
-      return
-
-    # must be a simulation message if we are here
-
     # empty timestamp is end-of-data flag
     if in_message['timestamp'] == '':
       print('Time-series end-of-data!', flush=True)
@@ -370,10 +362,14 @@ class CompetingApp(GridAPPSD):
     loadshape = float(in_message['loadshape'])
     solar = float(in_message['solar'])
     price = float(in_message['price'])
+    BatterySoC = in_message['BatterySoC']
     print('Time-series time: ' + str(time) + ', loadshape: ' + str(loadshape) +
-          ', solar: ' + str(solar) + ', price: ' + str(price), flush=True)
+          ', solar: ' + str(solar) + ', price: ' + str(price) +
+          ', BatterySoc: ' + str(BatterySoC), flush=True)
 
     if time % self.interval == 0:
+      self.updateSoC(BatterySoC)
+
       self.defineOptimizationDynamicProblem(time, loadshape, solar)
 
       self.doOptimization(time)
@@ -956,10 +952,6 @@ class CompetingApp(GridAPPSD):
     # subscribe to simulation output messages
     gapps.subscribe(service_output_topic('gridappsd-pseudo-sim',
                                          simulation_id), self)
-
-    # subscribe to deconfliction-pipeline feedback messages
-    gapps.subscribe(service_output_topic(
-                  'gridappsd-deconfliction-pipeline-socs', simulation_id), self)
 
     print('\nInitialized ' + opt_type +
           ' optimization competing app, waiting for messages...\n',

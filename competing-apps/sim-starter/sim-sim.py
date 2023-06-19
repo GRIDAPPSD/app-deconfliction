@@ -91,28 +91,31 @@ class SimSim(GridAPPSD):
   def send_message(self):
     ret = True # return True to call this again the next time interval
 
+    BatterySoC = {}
+
     # next() will throw an exception on EOF
     try:
       row = next(self.reader)
+
+      for device, battery in self.Batteries.items():
+        if battery['P_batt'] != 0.0:
+          # only send out SoC values that have been updated
+          contrib = AppUtil.contrib_SoC(battery['P_batt'], 1, battery,
+                                        self.deltaT)
+          battery['SoC'] += contrib
+          print(device + ' P_batt: ' + str(battery['P_batt']),
+                ', new SoC contribution: ' + str(contrib) +
+                ', updated SoC: ' + str(battery['SoC']), flush=True)
+
+        # unchanged SoC values also must be sent to apps
+        BatterySoC[device] = battery['SoC']
+
     except:
       # send out one final message with end-of-data flag for timestamp
       row = ['', '', '', '']
 
       # returning False will exit from the timer-based calls
       ret = False
-
-    BatterySoC = {}
-    for device, battery in self.Batteries.items():
-      if battery['P_batt'] != 0.0:
-        # only send out SoC values that have been updated
-        contrib = AppUtil.contrib_SoC(battery['P_batt'], 1, battery,self.deltaT)
-        battery['SoC'] += contrib
-        print(device + ' P_batt: ' + str(battery['P_batt']),
-              ', new SoC contribution: ' + str(contrib) +
-              ', updated SoC: ' + str(battery['SoC']), flush=True)
-
-      # unchanged SoC values also must be sent to apps
-      BatterySoC[device] = battery['SoC']
 
     message = {
       'timestamp': row[0],

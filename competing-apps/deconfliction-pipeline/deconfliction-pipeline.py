@@ -381,6 +381,7 @@ class DeconflictionPipeline(GridAPPSD):
     return fullResolutionVector
 
 
+  ''' SOC MOVE
   def updateSoC(self, name, P_batt, timestamp, revised_socs):
     if 'refTimestamp' not in self.Batteries[name]:
       self.Batteries[name]['refTimestamp'] = timestamp
@@ -483,13 +484,16 @@ class DeconflictionPipeline(GridAPPSD):
     self.Batteries[name]['runTimestamp'] = max(timestamp,
                                            self.Batteries[name]['runTimestamp'])
     self.Batteries[name]['runP_batt'] = P_batt
+  '''
 
 
   def DeviceDispatcher(self, timestamp, newResolutionVector):
     # Iterate over resolution and send set-points to devices that have
     # different or new values
     DevicesToDispatch ={}
+    ''' SOC MOVE
     revised_socs = {}
+    '''
     for device, value in newResolutionVector['setpoints'].items():
       if device.startswith('BatteryUnit.'):
         # batteries dispatch values even if they are the same as the last time
@@ -500,18 +504,26 @@ class DeconflictionPipeline(GridAPPSD):
              self.ResolutionVector['setpoints'][device]!=value)):
           DevicesToDispatch[device] = value
 
-          self.updateSoC(device, value, timestamp, revised_socs)
+          print('~~> Dispatching to device: ' + device + ', timestamp: ' +
+                str(timestamp) + ', value: ' + str(value), flush=True)
 
+          ''' SOC MOVE
+          self.updateSoC(device, value, timestamp, revised_socs)
           print('~~> Dispatching to device: ' + device + ', timestamp: ' +
                 str(timestamp) + ', value: ' + str(value) +
                 ' (projected SoC: ' + str(self.Batteries[device]['SoC']) + ')',
                 flush=True)
+          '''
 
           if self.testDevice and device==self.testDevice:
             print('~TEST: Dispatching to device: ' + device + ', timestamp: ' +
+                  str(timestamp) + ', value: ' + str(value), flush=True)
+            ''' SOC MOVE
+            print('~TEST: Dispatching to device: ' + device + ', timestamp: ' +
                   str(timestamp) + ', value: ' + str(value) +
-                  ' (projected SoC: ' + str(self.Batteries[device]['SoC']) +')',
-                  flush=True)
+                  ' (projected SoC: ' + str(self.Batteries[device]['SoC']) +')'
+                  , flush=True)
+            '''
 
       # not a battery so only dispatch value if it's changed or if it's
       # never been dispatched before
@@ -548,10 +560,12 @@ class DeconflictionPipeline(GridAPPSD):
             flush=True)
       self.gapps.send(self.publish_dispatch_topic, dispatch_message)
 
-
+    ''' SOC MOVE
     return revised_socs
+    '''
 
 
+  ''' SOC MOVE
   def AppFeedback(self, app_name, timestamp, revised_socs):
     # If running from a GridLAB-D simulation where Deconflictor Pipeline
     # updates devices in simulation, this feedback would come to apps through
@@ -570,8 +584,7 @@ class DeconflictionPipeline(GridAPPSD):
         print('~TEST: revised-socs message with device ' + self.testDevice +
               ' SoC: ' + str(revised_socs[self.testDevice]) + ', timestamp: ' +
               str(timestamp) + ', from app: ' + app_name, flush=True)
-
-    print('~', flush=True) # tidy output with "blank" line
+  '''
 
 
   def on_message(self, headers, message):
@@ -602,11 +615,18 @@ class DeconflictionPipeline(GridAPPSD):
     # Step 4: Setpoint Validator -- not implemented for prototype
 
     # Step 5: Device Dispatcher
+    ''' SOC MOVE
     revised_socs = self.DeviceDispatcher(timestamp, newResolutionVector)
+    '''
+    self.DeviceDispatcher(timestamp, newResolutionVector)
 
+    ''' SOC MOVE
     # Feedback loop with competing apps through revised SoC values so they
     # can make new set-point requests based on actual changes
     self.AppFeedback(app_name, timestamp, revised_socs)
+    '''
+
+    print('~', flush=True) # tidy output with "blank" line
 
     # Update the current resolution to the new resolution to be ready for the
     # next set-points message
