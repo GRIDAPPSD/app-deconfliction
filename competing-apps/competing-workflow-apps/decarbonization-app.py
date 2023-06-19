@@ -136,23 +136,16 @@ class CompetingApp(GridAPPSD):
     return
 
 
-  def updateSoC(self, SoC, Batteries):
-    for device, value in SoC.items():
+  def updateSoC(self, BatterySoC, Batteries):
+    for device, value in BatterySoC.items():
       Batteries[device]['SoC'] = value
-      print('Battery name: ' + device + ', Deconflictor sent revised projected SoC: ' + str(round(value,4)), flush=True)
+      #print('Updated SoC for: ' + device + ' = ' + str(round(value, 4)),
+      #      flush=True)
 
 
   def on_message(self, headers, in_message):
     #print('headers: ' + str(headers), flush=True)
     #print('message: ' + str(in_message), flush=True)
-
-    # handling both simulation and deconflictor feedback messages here so need
-    # to figure out which it is
-    if 'deconfliction-pipeline-socs' in headers['destination']:
-      self.updateSoC(in_message['SoC'], self.Batteries)
-      return
-
-    # must be a simulation message if we are here
 
     # empty timestamp is end-of-data flag
     if in_message['timestamp'] == '':
@@ -165,7 +158,10 @@ class CompetingApp(GridAPPSD):
     loadshape = float(in_message['loadshape'])
     solar = float(in_message['solar'])
     price = float(in_message['price'])
-    #print('time series time: ' + str(time) + ', loadshape: ' + str(loadshape) + ', solar: ' + str(solar) + ', price: ' + str(price), flush=True)
+    BatterySoC = in_message['BatterySoC']
+    #print('time series time: ' + str(time) + ', loadshape: ' + str(loadshape) + ', solar: ' + str(solar) + ', price: ' + str(price) + ', BatterySoC: ' + str(BatterySoC), flush=True)
+
+    self.updateSoC(BatterySoC)
 
     self.t_plot.append(AppUtil.to_datetime(time)) # plotting
 
@@ -231,10 +227,6 @@ class CompetingApp(GridAPPSD):
     # subscribe to simulation output messages
     gapps.subscribe(service_output_topic('gridappsd-pseudo-sim',
                                          simulation_id), self)
-
-    # subscribe to deconfliction pipeline feedback messages
-    gapps.subscribe(service_output_topic(
-                  'gridappsd-deconfliction-pipeline-socs', simulation_id), self)
 
     print('Initialized decarbonization app and now waiting for messages...',
           flush=True)
