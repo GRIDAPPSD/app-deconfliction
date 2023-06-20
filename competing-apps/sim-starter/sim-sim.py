@@ -103,6 +103,13 @@ class SimSim(GridAPPSD):
           contrib = AppUtil.contrib_SoC(battery['P_batt'], 1, battery,
                                         self.deltaT)
           battery['SoC'] += contrib
+
+          # constrain to range 0.2 <= SoC <= 0.9
+          if battery['SoC'] > 0.9:
+            battery['SoC'] = 0.9
+          elif battery['SoC'] < 0.2:
+            battery['SoC'] = 0.2
+
           print(device + ' P_batt: ' + str(battery['P_batt']),
                 ', new SoC contribution: ' + str(contrib) +
                 ', updated SoC: ' + str(battery['SoC']), flush=True)
