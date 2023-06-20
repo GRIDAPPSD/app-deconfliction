@@ -21,6 +21,7 @@ elif (os.path.isdir('../../../competing-apps/shared')):
 else:
   sys.path.append('/gridappsd/services/app-deconfliction/competing-apps/shared')
 
+from AppUtil import AppUtil
 import MethodUtil
 
 class DeconflictionMethod:
@@ -29,8 +30,16 @@ class DeconflictionMethod:
     self.setpointSetVector = None 
     self.numberOfSets = 0 
     
-    self.constraintJSONFileName = f"output/resilience" 
+    self.constraintSourceFolder = "output" 
+    self.constraintSourceFile = "resilience" 
     self.conflictTime = -1
+
+    SPARQLManager = getattr(importlib.import_module('sparql'),
+                            'SPARQLManager')
+    sparql_mgr = SPARQLManager(gapps, feeder_mrid, simulation_id) 
+    
+    self.Batteries = AppUtil.getBatteries(sparql_mgr) 
+    self.Regulators = AppUtil.getRegulators(sparql_mgr)
 
     def getDecarbonizationUtility(self):
        return 0
@@ -38,22 +47,43 @@ class DeconflictionMethod:
     def getResilienceUtility(self):
        return 0
 
-    def optimizationResolveConflict(self): 
-      json_constr_f = open(f"{self.constraintJSONFileName}_{self.conflictTime}.json", "r") 
+    def optimizationResolveConflict(self, constraintSourceJSON): 
+      json_constr_f = open(constraintSourceJSON, "r") 
       input_data = json.load(json_constr_f) 
       
       decision_var, opt_prob = pulp.LpProblem.from_dict(input_data) 
+
+      opt_prob.solve(pulp.PULP_CBC_CMD(msg = 0, gapRel = 0.01)) 
+      print('Optimization-based Deconfliction: Status:', pulp.LpStatus[opt_prob.status], flush = True) 
+
+      # Maybe the thing below will be useful in the future.
+      #decision_var["reg_tap"].value() 
       
-      opt_prob.solve() 
-      return 0
+      ResolutionVector = {}
+      setpoints = {} 
+      timestamps = {}
+      for i in self.Regulators: 
+        idx = self.Regulators[i]['idx'] 
+        for k in range(32): 
+          reg = 'reg_tap_('+ str(idx) + ',_' + str(k) + ')'
+          #if self.reg_taps[(idx, k)].varValue >= 0.5: 
+          if decision_var[reg].value() >= 0.5: 
+            setpoints[i] = k-16 
+            timestamps[i] = self.conflictTime
+            
+      for i in self.Batteries: 
+        idx = self.Batteries[i]['idx'] 
+        batt = 'p_batt_' + str(idx)
+        setpoints[i] = decision_var[batt].value() 
+        timestamps[i] = self.conflictTime
+
+      ResolutionVector.setpoints = setpoints
+      ResolutionVector.timestamps = timestamps
+
+      return ResolutionVector
 
     def deconflict(self, currentTimestamp) -> Dict: 
-      self.setpointSetVector = self.buildSetpointsVector(self.conflictMatrix) 
-      self.numberOfSets = len(self.setpointSetVector.get("setpointSets",[])) 
-      self.uMatrix = np.empty((self.numberOfSets, DeconflictionMethod.numberOfMetrics)) 
-      resolutionVector = { 
-        "setpoints": {}, 
-        "timestamps": {} 
-      } 
+      self.conflictTime = currentTimestamp
+      constraintSourceJSON = os.path.join(self.constraintSourceFolder, f"{self.constraintSourceFile}_{self.conflictTime}.json") 
       
-      return resolutionVector
+      return optimizationResolveConflict(self, constraintSourceJSON) 
