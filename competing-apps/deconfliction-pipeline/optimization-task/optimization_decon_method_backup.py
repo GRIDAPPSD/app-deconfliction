@@ -30,9 +30,11 @@ class DeconflictionMethod:
     self.setpointSetVector = None 
     self.numberOfSets = 0 
     
-    self.constraintSourceFolder = "output" 
+    self.sourceFolder = "output" 
     self.constraintSourceFile = "resilience" 
+    self.decarbonizationUtilitySourceFile = "decarbonization"
     self.conflictTime = -1 
+    self.max_exch_capacity = 5e6
     
     self.decision_var = {} 
     self.opt_prob = {}
@@ -44,22 +46,37 @@ class DeconflictionMethod:
     self.Batteries = AppUtil.getBatteries(sparql_mgr) 
     self.Regulators = AppUtil.getRegulators(sparql_mgr)
 
-    def addDecarbonizationUtility(self, inputDict): 
-      return 
+
 
     def addResilienceUtility(self, inputDict): 
       n = len(inputDict.objective.coefficients)
 
-      for dict in inputDict.objective.coefficients:
-        dict["value"] = dict["value"] / n
+      for myDict in inputDict.objective.coefficients:
+        myDict["value"] = myDict["value"] / n
 
       return
+
+    def addDecarbonizationUtility(self, inputDict, Pmax): 
+      utilitySourceJSON = os.path.join(self.sourceFolder, f"{self.decarbonizationUtilitySourceFile}_{self.conflictTime}.json") 
+      json_source_f = open(utilitySourceJSON, "r") 
+      source_data = json.load(json_source_f) 
+      
+      myDict = source_data.objective.coefficients[0]
+      myDict["value"] = 1 / Pmax
+      inputDict.objective.coefficients.append(myDict)
+
+      return 
 
     def optimizationResolveConflict(self, constraintSourceJSON): 
       json_constr_f = open(constraintSourceJSON, "r") 
       input_data = json.load(json_constr_f) 
 
-      addResilienceUtility(input_data)
+      addResilienceUtility(input_data) 
+      addDecarbonizationUtility(input_data, self.max_exch_capacity) 
+
+      print("FIXME: Debugging.")
+      print(input_data.objective.coefficients)
+      return 
       
       self.decision_var, self.opt_prob = pulp.LpProblem.from_dict(input_data) 
 
@@ -94,6 +111,7 @@ class DeconflictionMethod:
 
     def deconflict(self, currentTimestamp) -> Dict: 
       self.conflictTime = currentTimestamp
-      constraintSourceJSON = os.path.join(self.constraintSourceFolder, f"{self.constraintSourceFile}_{self.conflictTime}.json") 
+      constraintSourceJSON = os.path.join(self.sourceFolder, f"{self.constraintSourceFile}_{self.conflictTime}.json") 
+
       
       return optimizationResolveConflict(self, constraintSourceJSON) 
