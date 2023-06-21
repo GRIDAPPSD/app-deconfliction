@@ -20,10 +20,11 @@ sys.path.append(str(sharedDir))
 import MethodUtil
 
 class DeconflictionMethod:
-    maxAnalogSetpoints = 5 #default range length for analog setpoints
+    maxAnalogSetpoints = 5 #default range length for analog setpoints.
     numberOfMetrics = 4 #defines the number of columns in the U matrix.
+    maxTapBudget = 2 #defines the maximum tap budget allowed in a deconfliction scenario.
 
-    def __init__(self, conflictMatrix: Dict, fullResolutionFlag: bool = True):
+    def __init__(self, conflictMatrix: Dict = {}, fullResolutionFlag: bool = True):
         self.conflictMatrix = MethodUtil.ConflictSubMatrix
         self.setpointSetVector = None
         self.numberOfSets = 0
@@ -47,14 +48,22 @@ class DeconflictionMethod:
             csvReader = csv.reader(cf)
             self.csvData = list(csvReader)
             del self.csvData[0]
+        #intialize OpenDSS model.
         openDssFile = Path(__file__).parent.resolve() / '123Bus' / 'Run_IEEE123Bus.dss'
         dss.Text.Command(f'Redirect {str(openDssFile)}')
         dss.Text.Command(f'Compile {str(openDssFile)}')
-        dss.Solution.Solve()
+        dss.Solution.SolveNoControl()
+        self.initializeDistributedConflictMatrix()
         self.rVector = np.empty((DeconflictionMethod.numberOfMetrics, 1))
         self.calculateCriteriaPreferenceWeightVector()
 
 
+    def initializeDistributedConflictMatrix(self):
+        distributedAreasEquipmentFile = Path(__file__).parent.resolve() / "AddressableEquipment.json"
+        self.distributedEquipment = {}
+        with open(distributedAreasEquipmentFile,"r") as df:
+            self.distributedEquipment = json.load(df)
+    
 
     def buildSetpointsVector(self, conflictMatrix:Dict) -> Dict:
         def getTapPosition() -> Dict:
@@ -62,7 +71,8 @@ class DeconflictionMethod:
             xfmr_id = dss.Transformers.First()
             tap_vals = {}
             while xfmr_id:
-                tap_vals[dss.Transformers.Name()] = round((dss.Transformers.Tap()-1)*160)
+                regulationPerStep = (dss.Transformers.MaxTap() - dss.Transformers.MinTap()) / dss.Transformers.NumTaps()
+                tap_vals[dss.Transformers.Name()] = round((dss.Transformers.Tap()-1)/regulationPerStep)
                 xfmr_id = dss.Transformers.Next()
             return tap_vals
         
@@ -94,18 +104,18 @@ class DeconflictionMethod:
                     "maxValue": maxValue,
                     "minValue": minValue
                 }
-                print(f"{json.dumps(printStr, indent=4)}")
+#                print(f"{json.dumps(printStr, indent=4)}")
                 if tapVal is not None:
-                    if maxValue > tapVal + 2:
-                        maxValue = tapVal + 2
-                    elif maxValue < tapVal - 2:
-                        maxValue = tapVal - 2
+                    if maxValue > tapVal + DeconflictionMethod.maxTapBudget:
+                        maxValue = tapVal + DeconflictionMethod.maxTapBudget
+                    elif maxValue < tapVal - DeconflictionMethod.maxTapBudget:
+                        maxValue = tapVal - DeconflictionMethod.maxTapBudget
                         minValue = maxValue
-                    if minValue > tapVal + 2:
-                        minValue = tapVal + 2
+                    if minValue > tapVal + DeconflictionMethod.maxTapBudget:
+                        minValue = tapVal + DeconflictionMethod.maxTapBudget
                         maxValue = minValue
-                    elif minValue < tapVal - 2:
-                        minValue = tapVal - 2
+                    elif minValue < tapVal - DeconflictionMethod.maxTapBudget:
+                        minValue = tapVal - DeconflictionMethod.maxTapBudget
                 else:
                     raise RuntimeError(f"no tap postion was found for RatioTapChanger, {setpoint.split('.')[1]}")
                 if minValue < maxValue:
@@ -143,28 +153,6 @@ class DeconflictionMethod:
                     return True
                 device = dss.Circuit.NextElement()
             return False
-        
-
-        def runPowerFlowSnapshot(setpoints: List, setpointNames: List, simulationData: Dict):
-            if len(setpoints) != len(setpointNames):
-                raise RuntimeError("The number of setpoints does not match the number of setpoint names")
-            #end model update with measurements
-            for i in range(len(setpoints)):
-                setpointNameSplit = setpointNames[i].split(".")
-                if "BatteryUnit." in setpointNames[i]:
-                    #TODO: Figure out opendss command to change storage ouptput
-                    dss.run_command(f"Storage.{setpointNameSplit[1]}.kw={setpoints[i]}")
-                elif "RatioTapChanger." in setpointNames[i]:
-                    reg = dss.Transformers.First()
-                    while reg:
-                        if dss.Transformers.Name() == setpointNameSplit[1]:
-                            break
-                        else:
-                            dss.Transformers.Next()
-                    regulationPerStep = (dss.Transformers.MaxTap() - dss.Transformers.MinTap()) / dss.Transformers.NumTaps()
-                    tapStep = 1.0 + (setpoints[i]*regulationPerStep)
-                    dss.Transformers.Tap(tapStep)
-            dss.Solution.SolveNoControl()
         
 
         def extractPowerLosses() -> float:
@@ -237,7 +225,7 @@ class DeconflictionMethod:
 
         if index % 100 == 0:
             print(f"processing setpoint Alternative {index} of {self.uMatrix.shape[0]}...")
-        runPowerFlowSnapshot(setpoints, setpointNames, simulationData)
+        self.runPowerFlowSnapshot(setpoints, setpointNames, simulationData)
         violations = checkForViolations()
         if not violations:
             p_loss = extractPowerLosses()
@@ -291,14 +279,41 @@ class DeconflictionMethod:
         self.cMatrix = np.identity(self.uMatrix.shape[1])
         #TODO: formulate algorithm for forming the criteria priority matrix
         
-            
+    def runPowerFlowSnapshot(self, setpoints: List, setpointNames: List, simulationData: Dict):
+            if len(setpoints) != len(setpointNames):
+                raise RuntimeError("The number of setpoints does not match the number of setpoint names")
+            #end model update with measurements
+            for i in range(len(setpoints)):
+                setpointNameSplit = setpointNames[i].split(".")
+                if "BatteryUnit." in setpointNames[i]:
+                    #TODO: Figure out opendss command to change storage ouptput
+                    dss.run_command(f"Storage.{setpointNameSplit[1]}.kw={setpoints[i]}")
+                elif "RatioTapChanger." in setpointNames[i]:
+                    reg = dss.Transformers.First()
+                    while reg:
+                        if dss.Transformers.Name() == setpointNameSplit[1]:
+                            break
+                        else:
+                            reg = dss.Transformers.Next()
+                    regulationPerStep = (dss.Transformers.MaxTap() - dss.Transformers.MinTap()) / dss.Transformers.NumTaps()
+                    tapStep = 1.0 + (setpoints[i]*regulationPerStep)
+                    dss.Transformers.Tap(tapStep)
+            dss.Solution.SolveNoControl()
+
+
     def deconflict(self) -> Dict:
         for timeVal in self.conflictMatrix.get("timestamps",{}).values():
             self.conflictTime = max(self.conflictTime, timeVal)
-        self.setpointSetVector = self.buildSetpointsVector(self.conflictMatrix)
-        self.numberOfSets = len(self.setpointSetVector.get("setpointSets",[]))
-        self.uMatrix = np.empty((self.numberOfSets, DeconflictionMethod.numberOfMetrics))
-        self.invalidSetpoints = []
+        distributedConflictMatrix = {}
+        for area in self.distributedEquipment.keys():
+            distributedConflictMatrix[area] = {
+                "setpoints": {}
+            }
+            for equipment in self.distributedEquipment.get(area,[]):
+                if equipment in self.conflictMatrix["setpoints"].keys():
+                    distributedConflictMatrix[area]["setpoints"][equipment] = self.conflictMatrix["setpoints"][equipment]
+            if len(distributedConflictMatrix[area]["setpoints"]) == 0:
+                   del distributedConflictMatrix[area]
         #TODO: replace simulationData with device setpoint measurements
         simulationData = {}
         for i in self.csvData:
@@ -312,22 +327,38 @@ class DeconflictionMethod:
         dss.run_command(f'BatchEdit PVsystem..* irradiance={simulationData["solar"]}')
         dss.run_command(f'set loadmult = {simulationData["load"]}')
         #-----------------------------------------------------------------------
-        for i in range(self.numberOfSets):
-            self.buildUMatrix(self.setpointSetVector["setpointSets"][i], self.setpointSetVector["setpointIndexMap"], i, simulationData)
-        print(f"{len(self.invalidSetpoints)} setpoint alternatives eliminated due to ")
-        self.normalizeUMatrix()
-        self.calculateCriteriaPriorityMatrix()
-        self.calculateSetpointAlternativesPriorityMatrix()
-        fVector = self.pMatrix @ self.uMatrix @ self.cMatrix @ self.rVector
-        resolutionIndex = fVector.argmax()
-        resolutionSetpointSet = self.setpointSetVector["setpointSets"][resolutionIndex]
+        #resolve per distributed area
+        distributedResolutionVector = {}
         resolutionVector = {
             "setpoints": {},
             "timestamps": {}
         }
-        for i in range(len(resolutionSetpointSet)):
-            resolutionVector["setpoints"][self.setpointSetVector["setpointIndexMap"][i]] = resolutionSetpointSet[i]
-            resolutionVector["timestamps"][self.setpointSetVector["setpointIndexMap"][i]] = self.conflictTime
+        for area in distributedConflictMatrix.keys():
+            print(f"deconflicting area {area}...")
+            self.setpointSetVector = self.buildSetpointsVector(distributedConflictMatrix[area])
+            self.numberOfSets = len(self.setpointSetVector.get("setpointSets",[]))
+            self.uMatrix = np.empty((self.numberOfSets, DeconflictionMethod.numberOfMetrics))
+            self.invalidSetpoints = []
+            for i in range(self.numberOfSets):
+                self.buildUMatrix(self.setpointSetVector["setpointSets"][i], self.setpointSetVector["setpointIndexMap"], i, simulationData)
+            print(f"{len(self.invalidSetpoints)} setpoint alternatives eliminated due to operational violations.")
+            self.normalizeUMatrix()
+            self.calculateCriteriaPriorityMatrix()
+            self.calculateSetpointAlternativesPriorityMatrix()
+            fVector = self.pMatrix @ self.uMatrix @ self.cMatrix @ self.rVector
+            resolutionIndex = fVector.argmax()
+            resolutionSetpointSet = self.setpointSetVector["setpointSets"][resolutionIndex]
+            distributedResolutionVector = {
+                "setpoints": {},
+                "timestamps": {}
+            }
+            for i in range(len(resolutionSetpointSet)):
+                distributedResolutionVector["setpoints"][self.setpointSetVector["setpointIndexMap"][i]] = resolutionSetpointSet[i]
+                distributedResolutionVector["timestamps"][self.setpointSetVector["setpointIndexMap"][i]] = self.conflictTime
+            resolutionVector["setpoints"].update(distributedResolutionVector["setpoints"])
+            resolutionVector["timestamps"].update(distributedResolutionVector["timestamps"])
+            #update opendssmodel with resolved setpoints for next conflict
+            self.runPowerFlowSnapshot(resolutionSetpointSet, self.setpointSetVector["setpointIndexMap"], simulationData)
         return (False, resolutionVector)
 
 
@@ -336,28 +367,11 @@ class DeconflictionMethod:
 if __name__ == "__main__":
     cM = {}
     centralConflictMatrixFile = Path(__file__).parent.resolve() / "ConflictMatrix.json"
-    distributedAreasEquipmentFile = Path(__file__).parent.resolve() / "AddressableEquipment.json"
     centralConflictMatrix = {}
-    addressableEquipment = {}
     with open(centralConflictMatrixFile,"r") as cmf:
         centralConflictMatrix = json.load(cmf)
-    with open(distributedAreasEquipmentFile,"r") as df:
-        addressableEquipment = json.load(df)
-    distributedConflictMatrix = {}
-    for area in addressableEquipment.keys():
-        distributedConflictMatrix[area] = {
-            "setpoints": {},
-            "timestamps": centralConflictMatrix.get("timestamps",{})
-        }
-        for equipment in addressableEquipment.get(area,[]):
-            distributedConflictMatrix[area]["setpoints"][equipment] = centralConflictMatrix.get("setpoints",{}).get(equipment,{})
     rbdm = DeconflictionMethod(cM)
-# centralized solution
-# Decentralized solution
-    distributedResolutionVector = {}
-    for area in distributedConflictMatrix.keys():
-        MethodUtil.ConflictSubMatrix["setpoints"] = distributedConflictMatrix[area]["setpoints"]
-        MethodUtil.ConflictSubMatrix["timestamps"] = distributedConflictMatrix[area]["timestamps"]
-        print(f"deconflicting area {area}...")
-        fullResFlag, distributedResolutionVector[area] = rbdm.deconflict()
-    print(f'{json.dumps(distributedResolutionVector, indent=4, sort_keys=True)}')
+    MethodUtil.ConflictSubMatrix["setpoints"] = centralConflictMatrix["setpoints"]
+    MethodUtil.ConflictSubMatrix["timestamps"] = centralConflictMatrix["timestamps"]
+    fullResFlag, resolutionVector = rbdm.deconflict()
+    print(f'resolution vector:\n{json.dumps(resolutionVector, indent=4, sort_keys=True)}')
