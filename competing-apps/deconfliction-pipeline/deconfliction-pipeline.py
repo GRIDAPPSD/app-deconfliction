@@ -588,11 +588,17 @@ class DeconflictionPipeline(GridAPPSD):
   def on_sim_message(self, headers, message):
     print('Received sim message: ' + str(message), flush=True)
 
-    # update SoC values in MethodUtil for the benefit of
+    # update device set-point values in MethodUtil for the benefit of
     # DeconflictionMethod classes
+    MethodUtil.DeviceSetpoints.clear()
+    DeviceSetpoints = message['DeviceSetpoints']
+    for device, value in DeviceSetpoints.items():
+      MethodUtil.DeviceSetpoints[device] = value
+
+    # update SoC values in MethodUtil for the same reason
     BatterySoC = message['BatterySoC']
-    for name, value in BatterySoC.items():
-      MethodUtil.BatterySoC[name] = value
+    for device, value in BatterySoC.items():
+      MethodUtil.BatterySoC[device] = value
 
 
   def on_setpoints_message(self, headers, message):
@@ -683,7 +689,7 @@ class DeconflictionPipeline(GridAPPSD):
                                    self.Batteries['BatteryUnit.76']['eff']
     '''
 
-    # initialize BatterySoC dictionary for deconflict method usage
+    # initialize BatterySoC dictionary for deconfliction method usage
     for name in self.Batteries:
       MethodUtil.BatterySoC[name] = self.Batteries[name]['SoC']
 
