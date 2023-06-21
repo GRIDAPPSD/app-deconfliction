@@ -32,7 +32,10 @@ class DeconflictionMethod:
     
     self.constraintSourceFolder = "output" 
     self.constraintSourceFile = "resilience" 
-    self.conflictTime = -1
+    self.conflictTime = -1 
+    
+    self.decision_var = {} 
+    self.opt_prob = {}
 
     SPARQLManager = getattr(importlib.import_module('sparql'),
                             'SPARQLManager')
@@ -41,20 +44,27 @@ class DeconflictionMethod:
     self.Batteries = AppUtil.getBatteries(sparql_mgr) 
     self.Regulators = AppUtil.getRegulators(sparql_mgr)
 
-    def getDecarbonizationUtility(self):
-       return 0
+    def addDecarbonizationUtility(self, inputDict): 
+      return 
 
-    def getResilienceUtility(self):
-       return 0
+    def addResilienceUtility(self, inputDict): 
+      n = len(inputDict.objective.coefficients)
+
+      for dict in inputDict.objective.coefficients:
+        dict["value"] = dict["value"] / n
+
+      return
 
     def optimizationResolveConflict(self, constraintSourceJSON): 
       json_constr_f = open(constraintSourceJSON, "r") 
       input_data = json.load(json_constr_f) 
-      
-      decision_var, opt_prob = pulp.LpProblem.from_dict(input_data) 
 
-      opt_prob.solve(pulp.PULP_CBC_CMD(msg = 0, gapRel = 0.01)) 
-      print('Optimization-based Deconfliction: Status:', pulp.LpStatus[opt_prob.status], flush = True) 
+      addResilienceUtility(input_data)
+      
+      self.decision_var, self.opt_prob = pulp.LpProblem.from_dict(input_data) 
+
+      self.opt_prob.solve(pulp.PULP_CBC_CMD(msg = 0, gapRel = 0.01)) 
+      print('Optimization-based Deconfliction: Status:', pulp.LpStatus[self.opt_prob.status], flush = True) 
 
       # Maybe the thing below will be useful in the future.
       #decision_var["reg_tap"].value() 
@@ -67,14 +77,14 @@ class DeconflictionMethod:
         for k in range(32): 
           reg = 'reg_tap_('+ str(idx) + ',_' + str(k) + ')'
           #if self.reg_taps[(idx, k)].varValue >= 0.5: 
-          if decision_var[reg].value() >= 0.5: 
+          if self.decision_var[reg].value() >= 0.5: 
             setpoints[i] = k-16 
             timestamps[i] = self.conflictTime
             
       for i in self.Batteries: 
         idx = self.Batteries[i]['idx'] 
         batt = 'p_batt_' + str(idx)
-        setpoints[i] = decision_var[batt].value() 
+        setpoints[i] = self.decision_var[batt].value() 
         timestamps[i] = self.conflictTime
 
       ResolutionVector.setpoints = setpoints
