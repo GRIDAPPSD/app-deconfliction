@@ -26,6 +26,6 @@ else
 fi
 
 mkdir -p output
-python3 optimization-app.py decarbonization $SIMID "$SIMREQ" $STATE 2>&1 | tee output/optimization-app.log
-#python3 optimization-app.py decarbonization $SIMID "$SIMREQ" $STATE --outage 56 68 2>&1 | tee output/optimization-app.log
+python3 optimization-app.py decarbonization $SIMID "$SIMREQ" $STATE 2>&1 | tee output/decarbonization-app.log
+#python3 optimization-app.py decarbonization $SIMID "$SIMREQ" $STATE --outage 56 68 2>&1 | tee output/decarbonization-app.log
 

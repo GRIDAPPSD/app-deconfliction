@@ -53,6 +53,7 @@ import math
 import pprint
 import numpy as np
 import csv
+import queue
 
 from time import sleep
 from pulp import *
@@ -64,6 +65,10 @@ from matplotlib import pyplot as plt
 from matplotlib import dates as md
 from datetime import datetime
 from tabulate import tabulate
+
+# suppress warnings about overriding optimization function from decarbonization
+import warnings
+warnings.simplefilter('ignore', UserWarning)
 
 # find and add shared directory to path hopefully wherever it is from here
 if (os.path.isdir('../shared')):
@@ -83,11 +88,11 @@ from AppUtil import AppUtil
 
 class CompetingApp(GridAPPSD):
 
-  def updateSoC(self, SoC):
-    for device, value in SoC.items():
+  def updateSoC(self, BatterySoC):
+    for device, value in BatterySoC.items():
       self.Batteries[device]['SoC'] = value
-      print('Deconflictor sent revised projection for: ' + device +
-            ', SoC: ' + str(round(value, 4)), flush=True)
+      #print('Updated SoC for: ' + device + ' = ' + str(round(value, 4)),
+      #      flush=True)
 
 
   def defineOptimizationDynamicProblem(self, time, load_mult, pv_mult):
@@ -240,7 +245,7 @@ class CompetingApp(GridAPPSD):
 
   def doOptimization(self, time):
         # solve
-        self.dynamicProb.solve(PULP_CBC_CMD(msg=0, gapRel=0.01))
+        self.dynamicProb.solve(PULP_CBC_CMD(msg=0, gapRel=self.gapRel))
         print('Optimization status:', LpStatus[self.dynamicProb.status],
               flush=True)
 
@@ -347,36 +352,10 @@ class CompetingApp(GridAPPSD):
         self.gapps.send(self.publish_topic, out_message)
 
 
-  def on_message(self, headers, in_message):
+  def on_message(self, headers, message):
     #print('headers: ' + str(headers), flush=True)
-    #print('message: ' + str(in_message), flush=True)
-
-    # handling both simulation and deconflictor feedback messages here so need
-    # to figure out which it is
-    if 'deconfliction-pipeline-socs' in headers['destination']:
-      self.updateSoC(in_message['SoC'])
-      return
-
-    # must be a simulation message if we are here
-
-    # empty timestamp is end-of-data flag
-    if in_message['timestamp'] == '':
-      print('Time-series end-of-data!', flush=True)
-      self.exit_flag = True
-      return
-
-    # if we get here we must have data to process
-    time = int(in_message['timestamp'])
-    loadshape = float(in_message['loadshape'])
-    solar = float(in_message['solar'])
-    price = float(in_message['price'])
-    print('Time-series time: ' + str(time) + ', loadshape: ' + str(loadshape) +
-          ', solar: ' + str(solar) + ', price: ' + str(price), flush=True)
-
-    if time % self.interval == 0:
-      self.defineOptimizationDynamicProblem(time, loadshape, solar)
-
-      self.doOptimization(time)
+    #print('message: ' + str(message), flush=True)
+    self.messageQueue.put(message)
 
 
   def defineOptimizationVariables(self, len_branch_info, len_bus_info,
@@ -923,6 +902,7 @@ class CompetingApp(GridAPPSD):
 
     print('\nbranch_info phase count: ' + str(n_line_phase), flush=True)
 
+    self.gapRel = 0.01
     self.interval = 1
     # uncomment the self.interval lines below to adjust the deltaT period
     # the optimization is based on per app and the frequency of messages
@@ -934,11 +914,14 @@ class CompetingApp(GridAPPSD):
       #self.interval = 4
     elif opt_type.startswith('p') or opt_type.startswith('P'):
       self.opt_type = 'profit_cvr'
+      self.gapRel = 0.1
       #self.interval = 5
     else:
       print('*** Exiting due to unrecognized optimization type: ' + opt_type,
             flush=True)
       exit()
+
+    self.messageQueue = queue.Queue()
 
     self.deltaT = 0.25 * self.interval
 
@@ -954,23 +937,54 @@ class CompetingApp(GridAPPSD):
     self.publish_topic = service_output_topic('gridappsd-competing-app', '0')
 
     # subscribe to simulation output messages
-    gapps.subscribe(service_output_topic('gridappsd-pseudo-sim',
+    gapps.subscribe(service_output_topic('gridappsd-sim-sim',
                                          simulation_id), self)
-
-    # subscribe to deconfliction-pipeline feedback messages
-    gapps.subscribe(service_output_topic(
-                  'gridappsd-deconfliction-pipeline-socs', simulation_id), self)
 
     print('\nInitialized ' + opt_type +
           ' optimization competing app, waiting for messages...\n',
           flush=True)
 
-    self.exit_flag = False
+    # counter for interval values > 1
+    messageCounter = 0
 
-    while not self.exit_flag:
-      sleep(0.1)
+    while True:
+      if self.messageQueue.qsize() == 0:
+        sleep(0.1)
+        continue
 
-    return
+      # discard messages other than most recent
+      # comment this while loop out to never drain queue
+      while self.messageQueue.qsize() > 1:
+        print('Draining message queue, size: ' + str(self.messageQueue.qsize()),
+              flush=True)
+        self.messageQueue.get()
+        messageCounter += 1
+
+      message = self.messageQueue.get()
+      messageCounter += 1
+
+      # empty timestamp is end-of-data flag
+      if message['timestamp'] == '':
+        print('Time-series end-of-data!', flush=True)
+        break
+
+      if messageCounter % self.interval == 0:
+        time = int(message['timestamp'])
+        loadshape = float(message['loadshape'])
+        solar = float(message['solar'])
+        price = float(message['price'])
+        BatterySoC = message['BatterySoC']
+        print('Time-series time: ' + str(time) +
+              ', loadshape: ' + str(loadshape) +
+              ', solar: ' + str(solar) +
+              ', price: ' + str(price) +
+              ', BatterySoc: ' + str(BatterySoC), flush=True)
+
+        self.updateSoC(BatterySoC)
+
+        self.defineOptimizationDynamicProblem(time, loadshape, solar)
+
+        self.doOptimization(time)
 
 
 def _main():
