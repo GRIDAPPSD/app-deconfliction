@@ -587,6 +587,10 @@ class DeconflictionPipeline(GridAPPSD):
   def on_sim_message(self, headers, message):
     print('Received sim message: ' + str(message), flush=True)
 
+    # trigger an exit based on timestamp
+    if message['timestamp'] == '':
+      self.exitFlag = True
+
     # update device set-point values in MethodUtil for the benefit of
     # DeconflictionMethod classes
     MethodUtil.DeviceSetpoints.clear()
@@ -757,7 +761,9 @@ class DeconflictionPipeline(GridAPPSD):
 
     self.gapps = gapps
 
-    while True:
+    self.exitFlag = False
+
+    while not self.exitFlag:
       time.sleep(0.1)
 
 
