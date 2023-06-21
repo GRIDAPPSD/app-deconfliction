@@ -556,7 +556,7 @@ class DeconflictionPipeline(GridAPPSD):
       }
       print('~~> Sending device dispatch message: ' + str(dispatch_message),
             flush=True)
-      self.gapps.send(self.publish_dispatch_topic, dispatch_message)
+      self.gapps.send(self.publish_topic, dispatch_message)
 
     ''' SOC MOVE
     return revised_socs
@@ -731,11 +731,13 @@ class DeconflictionPipeline(GridAPPSD):
                                         'DeconflictionMethod')
       self.decon_method_test = DeconflictionMethod(self.ConflictMatrix)
 
+    ''' SOC MOVE
     self.publish_socs_topic = service_output_topic(
-                               'gridappsd-deconfliction-pipeline-socs', '0')
+                                   'gridappsd-deconfliction-pipeline-socs', '0')
+    '''
 
-    self.publish_dispatch_topic = service_output_topic(
-                               'gridappsd-deconfliction-pipeline-dispatch', '0')
+    self.publish_topic = service_output_topic(
+                                        'gridappsd-deconfliction-pipeline', '0')
 
     # subscribe to competing app set-points messages
     gapps.subscribe(service_output_topic('gridappsd-competing-app',
