@@ -245,7 +245,7 @@ class CompetingApp(GridAPPSD):
 
   def doOptimization(self, time):
         # solve
-        self.dynamicProb.solve(PULP_CBC_CMD(msg=0, gapRel=0.01))
+        #self.dynamicProb.solve(PULP_CBC_CMD(msg=0, gapRel=self.gapRel))
         print('Optimization status:', LpStatus[self.dynamicProb.status],
               flush=True)
 
@@ -902,6 +902,7 @@ class CompetingApp(GridAPPSD):
 
     print('\nbranch_info phase count: ' + str(n_line_phase), flush=True)
 
+    self.gapRel = 0.01
     self.interval = 1
     # uncomment the self.interval lines below to adjust the deltaT period
     # the optimization is based on per app and the frequency of messages
@@ -913,6 +914,7 @@ class CompetingApp(GridAPPSD):
       #self.interval = 4
     elif opt_type.startswith('p') or opt_type.startswith('P'):
       self.opt_type = 'profit_cvr'
+      self.gapRel = 0.1
       #self.interval = 5
     else:
       print('*** Exiting due to unrecognized optimization type: ' + opt_type,
