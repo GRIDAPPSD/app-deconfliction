@@ -65,13 +65,12 @@ import pprint
 import numpy as np
 import csv
 import copy
+import time
 
 from gridappsd import GridAPPSD
 from gridappsd.topics import service_output_topic
 
 from datetime import datetime
-
-from time import sleep
 
 # for loading shared modules
 if (os.path.isdir('shared')):
