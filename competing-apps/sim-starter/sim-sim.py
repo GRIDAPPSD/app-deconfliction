@@ -83,7 +83,9 @@ class SimSim(GridAPPSD):
     DispatchedDevices = message['dispatch']
     print('DispatchedDevices: ' + str(DispatchedDevices), flush=True)
 
+    self.DeviceSetpoints.clear()
     for device, value in DispatchedDevices.items():
+      self.DeviceSetpoints[device] = value
       if device.startswith('BatteryUnit.'):
         self.Batteries[device]['P_batt'] = value
 
@@ -144,6 +146,7 @@ class SimSim(GridAPPSD):
       'loadshape': row[1],
       'solar': row[2],
       'price': row[3],
+      'DeviceSetpoints': self.DeviceSetpoints,
       'BatterySoC': BatterySoC
     }
     self.gapps.send(self.publish_topic, message)
@@ -169,6 +172,8 @@ class SimSim(GridAPPSD):
 
     print(self.Batteries, flush=True)
 
+    self.DeviceSetpoints = {}
+
     self.deltaT = 0.25
 
     # for plotting
@@ -179,10 +184,10 @@ class SimSim(GridAPPSD):
       self.soc_plot[name] = []
       self.p_batt_plot[name] = []
 
-    gapps.subscribe(service_output_topic(
-              'gridappsd-deconfliction-pipeline-dispatch', simulation_id), self)
+    gapps.subscribe(service_output_topic('gridappsd-deconfliction-pipeline',
+                                         simulation_id), self)
 
-    self.publish_topic = service_output_topic('gridappsd-pseudo-sim',
+    self.publish_topic = service_output_topic('gridappsd-sim-sim',
                                               simulation_id)
 
     self.gapps = gapps
@@ -210,7 +215,7 @@ def _main():
   feeder_mrid = sim_request["power_system_config"]["Line_name"]
 
   # authenticate with GridAPPS-D Platform
-  os.environ['GRIDAPPSD_APPLICATION_ID'] = 'gridappsd-pseudo-sim'
+  os.environ['GRIDAPPSD_APPLICATION_ID'] = 'gridappsd-sim-sim'
   os.environ['GRIDAPPSD_APPLICATION_STATUS'] = 'STARTED'
   os.environ['GRIDAPPSD_USER'] = 'app_user'
   os.environ['GRIDAPPSD_PASSWORD'] = '1234App'

@@ -65,13 +65,12 @@ import pprint
 import numpy as np
 import csv
 import copy
+import time
 
 from gridappsd import GridAPPSD
 from gridappsd.topics import service_output_topic
 
 from datetime import datetime
-
-from time import sleep
 
 # for loading shared modules
 if (os.path.isdir('shared')):
@@ -556,7 +555,7 @@ class DeconflictionPipeline(GridAPPSD):
       }
       print('~~> Sending device dispatch message: ' + str(dispatch_message),
             flush=True)
-      self.gapps.send(self.publish_dispatch_topic, dispatch_message)
+      self.gapps.send(self.publish_topic, dispatch_message)
 
     ''' SOC MOVE
     return revised_socs
@@ -585,7 +584,23 @@ class DeconflictionPipeline(GridAPPSD):
   '''
 
 
-  def on_message(self, headers, message):
+  def on_sim_message(self, headers, message):
+    print('Received sim message: ' + str(message), flush=True)
+
+    # update device set-point values in MethodUtil for the benefit of
+    # DeconflictionMethod classes
+    MethodUtil.DeviceSetpoints.clear()
+    DeviceSetpoints = message['DeviceSetpoints']
+    for device, value in DeviceSetpoints.items():
+      MethodUtil.DeviceSetpoints[device] = value
+
+    # update SoC values in MethodUtil for the same reason
+    BatterySoC = message['BatterySoC']
+    for device, value in BatterySoC.items():
+      MethodUtil.BatterySoC[device] = value
+
+
+  def on_setpoints_message(self, headers, message):
     print('Received set-points message: ' + str(message), flush=True)
 
     app_name = message['app_name']
@@ -673,7 +688,7 @@ class DeconflictionPipeline(GridAPPSD):
                                    self.Batteries['BatteryUnit.76']['eff']
     '''
 
-    # initialize BatterySoC dictionary for deconflict method usage
+    # initialize BatterySoC dictionary for deconfliction method usage
     for name in self.Batteries:
       MethodUtil.BatterySoC[name] = self.Batteries[name]['SoC']
 
@@ -721,17 +736,24 @@ class DeconflictionPipeline(GridAPPSD):
                                         'DeconflictionMethod')
       self.decon_method_test = DeconflictionMethod(self.ConflictMatrix)
 
+    ''' SOC MOVE
     self.publish_socs_topic = service_output_topic(
-                               'gridappsd-deconfliction-pipeline-socs', '0')
+                                   'gridappsd-deconfliction-pipeline-socs', '0')
+    '''
 
-    self.publish_dispatch_topic = service_output_topic(
-                               'gridappsd-deconfliction-pipeline-dispatch', '0')
+    self.publish_topic = service_output_topic(
+                                        'gridappsd-deconfliction-pipeline', '0')
 
     # subscribe to competing app set-points messages
     gapps.subscribe(service_output_topic('gridappsd-competing-app',
-                                         simulation_id), self)
+                                      simulation_id), self.on_setpoints_message)
 
-    print('Initialized deconfliction pipeline, waiting for set-points messages...\n', flush=True)
+    # subscribe to simulation output messages to get updated SoC values
+    gapps.subscribe(service_output_topic('gridappsd-sim-sim', simulation_id),
+                                         self.on_sim_message)
+
+    print('Initialized deconfliction pipeline, waiting for messages...\n',
+          flush=True)
 
     self.gapps = gapps
 

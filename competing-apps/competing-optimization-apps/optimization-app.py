@@ -95,7 +95,7 @@ class CompetingApp(GridAPPSD):
       #      flush=True)
 
 
-  def defineOptimizationDynamicProblem(self, time, load_mult, pv_mult):
+  def defineOptimizationDynamicProblem(self, timestamp, load_mult, pv_mult):
     # copy the base/static LpProblem that doesn't depend on time-series data
     # as a starting point to then add the time-series dependent part on
     self.dynamicProb = LpProblem.deepcopy(self.staticProb)
@@ -243,7 +243,7 @@ class CompetingApp(GridAPPSD):
       self.dynamicProb += self.lambda_c[idx] + self.lambda_d[idx] <= 1
 
 
-  def doOptimization(self, time):
+  def doOptimization(self, timestamp):
         # solve
         self.dynamicProb.solve(PULP_CBC_CMD(msg=0, gapRel=self.gapRel))
         print('Optimization status:', LpStatus[self.dynamicProb.status],
@@ -272,11 +272,11 @@ class CompetingApp(GridAPPSD):
                 flush=True)
         data = self.dynamicProb.to_dict()
         json_opt = open('output/' + self.opt_type + '_' +
-                                 str(time) + '.json', 'w')
+                                 str(timestamp) + '.json', 'w')
         json.dump(data, json_opt, indent=4)
         json_opt.close()
         # self.dynamicProb.writeLP('output/' + self.opt_type + '_' +
-        #                          str(time) + '.lp')
+        #                          str(timestamp) + '.lp')
 
         '''
         branch_flow = []
@@ -345,7 +345,7 @@ class CompetingApp(GridAPPSD):
 
         out_message = {
           'app_name': self.opt_type+'-app',
-          'timestamp': time,
+          'timestamp': timestamp,
           'set_points': set_points
         }
         print('Sending message: ' + str(out_message), flush=True)
@@ -937,7 +937,7 @@ class CompetingApp(GridAPPSD):
     self.publish_topic = service_output_topic('gridappsd-competing-app', '0')
 
     # subscribe to simulation output messages
-    gapps.subscribe(service_output_topic('gridappsd-pseudo-sim',
+    gapps.subscribe(service_output_topic('gridappsd-sim-sim',
                                          simulation_id), self)
 
     print('\nInitialized ' + opt_type +
@@ -969,12 +969,12 @@ class CompetingApp(GridAPPSD):
         break
 
       if messageCounter % self.interval == 0:
-        time = int(message['timestamp'])
+        timestamp = int(message['timestamp'])
         loadshape = float(message['loadshape'])
         solar = float(message['solar'])
         price = float(message['price'])
         BatterySoC = message['BatterySoC']
-        print('Time-series time: ' + str(time) +
+        print('Time-series time: ' + str(timestamp) +
               ', loadshape: ' + str(loadshape) +
               ', solar: ' + str(solar) +
               ', price: ' + str(price) +
@@ -982,9 +982,9 @@ class CompetingApp(GridAPPSD):
 
         self.updateSoC(BatterySoC)
 
-        self.defineOptimizationDynamicProblem(time, loadshape, solar)
+        self.defineOptimizationDynamicProblem(timestamp, loadshape, solar)
 
-        self.doOptimization(time)
+        self.doOptimization(timestamp)
 
 
 def _main():
