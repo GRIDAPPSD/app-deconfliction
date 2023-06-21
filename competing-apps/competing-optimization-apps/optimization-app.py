@@ -53,6 +53,7 @@ import math
 import pprint
 import numpy as np
 import csv
+import queue
 
 from time import sleep
 from pulp import *
@@ -351,32 +352,10 @@ class CompetingApp(GridAPPSD):
         self.gapps.send(self.publish_topic, out_message)
 
 
-  def on_message(self, headers, in_message):
+  def on_message(self, headers, message):
     #print('headers: ' + str(headers), flush=True)
-    #print('message: ' + str(in_message), flush=True)
-
-    # empty timestamp is end-of-data flag
-    if in_message['timestamp'] == '':
-      print('Time-series end-of-data!', flush=True)
-      self.exit_flag = True
-      return
-
-    # if we get here we must have data to process
-    time = int(in_message['timestamp'])
-    loadshape = float(in_message['loadshape'])
-    solar = float(in_message['solar'])
-    price = float(in_message['price'])
-    BatterySoC = in_message['BatterySoC']
-    print('Time-series time: ' + str(time) + ', loadshape: ' + str(loadshape) +
-          ', solar: ' + str(solar) + ', price: ' + str(price) +
-          ', BatterySoc: ' + str(BatterySoC), flush=True)
-
-    if time % self.interval == 0:
-      self.updateSoC(BatterySoC)
-
-      self.defineOptimizationDynamicProblem(time, loadshape, solar)
-
-      self.doOptimization(time)
+    #print('message: ' + str(message), flush=True)
+    self.messageQueue.put(message)
 
 
   def defineOptimizationVariables(self, len_branch_info, len_bus_info,
@@ -940,6 +919,8 @@ class CompetingApp(GridAPPSD):
             flush=True)
       exit()
 
+    self.messageQueue = queue.Queue()
+
     self.deltaT = 0.25 * self.interval
 
     self.b_i = np.arange(0.9, 1.1, 0.00625)
@@ -961,12 +942,47 @@ class CompetingApp(GridAPPSD):
           ' optimization competing app, waiting for messages...\n',
           flush=True)
 
-    self.exit_flag = False
+    # counter for interval values > 1
+    messageCounter = 0
 
-    while not self.exit_flag:
-      sleep(0.1)
+    while True:
+      if self.messageQueue.qsize() == 0:
+        sleep(0.1)
+        continue
 
-    return
+      # discard messages other than most recent
+      # comment this while loop out to never drain queue
+      while self.messageQueue.qsize() > 1:
+        print('Draining message queue, size: ' + str(self.messageQueue.qsize()),
+              flush=True)
+        self.messageQueue.get()
+        messageCounter += 1
+
+      message = self.messageQueue.get()
+      messageCounter += 1
+
+      # empty timestamp is end-of-data flag
+      if message['timestamp'] == '':
+        print('Time-series end-of-data!', flush=True)
+        break
+
+      if messageCounter % self.interval == 0:
+        time = int(message['timestamp'])
+        loadshape = float(message['loadshape'])
+        solar = float(message['solar'])
+        price = float(message['price'])
+        BatterySoC = message['BatterySoC']
+        print('Time-series time: ' + str(time) +
+              ', loadshape: ' + str(loadshape) +
+              ', solar: ' + str(solar) +
+              ', price: ' + str(price) +
+              ', BatterySoc: ' + str(BatterySoC), flush=True)
+
+        self.updateSoC(BatterySoC)
+
+        self.defineOptimizationDynamicProblem(time, loadshape, solar)
+
+        self.doOptimization(time)
 
 
 def _main():
