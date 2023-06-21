@@ -54,8 +54,8 @@ import pprint
 import numpy as np
 import csv
 import queue
-import time
 
+from time import sleep
 from pulp import *
 
 from gridappsd import GridAPPSD
@@ -949,7 +949,7 @@ class CompetingApp(GridAPPSD):
 
     while True:
       if self.messageQueue.qsize() == 0:
-        time.sleep(0.1)
+        sleep(0.1)
         continue
 
       # discard messages other than most recent
