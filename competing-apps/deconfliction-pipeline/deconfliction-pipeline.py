@@ -585,7 +585,17 @@ class DeconflictionPipeline(GridAPPSD):
   '''
 
 
-  def on_message(self, headers, message):
+  def on_sim_message(self, headers, message):
+    print('Received sim message: ' + str(message), flush=True)
+
+    # update SoC values in MethodUtil for the benefit of
+    # DeconflictionMethod classes
+    BatterySoC = message['BatterySoC']
+    for name, value in BatterySoC.items():
+      MethodUtil.BatterySoC[name] = value
+
+
+  def on_setpoints_message(self, headers, message):
     print('Received set-points message: ' + str(message), flush=True)
 
     app_name = message['app_name']
@@ -729,9 +739,14 @@ class DeconflictionPipeline(GridAPPSD):
 
     # subscribe to competing app set-points messages
     gapps.subscribe(service_output_topic('gridappsd-competing-app',
-                                         simulation_id), self)
+                                      simulation_id), self.on_setpoints_message)
 
-    print('Initialized deconfliction pipeline, waiting for set-points messages...\n', flush=True)
+    # subscribe to simulation output messages to get updated SoC values
+    gapps.subscribe(service_output_topic('gridappsd-sim-sim', simulation_id),
+                                         self.on_sim_message)
+
+    print('Initialized deconfliction pipeline, waiting for messages...\n',
+          flush=True)
 
     self.gapps = gapps
 
