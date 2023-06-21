@@ -19,11 +19,13 @@ if [[ -z "$SIMREQ" ]]; then
     #read -d "\n" SIMID SIMREQ <<< $(../sim-starter/sim-starter.py $1)
     read -d "\n" SIMREQ <<< $(../sim-starter/sim-starter.py $1 nosim)
     SIMID=0
+    DELAY=$2
 else
 #   invocation when simulation is already started from platform viz
     SIMID=$1
+    DELAY=$2
 fi
 
 mkdir -p output
-python3 sim-sim.py $SIMID "$SIMREQ" 2>&1 | tee output/sim-sim.log
+python3 sim-sim.py $SIMID "$SIMREQ" $DELAY 2>&1 | tee output/sim-sim.log
 
