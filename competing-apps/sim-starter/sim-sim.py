@@ -91,26 +91,53 @@ class SimSim(GridAPPSD):
   def send_message(self):
     ret = True # return True to call this again the next time interval
 
-    # next() will throw an exception on EOF
+    BatterySoC = {}
+
+    # next() will throw a StopIteration exception on EOF
     try:
       row = next(self.reader)
-    except:
+
+      for device, battery in self.Batteries.items():
+        if battery['P_batt'] != 0.0:
+          # only send out SoC values that have been updated
+          contrib = AppUtil.contrib_SoC(battery['P_batt'], 1, battery,
+                                        self.deltaT)
+          battery['SoC'] += contrib
+
+          # constrain to range 0.2 <= SoC <= 0.9
+          if battery['SoC'] > 0.9:
+            battery['SoC'] = 0.9
+          elif battery['SoC'] < 0.2:
+            battery['SoC'] = 0.2
+
+          print(device + ' P_batt: ' + str(battery['P_batt']),
+                ', new SoC contribution: ' + str(contrib) +
+                ', updated SoC: ' + str(battery['SoC']), flush=True)
+
+        # unchanged SoC values also must be sent to apps
+        BatterySoC[device] = battery['SoC']
+
+      # for plotting
+      datetime = AppUtil.to_datetime(row[0])
+      self.t_plot.append(datetime)
+      for device, battery in self.Batteries.items():
+        self.p_batt_plot[device].append(battery['P_batt'])
+        self.soc_plot[device].append(battery['SoC'])
+
+    except StopIteration:
+      # for plotting
+      # make sure output directory exists since that's where results go
+      if not os.path.isdir('output'):
+        os.makedirs('output')
+
+      AppUtil.make_plots('Deconfliction Resolution', 'deconfliction',
+                   self.Batteries, self.t_plot, self.p_batt_plot, self.soc_plot)
+
       # send out one final message with end-of-data flag for timestamp
       row = ['', '', '', '']
 
       # returning False will exit from the timer-based calls
       ret = False
-
-    BatterySoC = {}
-    for device, battery in self.Batteries.items():
-      if battery['P_batt'] != 0.0:
-        # only send out SoC values that have been updated
-        contrib = AppUtil.contrib_SoC(battery['P_batt'], 1, battery,self.deltaT)
-        battery['SoC'] += contrib
-        BatterySoC[device] = battery['SoC']
-        print(device + ' P_batt: ' + str(battery['P_batt']),
-              ', new SoC contribution: ' + str(contrib) +
-              ', updated SoC: ' + str(BatterySoC[device]), flush=True)
 
     message = {
       'timestamp': row[0],
@@ -143,6 +170,14 @@ class SimSim(GridAPPSD):
     print(self.Batteries, flush=True)
 
     self.deltaT = 0.25
+
+    # for plotting
+    self.t_plot = []
+    self.soc_plot = {}
+    self.p_batt_plot = {}
+    for name in self.Batteries:
+      self.soc_plot[name] = []
+      self.p_batt_plot[name] = []
 
     gapps.subscribe(service_output_topic(
               'gridappsd-deconfliction-pipeline-dispatch', simulation_id), self)
