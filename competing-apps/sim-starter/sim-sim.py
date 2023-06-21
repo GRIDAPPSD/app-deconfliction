@@ -83,7 +83,6 @@ class SimSim(GridAPPSD):
     DispatchedDevices = message['dispatch']
     print('DispatchedDevices: ' + str(DispatchedDevices), flush=True)
 
-    self.DeviceSetpoints.clear()
     for device, value in DispatchedDevices.items():
       self.DeviceSetpoints[device] = value
       if device.startswith('BatteryUnit.'):
@@ -151,6 +150,9 @@ class SimSim(GridAPPSD):
     }
     self.gapps.send(self.publish_topic, message)
     print(time.time(), ': ', str(message), flush=True)
+
+    # clear set-points so they accumulate over multiple deconflictor messages
+    self.DeviceSetpoints.clear()
 
     if row[0] != '':
       self.currentTimestamp = int(row[0])

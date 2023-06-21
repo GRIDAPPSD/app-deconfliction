@@ -594,7 +594,7 @@ class DeconflictionPipeline(GridAPPSD):
     for device, value in DeviceSetpoints.items():
       MethodUtil.DeviceSetpoints[device] = value
 
-    # update SoC values in MethodUtil for the same reason
+    # update SoC values in MethodUtil for same reason
     BatterySoC = message['BatterySoC']
     for device, value in BatterySoC.items():
       MethodUtil.BatterySoC[device] = value
