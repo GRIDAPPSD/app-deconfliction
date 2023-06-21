@@ -937,7 +937,7 @@ class CompetingApp(GridAPPSD):
     self.publish_topic = service_output_topic('gridappsd-competing-app', '0')
 
     # subscribe to simulation output messages
-    gapps.subscribe(service_output_topic('gridappsd-pseudo-sim',
+    gapps.subscribe(service_output_topic('gridappsd-sim-sim',
                                          simulation_id), self)
 
     print('\nInitialized ' + opt_type +

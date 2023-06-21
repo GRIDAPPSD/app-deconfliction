@@ -182,7 +182,7 @@ class SimSim(GridAPPSD):
     gapps.subscribe(service_output_topic(
               'gridappsd-deconfliction-pipeline-dispatch', simulation_id), self)
 
-    self.publish_topic = service_output_topic('gridappsd-pseudo-sim',
+    self.publish_topic = service_output_topic('gridappsd-sim-sim',
                                               simulation_id)
 
     self.gapps = gapps
@@ -210,7 +210,7 @@ def _main():
   feeder_mrid = sim_request["power_system_config"]["Line_name"]
 
   # authenticate with GridAPPS-D Platform
-  os.environ['GRIDAPPSD_APPLICATION_ID'] = 'gridappsd-pseudo-sim'
+  os.environ['GRIDAPPSD_APPLICATION_ID'] = 'gridappsd-sim-sim'
   os.environ['GRIDAPPSD_APPLICATION_STATUS'] = 'STARTED'
   os.environ['GRIDAPPSD_USER'] = 'app_user'
   os.environ['GRIDAPPSD_PASSWORD'] = '1234App'
