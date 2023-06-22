@@ -46,7 +46,7 @@ elif [[ $APPS == *"P"* ]]; then
 fi
 
 cd ../sim-starter
-./run-sim.sh $MODEL $DELAY >/dev/null &
+./run-sim.sh $MODEL $DELAY --wait >/dev/null &
 
 cd ../deconfliction-pipeline
 ./run-pipeline.sh $MODEL ../$METHOD

@@ -195,22 +195,7 @@ class SimSim(GridAPPSD):
     self.reader = csv.reader(fp)
     next(self.reader) # skip header
 
-    if delay != None:
-      # if delay is set then this invocation is assumed to be from the
-      # wrapper script that starts all processes and therefore the sleep
-      # below allows these processes to initialize before any messages
-      time.sleep(30)
-      rt = RepeatedTimer(int(delay), self.send_message)
-    else:
-      # 0 seconds to only send messages when return hit
-      # 2 seconds seems to be right for resilience and decarbonization
-      # 8 seconds seems to be OK for resilience, decarbonization, and profit
-      #   depending on solver gapRel value
-      delay = 0
-      if delay > 0:
-        print('Hit return to start sending messages...', end='', flush=True)
-        input()
-      rt = RepeatedTimer(delay, self.send_message)
+    rt = RepeatedTimer(int(delay), self.send_message)
 
 
 def _main():
@@ -219,7 +204,9 @@ def _main():
   parser = argparse.ArgumentParser()
   parser.add_argument("simulation_id", help="Simulation ID")
   parser.add_argument("request", help="Simulation Request")
-  parser.add_argument("delay", nargs='?', help="Delay Between Messages")
+  parser.add_argument("delay",
+                      help="Delay in seconds between messages, 0=interactive")
+
   opts = parser.parse_args()
 
   sim_request = json.loads(opts.request.replace("\'",""))
