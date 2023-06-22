@@ -10,7 +10,7 @@
 #       <DELAY> = optional seconds between simulation data messages, default 8
 #
 # e.g.,
-#./run-deconfliction.sh 123 rd optimization-apps/compromise-rd-partial-method.py
+#./run-deconfliction.sh 123 rd deconfliction-methods/compromise-rd-partial-method.py
 
 MODEL=$1
 APPS=$2
