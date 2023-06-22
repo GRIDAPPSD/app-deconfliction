@@ -20,11 +20,11 @@ if [ "$#" -gt 3 ]; then
   DELAY=$4
 fi 
 
-# magic that kills background jobs started in this script when the final
+# magic that kills background jobs started in this script when the pipeline
 # foreground process receives ctrl-C
 trap "trap - SIGTERM && kill -- -$$" SIGINT SIGTERM EXIT
 
-cd ../competing-optimization-apps
+cd competing-optimization-apps
 
 if [[ $APPS == *"r"* ]]; then
   ./run-resilience.sh $MODEL >/dev/null &
@@ -48,5 +48,5 @@ cd ../sim-starter
 ./run-sim.sh $MODEL $DELAY >/dev/null &
 
 cd ../deconfliction-pipeline
-./run-pipeline.sh $MODEL $METHOD
+./run-pipeline.sh $MODEL ../$METHOD
 
