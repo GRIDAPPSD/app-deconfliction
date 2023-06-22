@@ -495,10 +495,18 @@ class DeconflictionPipeline(GridAPPSD):
       if device.startswith('BatteryUnit.'):
         # batteries dispatch values even if they are the same as the last time
         # as long as the value is associated with the current timestamp
+
+        # GDB 6/22/23: First is the original version and then the new version
+        # that doesn't dispatch P_batt of 0 beyond the initial change to 0
+        #if device not in self.ResolutionVector['setpoints'] or \
+        #   (newResolutionVector['timestamps'][device]==timestamp and \
+        #    (self.ResolutionVector['timestamps'][device]!=timestamp or \
+        #     self.ResolutionVector['setpoints'][device]!=value)):
         if device not in self.ResolutionVector['setpoints'] or \
            (newResolutionVector['timestamps'][device]==timestamp and \
-            (self.ResolutionVector['timestamps'][device]!=timestamp or \
-             self.ResolutionVector['setpoints'][device]!=value)):
+            (self.ResolutionVector['setpoints'][device]!=value or \
+             (self.ResolutionVector['timestamps'][device]!=timestamp and \
+              self.ResolutionVector['setpoints'][device]!=0.0))):
           DevicesToDispatch[device] = value
 
           print('~~> Dispatching to device: ' + device + ', timestamp: ' +
@@ -587,6 +595,10 @@ class DeconflictionPipeline(GridAPPSD):
   def on_sim_message(self, headers, message):
     print('Received sim message: ' + str(message), flush=True)
 
+    # trigger an exit based on timestamp
+    if message['timestamp'] == '':
+      self.exitFlag = True
+
     # update device set-point values in MethodUtil for the benefit of
     # DeconflictionMethod classes
     MethodUtil.DeviceSetpoints.clear()
@@ -594,7 +606,7 @@ class DeconflictionPipeline(GridAPPSD):
     for device, value in DeviceSetpoints.items():
       MethodUtil.DeviceSetpoints[device] = value
 
-    # update SoC values in MethodUtil for the same reason
+    # update SoC values in MethodUtil for same reason
     BatterySoC = message['BatterySoC']
     for device, value in BatterySoC.items():
       MethodUtil.BatterySoC[device] = value
@@ -757,7 +769,9 @@ class DeconflictionPipeline(GridAPPSD):
 
     self.gapps = gapps
 
-    while True:
+    self.exitFlag = False
+
+    while not self.exitFlag:
       time.sleep(0.1)
 
 

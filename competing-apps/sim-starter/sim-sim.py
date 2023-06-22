@@ -9,9 +9,6 @@ import time
 class RepeatedTimer(object):
   def __init__(self, interval, function, *args, **kwargs):
     if interval > 0:
-      print('Hit return to start sending messages...', end='', flush=True)
-      input()
-
       self._timer = None
       self.interval = interval
       self.function = function
@@ -83,7 +80,6 @@ class SimSim(GridAPPSD):
     DispatchedDevices = message['dispatch']
     print('DispatchedDevices: ' + str(DispatchedDevices), flush=True)
 
-    self.DeviceSetpoints.clear()
     for device, value in DispatchedDevices.items():
       self.DeviceSetpoints[device] = value
       if device.startswith('BatteryUnit.'):
@@ -152,13 +148,16 @@ class SimSim(GridAPPSD):
     self.gapps.send(self.publish_topic, message)
     print(time.time(), ': ', str(message), flush=True)
 
+    # clear set-points so they accumulate over multiple deconflictor messages
+    self.DeviceSetpoints.clear()
+
     if row[0] != '':
       self.currentTimestamp = int(row[0])
 
     return ret
 
 
-  def __init__(self, gapps, feeder_mrid, simulation_id):
+  def __init__(self, gapps, feeder_mrid, simulation_id, delay):
     SPARQLManager = getattr(importlib.import_module('sparql'),
                             'SPARQLManager')
     sparql_mgr = SPARQLManager(gapps, feeder_mrid, simulation_id)
@@ -196,11 +195,22 @@ class SimSim(GridAPPSD):
     self.reader = csv.reader(fp)
     next(self.reader) # skip header
 
-    rt = RepeatedTimer(0, self.send_message)
-    # 2 seconds seems to be right for resilience and decarbonization
-    #rt = RepeatedTimer(2, self.send_message)
-    # 8 seconds seems to be right for resilience, decarbonization, and profit
-    #rt = RepeatedTimer(8, self.send_message)
+    if delay != None:
+      # if delay is set then this invocation is assumed to be from the
+      # wrapper script that starts all processes and therefore the sleep
+      # below allows these processes to initialize before any messages
+      time.sleep(30)
+      rt = RepeatedTimer(int(delay), self.send_message)
+    else:
+      # 0 seconds to only send messages when return hit
+      # 2 seconds seems to be right for resilience and decarbonization
+      # 8 seconds seems to be OK for resilience, decarbonization, and profit
+      #   depending on solver gapRel value
+      delay = 0
+      if delay > 0:
+        print('Hit return to start sending messages...', end='', flush=True)
+        input()
+      rt = RepeatedTimer(delay, self.send_message)
 
 
 def _main():
@@ -209,6 +219,7 @@ def _main():
   parser = argparse.ArgumentParser()
   parser.add_argument("simulation_id", help="Simulation ID")
   parser.add_argument("request", help="Simulation Request")
+  parser.add_argument("delay", nargs='?', help="Delay Between Messages")
   opts = parser.parse_args()
 
   sim_request = json.loads(opts.request.replace("\'",""))
@@ -223,7 +234,7 @@ def _main():
   gapps = GridAPPSD()
   assert gapps.connected
 
-  SimSim(gapps, feeder_mrid, opts.simulation_id)
+  SimSim(gapps, feeder_mrid, opts.simulation_id, opts.delay)
 
 
 if __name__ == "__main__":
