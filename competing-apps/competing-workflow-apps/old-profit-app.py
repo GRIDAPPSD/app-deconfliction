@@ -61,8 +61,6 @@ from matplotlib import pyplot as plt
 from matplotlib import dates as md
 from datetime import datetime
 
-from time import sleep
-
 # find and add shared directory to path hopefully wherever it is from here
 if (os.path.isdir('../shared')):
   sys.path.append('../shared')
