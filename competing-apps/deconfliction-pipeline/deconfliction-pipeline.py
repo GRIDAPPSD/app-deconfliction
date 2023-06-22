@@ -495,10 +495,18 @@ class DeconflictionPipeline(GridAPPSD):
       if device.startswith('BatteryUnit.'):
         # batteries dispatch values even if they are the same as the last time
         # as long as the value is associated with the current timestamp
+
+        # GDB 6/22/23: First is the original version and then the new version
+        # that doesn't dispatch P_batt of 0 beyond the initial change to 0
+        #if device not in self.ResolutionVector['setpoints'] or \
+        #   (newResolutionVector['timestamps'][device]==timestamp and \
+        #    (self.ResolutionVector['timestamps'][device]!=timestamp or \
+        #     self.ResolutionVector['setpoints'][device]!=value)):
         if device not in self.ResolutionVector['setpoints'] or \
            (newResolutionVector['timestamps'][device]==timestamp and \
-            (self.ResolutionVector['timestamps'][device]!=timestamp or \
-             self.ResolutionVector['setpoints'][device]!=value)):
+            (self.ResolutionVector['setpoints'][device]!=value or \
+             (self.ResolutionVector['timestamps'][device]!=timestamp and \
+              self.ResolutionVector['setpoints'][device]!=0.0))):
           DevicesToDispatch[device] = value
 
           print('~~> Dispatching to device: ' + device + ', timestamp: ' +
