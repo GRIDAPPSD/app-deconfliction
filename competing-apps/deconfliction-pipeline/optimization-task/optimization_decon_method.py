@@ -28,8 +28,6 @@ import MethodUtil
 class DeconflictionMethod:
   def __init__(self, conflictMatrix: Dict, fullResolutionFlag: bool = True): 
     self.conflictMatrix = MethodUtil.ConflictSubMatrix 
-    self.setpointSetVector = None 
-    self.numberOfSets = 0 
     
     self.sourceFolder = "output" 
     self.constraintSourceFile = "decarbonization" 
