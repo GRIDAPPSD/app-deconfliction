@@ -9,6 +9,9 @@ packages = [{include = "app_deconfliction"}]
 [tool.poetry.dependencies]
 python = "^3.10"
 opendssdirect-py = {extras = ["extras"], version = "^0.8.2"}
+gridappsd-python = "^2023.5.1"
+pulp = "^2.7.0"
+tabulate = "^0.9.0"
 
 
 [build-system]

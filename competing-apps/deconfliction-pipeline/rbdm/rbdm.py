@@ -24,7 +24,7 @@ class DeconflictionMethod:
     numberOfMetrics = 4 #defines the number of columns in the U matrix.
     maxTapBudget = 2 #defines the maximum tap budget allowed in a deconfliction scenario.
 
-    def __init__(self, conflictMatrix: Dict = {}, fullResolutionFlag: bool = True):
+    def __init__(self, conflictMatrix: Dict = {}):
         self.conflictMatrix = MethodUtil.ConflictSubMatrix
         self.setpointSetVector = None
         self.numberOfSets = 0
@@ -301,7 +301,8 @@ class DeconflictionMethod:
             dss.Solution.SolveNoControl()
 
 
-    def deconflict(self) -> Dict:
+    def deconflict(self, currentTime: int) -> Dict:
+        
         for timeVal in self.conflictMatrix.get("timestamps",{}).values():
             self.conflictTime = max(self.conflictTime, timeVal)
         distributedConflictMatrix = {}
@@ -327,6 +328,7 @@ class DeconflictionMethod:
         dss.run_command(f'BatchEdit PVsystem..* irradiance={simulationData["solar"]}')
         dss.run_command(f'set loadmult = {simulationData["load"]}')
         #-----------------------------------------------------------------------
+        #update OpenDSSModel with 
         #resolve per distributed area
         distributedResolutionVector = {}
         resolutionVector = {
@@ -373,5 +375,5 @@ if __name__ == "__main__":
     rbdm = DeconflictionMethod(cM)
     MethodUtil.ConflictSubMatrix["setpoints"] = centralConflictMatrix["setpoints"]
     MethodUtil.ConflictSubMatrix["timestamps"] = centralConflictMatrix["timestamps"]
-    fullResFlag, resolutionVector = rbdm.deconflict()
+    fullResFlag, resolutionVector = rbdm.deconflict(12)
     print(f'resolution vector:\n{json.dumps(resolutionVector, indent=4, sort_keys=True)}')
