@@ -7,7 +7,7 @@
 #                (r)esilience, (d)ecarbonization, (p)rofit_cvr
 #       <METHOD> = name of DeconflictionMethod class file to use with path
 #                  referenced from deconfliction-pipeline directory
-#       <DELAY> = optional seconds between simulation data messages, default 3
+#       <DELAY> = optional seconds between simulation data messages, default 8
 #
 # e.g., ./run-deconfliction.sh 123 rd compromise-rd-partial-method.py
 
@@ -15,7 +15,7 @@ MODEL=$1
 APPS=$2
 METHOD=$3
 
-DELAY=3
+DELAY=8
 if [ "$#" -gt 3 ]; then
   DELAY=$4
 fi 
@@ -24,7 +24,7 @@ fi
 # foreground process receives ctrl-C
 trap "trap - SIGTERM && kill -- -$$" SIGINT SIGTERM EXIT
 
-cd competing-optimization-apps
+cd optimization-apps
 
 if [[ $APPS == *"r"* ]]; then
   ./run-resilience.sh $MODEL >/dev/null &
