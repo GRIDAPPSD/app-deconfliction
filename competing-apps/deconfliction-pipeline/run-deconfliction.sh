@@ -20,6 +20,10 @@ if [ "$#" -gt 3 ]; then
   DELAY=$4
 fi 
 
+# magic that kills background jobs started in this script when the final
+# foreground process receives ctrl-C
+trap "trap - SIGTERM && kill -- -$$" SIGINT SIGTERM EXIT
+
 cd ../competing-optimization-apps
 
 if [[ $APPS == *"r"* ]]; then
