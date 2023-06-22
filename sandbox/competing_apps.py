@@ -15,7 +15,7 @@ import pandas as pd
 deltaT = 15/60
 soc_0 = [0.5, 0.5]
 
-def Resilience(Pload, P_PV, soc_0, Battery, deltaT, emergency=False):
+def Resilience(Pload, P_PV, soc_0, Battery, deltaT, press = [0, 0], advise= [0,0], rho =0, emergency=False, Naive = False):
 
     E_rated    = Battery['E_rated']
     pch_max    =   Battery['Pch_max']
@@ -43,7 +43,7 @@ def Resilience(Pload, P_PV, soc_0, Battery, deltaT, emergency=False):
     Ldischbatt_idx = Lchbatt_idx + no_batt
     
     pren = P_PV
-    p_load_req = Pload #4733.3
+    p_load_req = Pload ## 4733.3
     
     
     obj = 0
@@ -51,8 +51,12 @@ def Resilience(Pload, P_PV, soc_0, Battery, deltaT, emergency=False):
         for batt_idx in range(no_batt):
             obj += 1*x[socbatt_idx+batt_idx] 
     else:
-        for batt_idx in range(no_batt):
-            obj += -1*x[socbatt_idx+batt_idx] 
+        if Naive: 
+            for batt_idx in range(no_batt):
+                obj += -1*x[socbatt_idx+batt_idx] 
+        else:
+            for batt_idx in range(no_batt):
+                obj += -1*x[socbatt_idx+batt_idx]/(1.8) + press[batt_idx]*(x[pbatt_idx+batt_idx] - advise[batt_idx])/500 + (rho/2)*((x[pbatt_idx+batt_idx] - advise[batt_idx])/500 )**2
         
     
     constraints = []
@@ -94,7 +98,7 @@ def Resilience(Pload, P_PV, soc_0, Battery, deltaT, emergency=False):
     return pbatt_sol
 
 
-def Decarbonization(Pload, P_PV, soc_0, Battery, deltaT, emergency=False):
+def Decarbonization(Pload, P_PV, soc_0, Battery, deltaT, press = [0, 0], advise= [0,0], rho =0, emergency=False, Naive = False):
 
     E_rated    = Battery['E_rated']
     pch_max    =   Battery['Pch_max']
@@ -128,10 +132,14 @@ def Decarbonization(Pload, P_PV, soc_0, Battery, deltaT, emergency=False):
     obj = 0
     if emergency:
         for batt_idx in range(no_batt):
-            obj += 1*x[socbatt_idx+batt_idx] 
+            obj += 1*x[socbatt_idx+batt_idx]
     else:
-        obj = cp.abs(x[psub_idx])
-        
+        if Naive: 
+            obj = cp.abs(x[psub_idx])
+        else:
+            obj = 1*cp.abs(x[psub_idx])/(p_load_req)
+            for batt_idx in range(no_batt):
+                obj = obj + press[batt_idx]*(x[pbatt_idx+batt_idx] - advise[batt_idx])/500 + (rho/2)*((x[pbatt_idx+batt_idx] - advise[batt_idx])/500 )**2
     
     constraints = []
     for batt_idx in range(no_batt):

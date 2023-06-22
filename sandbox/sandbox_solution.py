@@ -10,6 +10,7 @@ import cvxpy as cp
 import numpy as np
 import pandas as pd
 import competing_apps as CA
+import copy
 import json
 
 def update_conflict_matrix(matrix, data, col_name):
@@ -38,7 +39,7 @@ def check_conflict(matrix, time):
        max_val = max(conflict_matrix.loc[device].values)
        min_val = min(conflict_matrix.loc[device].values)
        diff = max_val - min_val
-       if diff > 0:
+       if diff > 5:
            print("conflict exists for device:"+ device + "; At time:" + str(time)) 
            conflict_status = True
          
@@ -69,42 +70,75 @@ if __name__ == "__main__":
     
     
     # t = 1
-    for i in data.index:
+    # for i in data.index:
+    Res_Naive = False
+    Decarb_Naive = False    
+    for i in range(1,10):
        
         deltaT = 15/60
         time = i*deltaT
         load_now  = base_load * data['Loadshape'][i]
         solar_now = base_pv * data['Solar'][i]
         
-        
-    
         # conflict_matrix[row]
     
         soc_now = list(Measurement.loc[i-1][4:6])
-        Pbatt_preffered = CA.Resilience(load_now, solar_now, soc_now, Battery, deltaT)
+        Pbatt_preffered = CA.Resilience(load_now, solar_now, soc_now, Battery, deltaT, [0,0], [0,0], Res_Naive)
         conflict_matrix= update_conflict_matrix(conflict_matrix, Pbatt_preffered, 'App1')
         conflict_matrix_store[time]= conflict_matrix.T.to_dict()
         
-        Pbatt_preffered = CA.Decarbonization(load_now, solar_now, soc_now, Battery, deltaT)
+        Pbatt_preffered = CA.Decarbonization(load_now, solar_now, soc_now, Battery, deltaT, [0,0], [0,0], Decarb_Naive)
         conflict_matrix = update_conflict_matrix(conflict_matrix, Pbatt_preffered, 'App2')
         conflict_matrix_store[time] = conflict_matrix.T.to_dict()
         
         conflict_status = check_conflict(conflict_matrix, time)
         
-        if conflict_status: 
-            
-            resol_vector = {}
+        ### Sample Incentive Design ###
+        incentive= copy.deepcopy(conflict_matrix)
+        incentive.loc[:,:] = 0
+        iteration = 0 
+        while conflict_status: 
+            iteration = iteration + 1
+            time =  time + 1/60
+            no_devices = conflict_matrix.shape[0]
+            no_apps = conflict_matrix.shape[1]
+            ### Sample Press Advise Signal Design ###
+            rho = 0.5
             for device in conflict_matrix.index:
-                resol_vector[device] = np.mean(conflict_matrix.loc[device])
+                for j in range(no_apps):
+                    incentive.loc[device][j] = incentive.loc[device][j] + round(rho*(conflict_matrix.loc[device][j] - conflict_matrix.loc[device][no_devices-1-j])/500,2)
+            
         
-        print(resol_vector)
+            press = incentive['App1'].values ### Sample Press - Linear based on other App's Preffered Values ###
+            advise = conflict_matrix['App2'].values ### Sample Advise - Other Apps' Preffered Values ###
+            Pbatt_preffered = CA.Resilience(load_now, solar_now, soc_now, Battery, deltaT, press, advise, rho, Res_Naive)
+            conflict_matrix= update_conflict_matrix(conflict_matrix, Pbatt_preffered, 'App1')
+            conflict_matrix_store[time]= conflict_matrix.T.to_dict()
+            
+            press = incentive['App2'].values ### Sample Press - Linear based on other App's Preffered Values ###
+            advise = conflict_matrix['App1'].values ### Sample Advise - Other App's Preffered Values ###
+            Pbatt_preffered = CA.Decarbonization(load_now, solar_now, soc_now, Battery, deltaT, press, advise, rho, Decarb_Naive)
+            conflict_matrix = update_conflict_matrix(conflict_matrix, Pbatt_preffered, 'App2')
+            conflict_matrix_store[time] = conflict_matrix.T.to_dict()
+            # print(iteration, conflict_matrix)
+            
+            conflict_status = check_conflict(conflict_matrix, time)
+        
+        
+        ### Sample Compromise Design ###
+        resol_vector = {}
+        for device in conflict_matrix.index:
+            resol_vector[device] = round(np.mean(conflict_matrix.loc[device]),2)
+        
+        ### Grid Emulation ###
+        print(conflict_status, resol_vector)
         Psub, SOC_new = CA.Simulate(load_now, solar_now, resol_vector, soc_now, Battery, deltaT)   
         
         
         meas_idx =  len(Measurement)
         Measurement.loc[meas_idx] = [time, Psub, resol_vector['batt1'], resol_vector['batt2'], SOC_new[0], SOC_new[1]]
         
-        print(conflict_status, resol_vector)
+
         
     Measurement.to_csv('outputs\\'+case_name + '_meas.csv', index=False) 
     with open('outputs\\'+case_name + '_conflict_store.json', "w") as outfile:
@@ -124,6 +158,7 @@ if __name__ == "__main__":
     ax[0].plot(Measurement['Time'][1:], Measurement['PBatt2'][1:])
     ax[0].set_xlabel('Time of Day')
     ax[0].set_ylabel('Battery Dispatch (kW)')
+    ax[0].legend(['Batt1', 'Batt2'])
     ax[0].grid()
     ax[1].plot(Measurement['Time'][1:], Measurement['socBatt1'][1:], '--')
     ax[1].plot(Measurement['Time'][1:], Measurement['socBatt2'][1:],'--')
