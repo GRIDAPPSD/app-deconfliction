@@ -677,11 +677,11 @@ class DeconflictionPipeline(GridAPPSD):
 
     SPARQLManager = getattr(importlib.import_module('sparql'),
                             'SPARQLManager')
-    sparql_mgr = SPARQLManager(gapps, feeder_mrid, simulation_id)
+    MethodUtil.sparql_mgr = SPARQLManager(gapps, feeder_mrid, simulation_id)
 
-    self.Batteries = AppUtil.getBatteries(sparql_mgr)
+    self.Batteries = AppUtil.getBatteries(MethodUtil.sparql_mgr)
 
-    self.Regulators = AppUtil.getRegulators(sparql_mgr)
+    self.Regulators = AppUtil.getRegulators(MethodUtil.sparql_mgr)
 
     '''
     # SHIVA HACK for 123 model testing
@@ -733,7 +733,7 @@ class DeconflictionPipeline(GridAPPSD):
 
     DeconflictionMethod = getattr(importlib.import_module(basename),
                                   'DeconflictionMethod')
-    self.decon_method = DeconflictionMethod(sparql_mgr, self.ConflictMatrix)
+    self.decon_method = DeconflictionMethod(self.ConflictMatrix)
 
     if self.testDeconMethodFlag:
       if method_test.endswith('.py'):
