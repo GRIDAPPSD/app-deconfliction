@@ -28,10 +28,10 @@ from AppUtil import AppUtil
 import MethodUtil
 
 class DeconflictionMethod:
-  def __init__(self, sparql_mgr, conflictMatrix: Dict): 
+  def __init__(self, conflictMatrix: Dict): 
     self.conflictMatrix = MethodUtil.ConflictSubMatrix 
     
-    self.sourceFolder = "output" 
+    self.sourceFolder = "../optimization-apps/output" 
     self.constraintSourceFile = "decarbonization" 
     self.resilienceUtilitySourceFile = "resilience"
     self.decarbonizationUtilitySourceFile = "decarbonization"
@@ -42,8 +42,8 @@ class DeconflictionMethod:
     self.decision_var = {} 
     self.opt_prob = {}
 
-    self.Batteries = AppUtil.getBatteries(sparql_mgr) 
-    self.Regulators = AppUtil.getRegulators(sparql_mgr)
+    self.Batteries = AppUtil.getBatteries(MethodUtil.sparql_mgr) 
+    self.Regulators = AppUtil.getRegulators(MethodUtil.sparql_mgr)
 
 
 
@@ -52,11 +52,11 @@ class DeconflictionMethod:
     json_f = open(utilitySourceJSON, "r") 
     source_data = json.load(json_f) 
     
-    n = len(source_data.objective.coefficients) 
+    n = len(source_data["objective"]["coefficients"]) 
     
-    for myDict in source_data.objective.coefficients: 
+    for myDict in source_data["objective"]["coefficients"]: 
       myDict["value"] = myDict["value"] / n 
-      inputDict.objective.coefficients.append(myDict) 
+      inputDict["objective"]["coefficients"].append(myDict) 
     
     return
 
@@ -65,25 +65,28 @@ class DeconflictionMethod:
     json_f = open(utilitySourceJSON, "r") 
     source_data = json.load(json_f) 
     
-    myDict = source_data.objective.coefficients[0] 
+    myDict = source_data["objective"]["coefficients"][0] 
     myDict["value"] = 1 / Pmax 
-    inputDict.objective.coefficients.append(myDict) 
+    inputDict["objective"]["coefficients"].append(myDict) 
     
     return 
 
   def optimizationResolveConflict(self, constraintSourceJSON): 
-    optDict = {} 
-    
     json_f = open(constraintSourceJSON, "r") 
     constraint_data = json.load(json_f) 
-    
-    optDict.objective = {"coefficients": []} 
-    optDict.constraints = copy.deepcopy(constraint_data.constraints) 
-    optDict.variables = copy.deepcopy(constraint_data.variables) 
-    optDict.parameters = copy.deepcopy(constraint_data.parameters) 
+
+    optDict = {
+      "objective": {"coefficients": []}, 
+      "constraints": copy.deepcopy(constraint_data["constraints"]),
+      "variables": copy.deepcopy(constraint_data["variables"]), 
+      "parameters": copy.deepcopy(constraint_data["parameters"]) 
+    } 
     
     self.addDecarbonizationUtility(optDict, self.max_exch_capacity) 
     self.addResilienceUtility(optDict) 
+
+    print("Reached here!")
+    return "42"
     
     #print("FIXME: Debugging.") 
     #print(optDict.objective.coefficients) 
@@ -114,8 +117,8 @@ class DeconflictionMethod:
       setpoints[i] = self.decision_var[batt].value() 
       timestamps[i] = self.conflictTime
 
-    ResolutionVector.setpoints = setpoints 
-    ResolutionVector.timestamps = timestamps 
+    ResolutionVector["setpoints"] = setpoints 
+    ResolutionVector["timestamps"] = timestamps 
     
     return ResolutionVector
 
@@ -124,4 +127,4 @@ class DeconflictionMethod:
     self.conflictTime = currentTimestamp 
     constraintSourceJSON = os.path.join(self.sourceFolder, f"{self.constraintSourceFile}_{self.conflictTime}.json") 
     
-    return optimizationResolveConflict(self, constraintSourceJSON)
+    return self.optimizationResolveConflict(constraintSourceJSON)
