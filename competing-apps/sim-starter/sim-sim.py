@@ -7,7 +7,7 @@ import time
 
 
 class RepeatedTimer(object):
-  def __init__(self, interval, function, *args, **kwargs):
+  def __init__(self, interval, function, get_dispatches_count, *args, **kwargs):
     if interval > 0:
       self._timer = None
       self.interval = interval
@@ -17,6 +17,16 @@ class RepeatedTimer(object):
       self.is_running = False
       self.next_call = time.time()
       self.start()
+
+    elif interval < 0:
+      dispatches_needed = -interval
+
+      while function(*args, **kwargs):
+        # magic that sends out new messages only when the number of device
+        # dispatch messages received is the number of running competing apps
+        while get_dispatches_count() < dispatches_needed:
+          time.sleep(0.1)
+
     else:
       print('Hit return to send first message...', end='', flush=True)
       input()
@@ -76,6 +86,8 @@ class SimSim(GridAPPSD):
     timestamp = message['timestamp']
     if timestamp != self.currentTimestamp:
       print('*** DISPATCH FALLING BEHIND--current timestamp: ' + str(self.currentTimestamp) + ', dispatch timestamp: ' + str(timestamp), flush=True)
+    else:
+      self.dispatches_count += 1
 
     DispatchedDevices = message['dispatch']
     print('DispatchedDevices: ' + str(DispatchedDevices), flush=True)
@@ -84,6 +96,10 @@ class SimSim(GridAPPSD):
       self.DeviceSetpoints[device] = value
       if device.startswith('BatteryUnit.'):
         self.Batteries[device]['P_batt'] = value
+
+
+  def get_dispatches_count(self):
+    return self.dispatches_count
 
 
   def send_message(self):
@@ -154,6 +170,8 @@ class SimSim(GridAPPSD):
     if row[0] != '':
       self.currentTimestamp = int(row[0])
 
+    self.dispatches_count = 0
+
     return ret
 
 
@@ -195,7 +213,7 @@ class SimSim(GridAPPSD):
     self.reader = csv.reader(fp)
     next(self.reader) # skip header
 
-    rt = RepeatedTimer(int(delay), self.send_message)
+    rt = RepeatedTimer(int(delay), self.send_message, self.get_dispatches_count)
 
 
 def _main():
