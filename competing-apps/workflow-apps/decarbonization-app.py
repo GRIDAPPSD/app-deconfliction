@@ -134,9 +134,9 @@ class CompetingApp(GridAPPSD):
     return
 
 
-  def updateSoC(self, BatterySoC, Batteries):
+  def updateSoC(self, BatterySoC):
     for device, value in BatterySoC.items():
-      Batteries[device]['SoC'] = value
+      self.Batteries[device]['SoC'] = value
       #print('Updated SoC for: ' + device + ' = ' + str(round(value, 4)),
       #      flush=True)
 

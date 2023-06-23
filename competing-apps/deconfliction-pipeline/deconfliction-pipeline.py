@@ -555,15 +555,18 @@ class DeconflictionPipeline(GridAPPSD):
           if self.testDevice and device==self.testDevice:
             print('~TEST: Device deleted from resolution: ' + device,flush=True)
 
-
-    if len(DevicesToDispatch) > 0:
-      dispatch_message = {
-        'timestamp': timestamp,
-        'dispatch': DevicesToDispatch
-      }
-      print('~~> Sending device dispatch message: ' + str(dispatch_message),
-            flush=True)
-      self.gapps.send(self.publish_topic, dispatch_message)
+    # GDB 6/23/23 I was only dispatching when len(DevicesToDispatch)>0, but
+    # we added a mode where sim-sim would count the number of disptach messages
+    # to determine when to send out the next timestamp data rather than on a
+    # fixed interval so now I always send a message and it is a noop for
+    # sim-sim other than counting messages when there are no devices
+    dispatch_message = {
+      'timestamp': timestamp,
+      'dispatch': DevicesToDispatch
+    }
+    print('~~> Sending device dispatch message: ' + str(dispatch_message),
+          flush=True)
+    self.gapps.send(self.publish_topic, dispatch_message)
 
     ''' SOC MOVE
     return revised_socs
@@ -730,7 +733,7 @@ class DeconflictionPipeline(GridAPPSD):
 
     DeconflictionMethod = getattr(importlib.import_module(basename),
                                   'DeconflictionMethod')
-    self.decon_method = DeconflictionMethod(self.ConflictMatrix)
+    self.decon_method = DeconflictionMethod(sparql_mgr, self.ConflictMatrix)
 
     if self.testDeconMethodFlag:
       if method_test.endswith('.py'):
