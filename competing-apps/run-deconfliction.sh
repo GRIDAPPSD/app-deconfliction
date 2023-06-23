@@ -7,7 +7,10 @@
 #                (r)esilience, (d)ecarbonization, (p)rofit_cvr
 #       <METHOD> = name of DeconflictionMethod class file to use with path
 #                  referenced from deconfliction-pipeline directory
-#       <DELAY> = optional seconds between simulation data messages, default 8
+#       <DELAY> = optional positive value is seconds between simulation data
+#                 messages, negative value is a count of apps being run,
+#                 e.g., -3 for 3 apps, where counting device dispatch messages
+#                 triggers simulation data messages, default=counting messages
 #
 # e.g.,
 #./run-deconfliction.sh 123 rd deconfliction-methods/compromise-rd-partial-method.py
