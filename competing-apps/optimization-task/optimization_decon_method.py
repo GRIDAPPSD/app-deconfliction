@@ -127,4 +127,4 @@ class DeconflictionMethod:
       constraintSourceJSON = os.path.join(self.sourceFolder, f"{self.constraintSourceFile}_{self.conflictTime}.json") 
 
       
-      return optimizationResolveConflict(self, constraintSourceJSON) 
+      return (False, optimizationResolveConflict(self, constraintSourceJSON))
