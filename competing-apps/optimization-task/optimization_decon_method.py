@@ -42,10 +42,6 @@ class DeconflictionMethod:
     self.decision_var = {} 
     self.opt_prob = {}
 
-    SPARQLManager = getattr(importlib.import_module('sparql'),
-                            'SPARQLManager')
-    sparql_mgr = SPARQLManager(gapps, feeder_mrid, simulation_id) 
-    
     self.Batteries = AppUtil.getBatteries(sparql_mgr) 
     self.Regulators = AppUtil.getRegulators(sparql_mgr)
 
