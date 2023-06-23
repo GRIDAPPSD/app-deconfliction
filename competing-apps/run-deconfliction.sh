@@ -24,9 +24,7 @@ METHOD=$3
 trap "trap - SIGTERM && kill -- -$$" SIGINT SIGTERM EXIT
 
 # choose workflow or optimization apps
-if [[ $APPS == *"w"* ]]; then
-  cd workflow-apps
-elif [[ $APPS == *"W"* ]]; then
+if [[ $APPS == *"w"* || $APPS == *"W"* ]]; then
   cd workflow-apps
 else
   cd optimization-apps
@@ -34,26 +32,17 @@ fi
 
 delay_app_counter=0
 
-if [[ $APPS == *"r"* ]]; then
-  ((delay_app_counter--))
-  ./run-resilience.sh $MODEL >/dev/null &
-elif [[ $APPS == *"R"* ]]; then
+if [[ $APPS == *"r"* || $APPS == *"R"* ]]; then
   ((delay_app_counter--))
   ./run-resilience.sh $MODEL >/dev/null &
 fi
 
-if [[ $APPS == *"d"* ]]; then
-  ((delay_app_counter--))
-  ./run-decarbonization.sh $MODEL >/dev/null &
-elif [[ $APPS == *"D"* ]]; then
+if [[ $APPS == *"d"* || $APPS == *"D"* ]]; then
   ((delay_app_counter--))
   ./run-decarbonization.sh $MODEL >/dev/null &
 fi
 
-if [[ $APPS == *"p"* ]]; then
-  ((delay_app_counter--))
-  ./run-profit.sh $MODEL >/dev/null &
-elif [[ $APPS == *"P"* ]]; then
+if [[ $APPS == *"p"* || $APPS == *"P"* ]]; then
   ((delay_app_counter--))
   ./run-profit.sh $MODEL >/dev/null &
 fi
@@ -67,7 +56,11 @@ cd ../sim-starter
 
 # don't start sim-sim with 0 delay since that means the user will be
 # running it separately and feeding data interactively
-if [ "$DELAY" -lt 0 ]; then
+if [ "$DELAY" -eq 0 ]; then
+  echo "*** Not starting sim-sim due to DELAY=0 ***"
+elif [[ $APPS == *"w"* || $APPS == *"W"* ]]; then
+  ./run-sim.sh $MODEL $DELAY --wait >/dev/null &
+elif [ "$DELAY" -lt 0 ]; then
   ./run-sim.sh $MODEL $DELAY >/dev/null &
 elif [ "$DELAY" -gt 0 ]; then
   ./run-sim.sh $MODEL $DELAY --wait >/dev/null &
