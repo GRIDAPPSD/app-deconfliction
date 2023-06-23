@@ -1,7 +1,6 @@
 #TODO: Copyright text
 
 import csv
-import copy
 import itertools
 import json
 import os
@@ -11,6 +10,9 @@ from typing import Dict, List
 
 import numpy as np
 import pulp
+
+import copy
+import importlib
 
 # find and add shared directory to path hopefully wherever it is from here
 if (os.path.isdir('../../shared')):
@@ -26,7 +28,7 @@ from AppUtil import AppUtil
 import MethodUtil
 
 class DeconflictionMethod:
-  def __init__(self, conflictMatrix: Dict, fullResolutionFlag: bool = True): 
+  def __init__(self, sparql_mgr, conflictMatrix: Dict): 
     self.conflictMatrix = MethodUtil.ConflictSubMatrix 
     
     self.sourceFolder = "output" 
@@ -127,4 +129,4 @@ class DeconflictionMethod:
       constraintSourceJSON = os.path.join(self.sourceFolder, f"{self.constraintSourceFile}_{self.conflictTime}.json") 
 
       
-      return (False, optimizationResolveConflict(self, constraintSourceJSON))
+      return optimizationResolveConflict(self, constraintSourceJSON)
