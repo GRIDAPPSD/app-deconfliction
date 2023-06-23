@@ -25,7 +25,14 @@ fi
 # foreground process receives ctrl-C
 trap "trap - SIGTERM && kill -- -$$" SIGINT SIGTERM EXIT
 
-cd optimization-apps
+# choose workflow or optimization apps
+if [[ $APPS == *"w"* ]]; then
+  cd workflow-apps
+elif [[ $APPS == *"W"* ]]; then
+  cd workflow-apps
+else
+  cd optimization-apps
+fi
 
 if [[ $APPS == *"r"* ]]; then
   ./run-resilience.sh $MODEL >/dev/null &
