@@ -922,7 +922,7 @@ class CompetingApp(GridAPPSD):
       #self.interval = 4
     elif opt_type.startswith('p') or opt_type.startswith('P'):
       self.opt_type = 'profit_cvr'
-      self.gapRel = 0.1
+      self.gapRel = 0.05
       #self.interval = 5
     else:
       print('*** Exiting due to unrecognized optimization type: ' + opt_type,
