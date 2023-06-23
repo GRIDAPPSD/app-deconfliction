@@ -4,9 +4,9 @@ import csv
 import itertools
 import json
 import math
-import os
 from pathlib import Path
 import sys
+import time
 from typing import Dict, List
 
 import numpy as np
@@ -56,6 +56,8 @@ class DeconflictionMethod:
         self.initializeDistributedConflictMatrix()
         self.rVector = np.empty((DeconflictionMethod.numberOfMetrics, 1))
         self.calculateCriteriaPreferenceWeightVector()
+        self.resolutionDict = {}
+        self.maxDeconflictionTime = -1
 
 
     def initializeDistributedConflictMatrix(self):
@@ -247,7 +249,8 @@ class DeconflictionMethod:
         #delete all rows with NaN in them and remove invalid setpoint alternatives
         self.uMatrix= self.uMatrix[~np.isnan(self.uMatrix).any(axis=1),:]
         if self.uMatrix.size == 0: #Throw error if all setpoint alternaitives caused powerflow operation violations
-            raise RuntimeError("All the setpoints requested by the applications are causing powerflow operation violations!")
+             print("!\n!\n!WARNING: All the setpoints requested by the applications are causing powerflow operation violations! Sending Resolution from previous time.\n!\n!")
+             return
         for i in range(-1,-len(self.invalidSetpoints)-1,-1):
             idx = self.invalidSetpoints[i]
             del self.setpointSetVector["setpointSets"][idx]
@@ -302,7 +305,7 @@ class DeconflictionMethod:
 
 
     def deconflict(self, currentTime: int) -> Dict:
-        
+        deconflictStart = time.perf_counter()
         for timeVal in self.conflictMatrix.get("timestamps",{}).values():
             self.conflictTime = max(self.conflictTime, timeVal)
         distributedConflictMatrix = {}
@@ -335,6 +338,7 @@ class DeconflictionMethod:
             "setpoints": {},
             "timestamps": {}
         }
+        deconflictionFailed = False
         for area in distributedConflictMatrix.keys():
             print(f"deconflicting area {area}...")
             self.setpointSetVector = self.buildSetpointsVector(distributedConflictMatrix[area])
@@ -345,23 +349,51 @@ class DeconflictionMethod:
                 self.buildUMatrix(self.setpointSetVector["setpointSets"][i], self.setpointSetVector["setpointIndexMap"], i, simulationData)
             print(f"{len(self.invalidSetpoints)} setpoint alternatives eliminated due to operational violations.")
             self.normalizeUMatrix()
-            self.calculateCriteriaPriorityMatrix()
-            self.calculateSetpointAlternativesPriorityMatrix()
-            fVector = self.pMatrix @ self.uMatrix @ self.cMatrix @ self.rVector
-            resolutionIndex = fVector.argmax()
-            resolutionSetpointSet = self.setpointSetVector["setpointSets"][resolutionIndex]
-            distributedResolutionVector = {
-                "setpoints": {},
-                "timestamps": {}
-            }
-            for i in range(len(resolutionSetpointSet)):
-                distributedResolutionVector["setpoints"][self.setpointSetVector["setpointIndexMap"][i]] = resolutionSetpointSet[i]
-                distributedResolutionVector["timestamps"][self.setpointSetVector["setpointIndexMap"][i]] = self.conflictTime
-            resolutionVector["setpoints"].update(distributedResolutionVector["setpoints"])
-            resolutionVector["timestamps"].update(distributedResolutionVector["timestamps"])
+            if self.uMatrix.size > 0:
+                self.calculateCriteriaPriorityMatrix()
+                self.calculateSetpointAlternativesPriorityMatrix()
+                fVector = self.pMatrix @ self.uMatrix @ self.cMatrix @ self.rVector
+                resolutionIndex = fVector.argmax()
+                resolutionSetpointSet = self.setpointSetVector["setpointSets"][resolutionIndex]
+                distributedResolutionVector = {
+                    "setpoints": {},
+                    "timestamps": {}
+                }
+                for i in range(len(resolutionSetpointSet)):
+                    distributedResolutionVector["setpoints"][self.setpointSetVector["setpointIndexMap"][i]] = resolutionSetpointSet[i]
+                    distributedResolutionVector["timestamps"][self.setpointSetVector["setpointIndexMap"][i]] = self.conflictTime
+                resolutionVector["setpoints"].update(distributedResolutionVector["setpoints"])
+                resolutionVector["timestamps"].update(distributedResolutionVector["timestamps"])
+            else:
+                #TODO: figure out a more sophisticated alternative than giving the last resolution when current conflict can't be resolved.
+                deconflictionFailed = True
+                pastResolutionVector = self.resolutionDict[self.conflictTime - 1]
+                resolutionSetpointSet = [0]*len(self.setpointSetVector["setpointIndexMap"])
+                for i in range(len(self.setpointSetVector["setpointIndexMap"])):
+                    resolutionVector["setpoints"][self.setpointSetVector["setpointIndexMap"][i]] = pastResolutionVector["setpoints"][self.setpointSetVector["setpointIndexMap"][i]]
+                    resolutionVector["timestamps"][self.setpointSetVector["setpointIndexMap"][i]] = self.conflictTime
+                    resolutionSetpointSet[i] = pastResolutionVector["setpoints"][self.setpointSetVector["setpointIndexMap"][i]]
             #update opendssmodel with resolved setpoints for next conflict
             self.runPowerFlowSnapshot(resolutionSetpointSet, self.setpointSetVector["setpointIndexMap"], simulationData)
+        deconflictTime = time.perf_counter() - deconflictStart
+        print(f"deconfliction for timestamp, {self.conflictTime}, took {deconflictTime}s.\n\n\n")
+        self.resolutionDict[self.conflictTime] = resolutionVector
+        self.resolutionDict[self.conflictTime]["deconflictTime"] = deconflictTime
+        self.resolutionDict[self.conflictTime]["deconflictionFailed"] = deconflictionFailed
+        self.maxDeconflictionTime = max(self.maxDeconflictionTime, deconflictTime)
+        if self.conflictTime == 96:
+            #TODO: move all this to a __del__() method when deconfliction pipeline service properly implements a clean exit
+            print(f"Maximum deconfliction time was {self.maxDeconflictionTime}")
+            resultFile = Path(__file__).parent.resolve() / 'resolutionResults.json'
+            with resultFile.open(mode="w") as rf:
+                json.dump(self.resolutionDict, rf, indent=4, sort_keys=True)
         return (False, resolutionVector)
+    
+
+    def __del__(self):
+        resultFile = Path(__file__).parent.resolve() / 'resolutionResults.json'
+        with resultFile.open(mode="w") as rf:
+            json.dump(self.resolutionDict, rf, indent=4, sort_keys=True)
 
 
     
