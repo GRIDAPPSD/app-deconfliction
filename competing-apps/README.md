@@ -71,6 +71,13 @@ Every time the pipeline framework receives a competing app set-points message wh
 
 The timestamp provided by the competing app sending the set-points message that resulted in the call to deconflict() is passed as an argument. This can serve as a reference to the DeconflictionMethod such as when stepping through ConflictMatrix to determine if a device set-point conflict is a new conflict or one that previously existed. Note that should ConflictSubMatrix be used instead of ConflictMatrix, then by definition of ConflictSubMatrix only containing new conflicts, this timestamp value passed to deconflict() will be associated with at least one of the apps for every device in ConflictSubMatrix.
 
+The first form for the return value, only returning ResolutionVector, is used when ConflictMatrix is being processed and a full ResolutionVector is being returned. The second form, returning a tuple consisting of a Boolean flag and the ResolutionVector, is typically used when returning a partial ResolutionVector when processing ConflictSubMatrix, but can also be used for a full ResolutionVector. The flag is True for returning a full ResolutionVector, False for returning a partial ResolutionVector. Therefore, typically the return statement would be "return (False, ResolutionVector)" to denote a partial ResolutionVector. Not having to return a tuple with a full ResolutionVector is simply shorthand for what is believed to be the most common usage. Only if a tuple is returned and the first value is False will the pipeline framework fill in the remainder of the partial ResolutionVector to produce a full ResolutionVector.
+
+### ConflictMatrix and ResolutionVector structures
+
+### MethodUtil members
+
+
 ## Directory layout
 
 ```` bash
