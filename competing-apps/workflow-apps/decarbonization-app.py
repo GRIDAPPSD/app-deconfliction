@@ -76,9 +76,9 @@ from AppUtil import AppUtil
 
 class CompetingApp(GridAPPSD):
 
-  def resilience(self, EnergyConsumers, SynchronousMachines, Batteries,
-                 SolarPVs, deltaT, emergencyState, outage,
-                 time, load_mult, pv_mult, price):
+  def decarbonization(self, EnergyConsumers, SynchronousMachines, Batteries,
+                      SolarPVs, deltaT, outage,
+                      time, load_mult, pv_mult, profit):
 
     P_load = 0.0
     for name in EnergyConsumers:
@@ -88,10 +88,7 @@ class CompetingApp(GridAPPSD):
     for name in SolarPVs:
       P_ren += pv_mult*SolarPVs[name]['kW']
 
-    if emergencyState:
-      print('\nRESILIENCE APP OUTPUT: Emergency state\n--------------------------------------', flush=True)
-    else:
-      print('\nRESILIENCE APP OUTPUT: Alert state\n----------------------------------', flush=True)
+    print('\nDECARBONIZATION APP OUTPUT\n--------------------------', flush=True)
 
     print('time: ' + str(time), flush=True)
     print('Total EnergyConsumers P_load: ' + str(round(P_load,4)), flush=True)
@@ -101,65 +98,30 @@ class CompetingApp(GridAPPSD):
 
     if outage!=None and time>outage[0] and time<outage[1]:
       P_sub = 0.0
-      emergencyState = True
 
-    if not emergencyState: # alert state
-      P_batt_total = 0.0
-      for name in Batteries:
-        Batteries[name]['state'] = 'idling'
-        if Batteries[name]['SoC'] < 0.9:
-          P_batt_c = (0.9 - Batteries[name]['SoC'])*Batteries[name]['ratedE'] / (Batteries[name]['eff_c'] * deltaT)
-          Batteries[name]['P_batt_c'] = P_batt_c = min(P_batt_c, Batteries[name]['ratedkW'])
-          P_batt_total += P_batt_c
-        else:
-          Batteries[name]['P_batt_c'] = P_batt_c = 0.0
+    P_batt_total = 0.0
+    for name in Batteries:
+      Batteries[name]['state'] = 'idling'
+      if Batteries[name]['SoC'] < 0.9:
+        P_batt_c = (0.9 - Batteries[name]['SoC'])*Batteries[name]['ratedE'] / (Batteries[name]['eff_c'] * deltaT)
+        Batteries[name]['P_batt_c'] = P_batt_c = min(P_batt_c, Batteries[name]['ratedkW'])
+        P_batt_total += P_batt_c
+
+    if P_ren > P_load:
+      P_surplus = P_ren - P_load
+      print('P_surplus: ' + str(round(P_surplus,4)) + ', P_batt_total: ' + str(round(P_batt_total,4)), flush=True)
+
+      # print('Charging from renewables', flush=True)
+      if P_surplus < P_batt_total:
+        for name in Batteries:
+          if 'P_batt_c' in Batteries[name]:
+            Batteries[name]['P_batt_c'] *= P_surplus/P_batt_total
 
       if P_batt_total > 0.0:
-        if P_ren > P_load:
-          if P_ren - P_load >= P_batt_total:
-            # print('Charging from renewables', flush=True)
-            # YES, Charge ESS
-            AppUtil.charge_batteries(Batteries, deltaT)
+        AppUtil.charge_batteries(Batteries, deltaT)
 
-          else:
-            # NO, Check P_sub
-            if P_ren + P_sub > P_load:
-              # print('P_ren<P_load Charging from renewable + substation', flush=True)
-              AppUtil.charge_batteries(Batteries, deltaT)
-
-        else:
-          # Check P_sub
-          if P_ren + P_sub > P_load:
-            # print('P_ren+P_sub>P_load Charging from renewable + substation', flush=True)
-            AppUtil.charge_batteries(Batteries, deltaT)
-
-    else: # emergency state
-      # Shiva HACK
-      P_sub = 0.0
-      if P_ren > P_load:
-        P_batt_total = 0.0
-        for name in Batteries:
-          Batteries[name]['state'] = 'idling'
-          if Batteries[name]['SoC'] < 0.9:
-            P_batt_c = (0.9 - Batteries[name]['SoC']) * Batteries[name]['ratedE'] / (Batteries[name]['eff_c'] * deltaT)
-            Batteries[name]['P_batt_c'] = P_batt_c = min(P_batt_c, Batteries[name]['ratedkW'])
-            P_batt_total += P_batt_c
-          else:
-            Batteries[name]['P_batt_c'] = P_batt_c = 0.0
-
-        P_surplus = P_ren - P_load
-        print('P_surplus: ' + str(P_surplus) + ', P_batt_total: ' + str(P_batt_total), flush=True)
-
-        # print('Charging from renewables', flush=True)
-        if P_surplus < P_batt_total:
-          for name in Batteries:
-            if 'P_batt_c' in Batteries[name]:
-              Batteries[name]['P_batt_c'] *= P_surplus / P_batt_total
-
-        if P_batt_total > 0.0:
-          AppUtil.charge_batteries(Batteries, deltaT)
-      else:
-        AppUtil.dispatch_DGSs(Batteries, SynchronousMachines, deltaT, P_load, P_ren, P_sub)
+    else:
+      AppUtil.dispatch_DGSs(Batteries, SynchronousMachines, deltaT, P_load, P_ren, P_sub)
 
     for name in Batteries:
       if Batteries[name]['state'] == 'charging':
@@ -172,9 +134,9 @@ class CompetingApp(GridAPPSD):
     return
 
 
-  def updateSoC(self, BatterySoC, Batteries):
+  def updateSoC(self, BatterySoC):
     for device, value in BatterySoC.items():
-      Batteries[device]['SoC'] = value
+      self.Batteries[device]['SoC'] = value
       #print('Updated SoC for: ' + device + ' = ' + str(round(value, 4)),
       #      flush=True)
 
@@ -201,10 +163,9 @@ class CompetingApp(GridAPPSD):
 
     self.t_plot.append(AppUtil.to_datetime(time)) # plotting
 
-    self.resilience(self.EnergyConsumers, self.SynchronousMachines,
-                    self.Batteries, self.SolarPVs, self.deltaT,
-                    self.emergencyState, self.outage,
-                    time, loadshape, solar, price)
+    self.decarbonization(self.EnergyConsumers, self.SynchronousMachines,
+                         self.Batteries, self.SolarPVs, self.deltaT,
+                         self.outage, time, loadshape, solar, price)
 
     self.solution[time] = {}
     AppUtil.batt_to_solution(self.Batteries, self.solution[time])
@@ -219,7 +180,7 @@ class CompetingApp(GridAPPSD):
       set_points[name] = solution[name]['P_batt']
 
     out_message = {
-      'app_name': 'resilience-app',
+      'app_name': 'decarbonization-app',
       'timestamp': time,
       'set_points': set_points
     }
@@ -229,7 +190,7 @@ class CompetingApp(GridAPPSD):
     return
 
 
-  def __init__(self, gapps, feeder_mrid, simulation_id, outage, state):
+  def __init__(self, gapps, feeder_mrid, simulation_id, outage):
     self.gapps = gapps
 
     SPARQLManager = getattr(importlib.import_module('shared.sparql'),
@@ -237,8 +198,6 @@ class CompetingApp(GridAPPSD):
     sparql_mgr = SPARQLManager(gapps, feeder_mrid, simulation_id)
 
     self.outage = outage
-
-    self.emergencyState = state.startswith('e') or state.startswith('E')
 
     self.EnergyConsumers = AppUtil.getEnergyConsumers(sparql_mgr)
 
@@ -267,7 +226,7 @@ class CompetingApp(GridAPPSD):
     gapps.subscribe(service_output_topic('gridappsd-sim-sim',
                                          simulation_id), self)
 
-    print('Initialized resilience app and now waiting for messages...',
+    print('Initialized decarbonization app and now waiting for messages...',
           flush=True)
 
     self.exit_flag = False
@@ -279,18 +238,18 @@ class CompetingApp(GridAPPSD):
     if not os.path.isdir('output'):
       os.makedirs('output')
 
-    json_fp = open('output/resilience_solution.json', 'w')
+    json_fp = open('output/decarbonization_solution.json', 'w')
     json.dump(self.solution, json_fp, indent=2)
     json_fp.close()
 
-    AppUtil.make_plots('Resilience Exclusivity', 'resilience', self.Batteries,
-                       self.t_plot, self.p_batt_plot, self.soc_plot)
+    AppUtil.make_plots('Decarbonization Exclusivity', 'decarbonization',
+                 self.Batteries, self.t_plot, self.p_batt_plot, self.soc_plot)
 
     return
 
 
 def _main():
-  print('Starting resilience app code...', flush=True)
+  print('Starting decarbonization app code...', flush=True)
 
   # for loading modules
   if (os.path.isdir('shared')):
@@ -305,8 +264,6 @@ def _main():
   parser = argparse.ArgumentParser()
   parser.add_argument("simulation_id", help="Simulation ID")
   parser.add_argument("request", help="Simulation Request")
-  parser.add_argument("state", nargs="?", default="Alert",
-                      help="Alert or Emergency State")
   parser.add_argument("--outage", "--out", "-o", type=int, nargs=2)
   opts = parser.parse_args()
 
@@ -314,7 +271,7 @@ def _main():
   feeder_mrid = sim_request["power_system_config"]["Line_name"]
 
   # authenticate with GridAPPS-D Platform
-  os.environ['GRIDAPPSD_APPLICATION_ID'] = 'gridappsd-resilience-app'
+  os.environ['GRIDAPPSD_APPLICATION_ID'] = 'gridappsd-competing-app'
   os.environ['GRIDAPPSD_APPLICATION_STATUS'] = 'STARTED'
   os.environ['GRIDAPPSD_USER'] = 'app_user'
   os.environ['GRIDAPPSD_PASSWORD'] = '1234App'
@@ -323,7 +280,7 @@ def _main():
   assert gapps.connected
 
   competing_app = CompetingApp(gapps, feeder_mrid, opts.simulation_id,
-                               opts.outage, opts.state)
+                               opts.outage)
 
 
 if __name__ == "__main__":
