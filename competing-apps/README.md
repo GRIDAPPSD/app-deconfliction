@@ -19,11 +19,11 @@ Sim-sim publishes messages containing time-series simulation parameters and upda
 
 ## DeconflictionMethod class interface
 
-Deconfliction methods are implemented within classes named DeconflictionMethod--the filename may indicate the type of method, but the class name must be DeconflictionMethod. The only required methods for DeconflictionMethod are a constructor for initialization and a method named deconflict() that performs deconfliction when called. The class may define other methods or even call other classes or processes needed to perform deconfliction at the descretion of the method developer, but the pipeline framework uses only __init__() and deconflict(). The pipeline framework imports and directly invokes these methods so DeconflictionMethod is part of the deconfliction pipeline process as distinguised from competing apps and sim-sim that interface via inter-process messaging.
+Deconfliction methods are implemented within classes named DeconflictionMethod--the filename for defining the class may distinguish the type of method, but the class name must be DeconflictionMethod. The only required methods for DeconflictionMethod are a constructor for initialization and a method named deconflict() that performs deconfliction when called. The class may define other methods or even call other classes or processes needed to perform deconfliction at the descretion of the method developer, but the pipeline framework uses only \_\_init\_\_() and deconflict(). The pipeline framework imports and directly invokes these methods so DeconflictionMethod is part of the deconfliction pipeline process as distinguised from competing apps and sim-sim that interface via inter-process messaging.
 
 The interface of the pipeline framework and DeconflictionMethod classes consists of:
 <ul>
-<li>Signature of DeconflictionMethod __init__() constructor</li>
+<li>Signature of DeconflictionMethod \_\_init\_\_() constructor</li>
 <li>Signature of and return value from DeconflictionMethod deconflict() method</li>
 <li>Descriptions of ConflictMatrix and ResolutionVector structures for exchanging data between the pipeline framework and DeconflictionMethod class</li>
 <li>MethodUtil class members used to provide ancilliary data from the pipeline framework to the DeconflictionMethod class</li>
