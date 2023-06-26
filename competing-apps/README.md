@@ -19,7 +19,9 @@ Sim-sim publishes messages containing time-series simulation parameters and upda
 
 ## DeconflictionMethod class interface
 
-Deconfliction methods are implemented within classes named DeconflictionMethod--the filename for defining the class may distinguish the type of method, but the class name must be DeconflictionMethod. The only required methods for DeconflictionMethod are a constructor for initialization and a method named deconflict() that performs deconfliction when called. The class may define other methods or even call other classes or processes needed to perform deconfliction at the descretion of the method developer, but the pipeline framework uses only \_\_init\_\_() and deconflict(). The pipeline framework imports and directly invokes these methods so DeconflictionMethod is part of the deconfliction pipeline process as distinguised from competing apps and sim-sim that interface via inter-process messaging.
+Deconfliction methods are implemented within classes named DeconflictionMethod--the filename for defining the class may distinguish the type of method, but the class name must be DeconflictionMethod. The only required methods for DeconflictionMethod are a constructor for initialization and a method named deconflict() that performs deconfliction when called. The class may define other methods or even call other classes or processes needed to perform deconfliction at the descretion of the method developer, but the pipeline framework uses only \_\_init\_\_() and deconflict(). The pipeline framework imports and directly invokes these methods so DeconflictionMethod is part of the deconfliction pipeline process as distinguished from competing apps and sim-sim that interface via inter-process messaging.
+
+DeconflictionMethod classes perform deconfliction by taking device set-points across all competing apps given in the ConflictMatrix structure and putting deconflicted device setpoints in the ResolutionVector structure. Alternatively, deconfliction can be performed using a structgure named ConflictSubMatrix that represents only the device conflicts that were introduced as a result of the most recent competing apps set-points message. A ResolutionVector is still created in this instance, but it is referred to as a partial ResolutionVector (because the devices represented are only those in ConflictSubMatrix) whereas using the entire ConflictMatrix to perform deconfliction must produce a full ResolutionVector. For using ConflictSubMatrix to produce a partial ResolutionVector, the pipeline framework assumes the responsibility of filling in the remainder of the ResolutionVector to ultimately arriving at a full ResolutuionVector. This responsibility includes both filling in set-points for devices for which there is no conflict in ConflictMatrix and also set-points for devices that were previously resolved. Therefore only if a DeconflictionMethod class is willing to accept previous resolutions should ConflictSubMatrix be used to produce a partial ResolutionVector.
 
 The interface of the pipeline framework and DeconflictionMethod classes consists of:
 <ul>
@@ -28,6 +30,42 @@ The interface of the pipeline framework and DeconflictionMethod classes consists
 <li>Descriptions of ConflictMatrix and ResolutionVector structures for exchanging data between the pipeline framework and DeconflictionMethod class</li>
 <li>MethodUtil class members used to provide ancilliary data from the pipeline framework to the DeconflictionMethod class</li>
 </ul>
+
+### DeconflictionMethod __init__() constructor
+
+The signature of the constructor is:
+
+```` bash
+class DeconflictionMethod:
+
+  def __init__(self, ConflictMatrix):
+````
+
+During pipeline framework initialization the configured DeconflictionMethod class is imported and the constructor called. A reference to the ConflictMatrix is passed in the constructor and typically the implementation will save this away in a class variable for later user in the deconflict() method. This same ConflictMatrix reference can be used throughout the deconfliction pipeline instance even as the ConflictMatrix is being continuously updated.
+
+### DeconflictionMethod deconflict() method
+
+There are two forms for the deconflict() return value with the same method signature for each. The first form is:
+
+```` bash
+class DeconflictionMethod:
+
+  def deconflict(self, timestamp):
+    ...
+
+    return ResolutionVector
+````
+
+The second form is:
+
+```` bash
+class DeconflictionMethod:
+
+  def deconflict(self, timestamp):
+    ...
+
+    return (fullResolutionFlag, ResolutionVector)
+````
 
 ## Directory layout
 
