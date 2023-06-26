@@ -303,9 +303,13 @@ class AppUtil:
     for name in Batteries:
       solution[name] = {}
       if Batteries[name]['state'] == 'charging':
-        solution[name]['P_batt'] = Batteries[name]['P_batt_c']
+        # Gary 6/23/23 Multiply P_batt by 1000 to scale units
+        solution[name]['P_batt'] = 1000*Batteries[name]['P_batt_c']
+        #solution[name]['P_batt'] = Batteries[name]['P_batt_c']
       elif Batteries[name]['state'] == 'discharging':
-        solution[name]['P_batt'] = -Batteries[name]['P_batt_d']
+        # Gary 6/23/23 Multiply P_batt by 1000 to scale units
+        solution[name]['P_batt'] = -1000*Batteries[name]['P_batt_d']
+        #solution[name]['P_batt'] = -Batteries[name]['P_batt_d']
       else:
         solution[name]['P_batt'] = 0.0
 
