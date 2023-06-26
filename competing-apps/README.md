@@ -23,7 +23,7 @@ Deconfliction methods are implemented within classes named DeconflictionMethod--
 
 The interface of the pipeline framework and DeconflictionMethod classes consists of:
 <ul>
-<li>Signature of DeconflictionMethod \_\_init\_\_() constructor</li>
+<li>Signature of DeconflictionMethod __init__() constructor</li>
 <li>Signature of and return value from DeconflictionMethod deconflict() method</li>
 <li>Descriptions of ConflictMatrix and ResolutionVector structures for exchanging data between the pipeline framework and DeconflictionMethod class</li>
 <li>MethodUtil class members used to provide ancilliary data from the pipeline framework to the DeconflictionMethod class</li>
