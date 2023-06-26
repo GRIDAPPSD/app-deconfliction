@@ -44,6 +44,7 @@ class AppUtil:
 
 
   def getRegulators(sparql_mgr):
+    idx = 0
     Regulators = {}
     bindings = sparql_mgr.regulator_query()
     for obj in bindings:
@@ -62,6 +63,8 @@ class AppUtil:
       Regulators[name]['highStep'] = float(obj['highStep']['value'])
       Regulators[name]['lowStep'] = float(obj['lowStep']['value'])
       Regulators[name]['increment'] = float(obj['incr']['value'])
+      Regulators[name]['idx'] = idx
+      idx += 1
 
     return Regulators
 

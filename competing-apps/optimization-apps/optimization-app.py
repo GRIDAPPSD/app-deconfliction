@@ -275,6 +275,9 @@ class CompetingApp(GridAPPSD):
                                  str(timestamp) + '.json', 'w')
         json.dump(data, json_opt, indent=4)
         json_opt.close()
+        json_opt = open('output/' + self.opt_type + '_latest.json', 'w')
+        json.dump(data, json_opt, indent=4)
+        json_opt.close()
         # self.dynamicProb.writeLP('output/' + self.opt_type + '_' +
         #                          str(timestamp) + '.lp')
 
