@@ -48,20 +48,22 @@ class DeconflictionMethod:
 
 
   def addResilienceUtility(self, inputDict): 
-    utilitySourceJSON = os.path.join(self.sourceFolder, f"{self.resilienceUtilitySourceFile}_{self.conflictTime}.json") 
+    #utilitySourceJSON = os.path.join(self.sourceFolder, f"{self.resilienceUtilitySourceFile}_{self.conflictTime}.json") 
+    utilitySourceJSON = os.path.join(self.sourceFolder, f"{self.resilienceUtilitySourceFile}_latest.json") 
     json_f = open(utilitySourceJSON, "r") 
     source_data = json.load(json_f) 
     
     n = len(source_data["objective"]["coefficients"]) 
     
     for myDict in source_data["objective"]["coefficients"]: 
-      myDict["value"] = myDict["value"] / n 
+      myDict["value"] = 0.01 * myDict["value"] / n 
       inputDict["objective"]["coefficients"].append(myDict) 
     
     return
 
   def addDecarbonizationUtility(self, inputDict, Pmax): 
-    utilitySourceJSON = os.path.join(self.sourceFolder, f"{self.decarbonizationUtilitySourceFile}_{self.conflictTime}.json") 
+    #utilitySourceJSON = os.path.join(self.sourceFolder, f"{self.decarbonizationUtilitySourceFile}_{self.conflictTime}.json") 
+    utilitySourceJSON = os.path.join(self.sourceFolder, f"{self.decarbonizationUtilitySourceFile}_latest.json") 
     json_f = open(utilitySourceJSON, "r") 
     source_data = json.load(json_f) 
     
@@ -76,22 +78,25 @@ class DeconflictionMethod:
     constraint_data = json.load(json_f) 
 
     optDict = {
-      "objective": {"coefficients": []}, 
+      "objective": {"name": "Anything", "coefficients": []}, 
       "constraints": copy.deepcopy(constraint_data["constraints"]),
       "variables": copy.deepcopy(constraint_data["variables"]), 
-      "parameters": copy.deepcopy(constraint_data["parameters"]) 
+      "parameters": copy.deepcopy(constraint_data["parameters"]),
+      "sos1": [],
+      "sos2": []
     } 
     
     self.addDecarbonizationUtility(optDict, self.max_exch_capacity) 
     self.addResilienceUtility(optDict) 
-
-    print("Reached here!")
-    return "42"
     
     #print("FIXME: Debugging.") 
     #print(optDict.objective.coefficients) 
     #return 
   
+    json_bi = open('opt_prob.json', 'w') 
+    json.dump(optDict, json_bi, indent=4) 
+    json_bi.close()
+
     self.decision_var, self.opt_prob = pulp.LpProblem.from_dict(optDict) 
     self.opt_prob.solve(pulp.PULP_CBC_CMD(msg = 0, gapRel = 0.01)) 
     print('Optimization-based Deconfliction: Status:', pulp.LpStatus[self.opt_prob.status], flush = True) 
@@ -125,6 +130,7 @@ class DeconflictionMethod:
 
   def deconflict(self, currentTimestamp) -> Dict: 
     self.conflictTime = currentTimestamp 
-    constraintSourceJSON = os.path.join(self.sourceFolder, f"{self.constraintSourceFile}_{self.conflictTime}.json") 
+    #constraintSourceJSON = os.path.join(self.sourceFolder, f"{self.constraintSourceFile}_{self.conflictTime}.json") 
+    constraintSourceJSON = os.path.join(self.sourceFolder, f"{self.constraintSourceFile}_latest.json") 
     
     return self.optimizationResolveConflict(constraintSourceJSON)
