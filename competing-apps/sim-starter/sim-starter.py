@@ -46,7 +46,7 @@ Created on Sept 29, 2020
 """
 
 __version__ = '0.1.0'
-
+import os
 import sys
 import json
 import os
@@ -77,6 +77,7 @@ Optional command line arguments:
         exit()
 
     appName = sys.argv[0]
+<<<<<<< HEAD
 
     # authenticate with GridAPPS-D Platform
     os.environ['GRIDAPPSD_APPLICATION_ID'] = 'gridappsd-sim-starter'
@@ -86,6 +87,13 @@ Optional command line arguments:
 
     gapps = GridAPPSD()
 
+=======
+    # authenticate with GridAPPS-D Platform
+    os.environ['GRIDAPPSD_APPLICATION_ID'] = 'gridappsd-sim-sim'
+    os.environ['GRIDAPPSD_APPLICATION_STATUS'] = 'STARTED'
+    os.environ['GRIDAPPSD_USER'] = 'app_user'
+    os.environ['GRIDAPPSD_PASSWORD'] = '1234App'
+>>>>>>> 2831c84e8d0dc32102d8f2beff04b3a057a6187b
     cwd = dirname(abspath(getsourcefile(lambda:0))) # magic to get current dir
     sim_config_file = cwd + '/' + sys.argv[1] + '-config.json'
 
