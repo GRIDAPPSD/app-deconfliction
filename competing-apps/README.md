@@ -21,7 +21,7 @@ Sim-sim publishes messages containing time-series simulation parameters and upda
 
 Deconfliction methods are implemented within classes named DeconflictionMethod--the filename for defining the class may distinguish the type of method, but the class name must be DeconflictionMethod. The only required methods for DeconflictionMethod are a constructor for initialization and a method named deconflict() that performs deconfliction when called. The class may define other methods or even call other classes or processes needed to perform deconfliction at the descretion of the method developer, but the pipeline framework uses only \_\_init\_\_() and deconflict(). The pipeline framework imports and directly invokes these methods so DeconflictionMethod is part of the deconfliction pipeline process as distinguished from competing apps and sim-sim that interface via inter-process messaging.
 
-DeconflictionMethod classes perform deconfliction by taking device set-points across all competing apps given in the ConflictMatrix structure and putting deconflicted device setpoints in the ResolutionVector structure. Alternatively, deconfliction can be performed using a structgure named ConflictSubMatrix that represents only the device conflicts that were introduced as a result of the most recent competing apps set-points message. A ResolutionVector is still created in this instance, but it is referred to as a partial ResolutionVector (because the devices represented are only those in ConflictSubMatrix) whereas using the entire ConflictMatrix to perform deconfliction must produce a full ResolutionVector. For using ConflictSubMatrix to produce a partial ResolutionVector, the pipeline framework assumes the responsibility of filling in the remainder of the ResolutionVector to ultimately arriving at a full ResolutuionVector. This responsibility includes both filling in set-points for devices for which there is no conflict in ConflictMatrix and also set-points for devices that were previously resolved. Therefore only if a DeconflictionMethod class is willing to accept previous resolutions should ConflictSubMatrix be used to produce a partial ResolutionVector.
+DeconflictionMethod classes perform deconfliction by taking device set-points across all competing apps given in the ConflictMatrix structure and putting deconflicted device setpoints in the ResolutionVector structure. Alternatively, deconfliction can be performed using a structgure named ConflictSubMatrix that represents only the device conflicts that were introduced as a result of the most recent competing app set-points message. A ResolutionVector is still created in this instance, but it is referred to as a partial ResolutionVector (because the devices represented are only those in ConflictSubMatrix) whereas using the entire ConflictMatrix to perform deconfliction must produce a full ResolutionVector. For using ConflictSubMatrix to produce a partial ResolutionVector, the pipeline framework takes over the responsibility of filling in the remainder of the ResolutionVector creating the full ResolutionVector. This responsibility includes both filling in set-points for devices for which there is no conflict in ConflictMatrix and also set-points for devices that were previously resolved by the DeconflictionMethod class (the pipeline framework remembers past resolutions). Therefore only if a DeconflictionMethod class is willing to accept previous resolutions should ConflictSubMatrix be used to produce a partial ResolutionVector.
 
 The interface of the pipeline framework and DeconflictionMethod classes consists of:
 <ul>
@@ -31,7 +31,7 @@ The interface of the pipeline framework and DeconflictionMethod classes consists
 <li>MethodUtil class members used to provide ancilliary data from the pipeline framework to the DeconflictionMethod class</li>
 </ul>
 
-### DeconflictionMethod __init__() constructor
+### DeconflictionMethod \_\_init\_\_() constructor
 
 The signature of the constructor is:
 
@@ -41,7 +41,7 @@ class DeconflictionMethod:
   def __init__(self, ConflictMatrix):
 ````
 
-During pipeline framework initialization the configured DeconflictionMethod class is imported and the constructor called. A reference to the ConflictMatrix is passed in the constructor and typically the implementation will save this away in a class variable for later user in the deconflict() method. This same ConflictMatrix reference can be used throughout the deconfliction pipeline instance even as the ConflictMatrix is being continuously updated.
+During pipeline framework initialization the configured DeconflictionMethod class is imported and the constructor called. A reference to the ConflictMatrix is passed in the constructor and typically the implementation will save this away in a class variable for later use in the deconflict() method. This same ConflictMatrix reference can be used throughout the deconfliction pipeline instance even as the ConflictMatrix is being continuously updated.
 
 ### DeconflictionMethod deconflict() method
 
@@ -66,6 +66,10 @@ class DeconflictionMethod:
 
     return (fullResolutionFlag, ResolutionVector)
 ````
+
+Every time the pipeline framework receives a competing app set-points message where the framework processes the set-points to determine that a new conflict has been introduced as a result of the message, the deconflict() method is called. Importantly, this can result in multiple deconflict() calls for a given timestamp or interval before the next sim-sim time-series data message is sent. As a consequence there will be multiple ResolutionVectors computed potentially leading to multiple set-point requests being dispatched to the same device effectively on top of each other. This is core to the design of the deconfliction pipeline and attempting to come up with a more sophisticated design that synchronizes set-points messages across multiple competing apps to eliminate dispatches on top of each other will not be as robust or timely in performing deconfliction. If each app could be counted on to supply set-points for each time interval this sort of synchronization would be possible, but it is the very nature of the apps being unpredictable in their timing that precludes synchronizing competing apps messages.
+
+The timestamp provided by the competing app sending the set-points message that resulted in the call to deconflict() is passed as an argument. This can serve as a reference to the DeconflictionMethod such as when stepping through ConflictMatrix to determine if a device set-point conflict is a new conflict or one that previously existed. Note that should ConflictSubMatrix be used instead of ConflictMatrix, then by definition of ConflictSubMatrix only containing new conflicts, this timestamp value passed to deconflict() will be associated with at least one of the apps for every device in ConflictSubMatrix.
 
 ## Directory layout
 
