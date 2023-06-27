@@ -13,6 +13,9 @@ if __name__ == '__main__':
     
     load = 4000
     green = 3888
-    state = apps.State.EMERGENCY
-    decarb_app.dispatch(batteries, [], load, green, 60/15, state)
+    state = apps.State.NORMAL
+    
+    for battery in batteries:
+        battery.power = 100
+    decarb_app.dispatch(batteries, batteries, load, green, 60/15, state)
     resil_app.dispatch(batteries, [], load, green, 60/15, state)

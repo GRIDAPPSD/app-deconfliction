@@ -74,7 +74,6 @@ class Decarbonization(object):
                  renewable: float,
                  delta_time: float, 
                  state: State) -> List[Battery]:
-        
         #feasability we must curtail renewable if we cannot store excess
         total_power = np.sum([battery.rated.power for battery in batteries])
         if renewable - load > total_power:
@@ -86,7 +85,7 @@ class Decarbonization(object):
         # operating variables
         power_dirty = pulp.LpVariable('power_dirty', 0, MAX_POWER_SUB)
         power_battery = [pulp.LpVariable(f'{battery.name}_power', -battery.rated.power, battery.rated.power) for battery in batteries]
-        
+               
         # BASE: constraints and objective  
         if state is State.EMERGENCY:
             prob += load == renewable - pulp.lpSum(power_battery)
@@ -99,9 +98,27 @@ class Decarbonization(object):
             prob += battery.discharge(power_battery[i], delta_time) >= battery.discharge_capacity()
         
         # ADVISE: constraints and objective
-        if advise and not State.EMERGENCY:
+        if advise and state is State.NORMAL:
+            
             prob += pulp.lpSum(power_battery) <= renewable
-            prob += pulp.lpSum([dist([p],[advise[i].power]) for i,p in enumerate(power_battery)])
+            
+            # linearize distance
+            # https://blog.thinknewfound.com/2018/08/trade-optimization/
+            alpha = [pulp.LpVariable(f'{battery.name}_alpha') for battery in batteries]
+            beta = [pulp.LpVariable(f'{battery.name}_beta') for battery in batteries]
+            gamma = [pulp.LpVariable(f'{battery.name}_gamma') for battery in batteries]
+            
+            for i,battery in enumerate(advise):
+                prob += alpha[i] >= battery.power
+                prob += alpha[i] >= -battery.power
+                
+                prob += beta[i] >= power_battery[i]
+                prob += beta[i] >= -power_battery[i]
+                
+                prob += gamma[i] >= alpha[i] - beta[i]
+                prob += gamma[i] >= -alpha[i] + beta[i]
+                 
+                prob += pulp.lpSum(gamma)
         
         # PRESS: constraints and objective
         # if press and not State.EMERGENCY:
