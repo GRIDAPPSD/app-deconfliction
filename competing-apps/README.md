@@ -75,11 +75,11 @@ The first form for the return value, only returning ResolutionVector, is used wh
 
 ### ConflictMatrix and ResolutionVector structures
 
-ConflictMatrix is a multi-dimensioned dictionary. The first dimension is either the literal value 'setpoints' or 'timestamps' as ConflictMatrix maintains both from the competing app set-points messages it received, i.e., ConflictMatrix['setpoints'] or ConflictMatrix['timestamps']. The second dimension differs based on the first dimension. If the first dimension is 'setpoints', then the second dimension is all the devices for which there are ConflictMatrix['setpoints'] entries, i.e., "for device in ConflictMatrix['setpoints'][device]:" to iterate over all devices. To carry through with ConflictMatrix['setpoints'], the final dimension is all the apps for which there are ConflictMatrix['setpoints'][device] entries. Therefore, "for app in ConflictMatrix['setpoints'][device]:" would iterate over all apps and when this for loop is nested under the previous one for devices, it would iterate over all entries of ConflictMatrix['setpoints'].
+ConflictMatrix is a multi-dimensioned dictionary. The first dimension is either the literal value 'setpoints' or 'timestamps' as ConflictMatrix maintains both from the competing app set-points messages it receives, i.e., ConflictMatrix['setpoints'] or ConflictMatrix['timestamps']. The second dimension differs based on the first dimension. If the first dimension is 'setpoints', then the second dimension is all the devices for which there are ConflictMatrix['setpoints'] entries, i.e., "for device in ConflictMatrix['setpoints'][device]:" will iterate over all devices. To carry through with ConflictMatrix['setpoints'], the final dimension is all the apps for which there are ConflictMatrix['setpoints'][device] entries. Therefore, "for app in ConflictMatrix['setpoints'][device]:" would iterate over all apps for a given device and when this for loop is nested under the previous one for devices, it would iterate over all entries of ConflictMatrix['setpoints'].
 
-If the first dimension is 'timestamps', the the second dimension is all the apps for which there are ConflictMatrix['timestamps'] entries.  There is no device dimension for ConflictMatrix['timestamps'] as when set-points for an app are updated they replace all previous device set-points and thus a single timestamp applies to all devices for that app.
+If the first dimension is 'timestamps', the the second dimension is all the apps for which there are ConflictMatrix['timestamps'] entries. There is no device dimension for ConflictMatrix['timestamps'] as when set-points for an app are updated they replace all previous device set-points and thus a single timestamp applies to all devices for that app.
 
-To summarize, the following code snippet will iterate over and print all ConflictMatrix entries and the associated timestamp:
+To summarize, the following code snippet will iterate over and print all ConflictMatrix entries and associated timestamps:
 
 ```` bash
 for device in ConflictMatrix['setpoints']:
@@ -89,7 +89,20 @@ for device in ConflictMatrix['setpoints']:
           ', timestamp: ' + ConflictMatrix['timestamps'][app]))
 ````
 
+ResolutionVector is similarly a multi-dimensioned dictionary where the first dimension is shared with ConflictMatrix being either 'setpoints' or 'timestamps'. The second dimension for ResolutionVector though is always the device whether it is either ResolutionVector['setpoints'] or ResolutionVector['timestamps']. The purpose of ResolutionVector is to specify a single deconflicted or resolved set-point for each device and therefore there is no app dimension. To iterate over all set-point values in the ResolutionVector, the code would be "for device in ResolutionVector['setpoints']:". The ResolutionVector['timestamps'][device] value should be the value of the most recent timestamp used to determine a deconflicted set-point for that device over all apps for the device.
+
+To summarize, the following code snippet will iterate over and print all ResolutionVector entires and associated timestamps:
+
+```` bash
+for device in ResolutionVector['setpoints']:
+  print('ResolutionVector set-point for device: ' + device +
+        ', value: ' + str(ResolutionVector['setpoints'][device] +
+        ', timestamp: ' + ResolutionVector['timestamps'][device]))
+````
+
 ### MethodUtil members
+
+NEXT TODO
 
 
 ## Directory layout
