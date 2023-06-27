@@ -185,5 +185,55 @@ Note "..." indicates files similar to the one preceeding and there are additiona
 
 ## Prerequisites
 
+<ol>
+<li>
+You must have the dockerized GridAPPS-D platform running that is available from <https://github.com/GRIDAPPSD/gridappsd-docker>. Follow documentation there if you are unfamiliar with running the platform.
+</li>
+
+<li>
+An updated version of the IEEE 123 node model defining battery and solar PV devices that is not yet included in the standard GridAPPS-D platform distribution must be loaded after starting the platform.
+
+SHIVA, please insert here how to get and install the updated model!
+
+Note that as long as docker containers are not cleared with the "./stop.sh -c" command, it is possible to stop and start the platform repeatedly without reloading this updated 123 node model.
+</li>
+
+<li>
+Python version 3.8 or newer is required as the one in your $PATH and can be checked with the command "python --version".
+</li>
+
+<li>
+The gridappsd-python module must be installed in Python. To check if this module is already installed:
+
+```` bash
+$ python
+>>> import gridappsd
+````
+
+If the import returns an error message, see <https://github.com/GRIDAPPSD/gridappsd-python> for installation instructions.
+</li>
+
+<li>
+Various other Python modules are required to run the different processes that are part of the deconfliction pipeline. The recommended approach is to run one-by-one each required deconfliction process through initialization to identify missing modules. These should then be installed until the process successfully initializes at which time the same initialization test can be done for the next process. The following steps walk through running each deconfliction process and steps to get any likely missing modules.
+</li>
+
+<li>
+To test the sim-sim module from a shell currently in the competing-apps directory of the app-deconfliction repo:
+
+```` bash
+$ cd sim-starter
+$ ./run-sim.sh 123
+````
+
+If you get output starting with "Hit return" after some query output, this demonstrates successful initialization. You may hit return to verify sending a time-series data message and then do a ctrl-C to exit.
+
+Any errors from running sim-sim are typically related to your GridAPPS-D platform setup and not missing Python modules assuming you have installed the gridappsd-python module as described above.
+</li>
+
+<li>
+optimization apps next
+</li>
+</ol>
+
 ## Running deconfliction pipeline
 
