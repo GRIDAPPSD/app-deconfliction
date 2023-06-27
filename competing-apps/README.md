@@ -260,9 +260,21 @@ $ cd ../deconfliction-pipeline
 $ ./run-pipeline.sh 123 ../deconfliction-methods/compromise-rd-partial-method.py
 ````
 
-If you get output starting with "Initialized deconfliction pipeline" fter some query output, this demonstrates successful intialization and you may do a ctrl-C exit. Typically if sim-sim and an optimization competing app both complete initialization, the deconfliction-pipeline will initialize successfully as well.
+If you get output starting with "Initialized deconfliction pipeline" after some query output, this demonstrates successful intialization and you may do a ctrl-C exit. Typically if sim-sim and an optimization competing app both complete initialization, the deconfliction-pipeline will initialize successfully as well.
 </li>
 </ol>
 
 ## Running deconfliction pipeline
+
+The deconfliction pipeline can be run either as individual processes running in separate terminals or from a single wrapper shell script encompassing all processes. Running from the wrapper script will suffice for most users and developers, but a reason to run in separate terminals is for better control including feeding time-series data messages from sim-sim on demand rather than automatically and being able to scrutinize running diagnostic output of all processes. The bulk of this section will focus on the wrapper script, but here are a few pointers on running processes in separate terminals first.
+
+One terminal will be needed for sim-sim, one for deconfliction pipeline, and one for each of the competing apps to be run--currently five terminals if all three competing optimization apps (resilience, decarbonization, profit_cvr) are run. For each of the processes there are shell scripts to invoke them rather than directly invoking Python from the command line. For sim-sim, the shell script is run-sim.sh in the sim-starter directory. For the deconfliction pipeline, the shell script is run-pipeline.sh in the deconfliction-pipeline directory. For competing optimization apps, in the optimization-apps directory there is a "run-" shell script per optimization objective type, e.g., run-resilience.sh. For guidance on command line arguments to use with each of these shell scripts, take a look at the single wrapper script, run-deconfliction.sh, described next. Note that redirecting stdout to /dev/null as is done in the single wrapper script is not needed/desired when running in separate terminals as seeing the diagnostic output as it is generated from each process is a primary benefit of decoupling from the single wrapper.
+
+The run-deconfliction.sh wrapper script in the competing-apps directory is your one stop shop for running deconfliction. Comments at the top of the script provide guidance on command line arguments with the basic usage being:
+
+```` bash
+$ ./run-deconfliction.sh <MODEL> <APPS> <METHOD> <DELAY>
+````
+
+where <MODEL> is a shorthand for looking up the full GridAPPS-D simulation request and feeder mrid. Currently only the <MODEL> value supported for app deconfliction development is "123" which uses the updated IEEE 123 node model assuming that has been loaded per guidance above.
 
