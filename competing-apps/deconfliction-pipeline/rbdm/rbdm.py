@@ -139,7 +139,7 @@ class DeconflictionMethod:
         def checkForViolations() -> bool:
             bus_volt = dss.Circuit.AllBusMagPu()
             #print(min(bus_volt), max(bus_volt))
-            if min(bus_volt) < 0.95:
+            if min(bus_volt) < 0.90:
                 return True
             elif max(bus_volt) > 1.10:
                 return True
@@ -290,7 +290,8 @@ class DeconflictionMethod:
                 setpointNameSplit = setpointNames[i].split(".")
                 if "BatteryUnit." in setpointNames[i]:
                     #TODO: Figure out opendss command to change storage ouptput
-                    dss.run_command(f"Storage.{setpointNameSplit[1]}.kw={setpoints[i]}")
+                    batt_kW = -0.001*setpoints[i]
+                    dss.run_command(f"Storage.{setpointNameSplit[1]}.kw={batt_kW}")
                 elif "RatioTapChanger." in setpointNames[i]:
                     reg = dss.Transformers.First()
                     while reg:
@@ -367,7 +368,14 @@ class DeconflictionMethod:
             else:
                 #TODO: figure out a more sophisticated alternative than giving the last resolution when current conflict can't be resolved.
                 deconflictionFailed = True
-                pastResolutionVector = self.resolutionDict[self.conflictTime - 1]
+                pastResolutionVector = {
+                    "setpoints": {}
+                }
+                for device in self.setpointSetVector["setpointIndexMap"]:
+                    for i in range(self.conflictTime-1, 0, -1):
+                        if device in self.resolutionDict[i]["setpoints"].keys():
+                            pastResolutionVector["setpoints"][device] = self.resolutionDict[i]["setpoints"][device]
+                            break
                 resolutionSetpointSet = [0]*len(self.setpointSetVector["setpointIndexMap"])
                 for i in range(len(self.setpointSetVector["setpointIndexMap"])):
                     resolutionVector["setpoints"][self.setpointSetVector["setpointIndexMap"][i]] = pastResolutionVector["setpoints"][self.setpointSetVector["setpointIndexMap"][i]]
