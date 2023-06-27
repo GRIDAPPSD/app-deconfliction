@@ -1,11 +1,7 @@
-{"123.0": ["RatioTapChanger.reg3a",
-  "RatioTapChanger.reg3c",
-  "RatioTapChanger.reg2a",
-  "BatteryUnit.battery1"],
- "123.1": ["BatteryUnit.battery2"],
- "123.2": ["BatteryUnit.battery5"],
- "123.3": ["BatteryUnit.battery3"],
- "123.7": ["RatioTapChanger.reg4a",
-  "RatioTapChanger.reg4c",
-  "RatioTapChanger.reg4b",
-  "BatteryUnit.battery4"]}
+{
+    "123.1": ["RatioTapChanger.reg4a", "RatioTapChanger.reg4b", "RatioTapChanger.reg4c", "BatteryUnit.battery4"],
+    "123.2": ["BatteryUnit.battery5"],
+    "123.3": ["BatteryUnit.battery3"],
+    "123.4": ["RatioTapChanger.reg1a", "RatioTapChanger.reg2a", "RatioTapChanger.reg3a", "RatioTapChanger.reg3c", "BatteryUnit.battery1"]
+}
+    

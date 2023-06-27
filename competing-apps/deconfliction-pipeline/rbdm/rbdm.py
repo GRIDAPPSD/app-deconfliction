@@ -139,7 +139,7 @@ class DeconflictionMethod:
         def checkForViolations() -> bool:
             bus_volt = dss.Circuit.AllBusMagPu()
             #print(min(bus_volt), max(bus_volt))
-            if min(bus_volt) < 0.90:
+            if min(bus_volt) < 0.95:
                 return True
             elif max(bus_volt) > 1.10:
                 return True
@@ -290,9 +290,7 @@ class DeconflictionMethod:
                 setpointNameSplit = setpointNames[i].split(".")
                 if "BatteryUnit." in setpointNames[i]:
                     #TODO: Figure out opendss command to change storage ouptput
-                    batt_kw = -1*setpoints[i]
-                    dss.run_command(f"Storage.{setpointNameSplit[1]}.kw={batt_kw}")
-                    #dss.run_command(f"Storage.{setpointNameSplit[1]}.kw={setpoints[i]}")
+                    dss.run_command(f"Storage.{setpointNameSplit[1]}.kw={setpoints[i]}")
                 elif "RatioTapChanger." in setpointNames[i]:
                     reg = dss.Transformers.First()
                     while reg:
