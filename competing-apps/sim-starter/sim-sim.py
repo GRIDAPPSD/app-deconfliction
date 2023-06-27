@@ -5,6 +5,8 @@
 import threading
 import time
 
+import matplotlib # done from AppUtil so just making sure it's available here
+
 
 class RepeatedTimer(object):
   def __init__(self, interval, function, *args, **kwargs):

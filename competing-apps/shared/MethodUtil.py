@@ -7,3 +7,5 @@ DeviceSetpoints = {}
 
 BatterySoC = {}
 
+sparql_mgr = None
+
