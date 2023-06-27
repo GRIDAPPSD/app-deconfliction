@@ -37,11 +37,10 @@ The signature of the constructor is:
 
 ```` bash
 class DeconflictionMethod:
-
   def __init__(self, ConflictMatrix):
 ````
 
-During pipeline framework initialization the configured DeconflictionMethod class is imported and the constructor called. A reference to the ConflictMatrix is passed in the constructor and typically the implementation will save this away in a class variable for later use in the deconflict() method. This same ConflictMatrix reference can be used throughout the deconfliction pipeline instance even as the ConflictMatrix is being continuously updated. Typically a class variable will be set to the ConflictMatrix reference passed to the constructor in order to make it available to other class methods as such:
+During pipeline framework initialization the configured DeconflictionMethod class is imported and the constructor called. A reference to the ConflictMatrix is passed in the constructor and typically the implementation will save this away in a class variable for later use in the deconflict() method. This same ConflictMatrix reference can be used throughout the deconfliction pipeline instance even as the ConflictMatrix is being continuously updated. Typically a class variable will be set to the ConflictMatrix reference passed to the constructor in order to make it available to other class methods such as:
 
 ```` bash
   def __init__(self, ConflictMatrix):
@@ -120,7 +119,6 @@ ConflictSubMatrix: Dictionary identical in layout to ConflictMatrix, but contain
 import MethodUtil
 
 class DeconflictionMethod:
-
   def __init__(self, ConflictMatrix):
     self.ConflictSubMatrix = MethodUtil.ConflictSubMatrix
 ````
@@ -131,7 +129,6 @@ DeviceSetpoints: Dictionary containing set-points that were changed over the per
 import MethodUtil
 
 class DeconflictionMethod:
-
   def __init__(self, ConflictMatrix):
     self.CurrentDeviceSetpoints = {}
 
