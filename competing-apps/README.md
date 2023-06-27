@@ -75,6 +75,20 @@ The first form for the return value, only returning ResolutionVector, is used wh
 
 ### ConflictMatrix and ResolutionVector structures
 
+ConflictMatrix is a multi-dimensioned dictionary. The first dimension is either the literal value 'setpoints' or 'timestamps' as ConflictMatrix maintains both from the competing app set-points messages it received, i.e., ConflictMatrix['setpoints'] or ConflictMatrix['timestamps']. The second dimension differs based on the first dimension. If the first dimension is 'setpoints', then the second dimension is all the devices for which there are ConflictMatrix['setpoints'] entries, i.e., "for device in ConflictMatrix['setpoints'][device]:" to iterate over all devices. To carry through with ConflictMatrix['setpoints'], the final dimension is all the apps for which there are ConflictMatrix['setpoints'][device] entries. Therefore, "for app in ConflictMatrix['setpoints'][device]:" would iterate over all apps and when this for loop is nested under the previous one for devices, it would iterate over all entries of ConflictMatrix['setpoints'].
+
+If the first dimension is 'timestamps', the the second dimension is all the apps for which there are ConflictMatrix['timestamps'] entries.  There is no device dimension for ConflictMatrix['timestamps'] as when set-points for an app are updated they replace all previous device set-points and thus a single timestamp applies to all devices for that app.
+
+To summarize, the following code snippet will iterate over and print all ConflictMatrix entries and the associated timestamp:
+
+```` bash
+for device in ConflictMatrix['setpoints']:
+  for app in ConflictMatrix['setpoints'][device]:
+    print('ConflictMatrix set-point for device: ' + device + ', app: ' + app +
+          ', value: ' + str(ConflictMatrix['setpoints'][device][app]) +
+          ', timestamp: ' + ConflictMatrix['timestamps'][app]))
+````
+
 ### MethodUtil members
 
 
