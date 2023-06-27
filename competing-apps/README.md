@@ -79,6 +79,8 @@ ConflictMatrix is a multi-dimensioned dictionary. The first dimension is either 
 
 If the first dimension is 'timestamps', the the second dimension is all the apps for which there are ConflictMatrix['timestamps'] entries. There is no device dimension for ConflictMatrix['timestamps'] as when set-points for an app are updated they replace all previous device set-points and thus a single timestamp applies to all devices for that app.
 
+Note that the name ConflictMatrix could be considered a misnomer for what is stored in the structure.  ConflictMatrix represents the most recent set-points (and associated timestamps) for an app over all devices for which that app has a set-point.  There may or may not be conflicts (different set-point values) in ConflictMatrix for any individual device between apps.
+
 To summarize, the following code snippet will iterate over and print all ConflictMatrix entries and associated timestamps:
 
 ```` bash
@@ -89,7 +91,7 @@ for device in ConflictMatrix['setpoints']:
           ', timestamp: ' + ConflictMatrix['timestamps'][app]))
 ````
 
-ResolutionVector is similarly a multi-dimensioned dictionary where the first dimension is shared with ConflictMatrix being either 'setpoints' or 'timestamps'. The second dimension for ResolutionVector though is always the device whether it is either ResolutionVector['setpoints'] or ResolutionVector['timestamps']. The purpose of ResolutionVector is to specify a single deconflicted or resolved set-point for each device and therefore there is no app dimension. To iterate over all set-point values in the ResolutionVector, the code would be "for device in ResolutionVector['setpoints']:". The ResolutionVector['timestamps'][device] value should be the value of the most recent timestamp used to determine a deconflicted set-point for that device over all apps for the device.
+ResolutionVector is similarly a multi-dimensioned dictionary where the first dimension is shared with ConflictMatrix being either 'setpoints' or 'timestamps'. The second dimension for ResolutionVector though is always the device whether it is either ResolutionVector['setpoints'] or ResolutionVector['timestamps'] as the first dimension. The purpose of ResolutionVector is to specify a single deconflicted or resolved set-point for each device across all apps and therefore there is no app dimension. To iterate over all set-point values in the ResolutionVector, the code would be "for device in ResolutionVector['setpoints']:". The ResolutionVector['timestamps'][device] value should be the most recent timestamp used to determine a deconflicted set-point over all apps for the device.
 
 To summarize, the following code snippet will iterate over and print all ResolutionVector entires and associated timestamps:
 
