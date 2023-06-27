@@ -58,7 +58,7 @@ class DeconflictionMethod:
         self.calculateCriteriaPreferenceWeightVector()
         self.resolutionDict = {}
         self.maxDeconflictionTime = -1
-
+        self.conflictDump = {}
 
     def initializeDistributedConflictMatrix(self):
         distributedAreasEquipmentFile = Path(__file__).parent.resolve() / "AddressableEquipment.json"
@@ -389,12 +389,19 @@ class DeconflictionMethod:
         self.resolutionDict[self.conflictTime]["deconflictTime"] = deconflictTime
         self.resolutionDict[self.conflictTime]["deconflictionFailed"] = deconflictionFailed
         self.maxDeconflictionTime = max(self.maxDeconflictionTime, deconflictTime)
+        
+        self.conflictDump[self.conflictTime] = json.loads(json.dumps(self.conflictMatrix))
+        
         if self.conflictTime == 96:
             #TODO: move all this to a __del__() method when deconfliction pipeline service properly implements a clean exit
             print(f"Maximum deconfliction time was {self.maxDeconflictionTime}")
             resultFile = Path(__file__).parent.resolve() / 'resolutionResults.json'
             with resultFile.open(mode="w") as rf:
                 json.dump(self.resolutionDict, rf, indent=4, sort_keys=True)
+                
+            conflictFile = Path(__file__).parent.resolve() / 'conflictResults.json'
+            with conflictFile.open(mode="w") as rf:
+                json.dump(self.conflictDump, rf, indent=4, sort_keys=True)
         return (False, resolutionVector)
     
 
