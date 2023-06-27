@@ -187,7 +187,7 @@ Note "..." indicates files similar to the one preceeding and there are additiona
 
 <ol>
 <li>
-You must have the dockerized GridAPPS-D platform running that is available from <https://github.com/GRIDAPPSD/gridappsd-python>. Follow documentation there if you are unfamiliar with running the platform.
+You must have the dockerized GridAPPS-D platform running that is available at the following URL <https://github.com/GRIDAPPSD/gridappsd-python> for test. Follow documentation there if you are unfamiliar with running the platform.
 </li>
 
 <li>
