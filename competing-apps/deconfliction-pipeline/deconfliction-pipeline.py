@@ -495,18 +495,10 @@ class DeconflictionPipeline(GridAPPSD):
       if device.startswith('BatteryUnit.'):
         # batteries dispatch values even if they are the same as the last time
         # as long as the value is associated with the current timestamp
-
-        # GDB 6/22/23: First is the original version and then the new version
-        # that doesn't dispatch P_batt of 0 beyond the initial change to 0
-        #if device not in self.ResolutionVector['setpoints'] or \
-        #   (newResolutionVector['timestamps'][device]==timestamp and \
-        #    (self.ResolutionVector['timestamps'][device]!=timestamp or \
-        #     self.ResolutionVector['setpoints'][device]!=value)):
         if device not in self.ResolutionVector['setpoints'] or \
            (newResolutionVector['timestamps'][device]==timestamp and \
-            (self.ResolutionVector['setpoints'][device]!=value or \
-             (self.ResolutionVector['timestamps'][device]!=timestamp and \
-              self.ResolutionVector['setpoints'][device]!=0.0))):
+            (self.ResolutionVector['timestamps'][device]!=timestamp or \
+             self.ResolutionVector['setpoints'][device]!=value)):
           DevicesToDispatch[device] = value
 
           print('~~> Dispatching to device: ' + device + ', timestamp: ' +
@@ -555,18 +547,15 @@ class DeconflictionPipeline(GridAPPSD):
           if self.testDevice and device==self.testDevice:
             print('~TEST: Device deleted from resolution: ' + device,flush=True)
 
-    # GDB 6/23/23 I was only dispatching when len(DevicesToDispatch)>0, but
-    # we added a mode where sim-sim would count the number of disptach messages
-    # to determine when to send out the next timestamp data rather than on a
-    # fixed interval so now I always send a message and it is a noop for
-    # sim-sim other than counting messages when there are no devices
-    dispatch_message = {
-      'timestamp': timestamp,
-      'dispatch': DevicesToDispatch
-    }
-    print('~~> Sending device dispatch message: ' + str(dispatch_message),
-          flush=True)
-    self.gapps.send(self.publish_topic, dispatch_message)
+
+    if len(DevicesToDispatch) > 0:
+      dispatch_message = {
+        'timestamp': timestamp,
+        'dispatch': DevicesToDispatch
+      }
+      print('~~> Sending device dispatch message: ' + str(dispatch_message),
+            flush=True)
+      self.gapps.send(self.publish_topic, dispatch_message)
 
     ''' SOC MOVE
     return revised_socs
@@ -677,11 +666,11 @@ class DeconflictionPipeline(GridAPPSD):
 
     SPARQLManager = getattr(importlib.import_module('sparql'),
                             'SPARQLManager')
-    MethodUtil.sparql_mgr = SPARQLManager(gapps, feeder_mrid, simulation_id)
+    sparql_mgr = SPARQLManager(gapps, feeder_mrid, simulation_id)
 
-    self.Batteries = AppUtil.getBatteries(MethodUtil.sparql_mgr)
+    self.Batteries = AppUtil.getBatteries(sparql_mgr)
 
-    self.Regulators = AppUtil.getRegulators(MethodUtil.sparql_mgr)
+    self.Regulators = AppUtil.getRegulators(sparql_mgr)
 
     '''
     # SHIVA HACK for 123 model testing

@@ -568,14 +568,6 @@ class CompetingApp(GridAPPSD):
   def __init__(self, gapps, opt_type, feeder_mrid, simulation_id, outage,state):
     self.gapps = gapps
 
-    self.messageQueue = queue.Queue()
-
-    # subscribe to simulation output messages
-    # since messages are just going on a queue, subscribe right away to
-    # keep from missing any sent during app initialization
-    gapps.subscribe(service_output_topic('gridappsd-sim-sim',
-                                         simulation_id), self)
-
     SPARQLManager = getattr(importlib.import_module('shared.sparql'),
                             'SPARQLManager')
     sparql_mgr = SPARQLManager(gapps, feeder_mrid, simulation_id)
@@ -922,12 +914,14 @@ class CompetingApp(GridAPPSD):
       #self.interval = 4
     elif opt_type.startswith('p') or opt_type.startswith('P'):
       self.opt_type = 'profit_cvr'
-      self.gapRel = 0.05
+      self.gapRel = 0.1
       #self.interval = 5
     else:
       print('*** Exiting due to unrecognized optimization type: ' + opt_type,
             flush=True)
       exit()
+
+    self.messageQueue = queue.Queue()
 
     self.deltaT = 0.25 * self.interval
 
@@ -941,6 +935,10 @@ class CompetingApp(GridAPPSD):
 
     # topic for sending out set_points messages
     self.publish_topic = service_output_topic('gridappsd-competing-app', '0')
+
+    # subscribe to simulation output messages
+    gapps.subscribe(service_output_topic('gridappsd-sim-sim',
+                                         simulation_id), self)
 
     print('\nInitialized ' + opt_type +
           ' optimization competing app, waiting for messages...\n',

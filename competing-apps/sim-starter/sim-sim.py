@@ -7,7 +7,7 @@ import time
 
 
 class RepeatedTimer(object):
-  def __init__(self, interval, function, get_dispatches_count, *args, **kwargs):
+  def __init__(self, interval, function, *args, **kwargs):
     if interval > 0:
       self._timer = None
       self.interval = interval
@@ -17,16 +17,6 @@ class RepeatedTimer(object):
       self.is_running = False
       self.next_call = time.time()
       self.start()
-
-    elif interval < 0:
-      dispatches_needed = -interval
-
-      while function(*args, **kwargs):
-        # magic that sends out new messages only when the number of device
-        # dispatch messages received is the number of running competing apps
-        while get_dispatches_count() < dispatches_needed:
-          time.sleep(0.1)
-
     else:
       print('Hit return to send first message...', end='', flush=True)
       input()
@@ -86,8 +76,6 @@ class SimSim(GridAPPSD):
     timestamp = message['timestamp']
     if timestamp != self.currentTimestamp:
       print('*** DISPATCH FALLING BEHIND--current timestamp: ' + str(self.currentTimestamp) + ', dispatch timestamp: ' + str(timestamp), flush=True)
-    else:
-      self.dispatches_count += 1
 
     DispatchedDevices = message['dispatch']
     print('DispatchedDevices: ' + str(DispatchedDevices), flush=True)
@@ -96,10 +84,6 @@ class SimSim(GridAPPSD):
       self.DeviceSetpoints[device] = value
       if device.startswith('BatteryUnit.'):
         self.Batteries[device]['P_batt'] = value
-
-
-  def get_dispatches_count(self):
-    return self.dispatches_count
 
 
   def send_message(self):
@@ -170,8 +154,6 @@ class SimSim(GridAPPSD):
     if row[0] != '':
       self.currentTimestamp = int(row[0])
 
-    self.dispatches_count = 0
-
     return ret
 
 
@@ -213,7 +195,22 @@ class SimSim(GridAPPSD):
     self.reader = csv.reader(fp)
     next(self.reader) # skip header
 
-    rt = RepeatedTimer(int(delay), self.send_message, self.get_dispatches_count)
+    if delay != None:
+      # if delay is set then this invocation is assumed to be from the
+      # wrapper script that starts all processes and therefore the sleep
+      # below allows these processes to initialize before any messages
+      time.sleep(30)
+      rt = RepeatedTimer(int(delay), self.send_message)
+    else:
+      # 0 seconds to only send messages when return hit
+      # 2 seconds seems to be right for resilience and decarbonization
+      # 8 seconds seems to be OK for resilience, decarbonization, and profit
+      #   depending on solver gapRel value
+      delay = 0
+      if delay > 0:
+        print('Hit return to start sending messages...', end='', flush=True)
+        input()
+      rt = RepeatedTimer(delay, self.send_message)
 
 
 def _main():
@@ -222,9 +219,7 @@ def _main():
   parser = argparse.ArgumentParser()
   parser.add_argument("simulation_id", help="Simulation ID")
   parser.add_argument("request", help="Simulation Request")
-  parser.add_argument("delay",
-                      help="Delay in seconds between messages, 0=interactive")
-
+  parser.add_argument("delay", nargs='?', help="Delay Between Messages")
   opts = parser.parse_args()
 
   sim_request = json.loads(opts.request.replace("\'",""))

@@ -26,15 +26,6 @@ else
     DELAY=$2
 fi
 
-DELAY=0
-if [ "$#" -gt 1 ]; then
-  DELAY=$2
-fi
-
-if [[ $3 == "--wait" ]]; then
-  sleep 30
-fi
-
 mkdir -p output
 python3 sim-sim.py $SIMID "$SIMREQ" $DELAY 2>&1 | tee output/sim-sim.log
 
