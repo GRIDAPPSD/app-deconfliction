@@ -41,7 +41,12 @@ class DeconflictionMethod:
   def __init__(self, ConflictMatrix):
 ````
 
-During pipeline framework initialization the configured DeconflictionMethod class is imported and the constructor called. A reference to the ConflictMatrix is passed in the constructor and typically the implementation will save this away in a class variable for later use in the deconflict() method. This same ConflictMatrix reference can be used throughout the deconfliction pipeline instance even as the ConflictMatrix is being continuously updated.
+During pipeline framework initialization the configured DeconflictionMethod class is imported and the constructor called. A reference to the ConflictMatrix is passed in the constructor and typically the implementation will save this away in a class variable for later use in the deconflict() method. This same ConflictMatrix reference can be used throughout the deconfliction pipeline instance even as the ConflictMatrix is being continuously updated. Typically a class variable will be set to the ConflictMatrix reference passed to the constructor in order to make it available to other class methods as such:
+
+```` bash
+  def __init__(self, ConflictMatrix):
+    self.ConflictMatrix = ConflictMatrix
+````
 
 ### DeconflictionMethod deconflict() method
 
@@ -104,8 +109,41 @@ for device in ResolutionVector['setpoints']:
 
 ### MethodUtil members
 
-NEXT TODO
+The MethodUtil class contains references to data structures that can optionally be used by DeconflictionMethod classes for performing deconfliction. These structures are kept up to date by the deconfliction pipeline framework and must be treated as read-only by DeconflictionMethod classes. The data structures are:
 
+ConflictSubMatrix: Dictionary identical in layout to ConflictMatrix, but containing only newly created conflicts as a result of the competing app set-points message that triggered the DeconflictionMethod deconflict() method to be called. This represents the minimal set of conflicts that must be resolved by deconflict() to create a partial ResolutionVector. If the ConflictSubMatrix is used instead of ConflictMatrix for performing deconfliction, either a class variable can be set to reference ConflictSubMatrix in the constructor analgous to how a class variable referencing ConflictMatrix would be set or MethodUtil.ConflictSubMatrix can be referenced directly when needed in deconflict() and other methods. Here is a typical usage setting a class variable in the constructor:
+
+```` bash
+# for import to work  sys.path() calls will first be needed to insure
+# competing-apps/shared is in path
+
+import MethodUtil
+
+class DeconflictionMethod:
+
+  def __init__(self, ConflictMatrix):
+    self.ConflictSubMatrix = MethodUtil.ConflictSubMatrix
+````
+
+DeviceSetpoints: Dictionary containing set-points that were changed over the period since the last sim-sim time-series data message was sent. This does not represent the comprehensive set of current device set-points, but that could easily be generated from this dictionary with code similar to this snippet:
+
+```` bash
+import MethodUtil
+
+class DeconflictionMethod:
+
+  def __init__(self, ConflictMatrix):
+    self.CurrentDeviceSetpoints = {}
+
+  def deconflict(self, timestamp):
+    # update dictionary of all current set-points
+    for device, value in MethodUtil.DeviceSetpoints.items():
+      self.CurrentDeviceSetpoints[device] = value
+````
+
+BatterySoC: Dictionary containing updated SoC values for all batteries at the time the most recent sim-sim time-series data message was sent. Iterating over all BatterySoC entries can be done with "for device, value in MethodUtil.BatterySoC.items()".
+
+sparql_mgr: Reference to class defining various GridAPPS-D queries that may prove useful to DeconflictionMethod classes.
 
 ## Directory layout
 
