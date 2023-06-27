@@ -155,6 +155,7 @@ sparql_mgr: Reference to class defining various GridAPPS-D queries that may prov
     ├── sim-sim.py
     ├── sim-starter.py
     ├── time-series.csv
+    ├── ieee123apps.xml
     ├── 123-config.json
     └── ...
 ├── optimization-apps
@@ -193,11 +194,10 @@ You must have the dockerized GridAPPS-D platform running that is available at ht
 </li>
 
 <li>
-An updated version of the IEEE 123 node model defining battery and solar PV devices not yet included in the standard GridAPPS-D platform distribution must be loaded after starting the platform.
+An updated version of the IEEE 123-bus model defining battery and solar PV devices not yet included in the standard GridAPPS-D platform distribution must be loaded after starting the platform.
+The CIM model for the test feeder is exported to the sim-starter directory. Open the Blazegraph url in the web browser and upload the file (ieee123apps.xml) using "UPDATE" tab.
 
-SHIVA, please insert here how to get and install the updated model!
-
-Note that as long as docker containers are not cleared with the "./stop.sh -c" command, it is possible to stop and start the platform repeatedly without reloading this updated 123 node model.
+Note that as long as docker containers are not cleared with the "./stop.sh -c" command, it is possible to stop and start the platform repeatedly without reloading this updated 123-bus model.
 </li>
 
 <li>
@@ -278,7 +278,7 @@ The run-deconfliction.sh wrapper script in the competing-apps directory is your 
 $ ./run-deconfliction.sh <MODEL> <APPS> <METHOD> <DELAY>
 ````
 
-where \<MODEL\> is a shorthand for looking up the full GridAPPS-D simulation request and feeder mrid. Currently only the \<MODEL\> value supported for app deconfliction development is "123" which uses the updated IEEE 123 node model assuming that has been loaded per guidance above.
+where \<MODEL\> is a shorthand for looking up the full GridAPPS-D simulation request and feeder mrid. Currently only the \<MODEL\> value supported for app deconfliction development is "123" which uses the updated IEEE 123-bus model assuming that has been loaded per guidance above.
 
 \<APPS\> is a code composed of the first letters for each of the competing apps to run. The possible apps are resilience, code "r" or "R"; decarbonization, code "d" or "D", and profit_cvr, code "p" or "P". Thus, "rdp" would run all three apps and "rd" would run resilience and decarbonization without profit_cvr. By default optimization-based apps will be run, but by including "w" or "W" anywhere within the code, workflow-based apps will be run instead (optimization and workflow apps cannot be "mixed" together).
 
