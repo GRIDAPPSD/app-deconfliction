@@ -276,5 +276,5 @@ The run-deconfliction.sh wrapper script in the competing-apps directory is your 
 $ ./run-deconfliction.sh <MODEL> <APPS> <METHOD> <DELAY>
 ````
 
-where <MODEL> is a shorthand for looking up the full GridAPPS-D simulation request and feeder mrid. Currently only the <MODEL> value supported for app deconfliction development is "123" which uses the updated IEEE 123 node model assuming that has been loaded per guidance above.
+where \<MODEL\> is a shorthand for looking up the full GridAPPS-D simulation request and feeder mrid. Currently only the \<MODEL\> value supported for app deconfliction development is "123" which uses the updated IEEE 123 node model assuming that has been loaded per guidance above.
 
