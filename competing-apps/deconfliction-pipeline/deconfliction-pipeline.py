@@ -622,6 +622,10 @@ class DeconflictionPipeline(GridAPPSD):
     timestamp = message['timestamp']
     set_points = message['set_points']
 
+    # for checking order of messages received
+    print('~ORDER: timestamp: ' + str(timestamp) + ', app: ' + app_name,
+          flush=True)
+
     # Step 1: Setpoint Processor
     self.SetpointProcessor(app_name, timestamp, set_points)
     self.ConflictMetric(timestamp)
