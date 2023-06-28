@@ -234,7 +234,7 @@ $ sudo pip install matplotlib
 </li>
 
 <li>
-To test an optimization-based competing app (all optimization apps use the same base code varying only the objective function) assuming you are in the sim-starter directory:
+To test an optimization-based competing app (all optimization apps use the same base code varying only the objective function) assuming you were in the sim-starter directory:
 
 ```` bash
 $ cd ../optimization-apps
@@ -254,7 +254,7 @@ Note that glpk-utils is needed by the PuLP optmization module. There are also wo
 </li>
 
 <li>
-To test the core deconfliction-pipeline process assuming you are in the optimization-apps directory:
+To test the core deconfliction-pipeline process assuming you were in the optimization-apps directory:
 
 ```` bash
 $ cd ../deconfliction-pipeline
@@ -267,9 +267,9 @@ If you get output starting with "Initialized deconfliction pipeline" after some 
 
 ## Running deconfliction pipeline
 
-The deconfliction pipeline can be run either as individual processes running in separate terminals or from a single wrapper shell script encompassing all processes. Running from the wrapper script will suffice for most users and developers, but a reason to run in separate terminals is for better control, including feeding time-series data messages from sim-sim on demand rather than automatically and being able to scrutinize running the diagnostic output of all processes. The bulk of this section will focus on the wrapper script, but here are a few pointers on running processes in separate terminals first.
+The deconfliction pipeline can be run either as individual processes running in separate terminals or from a single wrapper shell script encompassing all processes. Running from the wrapper script will suffice for most users and developers, but a reason to run in separate terminals is for better control, including feeding time-series data messages from sim-sim on demand rather than automatically and being able to scrutinize running diagnostic terminal output of all processes. The bulk of this section will focus on the wrapper script, but first are a few pointers on running processes in separate terminals.
 
-One terminal will be needed for sim-sim, one for the deconfliction pipeline, and one for each of the competing apps to be run--currently five terminals if all three competing optimization apps (resilience, decarbonization, profit_cvr) are run. For each of the processes, there are shell scripts to invoke them rather than directly invoking Python from the command line. For sim-sim, the shell script is run-sim.sh in the sim-starter directory. For the deconfliction pipeline, the shell script is run-pipeline.sh in the deconfliction-pipeline directory. For competing optimization apps, in the optimization-apps directory, there is a "run-" shell script per optimization objective type, e.g., run-resilience.sh. For guidance on command line arguments to use with each of these shell scripts, take a look at the single wrapper script, run-deconfliction.sh, described next. Note that redirecting stdout to /dev/null as is done in the single wrapper script is not needed/desired when running in separate terminals as seeing the diagnostic output as it is generated from each process is a primary benefit of decoupling from the single wrapper.
+One terminal will be needed for sim-sim, one for the deconfliction pipeline, and one for each of the competing apps to be run--currently five terminals if all three competing optimization apps (resilience, decarbonization, profit_cvr) are run. For each of the processes, there are shell scripts to invoke them rather than directly invoking Python from the command line. For sim-sim, the shell script is run-sim.sh in the sim-starter directory. For the deconfliction pipeline, the shell script is run-pipeline.sh in the deconfliction-pipeline directory. For competing optimization apps, in the optimization-apps directory, there is a "run-" shell script per optimization objective type, e.g., run-resilience.sh. For guidance on command line arguments to use with each of these shell scripts, look at the single wrapper script, run-deconfliction.sh, described just below. Note that redirecting stdout to /dev/null as is done in the single wrapper script is not needed/desired when running in separate terminals as seeing the diagnostic output as it is generated from each process is a primary benefit of running from separate terminals.
 
 The run-deconfliction.sh wrapper script in the competing-apps directory is your one-stop shop for running deconfliction. Comments at the top of the script provide guidance on command line arguments, with the basic usage being:
 
@@ -277,9 +277,9 @@ The run-deconfliction.sh wrapper script in the competing-apps directory is your 
 $ ./run-deconfliction.sh <MODEL> <APPS> <METHOD> <DELAY>
 ````
 
-where \<MODEL\> is a shorthand for looking up the full GridAPPS-D simulation request and feeder mrid. Currently, only the \<MODEL\> value supported for app deconfliction development is "123" which uses the updated IEEE 123-bus model, assuming that has been loaded per the guidance above.
+where \<MODEL\> is a shorthand used for looking up the full GridAPPS-D simulation request and feeder mrid. Currently, the only \<MODEL\> value supported for app deconfliction development is "123", which uses the updated IEEE 123-bus model, assuming that has been loaded into the GridAPPS-D platform per the guidance above.
 
-\<APPS\> is a code composed of the first letters for each of the competing apps to run. The possible apps are resilience, code "r" or "R"; decarbonization, code "d" or "D", and profit_cvr, code "p" or "P". Thus, "rdp" would run all three apps and "rd" would run resilience and decarbonization without profit_cvr. By default optimization-based apps will be run, but by including "w" or "W" anywhere within the code, workflow-based apps will be run instead (optimization and workflow apps cannot be "mixed" together).
+\<APPS\> is a code composed of the first letters for each of the competing apps to run. The possible apps are resilience, code "r" or "R"; decarbonization, code "d" or "D", and profit_cvr, code "p" or "P". Thus, "rdp" would run all three apps and "rd" would run resilience and decarbonization without profit_cvr. By default optimization-based apps will be run, but by including "w" or "W" anywhere within the code, workflow-based apps will be run instead (the run-deconfliction.sh wrapper does not support "mixing" optimization and workflow apps within an invocation). E.g., the code "wrd" would run the workflow-based resilience and decarbonization apps (as an aside, the workflow-based profit app has not been updated to work with the current deconfliction pipeline).
 
 \<METHOD\> is the name of the DeconflictionMethod class file that will be used to perform deconfliction. The relative path to this file along with the filename (".py" extension is optional) from the competing-apps directory where the run-deconfliction.sh wrapper script resides (thus shell file completion can be used) is given for this argument. Note that this class file can exist completely outside of the competing-apps area of the app-deconfliction repo and that's typically the case as the deconfliction method subtasks of the overall project have their own top-level repo directories. However, some simple sample DeconflictionMethod classes are supplied in the deconfliction-methods directory.
 
