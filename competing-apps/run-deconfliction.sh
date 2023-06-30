@@ -10,10 +10,12 @@
 #       <DELAY> = optional positive value is seconds between simulation data
 #                 messages, negative value is a count of apps being run,
 #                 e.g., -3 for 3 apps, where counting device dispatch messages
-#                 triggers simulation data messages, default=counting messages
+#                 until all apps respond triggers simulation data messages,
+#                 0 value to not run sim-sim meaning it must be run separately,
+#                 default=counting messages
 #
 # e.g.,
-#./run-deconfliction.sh 123 rd deconfliction-methods/compromise-rd-partial-method.py
+# ./run-deconfliction.sh 123 rd deconfliction-methods/compromise-rd-partial-method.py
 
 MODEL=$1
 APPS=$2

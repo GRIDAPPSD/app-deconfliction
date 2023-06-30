@@ -61,8 +61,6 @@ from pulp import *
 from gridappsd import GridAPPSD
 from gridappsd.topics import service_output_topic
 
-from matplotlib import pyplot as plt
-from matplotlib import dates as md
 from datetime import datetime
 from tabulate import tabulate
 

@@ -1,6 +1,4 @@
 
-sparql_mgr = None
-
 ConflictSubMatrix = {}
 ConflictSubMatrix['setpoints'] = {}
 ConflictSubMatrix['timestamps'] = {}
@@ -8,4 +6,6 @@ ConflictSubMatrix['timestamps'] = {}
 DeviceSetpoints = {}
 
 BatterySoC = {}
+
+sparql_mgr = None
 
