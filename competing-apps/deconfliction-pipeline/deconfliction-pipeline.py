@@ -67,6 +67,9 @@ import csv
 import copy
 import time
 
+from pathlib import Path
+sharedDir = Path(__file__).parent.parent.parent.resolve() / "shared"
+sys.path.append(str(sharedDir))
 from gridappsd import GridAPPSD
 from gridappsd.topics import service_output_topic
 
@@ -111,6 +114,11 @@ class DeconflictionPipeline(GridAPPSD):
       self.ConflictMatrix['setpoints'][device][app_name] = value
 
     print('ConflictMatrix: ' + str(self.ConflictMatrix), flush=True)
+    self.conflictDump[timestamp] = json.loads(json.dumps(self.ConflictMatrix))
+    if timestamp == 96 or timestamp == '96':
+        conflictFile = Path(__file__).parent.resolve() / 'conflictResults.json'
+        with conflictFile.open(mode="w") as rf:
+            json.dump(self.conflictDump, rf, indent=4, sort_keys=True)
 
     if self.testDevice:
       if  self.testDevice in set_points:
@@ -705,6 +713,8 @@ class DeconflictionPipeline(GridAPPSD):
     self.ResolutionVector = {}
     self.ResolutionVector['setpoints'] = {}
     self.ResolutionVector['timestamps'] = {}
+    self.conflictDump = {}
+    self.resolutionDump = {}
 
     # Step 0: Import deconfliction methodology class for this invocation of
     #         the Deconflictor based on method command line argument and
@@ -765,6 +775,8 @@ class DeconflictionPipeline(GridAPPSD):
 
     while not self.exitFlag:
       time.sleep(0.1)
+    
+    
 
 
 def _main():

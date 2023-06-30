@@ -20,12 +20,13 @@ sys.path.append(str(sharedDir))
 import MethodUtil
 
 class DeconflictionMethod:
-    maxAnalogSetpoints = 5 #default range length for analog setpoints.
+    maxAnalogSetpoints = 15 #default range length for analog setpoints.
     numberOfMetrics = 4 #defines the number of columns in the U matrix.
-    maxTapBudget = 2 #defines the maximum tap budget allowed in a deconfliction scenario.
+    maxTapBudget = 3 #defines the maximum tap budget allowed in a deconfliction scenario.
 
     def __init__(self, conflictMatrix: Dict = {}):
-        self.conflictMatrix = MethodUtil.ConflictSubMatrix
+        #self.conflictMatrix = MethodUtil.ConflictSubMatrix
+        self.conflictMatrix = conflictMatrix
         self.setpointSetVector = None
         self.numberOfSets = 0
         self.uMatrix = None
@@ -59,6 +60,7 @@ class DeconflictionMethod:
         self.resolutionDict = {}
         self.maxDeconflictionTime = -1
         self.conflictDump = {}
+        self.criteriaResults = {}
 
     def initializeDistributedConflictMatrix(self):
         distributedAreasEquipmentFile = Path(__file__).parent.resolve() / "AddressableEquipment.json"
@@ -135,104 +137,104 @@ class DeconflictionMethod:
         return setpointSetVector
     
 
-    def buildUMatrix(self, setpoints: List, setpointNames: List, index: int, simulationData: Dict):
-        def checkForViolations() -> bool:
-            bus_volt = dss.Circuit.AllBusMagPu()
-            #print(min(bus_volt), max(bus_volt))
-            if min(bus_volt) < 0.90:
+    
+    def checkForViolations(self) -> bool:
+        bus_volt = dss.Circuit.AllBusMagPu()
+        #print(min(bus_volt), max(bus_volt))
+        if min(bus_volt) < 0.90:
+            return True
+        elif max(bus_volt) > 1.10:
+            return True
+        sub = dss.Circuit.TotalPower()
+        sub_kva = math.sqrt((sub[0]*sub[0]) + (sub[1]*sub[1]))
+        if sub_kva > 5000:
+            return True
+        dss.Circuit.SetActiveClass('Transformer')
+        device = dss.Circuit.FirstElement()
+        while device:
+            a = dss.CktElement.CurrentsMagAng()
+            if a[0] > 668:
                 return True
-            elif max(bus_volt) > 1.10:
-                return True
-            sub = dss.Circuit.TotalPower()
-            sub_kva = math.sqrt((sub[0]*sub[0]) + (sub[1]*sub[1]))
-            if sub_kva > 5000:
-                return True
-            dss.Circuit.SetActiveClass('Transformer')
-            device = dss.Circuit.FirstElement()
-            while device:
-                a = dss.CktElement.CurrentsMagAng()
-                if a[0] > 668:
-                    return True
-                device = dss.Circuit.NextElement()
-            return False
-        
+            device = dss.Circuit.NextElement()
+        return False
 
-        def extractPowerLosses() -> float:
-            loss = dss.Circuit.Losses()
-            return loss[0]/1000
-        
 
-        def extractProfitAndEmissions() -> tuple:
-            bus_shunt_p = {}
-            total_load = 0
-            total_pv = 0
-            total_dg = 0
-            profit = 0
-            emissions = 0
-            sub = dss.Circuit.TotalPower()
-            p_sub = sub[0]
-            dss.Circuit.SetActiveClass('Load')
-            device = dss.Circuit.FirstElement()
-            while device:
-                output = dss.CktElement.TotalPowers()
-                bus = dss.CktElement.BusNames()
+    def extractPowerLosses(self) -> float:
+        loss = dss.Circuit.Losses()
+        return loss[0]/1000
+
+
+    def extractProfitAndEmissions(self) -> tuple:
+        bus_shunt_p = {}
+        total_load = 0
+        total_pv = 0
+        total_dg = 0
+        profit = 0
+        emissions = 0
+        sub = dss.Circuit.TotalPower()
+        p_sub = sub[0]
+        dss.Circuit.SetActiveClass('Load')
+        device = dss.Circuit.FirstElement()
+        while device:
+            output = dss.CktElement.TotalPowers()
+            bus = dss.CktElement.BusNames()
+            bus_shunt_p[bus[0]] = output[0]
+            total_load = total_load + output[0]
+            device = dss.Circuit.NextElement()  
+        dss.Circuit.SetActiveClass('PVSystem')
+        device = dss.Circuit.FirstElement()
+        while device:
+            output = dss.CktElement.TotalPowers()
+            bus = dss.CktElement.BusNames()
+            total_pv = total_pv + output[0]
+            if bus[0] in bus_shunt_p.keys():
+                bus_shunt_p[bus[0]] = bus_shunt_p[bus[0]] + output[0]
+            else:
                 bus_shunt_p[bus[0]] = output[0]
-                total_load = total_load + output[0]
-                device = dss.Circuit.NextElement()  
-            dss.Circuit.SetActiveClass('PVSystem')
-            device = dss.Circuit.FirstElement()
-            while device:
-                output = dss.CktElement.TotalPowers()
-                bus = dss.CktElement.BusNames()
-                total_pv = total_pv + output[0]
-                if bus[0] in bus_shunt_p.keys():
-                    bus_shunt_p[bus[0]] = bus_shunt_p[bus[0]] + output[0]
-                else:
-                    bus_shunt_p[bus[0]] = output[0]
-                device = dss.Circuit.NextElement() 
-            dss.Circuit.SetActiveClass('Generator')
-            device = dss.Circuit.FirstElement()
-            while device:
-                output = dss.CktElement.TotalPowers()
-                p_dg = output[0]
-                total_dg = total_dg + p_dg
-                if 'dies' in dss.CktElement.Name():
-                    profit = profit + p_dg*self.cost_diesel
-                    emissions = emissions - p_dg*self.emissions_diesel
-                elif 'lng' in dss.CktElement.Name():
-                    profit = profit + p_dg*self.cost_lng
-                    emissions = emissions - p_dg*self.emissions_lng
-                device = dss.Circuit.NextElement()
-            emissions = emissions - p_sub*self.emissions_transmission
-            profit = profit + p_sub*self.cost_transmission
-            for bus in list(bus_shunt_p.keys()):
-                p = bus_shunt_p[bus]
-                if  p > 0:
-                    profit = profit + p*self.cost_retail
-                else:
-                    profit = profit + p*self.cost_net_metering
-            return (profit, emissions)
-        
-
-        def extractBatteryOutput() -> float:
-            dss.Circuit.SetActiveClass('Storage')
-            device = dss.Circuit.FirstElement()
-            total_batt = 0
-            while device:
-                output = dss.CktElement.TotalPowers()
-                total_batt = total_batt + output[0]
-                device = dss.Circuit.NextElement()
-            return total_batt
+            device = dss.Circuit.NextElement() 
+        dss.Circuit.SetActiveClass('Generator')
+        device = dss.Circuit.FirstElement()
+        while device:
+            output = dss.CktElement.TotalPowers()
+            p_dg = output[0]
+            total_dg = total_dg + p_dg
+            if 'dies' in dss.CktElement.Name():
+                profit = profit + p_dg*self.cost_diesel
+                emissions = emissions - p_dg*self.emissions_diesel
+            elif 'lng' in dss.CktElement.Name():
+                profit = profit + p_dg*self.cost_lng
+                emissions = emissions - p_dg*self.emissions_lng
+            device = dss.Circuit.NextElement()
+        emissions = emissions - p_sub*self.emissions_transmission
+        profit = profit + p_sub*self.cost_transmission
+        for bus in list(bus_shunt_p.keys()):
+            p = bus_shunt_p[bus]
+            if  p > 0:
+                profit = profit + p*self.cost_retail
+            else:
+                profit = profit + p*self.cost_net_metering
+        return (profit, emissions)
 
 
+    def extractBatteryOutput(self) -> float:
+        dss.Circuit.SetActiveClass('Storage')
+        device = dss.Circuit.FirstElement()
+        total_batt = 0
+        while device:
+            output = dss.CktElement.TotalPowers()
+            total_batt = total_batt + output[0]
+            device = dss.Circuit.NextElement()
+        return total_batt
+
+    def buildUMatrix(self, setpoints: List, setpointNames: List, index: int, simulationData: Dict):
         if index % 100 == 0:
             print(f"processing setpoint Alternative {index} of {self.uMatrix.shape[0]}...")
         self.runPowerFlowSnapshot(setpoints, setpointNames, simulationData)
-        violations = checkForViolations()
+        violations = self.checkForViolations()
         if not violations:
-            p_loss = extractPowerLosses()
-            profit, emissions = extractProfitAndEmissions()
-            total_batt = extractBatteryOutput()
+            p_loss = self.extractPowerLosses()
+            profit, emissions = self.extractProfitAndEmissions()
+            total_batt = self.extractBatteryOutput()
             self.uMatrix[index,0] = profit
             self.uMatrix[index,1] = -p_loss
             self.uMatrix[index,2] = -emissions
@@ -301,7 +303,8 @@ class DeconflictionMethod:
                             reg = dss.Transformers.Next()
                     regulationPerStep = (dss.Transformers.MaxTap() - dss.Transformers.MinTap()) / dss.Transformers.NumTaps()
                     tapStep = 1.0 + (setpoints[i]*regulationPerStep)
-                    dss.Transformers.Tap(tapStep)
+#                     dss.Transformers.Tap(tapStep)
+                    dss.run_command(f"Transformer.{setpointNameSplit[1]}.Taps=[1.0 {tapStep}")
             dss.Solution.SolveNoControl()
 
 
@@ -384,6 +387,10 @@ class DeconflictionMethod:
             #update opendssmodel with resolved setpoints for next conflict
             self.runPowerFlowSnapshot(resolutionSetpointSet, self.setpointSetVector["setpointIndexMap"], simulationData)
         deconflictTime = time.perf_counter() - deconflictStart
+        p_loss = self.extractPowerLosses()
+        profit, emissions = self.extractProfitAndEmissions()
+        total_batt = self.extractBatteryOutput()
+        self.criteriaResults[self.conflictTime] = [profit, p_loss, emissions, total_batt]
         print(f"deconfliction for timestamp, {self.conflictTime}, took {deconflictTime}s.\n\n\n")
         self.resolutionDict[self.conflictTime] = resolutionVector
         self.resolutionDict[self.conflictTime]["deconflictTime"] = deconflictTime
@@ -402,6 +409,10 @@ class DeconflictionMethod:
             conflictFile = Path(__file__).parent.resolve() / 'conflictResults.json'
             with conflictFile.open(mode="w") as rf:
                 json.dump(self.conflictDump, rf, indent=4, sort_keys=True)
+    
+            criteriaFile = Path(__file__).parent.resolve() / 'criteriaResults.json'
+            with criteriaFile.open(mode="w") as rf:
+                json.dump(self.criteriaResults, rf, indent=4, sort_keys=True)
         return (False, resolutionVector)
     
 
