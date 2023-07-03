@@ -665,7 +665,11 @@ class DeconflictionPipeline(GridAPPSD):
     self.ResolutionVector.clear()
     self.ResolutionVector = newResolutionVector
 
-    # for Alex
+    # for SHIVA conflict metric testing
+    #self.TimeConflictMatrix[timestamp] = copy.deepcopy(self.ConflictMatrix)
+    #self.TimeResolutionVector[timestamp] = copy.deepcopy(self.ResolutionVector)
+
+    # for ALEX
     #print('!!! ALEX ResolutionVector START !!!', flush=True)
     #pprint.pprint(self.ResolutionVector)
     #print('!!! ALEX ResolutionVector FINISH !!!', flush=True)
@@ -720,6 +724,10 @@ class DeconflictionPipeline(GridAPPSD):
     self.ResolutionVector = {}
     self.ResolutionVector['setpoints'] = {}
     self.ResolutionVector['timestamps'] = {}
+
+    # for SHIVA conflict metric testing
+    #self.TimeConflictMatrix = {}
+    #self.TimeResolutionVector = {}
 
     # Step 0: Import deconfliction methodology class for this invocation of
     #         the Deconflictor based on method command line argument and
@@ -780,6 +788,14 @@ class DeconflictionPipeline(GridAPPSD):
 
     while not self.exitFlag:
       time.sleep(0.1)
+
+    # for SHIVA conflict metric
+    #json_file = open('output/ConflictMatrix_' + basename + '.json', 'w')
+    #json.dump(self.TimeConflictMatrix, json_file, indent=4)
+    #json_file.close()
+    #json_file = open('output/ResolutionVector_' + basename + '.json', 'w')
+    #json.dump(self.TimeResolutionVector, json_file, indent=4)
+    #json_file.close()
 
 
 def _main():
