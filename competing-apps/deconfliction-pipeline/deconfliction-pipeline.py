@@ -610,9 +610,9 @@ class DeconflictionPipeline(GridAPPSD):
       MethodUtil.DeviceSetpoints[device] = value
 
     if self.testDevice and self.testDevice in DeviceSetpoints:
-      print('~TEST simulation updated P_batt for device: ' + self.testDevice +
+      print('~TEST simulation updated set-point for device: ' + self.testDevice+
             ', timestamp: ' + str(message['timestamp']) +
-            ', P_batt: ' + str(DeviceSetpoints[self.testDevice]), flush=True)
+            ', set-point: ' + str(DeviceSetpoints[self.testDevice]), flush=True)
 
     # update SoC values in MethodUtil for same reason
     BatterySoC = message['BatterySoC']
