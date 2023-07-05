@@ -575,8 +575,7 @@ class CompetingApp(GridAPPSD):
     gapps.subscribe(service_output_topic('gridappsd-sim-sim',
                                          simulation_id), self)
 
-    SPARQLManager = getattr(importlib.import_module('shared.sparql'),
-                            'SPARQLManager')
+    SPARQLManager = getattr(importlib.import_module('sparql'), 'SPARQLManager')
     sparql_mgr = SPARQLManager(gapps, feeder_mrid, simulation_id)
 
     self.outage = outage
