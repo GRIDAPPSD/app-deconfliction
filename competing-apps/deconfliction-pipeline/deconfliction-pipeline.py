@@ -253,10 +253,10 @@ class DeconflictionPipeline(GridAPPSD):
         if self.testDevice:
           if self.testDevice in fullResolutionVector['setpoints']:
             print('~TEST: ResolutionVector (from full) for ' +
-                  self.testDevice + ' setpoints: ' +
-                  str(self.ResolutionVector['setpoints'][self.testDevice]) +
-                  ', timestamps: ' +
-                  str(self.ResolutionVector['timestamps'][self.testDevice]),
+                  self.testDevice + ' setpoint: ' +
+                  str(fullResolutionVector['setpoints'][self.testDevice]) +
+                  ', timestamp: ' +
+                  str(fullResolutionVector['timestamps'][self.testDevice]),
                   flush=True)
           else:
             print('~TEST: ResolutionVector (from full) does not contain ' +
@@ -291,9 +291,9 @@ class DeconflictionPipeline(GridAPPSD):
         if self.testDevice:
           if self.testDevice in fullResolutionVector['setpoints']:
             print('~TEST: ResolutionVector (from partial) for ' +
-                  self.testDevice + ' setpoints: ' +
+                  self.testDevice + ' setpoint: ' +
                   str(fullResolutionVector['setpoints'][self.testDevice]) +
-                  ', timestamps: ' +
+                  ', timestamp: ' +
                   str(fullResolutionVector['timestamps'][self.testDevice]),
                   flush=True)
           else:
@@ -307,9 +307,9 @@ class DeconflictionPipeline(GridAPPSD):
         if self.testDevice:
           if self.testDevice in fullResolutionVector['setpoints']:
             print('~TEST: ResolutionVector (no conflict) for ' +
-                  self.testDevice + ' setpoints: ' +
+                  self.testDevice + ' setpoint: ' +
                   str(fullResolutionVector['setpoints'][self.testDevice]) +
-                  ', timestamps: ' +
+                  ', timestamp: ' +
                   str(fullResolutionVector['timestamps'][self.testDevice]),
                   flush=True)
           else:
@@ -609,10 +609,20 @@ class DeconflictionPipeline(GridAPPSD):
     for device, value in DeviceSetpoints.items():
       MethodUtil.DeviceSetpoints[device] = value
 
+    if self.testDevice and self.testDevice in DeviceSetpoints:
+      print('~TEST simulation updated P_batt for device: ' + self.testDevice +
+            ', timestamp: ' + str(message['timestamp']) +
+            ', P_batt: ' + str(DeviceSetpoints[self.testDevice]), flush=True)
+
     # update SoC values in MethodUtil for same reason
     BatterySoC = message['BatterySoC']
     for device, value in BatterySoC.items():
       MethodUtil.BatterySoC[device] = value
+
+    if self.testDevice and self.testDevice in BatterySoC:
+      print('~TEST simulation updated SoC for device: ' + self.testDevice +
+            ', timestamp: ' + str(message['timestamp']) +
+            ', SoC: ' + str(BatterySoC[self.testDevice]), flush=True)
 
 
   def on_setpoints_message(self, headers, message):
