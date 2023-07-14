@@ -628,6 +628,9 @@ class DeconflictionPipeline(GridAPPSD):
   def on_setpoints_message(self, headers, message):
     print('Received set-points message: ' + str(message), flush=True)
 
+    # for SHIVA conflict metric testing
+    #realTime = round(time.time(), 4)
+
     app_name = message['app_name']
     timestamp = message['timestamp']
     set_points = message['set_points']
@@ -676,8 +679,8 @@ class DeconflictionPipeline(GridAPPSD):
     self.ResolutionVector = newResolutionVector
 
     # for SHIVA conflict metric testing
-    #self.TimeConflictMatrix[timestamp] = copy.deepcopy(self.ConflictMatrix)
-    #self.TimeResolutionVector[timestamp] = copy.deepcopy(self.ResolutionVector)
+    #self.TimeConflictMatrix[realTime] = copy.deepcopy(self.ConflictMatrix)
+    #self.TimeResolutionVector[realTime] = copy.deepcopy(self.ResolutionVector)
 
     # for ALEX
     #print('!!! ALEX ResolutionVector START !!!', flush=True)
