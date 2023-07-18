@@ -243,7 +243,8 @@ class CompetingApp(GridAPPSD):
 
   def doOptimization(self, timestamp):
         # solve
-        self.dynamicProb.solve(PULP_CBC_CMD(msg=0, gapRel=self.gapRel, timeLimit=3))
+        self.dynamicProb.solve(PULP_CBC_CMD(msg=0, gapRel=self.gapRel,
+                               timeLimit=5))
         print('Optimization status:', LpStatus[self.dynamicProb.status],
               flush=True)
 
@@ -577,8 +578,7 @@ class CompetingApp(GridAPPSD):
     gapps.subscribe(service_output_topic('gridappsd-sim-sim',
                                          simulation_id), self)
 
-    SPARQLManager = getattr(importlib.import_module('shared.sparql'),
-                            'SPARQLManager')
+    SPARQLManager = getattr(importlib.import_module('sparql'), 'SPARQLManager')
     sparql_mgr = SPARQLManager(gapps, feeder_mrid, simulation_id)
 
     self.outage = outage
