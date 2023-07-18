@@ -13,6 +13,7 @@ import pulp
 
 import copy
 import importlib
+from time import sleep
 
 # find and add shared directory to path hopefully wherever it is from here
 if (os.path.isdir('../../shared')):
@@ -129,6 +130,7 @@ class DeconflictionMethod:
 
 
   def deconflict(self, currentTimestamp) -> Dict: 
+    sleep(2)
     self.conflictTime = currentTimestamp 
     #constraintSourceJSON = os.path.join(self.sourceFolder, f"{self.constraintSourceFile}_{self.conflictTime}.json") 
     constraintSourceJSON = os.path.join(self.sourceFolder, f"{self.constraintSourceFile}_latest.json") 
