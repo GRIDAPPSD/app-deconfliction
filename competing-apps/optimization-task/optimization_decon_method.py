@@ -94,8 +94,8 @@ class DeconflictionMethod:
     #print(optDict.objective.coefficients) 
     #return 
   
-    json_bi = open('opt_prob.json', 'w') 
-    json.dump(optDict, json_bi, indent=4) 
+    json_bi = open(f"opt_prob_{self.conflictTime}.json", 'w') 
+    json.dump(optDict, json_bi, indent = 4) 
     json_bi.close()
 
     self.decision_var, self.opt_prob = pulp.LpProblem.from_dict(optDict) 
