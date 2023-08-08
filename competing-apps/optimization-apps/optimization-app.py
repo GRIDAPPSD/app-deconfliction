@@ -242,11 +242,31 @@ class CompetingApp(GridAPPSD):
 
 
   def doOptimization(self, timestamp):
+        data = self.dynamicProb.to_dict()
+        opt_prob = {}
+        opt_prob['utility_function'] = data['objective']
+        opt_prob['constraints'] = data['constraints']
+        opt_prob['variables'] = data['variables']
+        opt_prob['parameters'] = data['parameters']
+        opt_prob['sos1'] = data['sos1']
+        opt_prob['sos2'] = data['sos2']
+
+        # Dump optimization problem formulation to a file for Orestis'
+        # methodology that combines them from multiple competing apps.
+        # Eventually he'll get this from the message bus message, but
+        # for now he reads from files
+        json_opt = open('output/' + self.opt_type + '_' +
+                                 str(timestamp) + '.json', 'w')
+        json.dump(data, json_opt, indent=4)
+        json_opt.close()
+
         # solve
         self.dynamicProb.solve(PULP_CBC_CMD(msg=0, gapRel=self.gapRel,
                                timeLimit=5))
         print('Optimization status:', LpStatus[self.dynamicProb.status],
               flush=True)
+
+        objective = pulp.value(self.dynamicProb.objective)
 
         # Second stage for the decarbonization app
         if self.opt_type == 'decarbonization':
@@ -269,11 +289,7 @@ class CompetingApp(GridAPPSD):
           self.dynamicProb.solve(GLPK_CMD(msg=0, options=['--mipgap', '0.01']))
           print('Optimization Stage II:', LpStatus[self.dynamicProb.status],
                 flush=True)
-        data = self.dynamicProb.to_dict()
-        json_opt = open('output/' + self.opt_type + '_' +
-                                 str(timestamp) + '.json', 'w')
-        json.dump(data, json_opt, indent=4)
-        json_opt.close()
+
         # self.dynamicProb.writeLP('output/' + self.opt_type + '_' +
         #                          str(timestamp) + '.lp')
 
@@ -345,7 +361,9 @@ class CompetingApp(GridAPPSD):
         out_message = {
           'app_name': self.opt_type+'-app',
           'timestamp': timestamp,
-          'set_points': set_points
+          'set_points': set_points,
+          'opt_prob': opt_prob,
+          'objective': objective
         }
         print('Sending message: ' + str(out_message), flush=True)
         self.gapps.send(self.publish_topic, out_message)

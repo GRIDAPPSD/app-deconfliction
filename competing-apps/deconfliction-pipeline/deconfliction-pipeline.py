@@ -635,6 +635,9 @@ class DeconflictionPipeline(GridAPPSD):
     timestamp = message['timestamp']
     set_points = message['set_points']
 
+    MethodUtil.OptimizationProblem = message['opt_prob']
+    MethodUtil.Objective = message['objective']
+
     # for checking order of messages received
     print('~ORDER: timestamp: ' + str(timestamp) + ', app: ' + app_name,
           flush=True)
