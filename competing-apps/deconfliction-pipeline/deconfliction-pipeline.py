@@ -635,6 +635,7 @@ class DeconflictionPipeline(GridAPPSD):
     timestamp = message['timestamp']
     set_points = message['set_points']
 
+    MethodUtil.AppName = message['app_name']
     MethodUtil.OptimizationProblem = message['opt_prob']
     MethodUtil.Objective = message['objective']
 

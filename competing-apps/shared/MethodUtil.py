@@ -1,4 +1,6 @@
 
+AppName = None
+
 ConflictSubMatrix = {}
 ConflictSubMatrix['setpoints'] = {}
 ConflictSubMatrix['timestamps'] = {}
