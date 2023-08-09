@@ -99,8 +99,22 @@ class DeconflictionMethod:
     json_bi.close()
 
     self.decision_var, self.opt_prob = pulp.LpProblem.from_dict(optDict) 
-    self.opt_prob.solve(pulp.PULP_CBC_CMD(msg = 0, gapRel = 0.01)) 
+    self.opt_prob.solve(pulp.PULP_CBC_CMD(msg = 0, gapRel = 0.01, timeLimit = 8)) 
     print('Optimization-based Deconfliction: Status:', pulp.LpStatus[self.opt_prob.status], flush = True) 
+
+    # FIXME: The things below are hard-wired. Change in the future.
+    outputDict = {}
+    outputDict[f"{self.conflictTime}"] = {
+      "obj_value": pulp.value(self.opt_prob.objective),
+      "decarbonization_utility": (1 / self.max_exch_capacity) * self.decision_var['P_sub_mod'].value(),
+      "resilience_utility": (1 / 5) * (self.decision_var['soc_0'].value() + self.decision_var['soc_1'].value() + \
+               self.decision_var['soc_2'].value() + self.decision_var['soc_3'].value() + self.decision_var['soc_4'].value()),
+      "solution_time": self.opt_prob.solutionTime
+    }
+  
+    with open(f"debug_opt_prob.txt", 'a+') as txtFile: 
+      txtFile.write(json.dumps(outputDict))
+      txtFile.write("\n")
     
     # Maybe the thing below will be useful in the future.  
     # #decision_var["reg_tap"].value() 
