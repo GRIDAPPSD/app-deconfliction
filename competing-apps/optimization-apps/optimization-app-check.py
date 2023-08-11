@@ -57,7 +57,7 @@ import queue
 import copy
 
 from time import sleep
-from pulp import *
+#from pulp import *
 import cvxpy as cp
 
 from gridappsd import GridAPPSD
@@ -331,7 +331,6 @@ class CompetingApp(GridAPPSD):
     objective = None
     if self.opt_type == 'decarbonization':
       #self.staticProb = LpProblem("Min_Sub_Flow", LpMinimize)
-      #self.staticProb = cp.Problem(cp.Minimize(obj), constr)
 
       # objective
       #self.staticProb += self.Psub_mod
@@ -589,7 +588,6 @@ class CompetingApp(GridAPPSD):
     # objective
     if self.opt_type == 'decarbonization':
       #self.staticProb = LpProblem("Min_Sub_Flow", LpMinimize)
-      #self.staticProb = cp.Problem(cp.Minimize(obj), constr)
 
       # objective
       #self.staticProb += self.Psub_mod
