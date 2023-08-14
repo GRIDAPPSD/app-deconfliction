@@ -345,7 +345,7 @@ class CompetingApp(GridAPPSD):
       # Shiva will be investigating why this happens since we don't want
       # to be dependent on magic
       #self.staticProb +=lpSum(-100 * self.soc[i] for i in range(len_Batteries))
-      objective = sum(-100 * self.soc[i] for i in range(len_Batteries))
+      objective = sum(-100 * self.soc[i] for i in range(len(self.Batteries)))
 
     elif self.opt_type == 'profit_cvr':
       #self.staticProb = LpProblem("Min_Load_Demand", LpMinimize)
@@ -575,11 +575,11 @@ class CompetingApp(GridAPPSD):
     #self.reg_taps = LpVariable.dicts("reg_tap", [(i, tap) for i in
     #                      range(len_Regulators) for tap in range(32)],
     #                      lowBound=0, upBound=1, cat='Binary')
-    self.reg_taps = cp.Variable((len_Regulators, 32), boolean=True, name='reg_taps')
+    self.reg_taps = cp.Variable((len_Regulators, 32), boolean=True,
+                                name='reg_taps')
 
 
-  def defineOptimizationStaticProblem(self, branch_info, RegIdx,
-                                      len_Batteries, len_Regulators):
+  def defineOptimizationStaticProblem(self, branch_info, RegIdx):
     # define base/static optimization problem that doesn't change with the
     # time-series multiplier values
 
@@ -636,7 +636,7 @@ class CompetingApp(GridAPPSD):
             #     self.b_i[k]**2 *self.v_A[branch_info[branch]['from_bus_idx']]\
             #     - M * (1 - self.reg_taps[(reg_idx, k)]) <= 0
             self.staticConstraints.append(
-                 self.v_A[branch_info[branch]['to_bus_idx'] - \
+                 self.v_A[branch_info[branch]['to_bus_idx']] - \
                  self.b_i[k]**2 * self.v_A[branch_info[branch]['from_bus_idx']]\
                  - M * (1 - self.reg_taps[(reg_idx, k)]) <= 0)
 
@@ -644,7 +644,7 @@ class CompetingApp(GridAPPSD):
             #     self.b_i[k]**2 *self.v_A[branch_info[branch]['from_bus_idx']]\
             #     + M * (1 - self.reg_taps[(reg_idx, k)]) >= 0
             self.staticConstraints.append(
-                 self.v_A[branch_info[branch]['to_bus_idx'] - \
+                 self.v_A[branch_info[branch]['to_bus_idx']] - \
                  self.b_i[k]**2 * self.v_A[branch_info[branch]['from_bus_idx']]\
                  + M * (1 - self.reg_taps[(reg_idx, k)]) >= 0)
 
@@ -793,7 +793,7 @@ class CompetingApp(GridAPPSD):
     #self.staticProb += self.v_C[self.bus_info[sourcebus]['idx']] == v_source ** 2
     self.staticConstraints.append(self.v_C[self.bus_info[sourcebus]['idx']] == v_source ** 2)
 
-    for k in range(len_Regulators):
+    for k in range(len(self.Regulators)):
       #self.staticProb += lpSum(self.reg_taps[(k, tap)] for tap in range(32))==1
       self.staticConstraints.append(sum(self.reg_taps[(k, tap)] for tap in range(32)) == 1)
 
@@ -1168,8 +1168,7 @@ class CompetingApp(GridAPPSD):
     self.defineOptimizationVariables(len(branch_info), len(self.bus_info),
                                      len(self.Batteries), len(self.Regulators))
 
-    self.defineOptimizationStaticProblem(branch_info, RegIdx,
-                                     len(self.Batteries), len(self.Regulators))
+    self.defineOptimizationStaticProblem(branch_info, RegIdx)
 
     # topic for sending out set_points messages
     self.publish_topic = service_output_topic('gridappsd-competing-app', '0')
