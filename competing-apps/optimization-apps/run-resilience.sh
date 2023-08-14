@@ -26,6 +26,7 @@ else
 fi
 
 mkdir -p output
-python3 optimization-app.py resilience $SIMID "$SIMREQ" $STATE 2>&1 | tee output/resilience-app.log
+#python3 optimization-app.py resilience $SIMID "$SIMREQ" $STATE 2>&1 | tee output/resilience-app.log
+python3 optimization-app-check.py resilience $SIMID "$SIMREQ" $STATE 2>&1 | tee output/resilience-app.log
 #python3 optimization-app.py resilience $SIMID "$SIMREQ" $STATE --outage 56 68 2>&1 | tee output/resilience-app.log
 
