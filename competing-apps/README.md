@@ -54,7 +54,7 @@ There are two forms for the deconflict() return value with the same method signa
 ```` bash
 class DeconflictionMethod:
 
-  def deconflict(self, timestamp):
+  def deconflict(self, app_name, timestamp):
     ...
 
     return ResolutionVector
@@ -65,7 +65,7 @@ The second form is:
 ```` bash
 class DeconflictionMethod:
 
-  def deconflict(self, timestamp):
+  def deconflict(self, app_name, timestamp):
     ...
 
     return (fullResolutionFlag, ResolutionVector)
@@ -73,7 +73,7 @@ class DeconflictionMethod:
 
 Every time the pipeline framework receives a competing app set-points message, the framework processes the set-points to determine whether a new conflict has been introduced as a result of the message. If so, the deconflict() method is called to resolve those conflicts. Importantly, this can result in multiple deconflict() calls for a given timestamp or interval before the next sim-sim time-series data message is sent. As a consequence there will be multiple ResolutionVectors computed potentially leading to multiple set-points being dispatched to the same device effectively on top of each other. This is core to the design of the deconfliction pipeline and attempting to come up with a more sophisticated design that synchronizes set-points messages across multiple competing apps to eliminate dispatches on top of each other will not be as robust or timely in performing deconfliction. If each app could be counted on to supply set-points for each time interval this sort of synchronization would be possible, but it is the very nature of the apps being unpredictable in their timing that precludes synchronizing competing apps messages. Note that the pipeline framework only dispatches set-points to devices if that set-point would require an action by the device such as changing a regulator tap position or charging a battery. This means that dispatches on top of each other would only happen to perform an action, not when the previously resolved set-point still held.
 
-The timestamp provided by the competing app sending the set-points message that resulted in the call to deconflict() is passed as an argument. This can serve as a reference to the DeconflictionMethod such as when stepping through ConflictMatrix to determine if a device set-point conflict is a new conflict or one that previously existed. Note that should ConflictSubMatrix be used instead of ConflictMatrix, then by definition with ConflictSubMatrix only containing new conflicts, this timestamp value passed to deconflict() will be associated with at least one of the apps for every device in ConflictSubMatrix.
+The competing app name and timestamp as provided by the app sending the set-points message that resulted in the call to deconflict() are passed as arguments. The timestamp can serve as a reference to the DeconflictionMethod such as when stepping through ConflictMatrix to determine if a device set-point conflict is a new conflict or one that previously existed. Note that should ConflictSubMatrix be used instead of ConflictMatrix, then by definition with ConflictSubMatrix only containing new conflicts, this timestamp value passed to deconflict() will be associated with at least one of the apps for every device in ConflictSubMatrix.
 
 The first form for the return value, only returning ResolutionVector, is used when ConflictMatrix is being processed and a full ResolutionVector is being returned. The second form, returning a tuple consisting of a Boolean flag and the ResolutionVector, is typically used when returning a partial ResolutionVector when processing ConflictSubMatrix, but can also be used for a full ResolutionVector. The flag is True for returning a full ResolutionVector, False for returning a partial ResolutionVector. Therefore, typically the return statement would be "return (False, ResolutionVector)" to denote a partial ResolutionVector. Not having to return a tuple with a full ResolutionVector is simply shorthand for what is believed to be the most common usage. Only if a tuple is returned and the first value is False will the pipeline framework fill in the remainder of the partial ResolutionVector to produce a full ResolutionVector.
 

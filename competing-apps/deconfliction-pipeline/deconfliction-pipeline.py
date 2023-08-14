@@ -217,12 +217,12 @@ class DeconflictionPipeline(GridAPPSD):
               self.testDevice, flush=True)
 
 
-  def DeconflictionToResolution(self, timestamp, set_points):
+  def DeconflictionToResolution(self, app_name, timestamp, set_points):
     # If there is a conflict, then the call the deconflict method for the given
     # methodology to produce a resolution
     fullResolutionFlag = True
     if len(MethodUtil.ConflictSubMatrix['setpoints']) > 0:
-      returned = self.decon_method.deconflict(timestamp)
+      returned = self.decon_method.deconflict(app_name, timestamp)
       if type(returned) is tuple:
         fullResolutionFlag = returned[0]
         newResolutionVector = returned[1]
@@ -635,7 +635,6 @@ class DeconflictionPipeline(GridAPPSD):
     timestamp = message['timestamp']
     set_points = message['set_points']
 
-    MethodUtil.AppName = message['app_name']
     MethodUtil.OptimizationProblem = message['opt_prob']
     MethodUtil.Objective = message['objective']
 
@@ -659,7 +658,8 @@ class DeconflictionPipeline(GridAPPSD):
     self.ConflictIdentification(app_name, timestamp, set_points)
 
     # Steps 3.2 and 3.3: Deconfliction Solution and Resolution
-    newResolutionVector = self.DeconflictionToResolution(timestamp, set_points)
+    newResolutionVector = self.DeconflictionToResolution(app_name, timestamp,
+                                                         set_points)
 
     # Step 4: Setpoint Validator -- not implemented for prototype
 
