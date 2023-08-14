@@ -360,6 +360,7 @@ class CompetingApp(GridAPPSD):
     #                       timeLimit=5))
     #print('Optimization status:', LpStatus[self.dynamicProb.status],
     #      flush=True)
+    print('About to solve optimization problem', flush=True)
     problem.solve()
     print('Optimization status:', problem.status, flush=True)
 
@@ -447,7 +448,8 @@ class CompetingApp(GridAPPSD):
       idx = self.Regulators[reg]['idx']
       for k in range(32):
         #if self.reg_taps[(idx, k)].varValue >= 0.5:
-        if self.reg_taps[(idx, k)].value >= 0.5:
+        #if self.reg_taps[(idx, k)].value >= 0.5:
+        if self.reg_taps[(idx, k)].value:
           set_points[reg] = k-16
           regulator_taps.append([reg, k-16, self.b_i[k]])
 

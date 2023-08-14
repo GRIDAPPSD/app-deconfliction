@@ -635,7 +635,8 @@ class DeconflictionPipeline(GridAPPSD):
     timestamp = message['timestamp']
     set_points = message['set_points']
 
-    MethodUtil.OptimizationProblem = message['opt_prob']
+    # GDB 8/14/23 Comment this out while we get cvxpy optimization working
+    #MethodUtil.OptimizationProblem = message['opt_prob']
     MethodUtil.Objective = message['objective']
 
     # for checking order of messages received
