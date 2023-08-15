@@ -84,6 +84,7 @@ class AppUtil:
       # Shiva HACK
       # Batteries[name]['SoC'] = 0.5
       Batteries[name]['SoC'] = float(obj['storedE']['value'])/float(obj['ratedE']['value'])
+      Batteries[name]['SoC'] = 0.9
       # eff_c and eff_d don't come from the query, but they are used throughout
       # and this is a convenient point to assign them with query results
       Batteries[name]['eff'] = 0.975 * 0.86

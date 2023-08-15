@@ -320,6 +320,11 @@ class CompetingApp(GridAPPSD):
       #self.dynamicProb += self.lambda_c[idx] + self.lambda_d[idx] <= 1
       self.dynamicConstraints.append(self.lambda_c[idx] + self.lambda_d[idx] <= 1)
 
+      # Battery SoC constraints added as Shiva couldn't identify PuLP's
+      # equivalent of lb and ub
+      self.dynamicConstraints.append(self.soc[idx] <= 0.9)
+      self.dynamicConstraints.append(self.soc[idx] >= 0.2)
+
 
   def doOptimization(self, timestamp):
     # GDB Come back for this later
