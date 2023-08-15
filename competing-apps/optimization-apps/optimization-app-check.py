@@ -101,8 +101,21 @@ class CompetingApp(GridAPPSD):
     #self.dynamicProb = LpProblem.deepcopy(self.staticProb)
     self.dynamicConstraints = copy.deepcopy(self.staticConstraints)
 
+    v_min, v_max = (0.95 * 2401.77) ** 2, (1.05 * 2401.77) ** 2
     for bus in self.bus_info:
       bus_idx = self.bus_info[bus]['idx']
+      self.dynamicConstraints.append(
+        self.v_A[bus_idx] >= v_min)
+      self.dynamicConstraints.append(
+        self.v_A[bus_idx] <= v_max)
+      self.dynamicConstraints.append(
+        self.v_B[bus_idx] >= v_min)
+      self.dynamicConstraints.append(
+        self.v_B[bus_idx] <= v_max)
+      self.dynamicConstraints.append(
+        self.v_C[bus_idx] >= v_min)
+      self.dynamicConstraints.append(
+        self.v_C[bus_idx] <= v_max)
 
       #if bus_idx not in self.lines_in:
       #  print('Source bus: ' + bus, flush=True)
@@ -354,6 +367,9 @@ class CompetingApp(GridAPPSD):
       #self.staticProb += lpSum((self.v_A[i] + self.v_B[i] + self.v_C[i]) for i in range(len(self.bus_info)))
       objective = sum((self.v_A[i] + self.v_B[i] + self.v_C[i]) for i in range(len(self.bus_info)))
 
+    # TODO: For some reason CVXPY fails to print the regulator taps unless
+    #  substation regulator tap is fixed. For now fixing it to 6th position
+    self.dynamicConstraints.append(self.reg_taps[(0, 22)] == 1)
     problem = cp.Problem(cp.Minimize(objective), self.dynamicConstraints)
 
     #self.dynamicProb.solve(PULP_CBC_CMD(msg=0, gapRel=self.gapRel,
@@ -361,6 +377,7 @@ class CompetingApp(GridAPPSD):
     #print('Optimization status:', LpStatus[self.dynamicProb.status],
     #      flush=True)
     print('About to solve optimization problem', flush=True)
+    # problem.solve(solver=cp.MOSEK, verbose=True)
     problem.solve()
     print('Optimization status:', problem.status, flush=True)
 
@@ -394,6 +411,7 @@ class CompetingApp(GridAPPSD):
       #print('Optimization Stage II:', LpStatus[self.dynamicProb.status],
       #      flush=True)
       problem = cp.Problem(cp.Minimize(objective), self.dynamicConstraints)
+      # problem.solve(solver=cp.MOSEK)
       problem.solve()
       print('Optimization State II status:', problem.status, flush=True)
 
@@ -402,13 +420,13 @@ class CompetingApp(GridAPPSD):
 
     '''
     branch_flow = []
-    for branch in branch_info:
-      idx = branch_info[branch]['idx']
-      branch_flow.append([branch, branch_info[branch]['from_bus'],
-                  branch_info[branch]['to_bus'], p_flow_A[idx].varValue,
-                  p_flow_B[idx].varValue, p_flow_C[idx].varValue,
-                  q_flow_A[idx].varValue, q_flow_B[idx].varValue,
-                  q_flow_C[idx].varValue])
+    for branch in self.branch_info:
+      idx = self.branch_info[branch]['idx']
+      branch_flow.append([branch, self.branch_info[branch]['from_bus'],
+                  self.branch_info[branch]['to_bus'], self.p_flow_A[idx].value,
+                  self.p_flow_B[idx].value, self.p_flow_C[idx].value,
+                  self.q_flow_A[idx].value, self.q_flow_B[idx].value,
+                  self.q_flow_C[idx].value])
 
     print(tabulate(branch_flow, headers=['Line Name', 'from', 'to',
                   'P_A', 'P_B', 'P_C', 'Q_A', 'Q_B', 'Q_C'], tablefmt='psql'))
@@ -430,13 +448,13 @@ class CompetingApp(GridAPPSD):
 
     bus_voltage = []
     v = []
-    for bus in bus_info:
-      idx = bus_info[bus]['idx']
-      bus_voltage.append([bus, math.sqrt(v_A[idx].varValue),
-                  math.sqrt(v_B[idx].varValue), math.sqrt(v_C[idx].varValue)])
-      v.append(math.sqrt(v_A[idx].varValue) / 2401.77)
-      v.append(math.sqrt(v_B[idx].varValue) / 2401.77)
-      v.append(math.sqrt(v_C[idx].varValue) / 2401.77)
+    for bus in self.bus_info:
+      idx = self.bus_info[bus]['idx']
+      bus_voltage.append([bus, math.sqrt(self.v_A[idx].value),
+                  math.sqrt(self.v_B[idx].value), math.sqrt(self.v_C[idx].value)])
+      v.append(math.sqrt(self.v_A[idx].value) / 2401.77)
+      v.append(math.sqrt(self.v_B[idx].value) / 2401.77)
+      v.append(math.sqrt(self.v_C[idx].value) / 2401.77)
 
     print(tabulate(bus_voltage, headers=['Bus', 'V_A', 'V_B', 'V_C'],
                    tablefmt='psql'))
