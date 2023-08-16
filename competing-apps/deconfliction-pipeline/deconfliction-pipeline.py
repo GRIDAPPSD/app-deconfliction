@@ -225,12 +225,12 @@ class DeconflictionPipeline(GridAPPSD):
               self.testDevice, flush=True)
 
 
-  def DeconflictionToResolution(self, timestamp, set_points):
+  def DeconflictionToResolution(self, app_name, timestamp, set_points):
     # If there is a conflict, then the call the deconflict method for the given
     # methodology to produce a resolution
     fullResolutionFlag = True
     if len(MethodUtil.ConflictSubMatrix['setpoints']) > 0:
-      returned = self.decon_method.deconflict(timestamp)
+      returned = self.decon_method.deconflict(app_name, timestamp)
       if type(returned) is tuple:
         fullResolutionFlag = returned[0]
         newResolutionVector = returned[1]
@@ -261,10 +261,10 @@ class DeconflictionPipeline(GridAPPSD):
         if self.testDevice:
           if self.testDevice in fullResolutionVector['setpoints']:
             print('~TEST: ResolutionVector (from full) for ' +
-                  self.testDevice + ' setpoints: ' +
-                  str(self.ResolutionVector['setpoints'][self.testDevice]) +
-                  ', timestamps: ' +
-                  str(self.ResolutionVector['timestamps'][self.testDevice]),
+                  self.testDevice + ' setpoint: ' +
+                  str(fullResolutionVector['setpoints'][self.testDevice]) +
+                  ', timestamp: ' +
+                  str(fullResolutionVector['timestamps'][self.testDevice]),
                   flush=True)
           else:
             print('~TEST: ResolutionVector (from full) does not contain ' +
@@ -299,9 +299,9 @@ class DeconflictionPipeline(GridAPPSD):
         if self.testDevice:
           if self.testDevice in fullResolutionVector['setpoints']:
             print('~TEST: ResolutionVector (from partial) for ' +
-                  self.testDevice + ' setpoints: ' +
+                  self.testDevice + ' setpoint: ' +
                   str(fullResolutionVector['setpoints'][self.testDevice]) +
-                  ', timestamps: ' +
+                  ', timestamp: ' +
                   str(fullResolutionVector['timestamps'][self.testDevice]),
                   flush=True)
           else:
@@ -315,9 +315,9 @@ class DeconflictionPipeline(GridAPPSD):
         if self.testDevice:
           if self.testDevice in fullResolutionVector['setpoints']:
             print('~TEST: ResolutionVector (no conflict) for ' +
-                  self.testDevice + ' setpoints: ' +
+                  self.testDevice + ' setpoint: ' +
                   str(fullResolutionVector['setpoints'][self.testDevice]) +
-                  ', timestamps: ' +
+                  ', timestamp: ' +
                   str(fullResolutionVector['timestamps'][self.testDevice]),
                   flush=True)
           else:
@@ -606,18 +606,39 @@ class DeconflictionPipeline(GridAPPSD):
     for device, value in DeviceSetpoints.items():
       MethodUtil.DeviceSetpoints[device] = value
 
+    if self.testDevice and self.testDevice in DeviceSetpoints:
+      print('~TEST simulation updated set-point for device: ' + self.testDevice+
+            ', timestamp: ' + str(message['timestamp']) +
+            ', set-point: ' + str(DeviceSetpoints[self.testDevice]), flush=True)
+
     # update SoC values in MethodUtil for same reason
     BatterySoC = message['BatterySoC']
     for device, value in BatterySoC.items():
       MethodUtil.BatterySoC[device] = value
 
+    if self.testDevice and self.testDevice in BatterySoC:
+      print('~TEST simulation updated SoC for device: ' + self.testDevice +
+            ', timestamp: ' + str(message['timestamp']) +
+            ', SoC: ' + str(BatterySoC[self.testDevice]), flush=True)
+
 
   def on_setpoints_message(self, headers, message):
     print('Received set-points message: ' + str(message), flush=True)
 
+    # for SHIVA conflict metric testing
+    #realTime = round(time.time(), 4)
+
     app_name = message['app_name']
     timestamp = message['timestamp']
     set_points = message['set_points']
+
+    # GDB 8/14/23 Comment this out while we get cvxpy optimization working
+    #MethodUtil.OptimizationProblem = message['opt_prob']
+    MethodUtil.Objective = message['objective']
+
+    # for checking order of messages received
+    print('~ORDER: timestamp: ' + str(timestamp) + ', app: ' + app_name,
+          flush=True)
 
     # Step 1: Setpoint Processor
     self.SetpointProcessor(app_name, timestamp, set_points)
@@ -635,7 +656,8 @@ class DeconflictionPipeline(GridAPPSD):
     self.ConflictIdentification(app_name, timestamp, set_points)
 
     # Steps 3.2 and 3.3: Deconfliction Solution and Resolution
-    newResolutionVector = self.DeconflictionToResolution(timestamp, set_points)
+    newResolutionVector = self.DeconflictionToResolution(app_name, timestamp,
+                                                         set_points)
 
     # Step 4: Setpoint Validator -- not implemented for prototype
 
@@ -658,7 +680,11 @@ class DeconflictionPipeline(GridAPPSD):
     self.ResolutionVector.clear()
     self.ResolutionVector = newResolutionVector
 
-    # for Alex
+    # for SHIVA conflict metric testing
+    #self.TimeConflictMatrix[realTime] = copy.deepcopy(self.ConflictMatrix)
+    #self.TimeResolutionVector[realTime] = copy.deepcopy(self.ResolutionVector)
+
+    # for ALEX
     #print('!!! ALEX ResolutionVector START !!!', flush=True)
     #pprint.pprint(self.ResolutionVector)
     #print('!!! ALEX ResolutionVector FINISH !!!', flush=True)
@@ -715,6 +741,10 @@ class DeconflictionPipeline(GridAPPSD):
     self.ResolutionVector['timestamps'] = {}
     self.conflictDump = {}
     self.resolutionDump = {}
+
+    # for SHIVA conflict metric testing
+    #self.TimeConflictMatrix = {}
+    #self.TimeResolutionVector = {}
 
     # Step 0: Import deconfliction methodology class for this invocation of
     #         the Deconflictor based on method command line argument and
@@ -777,6 +807,14 @@ class DeconflictionPipeline(GridAPPSD):
       time.sleep(0.1)
     
     
+
+    # for SHIVA conflict metric
+    #json_file = open('output/ConflictMatrix_' + basename + '.json', 'w')
+    #json.dump(self.TimeConflictMatrix, json_file, indent=4)
+    #json_file.close()
+    #json_file = open('output/ResolutionVector_' + basename + '.json', 'w')
+    #json.dump(self.TimeResolutionVector, json_file, indent=4)
+    #json_file.close()
 
 
 def _main():

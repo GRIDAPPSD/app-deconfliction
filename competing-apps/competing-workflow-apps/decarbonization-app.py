@@ -193,8 +193,7 @@ class CompetingApp(GridAPPSD):
   def __init__(self, gapps, feeder_mrid, simulation_id, outage):
     self.gapps = gapps
 
-    SPARQLManager = getattr(importlib.import_module('shared.sparql'),
-                            'SPARQLManager')
+    SPARQLManager = getattr(importlib.import_module('sparql'), 'SPARQLManager')
     sparql_mgr = SPARQLManager(gapps, feeder_mrid, simulation_id)
 
     self.outage = outage

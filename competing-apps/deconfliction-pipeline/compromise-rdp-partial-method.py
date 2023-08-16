@@ -22,7 +22,7 @@ class DeconflictionMethod:
     self.ConflictSubMatrix = MethodUtil.ConflictSubMatrix
 
 
-  def deconflict(self, timestamp):
+  def deconflict(self, app_name, timestamp):
     ResolutionSubVector = {}
     ResolutionSubVector['setpoints'] = {}
     ResolutionSubVector['timestamps'] = {}

@@ -26,6 +26,7 @@ else
 fi
 
 mkdir -p output
-python3 optimization-app.py profit_cvr $SIMID "$SIMREQ" $STATE 2>&1 | tee output/profit_cvr-app.log
-#python3 optimization-app.py profit_cvr $SIMID "$SIMREQ" $STATE --outage 56 68 2>&1 | tee output/profit_cvr-app.log
+#python3 optimization-app-pulp.py profit_cvr $SIMID "$SIMREQ" $STATE 2>&1 | tee output/profit_cvr-app.log
+python3 optimization-app-cvxpy.py profit_cvr $SIMID "$SIMREQ" $STATE 2>&1 | tee output/profit_cvr-app.log
+#python3 optimization-app-pulp.py profit_cvr $SIMID "$SIMREQ" $STATE --outage 56 68 2>&1 | tee output/profit_cvr-app.log
 

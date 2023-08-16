@@ -242,10 +242,35 @@ class CompetingApp(GridAPPSD):
 
 
   def doOptimization(self, timestamp):
+        data = self.dynamicProb.to_dict()
+        opt_prob = {}
+        opt_prob['utility_function'] = data['objective']
+        opt_prob['constraints'] = data['constraints']
+        opt_prob['variables'] = data['variables']
+        opt_prob['parameters'] = data['parameters']
+        opt_prob['sos1'] = data['sos1']
+        opt_prob['sos2'] = data['sos2']
+
+        # Dump optimization problem formulation to a file for Orestis'
+        # methodology that combines them from multiple competing apps.
+        # Eventually he'll get this from the message bus message, but
+        # for now he reads from files
+        json_opt = open('output/' + self.opt_type + '_' +
+                                 str(timestamp) + '.json', 'w')
+        json.dump(data, json_opt, indent=4)
+        json_opt.close()
+
         # solve
+<<<<<<<< HEAD:competing-apps/competing-optimization-apps/optimization-app.py
         self.dynamicProb.solve(PULP_CBC_CMD(msg=0, gapRel=self.gapRel, timeLimit=3))
+========
+        self.dynamicProb.solve(PULP_CBC_CMD(msg=0, gapRel=self.gapRel,
+                               timeLimit=5))
+>>>>>>>> 0adad101930c0fdb3c89c65c64acc6444799520c:competing-apps/competing-optimization-apps/optimization-app-pulp.py
         print('Optimization status:', LpStatus[self.dynamicProb.status],
               flush=True)
+
+        objective = pulp.value(self.dynamicProb.objective)
 
         # Second stage for the decarbonization app
         if self.opt_type == 'decarbonization':
@@ -268,11 +293,7 @@ class CompetingApp(GridAPPSD):
           self.dynamicProb.solve(GLPK_CMD(msg=0, options=['--mipgap', '0.01']))
           print('Optimization Stage II:', LpStatus[self.dynamicProb.status],
                 flush=True)
-        data = self.dynamicProb.to_dict()
-        json_opt = open('output/' + self.opt_type + '_' +
-                                 str(timestamp) + '.json', 'w')
-        json.dump(data, json_opt, indent=4)
-        json_opt.close()
+
         # self.dynamicProb.writeLP('output/' + self.opt_type + '_' +
         #                          str(timestamp) + '.lp')
 
@@ -344,7 +365,9 @@ class CompetingApp(GridAPPSD):
         out_message = {
           'app_name': self.opt_type+'-app',
           'timestamp': timestamp,
-          'set_points': set_points
+          'set_points': set_points,
+          'opt_prob': opt_prob,
+          'objective': objective
         }
         print('Sending message: ' + str(out_message), flush=True)
         self.gapps.send(self.publish_topic, out_message)
@@ -566,8 +589,20 @@ class CompetingApp(GridAPPSD):
   def __init__(self, gapps, opt_type, feeder_mrid, simulation_id, outage,state):
     self.gapps = gapps
 
+<<<<<<<< HEAD:competing-apps/competing-optimization-apps/optimization-app.py
     SPARQLManager = getattr(importlib.import_module('shared.sparql'),
                             'SPARQLManager')
+========
+    self.messageQueue = queue.Queue()
+
+    # subscribe to simulation output messages
+    # since messages are just going on a queue, subscribe right away to
+    # keep from missing any sent during app initialization
+    gapps.subscribe(service_output_topic('gridappsd-sim-sim',
+                                         simulation_id), self)
+
+    SPARQLManager = getattr(importlib.import_module('sparql'), 'SPARQLManager')
+>>>>>>>> 0adad101930c0fdb3c89c65c64acc6444799520c:competing-apps/competing-optimization-apps/optimization-app-pulp.py
     sparql_mgr = SPARQLManager(gapps, feeder_mrid, simulation_id)
 
     self.outage = outage
