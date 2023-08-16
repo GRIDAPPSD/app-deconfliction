@@ -39,7 +39,7 @@
 # UNITED STATES DEPARTMENT OF ENERGY under Contract DE-AC05-76RL01830
 # ------------------------------------------------------------------------------
 """
-Created on October 31, 2022
+Created on August 14, 2023
 
 @author: Gary Black and Shiva Poudel
 """""
@@ -57,7 +57,6 @@ import queue
 import copy
 
 from time import sleep
-#from pulp import *
 import cvxpy as cp
 
 from gridappsd import GridAPPSD
@@ -96,9 +95,8 @@ class CompetingApp(GridAPPSD):
 
 
   def defineOptimizationDynamicProblem(self, timestamp, load_mult, pv_mult):
-    # copy the base/static LpProblem that doesn't depend on time-series data
-    # as a starting point to then add the time-series dependent part on
-    #self.dynamicProb = LpProblem.deepcopy(self.staticProb)
+    # copy the base/static constraints that don't depend on time-series data
+    # as a starting point to then add the time-series dependent part to that
     self.dynamicConstraints = copy.deepcopy(self.staticConstraints)
 
     v_min, v_max = (0.95 * 2401.77) ** 2, (1.05 * 2401.77) ** 2
@@ -141,37 +139,21 @@ class CompetingApp(GridAPPSD):
              'A' in self.Batteries_obj[bus]['phase']:
             #print('Batteries A bus: ' + bus, flush=True)
             batname = self.Batteries_obj[bus]['name']
-            #self.dynamicProb += lpSum(self.p_flow_A[idx] \
-            #     for idx in self.lines_in[bus_idx]['A']) - \
-            #  self.p_batt[self.Batteries[batname]['idx']] - injection_p == \
-            #  lpSum(self.p_flow_A[idx] for idx in self.lines_out[bus_idx]['A'])
             self.dynamicConstraints.append(sum(self.p_flow_A[idx] \
                  for idx in self.lines_in[bus_idx]['A']) - \
                self.p_batt[self.Batteries[batname]['idx']] - injection_p == \
                sum(self.p_flow_A[idx] for idx in self.lines_out[bus_idx]['A']))
 
-            #self.dynamicProb += lpSum(self.q_flow_A[idx] \
-            #     for idx in self.lines_in[bus_idx]['A']) - \
-            #   injection_q == lpSum(self.q_flow_A[idx] \
-            #     for idx in self.lines_out[bus_idx]['A'])
             self.dynamicConstraints.append(sum(self.q_flow_A[idx] \
                  for idx in self.lines_in[bus_idx]['A']) - \
                injection_q == sum(self.q_flow_A[idx] \
                  for idx in self.lines_out[bus_idx]['A']))
           else:
-            #self.dynamicProb += lpSum(self.p_flow_A[idx] \
-            #     for idx in self.lines_in[bus_idx]['A']) - \
-            #   injection_p == lpSum(self.p_flow_A[idx] \
-            #     for idx in self.lines_out[bus_idx]['A'])
             self.dynamicConstraints.append(sum(self.p_flow_A[idx] \
                  for idx in self.lines_in[bus_idx]['A']) - \
                injection_p == sum(self.p_flow_A[idx] \
                  for idx in self.lines_out[bus_idx]['A']))
 
-            #self.dynamicProb += lpSum(self.q_flow_A[idx] \
-            #     for idx in self.lines_in[bus_idx]['A']) - \
-            #   injection_q == lpSum(self.q_flow_A[idx] \
-            #     for idx in self.lines_out[bus_idx]['A'])
             self.dynamicConstraints.append(sum(self.q_flow_A[idx] \
                  for idx in self.lines_in[bus_idx]['A']) - \
                injection_q == sum(self.q_flow_A[idx] \
@@ -193,37 +175,21 @@ class CompetingApp(GridAPPSD):
              'B' in self.Batteries_obj[bus]['phase']:
             #print('Batteries B bus: ' + bus, flush=True)
             batname = self.Batteries_obj[bus]['name']
-            #self.dynamicProb += lpSum(self.p_flow_B[idx] \
-            #     for idx in self.lines_in[bus_idx]['B']) - \
-            #  self.p_batt[self.Batteries[batname]['idx']] - injection_p == \
-            #  lpSum(self.p_flow_B[idx] for idx in self.lines_out[bus_idx]['B'])
             self.dynamicConstraints.append(sum(self.p_flow_B[idx] \
                  for idx in self.lines_in[bus_idx]['B']) - \
                self.p_batt[self.Batteries[batname]['idx']] - injection_p == \
                sum(self.p_flow_B[idx] for idx in self.lines_out[bus_idx]['B']))
 
-            #self.dynamicProb += lpSum(self.q_flow_B[idx] \
-            #     for idx in self.lines_in[bus_idx]['B']) - \
-            #   injection_q == lpSum(self.q_flow_B[idx] \
-            #     for idx in self.lines_out[bus_idx]['B'])
             self.dynamicConstraints.append(sum(self.q_flow_B[idx] \
                  for idx in self.lines_in[bus_idx]['B']) - \
                injection_q == sum(self.q_flow_B[idx] \
                  for idx in self.lines_out[bus_idx]['B']))
           else:
-            #self.dynamicProb += lpSum(self.p_flow_B[idx] \
-            #     for idx in self.lines_in[bus_idx]['B']) - \
-            #   injection_p == lpSum(self.p_flow_B[idx] \
-            #     for idx in self.lines_out[bus_idx]['B'])
             self.dynamicConstraints.append(sum(self.p_flow_B[idx] \
                  for idx in self.lines_in[bus_idx]['B']) - \
                injection_p == sum(self.p_flow_B[idx] \
                  for idx in self.lines_out[bus_idx]['B']))
 
-            #self.dynamicProb += lpSum(self.q_flow_B[idx] \
-            #     for idx in self.lines_in[bus_idx]['B']) - \
-            #   injection_q == lpSum(self.q_flow_B[idx] \
-            #     for idx in self.lines_out[bus_idx]['B'])
             self.dynamicConstraints.append(sum(self.q_flow_B[idx] \
                  for idx in self.lines_in[bus_idx]['B']) - \
                injection_q == sum(self.q_flow_B[idx] \
@@ -245,37 +211,21 @@ class CompetingApp(GridAPPSD):
              'C' in self.Batteries_obj[bus]['phase']:
             #print('Batteries C bus: ' + bus, flush=True)
             batname = self.Batteries_obj[bus]['name']
-            #self.dynamicProb += lpSum(self.p_flow_C[idx] \
-            #     for idx in self.lines_in[bus_idx]['C']) - \
-            #  self.p_batt[self.Batteries[batname]['idx']] - injection_p == \
-            #  lpSum(self.p_flow_C[idx] for idx in self.lines_out[bus_idx]['C'])
             self.dynamicConstraints.append(sum(self.p_flow_C[idx] \
                  for idx in self.lines_in[bus_idx]['C']) - \
                self.p_batt[self.Batteries[batname]['idx']] - injection_p == \
                sum(self.p_flow_C[idx] for idx in self.lines_out[bus_idx]['C']))
 
-            #self.dynamicProb += lpSum(self.q_flow_C[idx] \
-            #     for idx in self.lines_in[bus_idx]['C']) - \
-            #   injection_q == lpSum(self.q_flow_C[idx] \
-            #     for idx in self.lines_out[bus_idx]['C'])
             self.dynamicConstraints.append(sum(self.q_flow_C[idx] \
                  for idx in self.lines_in[bus_idx]['C']) - \
                injection_q == sum(self.q_flow_C[idx] \
                  for idx in self.lines_out[bus_idx]['C']))
           else:
-            #self.dynamicProb += lpSum(self.p_flow_C[idx] \
-            #     for idx in self.lines_in[bus_idx]['C']) - \
-            #   injection_p == lpSum(self.p_flow_C[idx] \
-            #     for idx in self.lines_out[bus_idx]['C'])
             self.dynamicConstraints.append(sum(self.p_flow_C[idx] \
                  for idx in self.lines_in[bus_idx]['C']) - \
                injection_p == sum(self.p_flow_C[idx] \
                  for idx in self.lines_out[bus_idx]['C']))
 
-            #self.dynamicProb += lpSum(self.q_flow_C[idx] \
-            #     for idx in self.lines_in[bus_idx]['C']) - \
-            #   injection_q == lpSum(self.q_flow_C[idx] \
-            #     for idx in self.lines_out[bus_idx]['C'])
             self.dynamicConstraints.append(sum(self.q_flow_C[idx] \
                  for idx in self.lines_in[bus_idx]['C']) - \
                injection_q == sum(self.q_flow_C[idx] \
@@ -284,11 +234,6 @@ class CompetingApp(GridAPPSD):
     for name in self.Batteries:
       self.Batteries[name]['state'] = 'idling'
       idx = self.Batteries[name]['idx']
-      #self.dynamicProb += self.soc[idx] == self.Batteries[name]['SoC'] + \
-      #        self.Batteries[name]['eff'] * self.p_batt_c[idx] * \
-      #        self.deltaT / self.Batteries[name]['ratedE'] + \
-      #        1 / self.Batteries[name]['eff'] * self.p_batt_d[idx] * \
-      #        self.deltaT / self.Batteries[name]['ratedE']
       self.dynamicConstraints.append(
               self.soc[idx] == self.Batteries[name]['SoC'] + \
               self.Batteries[name]['eff'] * self.p_batt_c[idx] * \
@@ -296,28 +241,19 @@ class CompetingApp(GridAPPSD):
               1 / self.Batteries[name]['eff'] * self.p_batt_d[idx] * \
               self.deltaT / self.Batteries[name]['ratedE'])
 
-      #self.dynamicProb += self.p_batt_c[idx] >= 0
       self.dynamicConstraints.append(self.p_batt_c[idx] >= 0)
 
-      #self.dynamicProb += self.p_batt_d[idx] <= 0
       self.dynamicConstraints.append(self.p_batt_d[idx] <= 0)
 
-      #self.dynamicProb += self.p_batt_c[idx] <= \
-      #        self.lambda_c[idx] * self.Batteries[name]['prated']
       self.dynamicConstraints.append(self.p_batt_c[idx] <= \
               self.lambda_c[idx] * self.Batteries[name]['prated'])
 
-      #self.dynamicProb += self.p_batt_d[idx] >= \
-      #        -self.lambda_d[idx] * self.Batteries[name]['prated']
       self.dynamicConstraints.append(self.p_batt_d[idx] >= \
               -self.lambda_d[idx] * self.Batteries[name]['prated'])
 
-      #self.dynamicProb += self.p_batt[idx] == \
-      #        self.p_batt_c[idx] + self.p_batt_d[idx]
       self.dynamicConstraints.append(self.p_batt[idx] == \
               self.p_batt_c[idx] + self.p_batt_d[idx])
 
-      #self.dynamicProb += self.lambda_c[idx] + self.lambda_d[idx] <= 1
       self.dynamicConstraints.append(self.lambda_c[idx] + self.lambda_d[idx] <= 1)
 
       # Battery SoC constraints added as Shiva couldn't identify PuLP's
@@ -327,7 +263,7 @@ class CompetingApp(GridAPPSD):
 
 
   def doOptimization(self, timestamp):
-    # GDB Come back for this later
+    # GDB Come back for this later to convert from PuLP to CVXPY
     #data = self.dynamicProb.to_dict()
     #opt_prob = {}
     #opt_prob['utility_function'] = data['objective']
@@ -348,47 +284,32 @@ class CompetingApp(GridAPPSD):
 
     objective = None
     if self.opt_type == 'decarbonization':
-      #self.staticProb = LpProblem("Min_Sub_Flow", LpMinimize)
-
       # objective
-      #self.staticProb += self.Psub_mod
       # The latest version of cvxpy complains "unbounded" if not normalized
       objective = self.Psub_mod / 1000
 
     elif self.opt_type == 'resilience':
-      #self.staticProb = LpProblem("Max_Reserve", LpMinimize)
-
       # objective
       # SHIVA magic scaling factor for SoC that causes the optmization to
       # come up with the correct results where -self.soc[i] doesn't.
       # Shiva will be investigating why this happens since we don't want
       # to be dependent on magic
-      #self.staticProb +=lpSum(-100 * self.soc[i] for i in range(len_Batteries))
       objective = sum(-100 * self.soc[i] for i in range(len(self.Batteries)))
 
     elif self.opt_type == 'profit_cvr':
-      #self.staticProb = LpProblem("Min_Load_Demand", LpMinimize)
-
       # objective
-      #self.staticProb += lpSum((self.v_A[i] + self.v_B[i] + self.v_C[i]) for i in range(len(self.bus_info)))
       objective = sum((self.v_A[i] + self.v_B[i] + self.v_C[i]) for i in range(len(self.bus_info)))
 
     # TODO: For some reason CVXPY fails to print the regulator taps unless
-    #  substation regulator tap is fixed. For now fixing it to 6th position
+    #  substation regulator tap is fixed. For now fixing it to zero position
     self.dynamicConstraints.append(self.reg_taps[(0, 16)] == 1)
     problem = cp.Problem(cp.Minimize(objective), self.dynamicConstraints)
 
-    #self.dynamicProb.solve(PULP_CBC_CMD(msg=0, gapRel=self.gapRel,
-    #                       timeLimit=5))
-    #print('Optimization status:', LpStatus[self.dynamicProb.status],
-    #      flush=True)
-    print('About to solve optimization problem', flush=True)
     # problem.solve(solver=cp.MOSEK, verbose=True)
     problem.solve(solver=cp.GLPK_MI, abstol=1e-3, kktsolver='chol',
                   feastol=1e-3, max_iters=100, verbose=True)
     print('Optimization status:', problem.status, flush=True)
 
-    #objective = pulp.value(self.dynamicProb.objective)
     objval = problem.value
 
     # Second stage for the decarbonization app
@@ -396,7 +317,6 @@ class CompetingApp(GridAPPSD):
       bus_idx_batt = {'A': [], 'B': [], 'C': []}
       for name in self.Batteries:
         idx = self.Batteries[name]['idx']
-        #self.dynamicProb += self.p_batt[idx] == self.p_batt[idx].varValue
         self.dynamicConstraints.append(self.p_batt[idx] == self.p_batt[idx].value)
         bus = self.Batteries[name]['bus']
         if 'A' in self.Batteries[name]['phase']:
@@ -406,24 +326,13 @@ class CompetingApp(GridAPPSD):
         else:
           bus_idx_batt['C'].append(self.bus_info[bus]['idx'])
 
-      #self.dynamicProb += self.dynamicProb.objective-self.Psub_mod + \
-      #                    lpSum(-self.v_A[i] for i in bus_idx_batt['A']) + \
-      #                    lpSum(-self.v_B[i] for i in bus_idx_batt['B']) + \
-      #                    lpSum(-self.v_C[i] for i in bus_idx_batt['C'])
       objective += -self.Psub_mod + \
                           sum(-self.v_A[i] for i in bus_idx_batt['A']) + \
                           sum(-self.v_B[i] for i in bus_idx_batt['B']) + \
                           sum(-self.v_C[i] for i in bus_idx_batt['C'])
-      #self.dynamicProb.solve(GLPK_CMD(msg=0, options=['--mipgap', '0.01']))
-      #print('Optimization Stage II:', LpStatus[self.dynamicProb.status],
-      #      flush=True)
       # problem = cp.Problem(cp.Minimize(objective), self.dynamicConstraints)
-      # # problem.solve(solver=cp.MOSEK)
       # problem.solve(solver=cp.MOSEK)
       # print('Optimization State II status:', problem.status, flush=True)
-
-    # self.dynamicProb.writeLP('output/' + self.opt_type + '_' +
-    #                          str(timestamp) + '.lp')
 
     '''
     branch_flow = []
@@ -472,8 +381,6 @@ class CompetingApp(GridAPPSD):
     for reg in self.Regulators:
       idx = self.Regulators[reg]['idx']
       for k in range(32):
-        #if self.reg_taps[(idx, k)].varValue >= 0.5:
-        #if self.reg_taps[(idx, k)].value >= 0.5:
         if self.reg_taps[(idx, k)].value:
           set_points[reg] = k-16
           regulator_taps.append([reg, k-16, self.b_i[k]])
@@ -484,12 +391,8 @@ class CompetingApp(GridAPPSD):
     p_batt_setpoints = []
     for name in self.Batteries:
       idx = self.Batteries[name]['idx']
-      #self.Batteries[name]['SoC'] = self.soc[idx].varValue
       self.Batteries[name]['SoC'] = self.soc[idx].value
-      #set_points[name] = self.p_batt[idx].varValue
       set_points[name] = self.p_batt[idx].value
-      #p_batt_setpoints.append([name, set_points[name]/1000,
-      #                         self.soc[idx].varValue])
       p_batt_setpoints.append([name, set_points[name]/1000,
                                self.soc[idx].value])
 
@@ -516,92 +419,40 @@ class CompetingApp(GridAPPSD):
   def defineOptimizationVariables(self, len_branch_info, len_bus_info,
                                   len_Batteries, len_Regulators):
     flow_min, flow_max = -5e6, 5e6
-    #self.p_flow_A = LpVariable.dicts("p_flow_A",
-    #                     (i for i in range(len_branch_info)),
-    #                     lowBound=flow_min, upBound=flow_max, cat='Continuous')
     self.p_flow_A = cp.Variable(len_branch_info, integer=False, name='p_flow_A')
 
-    #self.p_flow_B = LpVariable.dicts("p_flow_B",
-    #                     (i for i in range(len_branch_info)),
-    #                     lowBound=flow_min, upBound=flow_max, cat='Continuous')
     self.p_flow_B = cp.Variable(len_branch_info, integer=False, name='p_flow_B')
 
-    #self.p_flow_C = LpVariable.dicts("p_flow_C",
-    #                     (i for i in range(len_branch_info)),
-    #                     lowBound=flow_min, upBound=flow_max, cat='Continuous')
     self.p_flow_C = cp.Variable(len_branch_info, integer=False, name='p_flow_C')
 
-    #self.q_flow_A = LpVariable.dicts("q_flow_A",
-    #                     (i for i in range(len_branch_info)),
-    #                     lowBound=flow_min, upBound=flow_max, cat='Continuous')
     self.q_flow_A = cp.Variable(len_branch_info, integer=False, name='q_flow_A')
 
-    #self.q_flow_B = LpVariable.dicts("q_flow_B",
-    #                     (i for i in range(len_branch_info)),
-    #                     lowBound=flow_min, upBound=flow_max, cat='Continuous')
     self.q_flow_B = cp.Variable(len_branch_info, integer=False, name='q_flow_B')
 
-    #self.q_flow_C = LpVariable.dicts("q_flow_C",
-    #                     (i for i in range(len_branch_info)),
-    #                     lowBound=flow_min, upBound=flow_max, cat='Continuous')
     self.q_flow_C = cp.Variable(len_branch_info, integer=False, name='q_flow_C')
 
-    #self.Psub = LpVariable("P_sub", lowBound=flow_min, upBound=flow_max, cat='Continuous')
     self.Psub = cp.Variable(integer=False, name='P_sub')
 
-    #self.Psub_mod = LpVariable("P_sub_mod", lowBound=flow_min, upBound=flow_max, cat='Continuous')
     self.Psub_mod = cp.Variable(integer=False, name='P_sub_mod')
 
-    #self.p_rated = 250e3
-    #self.p_batt = LpVariable.dicts("p_batt",
-    #                    (i for i in range(len_Batteries)),
-    #                    lowBound=-self.p_rated, upBound=self.p_rated,
-    #                    cat='Continuous')
     self.p_batt = cp.Variable(len_Batteries, integer=False, name='p_batt')
 
-    #self.p_batt_c = LpVariable.dicts("p_batt_c",
-    #                    (i for i in range(len_Batteries)),
-    #                    lowBound=-self.p_rated, upBound=self.p_rated,
-    #                    cat='Continuous')
     self.p_batt_c = cp.Variable(len_Batteries, integer=False, name='p_batt_c')
 
-    #self.p_batt_d = LpVariable.dicts("p_batt_d",
-    #                    (i for i in range(len_Batteries)),
-    #                    lowBound=-self.p_rated, upBound=self.p_rated,
-    #                    cat='Continuous')
     self.p_batt_d = cp.Variable(len_Batteries, integer=False, name='p_batt_d')
 
-    #self.soc = LpVariable.dicts("soc",
-    #                    (i for i in range(len_Batteries)),
-    #                    lowBound=0.2, upBound=0.9, cat='Continuous')
     self.soc = cp.Variable(len_Batteries, integer=False, name='soc')
 
-    #self.lambda_c = LpVariable.dicts("lambda_c",
-    #                    (i for i in range(len_Batteries)),
-    #                    lowBound=0, upBound=1, cat='Binary')
     self.lambda_c = cp.Variable(len_Batteries, boolean=True, name='lambda_c')
 
-    #self.lambda_d = LpVariable.dicts("lambda_d",
-    #                    (i for i in range(len_Batteries)),
-    #                    lowBound=0, upBound=1, cat='Binary')
     self.lambda_d = cp.Variable(len_Batteries, boolean=True, name='lambda_d')
 
-    #v_min, v_max = (0.95 * 2401.77) ** 2, (1.05 * 2401.77) ** 2
-    #self.v_A = LpVariable.dicts("v_A", (i for i in range(len_bus_info)),
-    #                      lowBound=v_min, upBound=v_max, cat='Continuous')
     self.v_A = cp.Variable(len_bus_info, integer=False, name='v_A')
 
-    #self.v_B = LpVariable.dicts("v_B", (i for i in range(len_bus_info)),
-    #                      lowBound=v_min, upBound=v_max, cat='Continuous')
     self.v_B = cp.Variable(len_bus_info, integer=False, name='v_B')
 
-    #self.v_C = LpVariable.dicts("v_C", (i for i in range(len_bus_info)),
-    #                      lowBound=v_min, upBound=v_max, cat='Continuous')
     self.v_C = cp.Variable(len_bus_info, integer=False, name='v_C')
 
-    #self.reg_taps = LpVariable.dicts("reg_tap", [(i, tap) for i in
-    #                      range(len_Regulators) for tap in range(32)],
-    #                      lowBound=0, upBound=1, cat='Binary')
     self.reg_taps = cp.Variable((len_Regulators, 32), boolean=True,
                                 name='reg_taps')
 
@@ -614,16 +465,9 @@ class CompetingApp(GridAPPSD):
 
     # objective
     if self.opt_type == 'decarbonization':
-      #self.staticProb = LpProblem("Min_Sub_Flow", LpMinimize)
-
-      # objective
-      #self.staticProb += self.Psub_mod
-
       # constraints
-      #self.staticProb += self.Psub_mod >= self.Psub
       self.staticConstraints.append(self.Psub_mod >= self.Psub)
 
-      #self.staticProb += self.Psub_mod >= -self.Psub
       self.staticConstraints.append(self.Psub_mod >= -self.Psub)
 
       flow_min, flow_max = -5e6, 5e6
@@ -633,30 +477,9 @@ class CompetingApp(GridAPPSD):
       self.staticConstraints.append(self.Psub_mod <= flow_max)
 
       sub_flow_idx = self.EnergySource['flow_idx']
-      #self.staticProb += self.Psub == self.p_flow_A[sub_flow_idx] + \
-      #                                self.p_flow_B[sub_flow_idx] + \
-      #                                self.p_flow_C[sub_flow_idx]
       self.staticConstraints.append(self.Psub == self.p_flow_A[sub_flow_idx] + \
                                                  self.p_flow_B[sub_flow_idx] + \
                                                  self.p_flow_C[sub_flow_idx])
-
-    elif self.opt_type == 'resilience':
-      #self.staticProb = LpProblem("Max_Reserve", LpMinimize)
-
-      # objective
-      # SHIVA magic scaling factor for SoC that causes the optmization to
-      # come up with the correct results where -self.soc[i] doesn't.
-      # Shiva will be investigating why this happens since we don't want
-      # to be dependent on magic
-      #self.staticProb +=lpSum(-100 * self.soc[i] for i in range(len_Batteries))
-      pass
-
-    elif self.opt_type == 'profit_cvr':
-      #self.staticProb = LpProblem("Min_Load_Demand", LpMinimize)
-
-      # objective
-      #self.staticProb += lpSum((self.v_A[i] + self.v_B[i] + self.v_C[i]) for i in range(len(self.bus_info)))
-      pass
 
     M = 1e9
     for branch in branch_info:
@@ -665,17 +488,11 @@ class CompetingApp(GridAPPSD):
           reg_idx = RegIdx[branch+'.A']
 
           for k in range(32):
-            #self.staticProb += self.v_A[branch_info[branch]['to_bus_idx']] - \
-            #     self.b_i[k]**2 *self.v_A[branch_info[branch]['from_bus_idx']]\
-            #     - M * (1 - self.reg_taps[(reg_idx, k)]) <= 0
             self.staticConstraints.append(
                  self.v_A[branch_info[branch]['to_bus_idx']] - \
                  self.b_i[k]**2 * self.v_A[branch_info[branch]['from_bus_idx']]\
                  - M * (1 - self.reg_taps[(reg_idx, k)]) <= 0)
 
-            #self.staticProb += self.v_A[branch_info[branch]['to_bus_idx']] - \
-            #     self.b_i[k]**2 *self.v_A[branch_info[branch]['from_bus_idx']]\
-            #     + M * (1 - self.reg_taps[(reg_idx, k)]) >= 0
             self.staticConstraints.append(
                  self.v_A[branch_info[branch]['to_bus_idx']] - \
                  self.b_i[k]**2 * self.v_A[branch_info[branch]['from_bus_idx']]\
@@ -685,17 +502,11 @@ class CompetingApp(GridAPPSD):
           reg_idx = RegIdx[branch+'.B']
 
           for k in range(32):
-            #self.staticProb += self.v_B[branch_info[branch]['to_bus_idx']] - \
-            #     self.b_i[k]**2 *self.v_B[branch_info[branch]['from_bus_idx']]\
-            #        - M * (1 - self.reg_taps[(reg_idx, k)]) <= 0
             self.staticConstraints.append(
                  self.v_B[branch_info[branch]['to_bus_idx']] - \
                  self.b_i[k]**2 * self.v_B[branch_info[branch]['from_bus_idx']]\
                     - M * (1 - self.reg_taps[(reg_idx, k)]) <= 0)
 
-            #self.staticProb += self.v_B[branch_info[branch]['to_bus_idx']] - \
-            #     self.b_i[k]**2 *self.v_B[branch_info[branch]['from_bus_idx']]\
-            #        + M * (1 - self.reg_taps[(reg_idx, k)]) >= 0
             self.staticConstraints.append(
                  self.v_B[branch_info[branch]['to_bus_idx']] - \
                  self.b_i[k]**2 * self.v_B[branch_info[branch]['from_bus_idx']]\
@@ -705,17 +516,11 @@ class CompetingApp(GridAPPSD):
           reg_idx = RegIdx[branch+'.C']
 
           for k in range(32):
-            #self.staticProb += self.v_C[branch_info[branch]['to_bus_idx']] - \
-            #     self.b_i[k]**2 *self.v_C[branch_info[branch]['from_bus_idx']]\
-            #     - M * (1 - self.reg_taps[(reg_idx, k)]) <= 0
             self.staticConstraints.append(
                  self.v_C[branch_info[branch]['to_bus_idx']] - \
                  self.b_i[k]**2 * self.v_C[branch_info[branch]['from_bus_idx']]\
                  - M * (1 - self.reg_taps[(reg_idx, k)]) <= 0)
 
-            #self.staticProb += self.v_C[branch_info[branch]['to_bus_idx']] - \
-            #     self.b_i[k]**2 *self.v_C[branch_info[branch]['from_bus_idx']]\
-            #     + M * (1 - self.reg_taps[(reg_idx, k)]) >= 0
             self.staticConstraints.append(
                  self.v_C[branch_info[branch]['to_bus_idx']] - \
                  self.b_i[k]**2 * self.v_C[branch_info[branch]['from_bus_idx']]\
@@ -771,12 +576,6 @@ class CompetingApp(GridAPPSD):
         idx = branch_info[branch]['idx']
         hfsqrt3 = math.sqrt(3.0)/2.0
 
-        #self.staticProb += self.v_A[to_bus_idx] == self.v_A[fr_bus_idx] - \
-        #    2.0*(self.p_flow_A[idx]*z_aa.real + self.q_flow_A[idx]*z_aa.imag +\
-        #    self.p_flow_B[idx]*(-0.5*z_ab.real + hfsqrt3*z_ab.imag) + \
-        #    self.q_flow_B[idx]*(-0.5*z_ab.imag - hfsqrt3*z_ab.real) + \
-        #    self.p_flow_C[idx]*(-0.5*z_ac.real - hfsqrt3*z_ac.imag) + \
-        #    self.q_flow_C[idx]*(-0.5*z_ac.imag + hfsqrt3*z_ac.real))
         self.staticConstraints.append(
             self.v_A[to_bus_idx] == self.v_A[fr_bus_idx] - \
             2.0*(self.p_flow_A[idx]*z_aa.real + self.q_flow_A[idx]*z_aa.imag + \
@@ -785,12 +584,6 @@ class CompetingApp(GridAPPSD):
             self.p_flow_C[idx]*(-0.5*z_ac.real - hfsqrt3*z_ac.imag) + \
             self.q_flow_C[idx]*(-0.5*z_ac.imag + hfsqrt3*z_ac.real)))
 
-        #self.staticProb += self.v_B[to_bus_idx] == self.v_B[fr_bus_idx] - \
-        #    2.0*(self.p_flow_B[idx]*z_bb.real + self.q_flow_B[idx]*z_bb.imag +\
-        #    self.p_flow_A[idx]*(-0.5*z_ab.real - hfsqrt3*z_ab.imag) + \
-        #    self.q_flow_A[idx]*(-0.5*z_ab.imag + hfsqrt3*z_ab.real) + \
-        #    self.p_flow_C[idx]*(-0.5*z_bc.real + hfsqrt3*z_bc.imag) + \
-        #    self.q_flow_C[idx]*(-0.5*z_bc.imag - hfsqrt3*z_bc.real))
         self.staticConstraints.append(
             self.v_B[to_bus_idx] == self.v_B[fr_bus_idx] - \
             2.0*(self.p_flow_B[idx]*z_bb.real + self.q_flow_B[idx]*z_bb.imag + \
@@ -799,12 +592,6 @@ class CompetingApp(GridAPPSD):
             self.p_flow_C[idx]*(-0.5*z_bc.real + hfsqrt3*z_bc.imag) + \
             self.q_flow_C[idx]*(-0.5*z_bc.imag - hfsqrt3*z_bc.real)))
 
-        #self.staticProb += self.v_C[to_bus_idx] == self.v_C[fr_bus_idx] - \
-        #    2.0*(self.p_flow_C[idx]*z_cc.real + self.q_flow_C[idx]*z_cc.imag +\
-        #    self.p_flow_A[idx]*(-0.5*z_ac.real + hfsqrt3*z_ac.imag) + \
-        #    self.q_flow_A[idx]*(-0.5*z_ac.imag - hfsqrt3*z_ac.real) + \
-        #    self.p_flow_B[idx]*(-0.5*z_bc.real - hfsqrt3*z_bc.imag) + \
-        #    self.q_flow_B[idx]*(-0.5*z_bc.imag + hfsqrt3*z_bc.real))
         self.staticConstraints.append(
             self.v_C[to_bus_idx] == self.v_C[fr_bus_idx] - \
             2.0*(self.p_flow_C[idx]*z_cc.real + self.q_flow_C[idx]*z_cc.imag + \
@@ -817,17 +604,13 @@ class CompetingApp(GridAPPSD):
     sourcebus = self.EnergySource['bus']
     v_source = self.EnergySource['basev'] / math.sqrt(3)
 
-    #self.staticProb += self.v_A[self.bus_info[sourcebus]['idx']] == v_source ** 2
     self.staticConstraints.append(self.v_A[self.bus_info[sourcebus]['idx']] == v_source ** 2)
 
-    #self.staticProb += self.v_B[self.bus_info[sourcebus]['idx']] == v_source ** 2
     self.staticConstraints.append(self.v_B[self.bus_info[sourcebus]['idx']] == v_source ** 2)
 
-    #self.staticProb += self.v_C[self.bus_info[sourcebus]['idx']] == v_source ** 2
     self.staticConstraints.append(self.v_C[self.bus_info[sourcebus]['idx']] == v_source ** 2)
 
     for k in range(len(self.Regulators)):
-      #self.staticProb += lpSum(self.reg_taps[(k, tap)] for tap in range(32))==1
       self.staticConstraints.append(sum(self.reg_taps[(k, tap)] for tap in range(32)) == 1)
 
 
@@ -1175,7 +958,6 @@ class CompetingApp(GridAPPSD):
 
     print('\nbranch_info phase count: ' + str(n_line_phase), flush=True)
 
-    self.gapRel = 0.01
     self.interval = 1
     # uncomment the self.interval lines below to adjust the deltaT period
     # the optimization is based on per app and the frequency of messages
@@ -1187,7 +969,6 @@ class CompetingApp(GridAPPSD):
       #self.interval = 4
     elif opt_type.startswith('p') or opt_type.startswith('P'):
       self.opt_type = 'profit_cvr'
-      self.gapRel = 0.05
       #self.interval = 5
     else:
       print('*** Exiting due to unrecognized optimization type: ' + opt_type,
