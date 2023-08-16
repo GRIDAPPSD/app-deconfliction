@@ -308,7 +308,7 @@ class DeconflictionMethod:
             dss.Solution.SolveNoControl()
 
 
-    def deconflict(self, currentTime: int) -> Dict:
+    def deconflict(self, app_name: str, currentTime: int) -> Dict:
         deconflictStart = time.perf_counter()
         for timeVal in self.conflictMatrix.get("timestamps",{}).values():
             self.conflictTime = max(self.conflictTime, timeVal)
