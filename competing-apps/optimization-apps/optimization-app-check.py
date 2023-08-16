@@ -352,7 +352,8 @@ class CompetingApp(GridAPPSD):
 
       # objective
       #self.staticProb += self.Psub_mod
-      objective = self.Psub_mod
+      # The latest version of cvxpy complains "unbounded" if not normalized
+      objective = self.Psub_mod / 1000
 
     elif self.opt_type == 'resilience':
       #self.staticProb = LpProblem("Max_Reserve", LpMinimize)
@@ -374,7 +375,7 @@ class CompetingApp(GridAPPSD):
 
     # TODO: For some reason CVXPY fails to print the regulator taps unless
     #  substation regulator tap is fixed. For now fixing it to 6th position
-    self.dynamicConstraints.append(self.reg_taps[(0, 22)] == 1)
+    self.dynamicConstraints.append(self.reg_taps[(0, 16)] == 1)
     problem = cp.Problem(cp.Minimize(objective), self.dynamicConstraints)
 
     #self.dynamicProb.solve(PULP_CBC_CMD(msg=0, gapRel=self.gapRel,
@@ -383,7 +384,8 @@ class CompetingApp(GridAPPSD):
     #      flush=True)
     print('About to solve optimization problem', flush=True)
     # problem.solve(solver=cp.MOSEK, verbose=True)
-    problem.solve()
+    problem.solve(solver=cp.GLPK_MI, abstol=1e-3, kktsolver='chol',
+                  feastol=1e-3, max_iters=100, verbose=True)
     print('Optimization status:', problem.status, flush=True)
 
     #objective = pulp.value(self.dynamicProb.objective)
@@ -415,10 +417,10 @@ class CompetingApp(GridAPPSD):
       #self.dynamicProb.solve(GLPK_CMD(msg=0, options=['--mipgap', '0.01']))
       #print('Optimization Stage II:', LpStatus[self.dynamicProb.status],
       #      flush=True)
-      problem = cp.Problem(cp.Minimize(objective), self.dynamicConstraints)
+      # problem = cp.Problem(cp.Minimize(objective), self.dynamicConstraints)
+      # # problem.solve(solver=cp.MOSEK)
       # problem.solve(solver=cp.MOSEK)
-      problem.solve()
-      print('Optimization State II status:', problem.status, flush=True)
+      # print('Optimization State II status:', problem.status, flush=True)
 
     # self.dynamicProb.writeLP('output/' + self.opt_type + '_' +
     #                          str(timestamp) + '.lp')
@@ -623,6 +625,12 @@ class CompetingApp(GridAPPSD):
 
       #self.staticProb += self.Psub_mod >= -self.Psub
       self.staticConstraints.append(self.Psub_mod >= -self.Psub)
+
+      flow_min, flow_max = -5e6, 5e6
+      self.staticConstraints.append(self.Psub >= flow_min)
+      self.staticConstraints.append(self.Psub <= flow_max)
+      self.staticConstraints.append(self.Psub_mod >= flow_min)
+      self.staticConstraints.append(self.Psub_mod <= flow_max)
 
       sub_flow_idx = self.EnergySource['flow_idx']
       #self.staticProb += self.Psub == self.p_flow_A[sub_flow_idx] + \
