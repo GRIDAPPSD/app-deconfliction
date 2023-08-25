@@ -97,7 +97,13 @@ class CompetingApp(GridAPPSD):
   def defineOptimizationDynamicProblem(self, timestamp, load_mult, pv_mult):
     # copy the base/static constraints that don't depend on time-series data
     # as a starting point to then add the time-series dependent part to that
-    self.dynamicConstraints = copy.deepcopy(self.staticConstraints)
+    #self.dynamicConstraints = copy.deepcopy(self.staticConstraints)
+
+    # GDB 8/25/23
+    # For CVXPY since we have to redefine the whole problem with each new
+    # timestamp, we can just share the same reference to the constraints
+    # rather than copying it
+    self.dynamicConstraints = self.staticConstraints
 
     v_min, v_max = (0.95 * 2401.77) ** 2, (1.05 * 2401.77) ** 2
     for bus in self.bus_info:
@@ -982,7 +988,11 @@ class CompetingApp(GridAPPSD):
     self.defineOptimizationVariables(len(branch_info), len(self.bus_info),
                                      len(self.Batteries), len(self.Regulators))
 
-    self.defineOptimizationStaticProblem(branch_info, RegIdx)
+    # GDB 8/25/23
+    # Defining the part of the optimization problem that doesn't change with
+    # each timestamp flies for PuLP, but not CVXPY. Based on how it sets up
+    # the problem internally, it all needs to be redone each time.
+    #self.defineOptimizationStaticProblem(branch_info, RegIdx)
 
     # topic for sending out set_points messages
     self.publish_topic = service_output_topic('gridappsd-competing-app', '0')
@@ -1028,6 +1038,11 @@ class CompetingApp(GridAPPSD):
               ', BatterySoc: ' + str(BatterySoC), flush=True)
 
         self.updateSoC(BatterySoC)
+
+        # GDB 8/25/23
+        # Need to define the full optimization problem each time anything
+        # changes for CVXPY to be happy
+        self.defineOptimizationStaticProblem(branch_info, RegIdx)
 
         self.defineOptimizationDynamicProblem(timestamp, loadshape, solar)
 
