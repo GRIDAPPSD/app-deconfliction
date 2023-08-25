@@ -313,7 +313,7 @@ class CompetingApp(GridAPPSD):
 
     # problem.solve(solver=cp.MOSEK, verbose=True)
     problem.solve(solver=cp.GLPK_MI, abstol=1e-3, kktsolver='chol',
-                  feastol=1e-3, max_iters=100, verbose=True)
+                  feastol=1e-3, max_iters=100, verbose=False)
     print('Optimization status:', problem.status, flush=True)
 
     objval = problem.value
