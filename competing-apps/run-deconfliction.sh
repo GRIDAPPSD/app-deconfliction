@@ -55,6 +55,11 @@ if [[ $APPS == *"p"* || $APPS == *"P"* ]]; then
   ./run-profit.sh $OPTLIB $MODEL >/dev/null &
 fi
 
+if [[ $APPS == *"l"* || $APPS == *"L"* ]]; then
+  ((delay_app_counter--))
+  ./run-loadshed.sh $OPTLIB $MODEL >/dev/null &
+fi
+
 DELAY=$delay_app_counter
 if [ "$#" -gt 4 ]; then
   DELAY=$5
