@@ -27,9 +27,9 @@ fi
 
 mkdir -p output
 if [ "$1" = "pulp" ] || [ "$1" = "PULP" ] || [ "$1" = "PuLP" ]; then
-  python3 optimization-app-pulp.py load_shed $SIMID "$SIMREQ" $STATE 2>&1 | tee output/loadshed-app.log
+  python3 optimization-app-pulp-loadshed.py load_shed $SIMID "$SIMREQ" $STATE 2>&1 | tee output/loadshed-app.log
 else
-  python3 optimization-app-cvxpy.py load_shed $SIMID "$SIMREQ" $STATE 2>&1 | tee output/loadshed-app.log
+  python3 optimization-app-cvxpy-loadshed.py load_shed $SIMID "$SIMREQ" $STATE 2>&1 | tee output/loadshed-app.log
 fi
-#python3 optimization-app-pulp.py load_shed $SIMID "$SIMREQ" $STATE --outage 56 68 2>&1 | tee output/resilience-app.log
+#python3 optimization-app-pulp-loadshed.py load_shed $SIMID "$SIMREQ" $STATE --outage 56 68 2>&1 | tee output/resilience-app.log
 
