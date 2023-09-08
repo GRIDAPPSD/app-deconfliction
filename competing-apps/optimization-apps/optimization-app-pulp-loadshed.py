@@ -519,7 +519,7 @@ class CompetingApp(GridAPPSD):
 
     elif self.opt_type == 'load_shedding':
       self.staticProb = LpProblem("Max_Load_Pickup", LpMinimize)
-      self.staticProb += lpSum(self.alpha[i] for i in range(len(self.bus_info)))
+      self.staticProb += lpSum(-self.alpha[i] for i in range(len(self.bus_info)))
 
     for branch in branch_info:
       if branch_info[branch]['type'] == 'regulator':
