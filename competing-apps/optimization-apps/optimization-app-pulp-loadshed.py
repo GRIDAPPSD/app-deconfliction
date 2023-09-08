@@ -394,7 +394,7 @@ class CompetingApp(GridAPPSD):
           'opt_prob': opt_prob,
           'objective': objective
         }
-        //print('Sending message: ' + str(out_message), flush=True)
+        #print('Sending message: ' + str(out_message), flush=True)
         self.gapps.send(self.publish_topic, out_message)
 
 
@@ -468,7 +468,7 @@ class CompetingApp(GridAPPSD):
     self.alpha = LpVariable.dicts("alpha", (i for i in range(len_bus_info)),
                                   lowBound=0, upBound=1, cat='Continuous')
 
-    // SHIVA, any lower and upper bounds on these p and q load variables?
+    # SHIVA, any lower and upper bounds on these p and q load variables?
     self.injection_p_load_A = LpVariable.dicts("injection_p_load_A",
                                   (i for i in range(len_bus_info)),
                                   cat='Continuous')
