@@ -380,9 +380,11 @@ class CompetingApp(GridAPPSD):
                        'Target SoC'], tablefmt='psql'), flush=True)
 
         alpha_vals = []
-        for bus in self.bus_info:
-          bus_idx = self.bus_info[bus]['idx']
-          alpha_vals.append([bus, self.alpha[bus_idx].varValue])
+        with open('output/alpha_30K.csv', 'w') as fcsv: # GARY
+          for bus in self.bus_info:
+            bus_idx = self.bus_info[bus]['idx']
+            alpha_vals.append([bus, self.alpha[bus_idx].varValue])
+            fcsv.write(bus + ',' + str(int(self.alpha[bus_idx].varValue)) + '\n')
 
         print(tabulate(alpha_vals, headers=['Bus', 'Alpha'],
                        tablefmt='psql'), flush=True)
@@ -520,6 +522,7 @@ class CompetingApp(GridAPPSD):
     elif self.opt_type == 'load_shedding':
       self.staticProb = LpProblem("Max_Load_Pickup", LpMinimize)
       self.staticProb += lpSum(-self.alpha[i] for i in range(len(self.bus_info)))
+      self.staticProb += self.Psub <= 30000 # GARY
 
     for branch in branch_info:
       if branch_info[branch]['type'] == 'regulator':
