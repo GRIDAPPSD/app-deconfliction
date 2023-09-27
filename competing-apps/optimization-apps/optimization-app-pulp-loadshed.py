@@ -500,12 +500,12 @@ class CompetingApp(GridAPPSD):
     # objective
     if self.opt_type == 'decarbonization':
       self.staticProb = LpProblem("Min_Sub_Flow", LpMinimize)
-      sub_flow_idx = self.EnergySource['flow_idx']
       self.staticProb += self.Psub_mod
       self.staticProb += self.Psub_mod >= self.Psub
       self.staticProb += self.Psub_mod >= -self.Psub
-      self.staticProb += self.Psub == self.p_flow_A[sub_flow_idx] + self.p_flow_B[sub_flow_idx] + \
-                         self.p_flow_C[sub_flow_idx]
+      sub_flow_idx = self.EnergySource['flow_idx']
+      self.staticProb += self.Psub == self.p_flow_A[sub_flow_idx] + \
+                       self.p_flow_B[sub_flow_idx] + self.p_flow_C[sub_flow_idx]
 
     elif self.opt_type == 'resilience':
       self.staticProb = LpProblem("Max_Reserve", LpMinimize)
@@ -522,6 +522,9 @@ class CompetingApp(GridAPPSD):
     elif self.opt_type == 'load_shedding':
       self.staticProb = LpProblem("Max_Load_Pickup", LpMinimize)
       self.staticProb += lpSum(-self.alpha[i] for i in range(len(self.bus_info)))
+      sub_flow_idx = self.EnergySource['flow_idx']
+      self.staticProb += self.Psub == self.p_flow_A[sub_flow_idx] + \
+                       self.p_flow_B[sub_flow_idx] + self.p_flow_C[sub_flow_idx]
       self.staticProb += self.Psub <= 30000 # GARY
 
     for branch in branch_info:
