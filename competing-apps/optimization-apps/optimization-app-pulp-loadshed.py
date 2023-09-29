@@ -130,8 +130,8 @@ class CompetingApp(GridAPPSD):
              'A' in self.EnergyConsumers[bus]['kW']:
             #injection_p = load_mult*self.EnergyConsumers[bus]['kW']['A']
             #injection_q = load_mult*self.EnergyConsumers[bus]['kVar']['A']
-            self.dynamicProb += self.injection_p_load_A[bus_idx] == self.alpha[bus_idx]*load_mult*self.EnergyConsumers[bus]['kW']['A']
-            self.dynamicProb += self.injection_q_load_A[bus_idx] == self.alpha[bus_idx]*load_mult*self.EnergyConsumers[bus]['kVar']['A']
+            self.dynamicProb += self.injection_p_load_A[bus_idx] == self.alpha*load_mult*self.EnergyConsumers[bus]['kW']['A']
+            self.dynamicProb += self.injection_q_load_A[bus_idx] == self.alpha*load_mult*self.EnergyConsumers[bus]['kVar']['A']
 
           if bus in self.SolarPVs and 'A' in self.SolarPVs[bus]['phase']:
             #injection_p -= pv_mult*self.SolarPVs[bus]['p']
@@ -170,8 +170,8 @@ class CompetingApp(GridAPPSD):
              'B' in self.EnergyConsumers[bus]['kW']:
             #injection_p = load_mult*self.EnergyConsumers[bus]['kW']['B']
             #injection_q = load_mult*self.EnergyConsumers[bus]['kVar']['B']
-            self.dynamicProb += self.injection_p_load_B[bus_idx] == self.alpha[bus_idx]*load_mult*self.EnergyConsumers[bus]['kW']['B']
-            self.dynamicProb += self.injection_q_load_B[bus_idx] == self.alpha[bus_idx]*load_mult*self.EnergyConsumers[bus]['kVar']['B']
+            self.dynamicProb += self.injection_p_load_B[bus_idx] == self.alpha*load_mult*self.EnergyConsumers[bus]['kW']['B']
+            self.dynamicProb += self.injection_q_load_B[bus_idx] == self.alpha*load_mult*self.EnergyConsumers[bus]['kVar']['B']
 
           if bus in self.SolarPVs and 'B' in self.SolarPVs[bus]['phase']:
             #injection_p -= pv_mult*self.SolarPVs[bus]['p']
@@ -210,8 +210,8 @@ class CompetingApp(GridAPPSD):
              'C' in self.EnergyConsumers[bus]['kW']:
             #injection_p = load_mult*self.EnergyConsumers[bus]['kW']['C']
             #injection_q = load_mult*self.EnergyConsumers[bus]['kVar']['C']
-            self.dynamicProb += self.injection_p_load_C[bus_idx] == self.alpha[bus_idx]*load_mult*self.EnergyConsumers[bus]['kW']['C']
-            self.dynamicProb += self.injection_q_load_C[bus_idx] == self.alpha[bus_idx]*load_mult*self.EnergyConsumers[bus]['kVar']['C']
+            self.dynamicProb += self.injection_p_load_C[bus_idx] == self.alpha*load_mult*self.EnergyConsumers[bus]['kW']['C']
+            self.dynamicProb += self.injection_q_load_C[bus_idx] == self.alpha*load_mult*self.EnergyConsumers[bus]['kVar']['C']
 
           if bus in self.SolarPVs and 'C' in self.SolarPVs[bus]['phase']:
             #injection_p -= pv_mult*self.SolarPVs[bus]['p']
@@ -379,15 +379,7 @@ class CompetingApp(GridAPPSD):
         print(tabulate(p_batt_setpoints, headers=['Battery', 'P_batt (kW)',
                        'Target SoC'], tablefmt='psql'), flush=True)
 
-        alpha_vals = []
-        with open('output/alpha_30K.csv', 'w') as fcsv: # GARY
-          for bus in self.bus_info:
-            bus_idx = self.bus_info[bus]['idx']
-            alpha_vals.append([bus, self.alpha[bus_idx].varValue])
-            fcsv.write(bus + ',' + str(int(self.alpha[bus_idx].varValue)) + '\n')
-
-        print(tabulate(alpha_vals, headers=['Bus', 'Alpha'],
-                       tablefmt='psql'), flush=True)
+        print('\nalpha: ' + str(self.alpha.varValue) + '\n', flush=True)
 
         out_message = {
           'app_name': self.opt_type+'-app',
@@ -467,29 +459,28 @@ class CompetingApp(GridAPPSD):
                           range(len_Regulators) for tap in range(32)],
                           lowBound=0, upBound=1, cat='Binary')
 
-    self.alpha = LpVariable.dicts("alpha", (i for i in range(len_bus_info)),
-                                  lowBound=0, upBound=1, cat='Continuous')
+    self.alpha = LpVariable("alpha", lowBound=0, upBound=1, cat='Continuous')
 
     # SHIVA, any lower and upper bounds on these p and q load variables?
     self.injection_p_load_A = LpVariable.dicts("injection_p_load_A",
                                   (i for i in range(len_bus_info)),
-                                  cat='Continuous')
+                                  lowBound=0, cat='Continuous')
     self.injection_p_load_B = LpVariable.dicts("injection_p_load_B",
                                   (i for i in range(len_bus_info)),
-                                  cat='Continuous')
+                                  lowBound=0, cat='Continuous')
     self.injection_p_load_C = LpVariable.dicts("injection_p_load_C",
                                   (i for i in range(len_bus_info)),
-                                  cat='Continuous')
+                                  lowBound=0, cat='Continuous')
 
     self.injection_q_load_A = LpVariable.dicts("injection_q_load_A",
                                   (i for i in range(len_bus_info)),
-                                  cat='Continuous')
+                                  lowBound=0, cat='Continuous')
     self.injection_q_load_B = LpVariable.dicts("injection_q_load_B",
                                   (i for i in range(len_bus_info)),
-                                  cat='Continuous')
+                                  lowBound=0, cat='Continuous')
     self.injection_q_load_C = LpVariable.dicts("injection_q_load_C",
                                   (i for i in range(len_bus_info)),
-                                  cat='Continuous')
+                                  lowBound=0, cat='Continuous')
 
 
   def defineOptimizationStaticProblem(self, branch_info, RegIdx,
@@ -521,11 +512,11 @@ class CompetingApp(GridAPPSD):
 
     elif self.opt_type == 'load_shedding':
       self.staticProb = LpProblem("Max_Load_Pickup", LpMinimize)
-      self.staticProb += lpSum(-self.alpha[i] for i in range(len(self.bus_info)))
+      self.staticProb += -self.alpha
       sub_flow_idx = self.EnergySource['flow_idx']
       self.staticProb += self.Psub == self.p_flow_A[sub_flow_idx] + \
                        self.p_flow_B[sub_flow_idx] + self.p_flow_C[sub_flow_idx]
-      self.staticProb += self.Psub <= 30000 # GARY
+      self.staticProb += self.Psub <= 500000 # USER DEFINED AVAILABILITY
 
     for branch in branch_info:
       if branch_info[branch]['type'] == 'regulator':
