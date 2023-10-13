@@ -15,7 +15,8 @@ import pandas as pd
 deltaT = 15/60
 soc_0 = [0.5, 0.5]
 
-def Resilience(Pload, P_PV, soc_0, Battery, deltaT, press = [0, 0], advise= [0,0], rho =0, previous = [0,0], emergency=False, Naive = True):
+def Resilience(Pload, P_PV, soc_0, Battery, deltaT, weights = [0, 0], advise= [0,0], preffered = [0,0], emergency=False, Naive = True):
+
 
     E_rated    = Battery['E_rated']
     pch_max    =   Battery['Pch_max']
@@ -24,16 +25,19 @@ def Resilience(Pload, P_PV, soc_0, Battery, deltaT, press = [0, 0], advise= [0,0
     Disch_eff  = Battery['Disch_eff']
     no_batt = len(E_rated)
     
-    #       SOC      Pbatt   Pbatt_Ch  Pbatt_DisCh   Pload  Psub
-    n1 = no_batt + no_batt  + no_batt  + no_batt       +  1  + 1
+    #       SOC      Pbatt_Cen   Pbatt_Ch  Pbatt_DisCh   Pload  Psub  + Pbatt + Weights
+    n1 =  no_batt    + no_batt   + no_batt  + no_batt    + 1    + 1   + no_batt + no_batt
     x = cp.Variable(n1, integer=False)
     
     socbatt_idx    = 0
     pbatt_idx      = socbatt_idx + no_batt
     pchbatt_idx    = pbatt_idx + no_batt
     pdischbatt_idx = pchbatt_idx + no_batt
-    pload_idx = pdischbatt_idx + no_batt
+    pload_idx = pdischbatt_idx + 2
     psub_idx = pload_idx + 1
+    pbatt_actual_idx  = psub_idx + 1
+    pbatt_weight_idx  = pbatt_actual_idx + no_batt
+    
     
     #  Lchbatt  Ldischbatt 
     n2 = no_batt + no_batt 
@@ -51,16 +55,16 @@ def Resilience(Pload, P_PV, soc_0, Battery, deltaT, press = [0, 0], advise= [0,0
         for batt_idx in range(no_batt):
             obj += 1*x[socbatt_idx+batt_idx] 
     else:
-        pu_value = 1.5 ### Per unitizing here 
+        pu_value = (1.8) ### Per unitizing here 
         if Naive: 
             for batt_idx in range(no_batt):
                 obj += -1*x[socbatt_idx+batt_idx]  /pu_value
         else:
             for batt_idx in range(no_batt):
                 #### Penalizing app based on deviation from Each other #####
-                obj += (-1*x[socbatt_idx+batt_idx]/ pu_value) + press[batt_idx]*(x[pbatt_idx+batt_idx] - advise[batt_idx])/500  \
-                    + (rho/2)*((x[pbatt_idx+batt_idx] - advise[batt_idx])/500 )**2 + (rho*1.5)*((x[pbatt_idx+batt_idx]  - previous[batt_idx])/500)**2
-        
+                # obj += (-1*x[socbatt_idx+batt_idx]/ pu_value) + press[batt_idx]*(x[pbatt_idx+batt_idx] - advise[batt_idx])/500 + (rho/2)*((x[pbatt_idx+batt_idx] - advise[batt_idx])/500 )**2
+                #### Findin out best Centroid #####
+                 obj += -1*x[socbatt_idx+batt_idx]  /pu_value
     
     constraints = []
     for batt_idx in range(no_batt):
@@ -83,7 +87,17 @@ def Resilience(Pload, P_PV, soc_0, Battery, deltaT, press = [0, 0], advise= [0,0
         constraints.append( x[pload_idx]  <= p_load_req)
     else:       
         constraints.append( x[pload_idx]  == p_load_req)   
-    
+        
+    if not Naive: 
+        for batt_idx in range(no_batt):
+            max_strech = max(pch_max[batt_idx] - preffered[batt_idx],  preffered[batt_idx] - pdisch_max[batt_idx])
+            constraints.append( x[pbatt_weight_idx+batt_idx] == (preffered[batt_idx] - x[pbatt_actual_idx+batt_idx])/(max_strech))
+            constraints.append( x[pbatt_idx+batt_idx] == ((weights[batt_idx]*advise[batt_idx]) + (x[pbatt_weight_idx+batt_idx]*x[pbatt_actual_idx+batt_idx])) \
+                                   / (weights[batt_idx] + weights[batt_idx]))
+    else: 
+        a = 1
+        for batt_idx in range(no_batt):
+            constraints.append( x[pbatt_idx+batt_idx]  == x[pbatt_actual_idx+batt_idx])
     
     prob = cp.Problem(cp.Minimize(obj), constraints)
     prob.solve()
@@ -96,12 +110,12 @@ def Resilience(Pload, P_PV, soc_0, Battery, deltaT, press = [0, 0], advise= [0,0
     
     pbatt_sol = {}
     for batt_idx in range(no_batt):
-        pbatt_sol['batt'+str(batt_idx+1)] = x[pbatt_idx+batt_idx].value
+        pbatt_sol['batt'+str(batt_idx+1)] = x[pbatt_actual_idx+batt_idx].value
     
     return pbatt_sol
 
 
-def Decarbonization(Pload, P_PV, soc_0, Battery, deltaT, press = [0, 0], advise= [0,0], rho =0, previous = [0,0], emergency=False, Naive = True):
+def Decarbonization(Pload, P_PV, soc_0, Battery, deltaT, press = [0, 0], advise= [0,0], rho =0, emergency=False, Naive = True):
 
     E_rated    = Battery['E_rated']
     pch_max    =   Battery['Pch_max']
@@ -111,7 +125,7 @@ def Decarbonization(Pload, P_PV, soc_0, Battery, deltaT, press = [0, 0], advise=
     no_batt = len(E_rated)
     
     #       SOC      Pbatt   Pbatt_Ch  Pbatt_DisCh   Pload  Psub
-    n1 = no_batt + no_batt  + no_batt  + no_batt       +  1  + 1
+    n1 = no_batt + no_batt  + no_batt  + no_batt     +  1   + 1
     x = cp.Variable(n1, integer=False)
     
     socbatt_idx    = 0
@@ -137,16 +151,14 @@ def Decarbonization(Pload, P_PV, soc_0, Battery, deltaT, press = [0, 0], advise=
         for batt_idx in range(no_batt):
             obj += 1*x[socbatt_idx+batt_idx]
     else:
-        pu_value = max((p_load_req-pren + sum(Battery['Pch_max'])), 2000)
-        # pu_value = p_load_req
+        pu_value = max((p_load_req-pren + sum(Battery['Pch_max'])), 1)
         if Naive: 
             obj = cp.abs(x[psub_idx])/pu_value
         else:
             
-            obj = 1.0*cp.abs(x[psub_idx])/pu_value
+            obj = 1*cp.abs(x[psub_idx])/pu_value
             for batt_idx in range(no_batt):
-                obj = obj + press[batt_idx]*(x[pbatt_idx+batt_idx] - advise[batt_idx])/500 + (rho/2)*((x[pbatt_idx+batt_idx] - advise[batt_idx])/500 )**2 \
-                           + (rho*1.5)*((x[pbatt_idx+batt_idx]  - previous[batt_idx])/500)**2
+                obj = obj + press[batt_idx]*(x[pbatt_idx+batt_idx] - advise[batt_idx])/500 + (rho/2)*((x[pbatt_idx+batt_idx] - advise[batt_idx])/500 )**2
     
     constraints = []
     for batt_idx in range(no_batt):
