@@ -11,7 +11,7 @@
 if [[ -z "$SIMREQ" ]]; then
     # requires at least a reference to the type of simulation to use
     if [ "$#" -eq 0 ]; then
-        echo "Usage: ./run-competing.sh #nodes"
+        echo "Usage: ./run-loadshed.sh #nodes"
         echo
         exit
     fi
@@ -19,12 +19,17 @@ if [[ -z "$SIMREQ" ]]; then
     #read -d "\n" SIMID SIMREQ <<< $(../sim-starter/sim-starter.py $2)
     read -d "\n" SIMREQ <<< $(../sim-starter/sim-starter.py $2 nosim)
     SIMID=0
+    STATE=$3
 else
 #   invocation when simulation is already started from platform viz
     SIMID=$2
 fi
 
 mkdir -p output
-#python3 profit-app.py $SIMID "$SIMREQ" 2>&1 | tee output/profit-app.log
-python3 profit-app.py $SIMID "$SIMREQ" --outage 56 68 2>&1 | tee output/profit-app.log
+if [ "$1" = "pulp" ] || [ "$1" = "PULP" ] || [ "$1" = "PuLP" ]; then
+  python3 optimization-app-pulp-loadshed.py load_shed $SIMID "$SIMREQ" $STATE 2>&1 | tee output/loadshed-app.log
+else
+  python3 optimization-app-cvxpy-loadshed.py load_shed $SIMID "$SIMREQ" $STATE 2>&1 | tee output/loadshed-app.log
+fi
+#python3 optimization-app-pulp-loadshed.py load_shed $SIMID "$SIMREQ" $STATE --outage 56 68 2>&1 | tee output/resilience-app.log
 

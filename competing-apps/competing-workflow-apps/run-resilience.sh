@@ -16,13 +16,13 @@ if [[ -z "$SIMREQ" ]]; then
         exit
     fi
 
-    #read -d "\n" SIMID SIMREQ <<< $(../sim-starter/sim-starter.py $1)
-    read -d "\n" SIMREQ <<< $(../sim-starter/sim-starter.py $1 nosim)
+    #read -d "\n" SIMID SIMREQ <<< $(../sim-starter/sim-starter.py $2)
+    read -d "\n" SIMREQ <<< $(../sim-starter/sim-starter.py $2 nosim)
     SIMID=0
-    STATE=$2
+    STATE=$3
 else
 #   invocation when simulation is already started from platform viz
-    SIMID=$1
+    SIMID=$2
 fi
 
 mkdir -p output

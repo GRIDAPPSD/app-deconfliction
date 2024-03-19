@@ -16,17 +16,20 @@ if [[ -z "$SIMREQ" ]]; then
         exit
     fi
 
-    #read -d "\n" SIMID SIMREQ <<< $(../sim-starter/sim-starter.py $1)
-    read -d "\n" SIMREQ <<< $(../sim-starter/sim-starter.py $1 nosim)
+    #read -d "\n" SIMID SIMREQ <<< $(../sim-starter/sim-starter.py $2)
+    read -d "\n" SIMREQ <<< $(../sim-starter/sim-starter.py $2 nosim)
     SIMID=0
-    STATE=$2
+    STATE=$3
 else
 #   invocation when simulation is already started from platform viz
-    SIMID=$1
+    SIMID=$2
 fi
 
 mkdir -p output
-#python3 optimization-app-pulp.py profit_cvr $SIMID "$SIMREQ" $STATE 2>&1 | tee output/profit_cvr-app.log
-python3 optimization-app-cvxpy.py profit_cvr $SIMID "$SIMREQ" $STATE 2>&1 | tee output/profit_cvr-app.log
+if [ "$1" = "pulp" ] || [ "$1" = "PULP" ] || [ "$1" = "PuLP" ]; then
+  python3 optimization-app-pulp.py profit_cvr $SIMID "$SIMREQ" $STATE 2>&1 | tee output/profit_cvr-app.log
+else
+  python3 optimization-app-cvxpy.py profit_cvr $SIMID "$SIMREQ" $STATE 2>&1 | tee output/profit_cvr-app.log
+fi
 #python3 optimization-app-pulp.py profit_cvr $SIMID "$SIMREQ" $STATE --outage 56 68 2>&1 | tee output/profit_cvr-app.log
 

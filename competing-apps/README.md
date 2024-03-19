@@ -159,7 +159,8 @@ sparql_mgr: Reference to class defining various GridAPPS-D queries that may prov
     ├── 123-config.json
     └── ...
 ├── optimization-apps
-    ├── optimization-app.py
+    ├── optimization-app-cvxpy.py
+    ├── optimization-app-pulp.py
     ├── run-resilience.sh
     ├── run-decarbonization.sh
     └── run-profit.sh
@@ -241,13 +242,14 @@ $ cd ../optimization-apps
 $ ./run-resilience.sh 123
 ````
 
-If you get output starting with "Initialized resilience optimization competing app" after some query output, this demonstrates successful initialization and you may do a ctrl-C exit. Modules likely to be missing include numpy, tabulate, and pulp. The following may prove helpful based on failed imports:
+If you get output starting with "Initialized resilience optimization competing app" after some query output, this demonstrates successful initialization and you may do a ctrl-C exit. Modules likely to be missing include numpy, tabulate, pulp, and cvxpy. The following may prove helpful based on failed imports:
 
 ```` bash
 $ sudo pip install numpy
 $ sudo pip install tabulate
 $ sudo apt-get install glpk-utils
 $ sudo pip install pulp
+$ sudo pip install cvxpy
 ````
 
 Note that glpk-utils is needed by the PuLP optmization module. There are also workflow-based competing apps in the competing-apps/workflow-apps directory. If an optimization-based app initializes though, it is unlikely a workflow-based app will fail so that test can be skipped.
@@ -274,7 +276,7 @@ One terminal will be needed for sim-sim, one for the deconfliction pipeline, and
 The run-deconfliction.sh wrapper script in the competing-apps directory is your one-stop shop for running deconfliction. Comments at the top of the script provide guidance on command line arguments, with the basic usage being:
 
 ```` bash
-$ ./run-deconfliction.sh <MODEL> <APPS> <METHOD> <DELAY>
+$ ./run-deconfliction.sh <MODEL> <APPS> <METHOD> <OPTLIB> <DELAY>
 ````
 
 where \<MODEL\> is a shorthand used for looking up the full GridAPPS-D simulation request and feeder mrid. Currently, the only \<MODEL\> value supported for app deconfliction development is "123", which uses the updated IEEE 123-bus model, assuming that has been loaded into the GridAPPS-D platform per the guidance above.
@@ -285,7 +287,9 @@ where \<MODEL\> is a shorthand used for looking up the full GridAPPS-D simulatio
 
 These sample DeconflictionMethod classes can be used for testing the pipeline as well as guiding development for other project subtasks by demonstrating the interface between the deconfliction pipeline framework and DeconflictionMethod classes. They are designed for use with different combinations of competing apps and implement two basic deconfliction methodologies--exclusivity and compromise. Further, some create full ResolutionVectors from ConflictMatrix, and some create partial ResolutionVectors from ConflictSubMatrix. There is a file naming convention for these different attributes to make it easy to see what each sample class does. The convention starts with either "exclusivity" or "compromise" followed by the familiar first letter-based code shared with the \<APPS\> command line argument for run-deconfliction.sh. After that is either "full" or "partial" for the type of ResolutionVector and finally, all end in "method". I.e., "compromise-rd-partial-method.py" is a compromise methodology (simply averages conflicting set-points between all those apps being considered in the compromise) between the resilience and decarbonization competing apps that produces a partial ResolutionVector. Note that any of these sample DeconflictionMethod classes can be used with either optimization- or workflow-based competing apps.
 
-\<DELAY\> is an integer value that specifies how to handle sending sim-sim time-series data messages. If the value is positive, then it is the number of seconds to pause between automatically sending each message. If the value is negative, which is the default if no explicit \<DELAY\> is specified, then rather than pause a fixed time before sending the next message, new messages are triggered by device dispatch messages received by sim-sim from the pipeline. For each competing app set-points message, the pipeline sends a device dispatch message even in the case where no set-point changes were requested (this is done solely to support this special mode for triggering new sim-sim messages). Therefore sim-sim will wait for all apps to have processed the latest time-series data message (that sim-sim learns about from pipeline device dispatch messages) before it sends the next data message. This is a nice feature for development and testing, but not one that would be part of a production deconfliction pipeline. That's because the nature of competing apps and deconfliction is that there is no guarantee an app will send a set-point request at any fixed predictable interval, if ever. But, for development/testing, this "counting messages" mode allows processing to happen as quickly as possible and it eliminates implications due to the timeliness of messages sent either by competing apps or the deconfliction pipeline. For the pipeline, the speed of determining a ResolutionVector by the DeconflictionMethod deconflict() method can introduce issues avoided by this mode. Sim-sim will just wait until it gets all the messages it expects before moving on. Finally, a zero value for \<DELAY\> indicates to run-deconfliction.sh not to run sim-sim at all. In this case it must be started separately where doing so allows an interactive mode of sim-sim to be used (that can't be used from run-deconfliction.sh) where time-series data messages are only sent when the user hits return in the separate sim-sim terminal.
+\<OPTLIB\> is the optional name of the optimization library to use for competing apps. If the value is either "pulp", "PuLP", or "PULP", then the PuLP library will be used. Otherwise, the CVXPY library will be used. This argument is only applicable when optimization apps are being run rather than workflow apps. Note that currently only PuLP optimization apps include the optimization problem formulation in the set-points messages sent to the deconfliction pipeline as required for at least the optimization deconfliction methodology.
+
+\<DELAY\> is the optional integer value that specifies how to handle sending sim-sim time-series data messages. If the value is positive, then it is the number of seconds to pause between automatically sending each message. If the value is negative, which is the default if no explicit \<DELAY\> is specified, then rather than pause a fixed time before sending the next message, new messages are triggered by device dispatch messages received by sim-sim from the pipeline. For each competing app set-points message, the pipeline sends a device dispatch message even in the case where no set-point changes were requested (this is done solely to support this special mode for triggering new sim-sim messages). Therefore sim-sim will wait for all apps to have processed the latest time-series data message (that sim-sim learns about from pipeline device dispatch messages) before it sends the next data message. This is a nice feature for development and testing, but not one that would be part of a production deconfliction pipeline. That's because the nature of competing apps and deconfliction is that there is no guarantee an app will send a set-point request at any fixed predictable interval, if ever. But, for development/testing, this "counting messages" mode allows processing to happen as quickly as possible and it eliminates implications due to the timeliness of messages sent either by competing apps or the deconfliction pipeline. For the pipeline, the speed of determining a ResolutionVector by the DeconflictionMethod deconflict() method can introduce issues avoided by this mode. Sim-sim will just wait until it gets all the messages it expects before moving on. Finally, a zero value for \<DELAY\> indicates to run-deconfliction.sh not to run sim-sim at all. In this case it must be started separately where doing so allows an interactive mode of sim-sim to be used (that can't be used from run-deconfliction.sh) where time-series data messages are only sent when the user hits return in the separate sim-sim terminal.
 
 One special consideration regarding sending sim-sim data messages automatically on a fixed time interval is to make certain not to send messages before all competing apps have initialized. If messages are sent early the processing in competing apps will discard some messages leading to unpredictable and unrepeatable results, which is not a good outcome for code development/testing. To handle this situation the run-deconfliction.sh wrapper sends a "--wait" command line argument to the run-sim.sh script that causes it to sleep for 30 seconds (typical app initialization time is 20 seconds depending on the host system) before proceeding to invoke sim-sim and start sending data messages. For the default "counting messages" invocation of run-deconfliction.sh, there is no need to perform this 30-second wait step and sim-sim can send the first data message as early as it wants. Then it will just wait for competing apps to initialize and process that first message with results returned via pipeline device dispatch message before considering sending the second data message. It is only a backlog of data messages that causes the issue. The run-deconfliction.sh wrapper script should take care of this need to wait for you so really it should only need to be considered if running deconfliction processes in separate terminals.
 
@@ -293,8 +297,9 @@ With all of that, as example invocations of run-deconfliction.sh using the sampl
 
 ```` bash
 $ ./run-deconfliction.sh 123 rd deconfliction-methods/compromise-rd-partial-method.py
-$ ./run-deconfliction.sh 123 rdp deconfliction-methods/compromise-rdp-full-method.py 8
+$ ./run-deconfliction.sh 123 rd deconfliction-methods/compromise-rd-partial-method.py pulp
+$ ./run-deconfliction.sh 123 rdp deconfliction-methods/compromise-rdp-full-method.py cvxpy 8
 ````
 
-In the first invocation, the resilience and decarbonization optimization-based competing apps are run with a compromise deconfliction method that produces partial ResolutionVector results in the DeconflictionMethod class deconflict() method. In the second invocation, the profit app is added in as well with all three of those apps being considered in the compromise deconfliction, which this time produces full ResolutionVector results. Lastly, rather than triggering new sim-sim messages based on device dispatch messages received, new messages are sent automatically every 8 seconds.
+In the first invocation, the resilience and decarbonization optimization-based competing apps are run with a compromise deconfliction method that produces partial ResolutionVector results in the DeconflictionMethod class deconflict() method. In the second invocation, the PuLP optimization library is used for the competing apps instead of the default CVXPY library. In the third invocation, the profit app is added in as well with all three of those apps being considered in the compromise deconfliction, which this time produces full ResolutionVector results. Lastly, rather than triggering new sim-sim messages based on device dispatch messages received, new messages are sent automatically every 8 seconds. A value for the optimization library, CVXPY in this case, must be specified in order to specify a <DELAY> value.
 

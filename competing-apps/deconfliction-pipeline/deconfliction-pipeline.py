@@ -642,6 +642,24 @@ class DeconflictionPipeline(GridAPPSD):
 
     # Step 1: Setpoint Processor
     self.SetpointProcessor(app_name, timestamp, set_points)
+
+    # GDB 11/2/24 SHIVA NOVEMBER special request
+    # count messages so deconfliction is only done when all competing apps
+    # have sent their set-point messages for a timestamp
+    #if timestamp not in self.message_count:
+    #  self.message_count[timestamp] = 1
+    #else:
+    #  self.message_count[timestamp] += 1
+
+    #if self.message_count[timestamp] < 2: # hardwired for 2 apps currently
+    #  return
+
+    #del self.message_count[timestamp]
+    #if len(self.message_count) > 0:
+    #  print('*** PANIC: set-point message counter in bad state: ' + str(self.message_counter), flush=True)
+    #  exit()
+    # end SHIVA NOVEMBER special request
+
     self.ConflictMetric(timestamp)
 
     # for Alex
@@ -697,6 +715,10 @@ class DeconflictionPipeline(GridAPPSD):
     # 'BatteryUnit.battery1', or None to omit test output
     self.testDevice = None
     #self.testDevice = 'BatteryUnit.battery1'
+
+    # GDB 11/2/24 SHIVA NOVEMBER special request
+    #self.message_count = {}
+    # End SHIVA NOVEMBER special request
 
     SPARQLManager = getattr(importlib.import_module('sparql'),
                             'SPARQLManager')

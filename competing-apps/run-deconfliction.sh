@@ -21,6 +21,12 @@ MODEL=$1
 APPS=$2
 METHOD=$3
 
+if [ "$#" -gt 3 ]; then
+  OPTLIB=$4
+else
+  OPTLIB="cvxpy"
+fi
+
 # magic that kills background jobs started in this script when the pipeline
 # foreground process receives ctrl-C
 trap "trap - SIGTERM && kill -- -$$" SIGINT SIGTERM EXIT
@@ -36,22 +42,27 @@ delay_app_counter=0
 
 if [[ $APPS == *"r"* || $APPS == *"R"* ]]; then
   ((delay_app_counter--))
-  ./run-resilience.sh $MODEL >/dev/null &
+  ./run-resilience.sh $OPTLIB $MODEL >/dev/null &
 fi
 
 if [[ $APPS == *"d"* || $APPS == *"D"* ]]; then
   ((delay_app_counter--))
-  ./run-decarbonization.sh $MODEL >/dev/null &
+  ./run-decarbonization.sh $OPTLIB $MODEL >/dev/null &
 fi
 
 if [[ $APPS == *"p"* || $APPS == *"P"* ]]; then
   ((delay_app_counter--))
-  ./run-profit.sh $MODEL >/dev/null &
+  ./run-profit.sh $OPTLIB $MODEL >/dev/null &
+fi
+
+if [[ $APPS == *"l"* || $APPS == *"L"* ]]; then
+  ((delay_app_counter--))
+  ./run-loadshed.sh $OPTLIB $MODEL >/dev/null &
 fi
 
 DELAY=$delay_app_counter
-if [ "$#" -gt 3 ]; then
-  DELAY=$4
+if [ "$#" -gt 4 ]; then
+  DELAY=$5
 fi
 
 cd ../sim-starter
