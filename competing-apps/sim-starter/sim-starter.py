@@ -46,9 +46,10 @@ Created on Sept 29, 2020
 """
 
 __version__ = '0.1.0'
-import os
+
 import sys
 import json
+import os
 from inspect import getsourcefile
 from os.path import abspath, dirname
 
@@ -77,15 +78,16 @@ Optional command line arguments:
 
     appName = sys.argv[0]
 
-    cwd = dirname(abspath(getsourcefile(lambda:0))) # magic to get current dir
-    sim_config_file = cwd + '/' + sys.argv[1] + '-config.json'
-    
     # authenticate with GridAPPS-D Platform
     os.environ['GRIDAPPSD_APPLICATION_ID'] = 'gridappsd-sim-starter'
     os.environ['GRIDAPPSD_APPLICATION_STATUS'] = 'STARTED'
     os.environ['GRIDAPPSD_USER'] = 'app_user'
     os.environ['GRIDAPPSD_PASSWORD'] = '1234App'
+
     gapps = GridAPPSD()
+
+    cwd = dirname(abspath(getsourcefile(lambda:0))) # magic to get current dir
+    sim_config_file = cwd + '/' + sys.argv[1] + '-config.json'
 
     with open(sim_config_file) as config_fp:
         sim_config = json.load(config_fp)

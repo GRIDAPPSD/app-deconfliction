@@ -4,14 +4,17 @@ version = "0.1.0"
 description = ""
 authors = ["afisher1 <4552674+afisher1@users.noreply.github.com>"]
 readme = "README.md"
-packages = [{include = "app_deconfliction"}]
+packages = []
 
 [tool.poetry.dependencies]
 python = "^3.10"
-opendssdirect-py = {extras = ["extras"], version = "^0.8.2"}
-gridappsd-python = "^2023.5.1"
+opendssdirect-py = {extras = ["extras"], version = "^0.9"}
+gridappsd-python = "^2024"
 pulp = "^2.7.0"
 tabulate = "^0.9.0"
+cim-graph = "^0.1.5a0"
+gridappsd-field-bus = "^2024"
+cvxpy = "^1.4.2"
 
 
 [build-system]
