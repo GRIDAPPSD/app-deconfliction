@@ -757,8 +757,8 @@ class SwitchAreaAgentLevelRbdmService(SwitchAreaAgent):
                 break
         #TODO: update model with current measurements not data from this csvfile.
         #-----------------------------------------------------------------------
-        dssContext.run_command(f'BatchEdit PVsystem..* irradiance={simulationData["solar"]}')
-        dssContext.run_command(f'set loadmult = {simulationData["load"]}')
+        # dssContext.run_command(f'BatchEdit PVsystem..* irradiance={simulationData["solar"]}')
+        # dssContext.run_command(f'set loadmult = {simulationData["load"]}')
         #-----------------------------------------------------------------------
         distributedResolutionVector = {}
         resolutionVector = {"setpoints": {}, "timestamps": {}}
@@ -1165,8 +1165,8 @@ class SecondaryAreaAgentLevelRbdmService(SecondaryAreaAgent):
                 break
         #TODO: update model with current measurements not data from this csvfile.
         #-----------------------------------------------------------------------
-        dssContext.run_command(f'BatchEdit PVsystem..* irradiance={simulationData["solar"]}')
-        dssContext.run_command(f'set loadmult = {simulationData["load"]}')
+        # dssContext.run_command(f'BatchEdit PVsystem..* irradiance={simulationData["solar"]}')
+        # dssContext.run_command(f'set loadmult = {simulationData["load"]}')
         #-----------------------------------------------------------------------
         distributedResolutionVector = {}
         resolutionVector = {"setpoints": {}, "timestamps": {}}
@@ -1319,8 +1319,8 @@ def main(**kwargs):
         logger.error(errorStr)
         raise TypeError(errorStr)
     dss.Basic.AllowChangeDir(False)
-    dss.Basic.AllowEditor(False)
-    dss.Basic.AllowForms(False)
+    # dss.Basic.AllowEditor(False)
+    # dss.Basic.AllowForms(False)
     dssContext = dss.NewContext()
     dssContext.run_command("Clear")
     openDssFile = Path(__file__).parent.resolve() / '123Bus' / 'Run_IEEE123Bus.dss'
