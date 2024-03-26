@@ -10,8 +10,11 @@ import time
 from typing import Dict, List
 
 import numpy as np
-import opendssdirect as dss
+from opendssdirect import dss
 from opendssdirect.utils import Iterator
+
+from gridappsd import GridAPPSD
+from gridappsd import topics as gt
 
 # find and add shared directory to path hopefully wherever it is from here
 sharedDir = Path(__file__).parent.parent.parent.resolve() / "shared"
@@ -24,9 +27,11 @@ class DeconflictionMethod:
     numberOfMetrics = 4 #defines the number of columns in the U matrix.
     maxTapBudget = 3 #defines the maximum tap budget allowed in a deconfliction scenario.
 
-    def __init__(self, conflictMatrix: Dict = {}):
+    def __init__(self, gapps: GridAPPSD, conflictMatrix: Dict = {}):
         #self.conflictMatrix = MethodUtil.ConflictSubMatrix
+        self.gapps = gapps
         self.conflictMatrix = conflictMatrix
+
         self.setpointSetVector = None
         self.numberOfSets = 0
         self.uMatrix = None
@@ -61,6 +66,7 @@ class DeconflictionMethod:
         self.maxDeconflictionTime = -1
         self.conflictDump = {}
         self.criteriaResults = {}
+
 
     def initializeDistributedConflictMatrix(self):
         distributedAreasEquipmentFile = Path(__file__).parent.resolve() / "AddressableEquipment.json"
@@ -293,7 +299,7 @@ class DeconflictionMethod:
                 if "BatteryUnit." in setpointNames[i]:
                     #TODO: Figure out opendss command to change storage ouptput
                     batt_kW = -0.001*setpoints[i]
-                    dss.run_command(f"Storage.{setpointNameSplit[1]}.kw={batt_kW}")
+                    dss.Text.Command(f"Storage.{setpointNameSplit[1]}.kw={batt_kW}")
                 elif "RatioTapChanger." in setpointNames[i]:
                     reg = dss.Transformers.First()
                     while reg:
@@ -304,7 +310,7 @@ class DeconflictionMethod:
                     regulationPerStep = (dss.Transformers.MaxTap() - dss.Transformers.MinTap()) / dss.Transformers.NumTaps()
                     tapStep = 1.0 + (setpoints[i]*regulationPerStep)
 #                     dss.Transformers.Tap(tapStep)
-                    dss.run_command(f"Transformer.{setpointNameSplit[1]}.Taps=[1.0 {tapStep}")
+                    dss.Text.Command(f"Transformer.{setpointNameSplit[1]}.Taps=[1.0 {tapStep}")
             dss.Solution.SolveNoControl()
 
 
@@ -332,8 +338,8 @@ class DeconflictionMethod:
                 break
         #TODO: update model with current measurements not data from this csvfile.
         #-----------------------------------------------------------------------
-        dss.run_command(f'BatchEdit PVsystem..* irradiance={simulationData["solar"]}')
-        dss.run_command(f'set loadmult = {simulationData["load"]}')
+        dss.Text.Command(f'BatchEdit PVsystem..* irradiance={simulationData["solar"]}')
+        dss.Text.Command(f'set loadmult = {simulationData["load"]}')
         #-----------------------------------------------------------------------
         #update OpenDSSModel with 
         #resolve per distributed area
@@ -386,6 +392,20 @@ class DeconflictionMethod:
                     resolutionSetpointSet[i] = pastResolutionVector["setpoints"][self.setpointSetVector["setpointIndexMap"][i]]
             #update opendssmodel with resolved setpoints for next conflict
             self.runPowerFlowSnapshot(resolutionSetpointSet, self.setpointSetVector["setpointIndexMap"], simulationData)
+        # distributedResolutionVector = {}
+        # resolutionVector = {
+        #     "setpoints": {},
+        #     "timestamps": {}
+        # }
+        # systemBusRequestTopic = gt.field_agent_request_queue("_E3D03A27-B988-4D79-BFAB-F9D37FB289F7",
+        #                                                      'da_rules_based_deconfliction_service__E3D03A27-B988-4D79'
+        #                                                      '-BFAB-F9D37FB289F7')
+        # systemBusRequestMessage = {"requestType": "Deconflict","conflictMatrix": self.conflictMatrix}
+        # deconflictionResponse = self.gapps.get_response(systemBusRequestTopic, systemBusRequestMessage, timeout=60)
+        # distributedResolutionVector = deconflictionResponse.get("resolutionVector", 
+        #                                                         {"setpoints": {}, "timestamps": {}})
+        # resolutionVector["setpoints"].update(distributedResolutionVector["setpoints"])
+        # resolutionVector["timestamps"].update(distributedResolutionVector["timestamps"])
         deconflictTime = time.perf_counter() - deconflictStart
         p_loss = self.extractPowerLosses()
         profit, emissions = self.extractProfitAndEmissions()
@@ -394,7 +414,8 @@ class DeconflictionMethod:
         print(f"deconfliction for timestamp, {self.conflictTime}, took {deconflictTime}s.\n\n\n")
         self.resolutionDict[self.conflictTime] = resolutionVector
         self.resolutionDict[self.conflictTime]["deconflictTime"] = deconflictTime
-        self.resolutionDict[self.conflictTime]["deconflictionFailed"] = deconflictionFailed
+        self.resolutionDict[self.conflictTime]["deconflictionFailed"] = deconflictionFailed = False
+
         self.maxDeconflictionTime = max(self.maxDeconflictionTime, deconflictTime)
         
         self.conflictDump[self.conflictTime] = json.loads(json.dumps(self.conflictMatrix))
@@ -424,14 +445,14 @@ class DeconflictionMethod:
 
     
 #for testing purposes only must be removed for actual implementation
-if __name__ == "__main__":
-    cM = {}
-    centralConflictMatrixFile = Path(__file__).parent.resolve() / "ConflictMatrix.json"
-    centralConflictMatrix = {}
-    with open(centralConflictMatrixFile,"r") as cmf:
-        centralConflictMatrix = json.load(cmf)
-    rbdm = DeconflictionMethod(cM)
-    MethodUtil.ConflictSubMatrix["setpoints"] = centralConflictMatrix["setpoints"]
-    MethodUtil.ConflictSubMatrix["timestamps"] = centralConflictMatrix["timestamps"]
-    fullResFlag, resolutionVector = rbdm.deconflict(12)
-    print(f'resolution vector:\n{json.dumps(resolutionVector, indent=4, sort_keys=True)}')
+# if __name__ == "__main__":
+#     cM = {}
+#     centralConflictMatrixFile = Path(__file__).parent.resolve() / "ConflictMatrix.json"
+#     centralConflictMatrix = {}
+#     with open(centralConflictMatrixFile,"r") as cmf:
+#         centralConflictMatrix = json.load(cmf)
+#     rbdm = DeconflictionMethod(cM)
+#     MethodUtil.ConflictSubMatrix["setpoints"] = centralConflictMatrix["setpoints"]
+#     MethodUtil.ConflictSubMatrix["timestamps"] = centralConflictMatrix["timestamps"]
+#     fullResFlag, resolutionVector = rbdm.deconflict(12)
+#     print(f'resolution vector:\n{json.dumps(resolutionVector, indent=4, sort_keys=True)}')
