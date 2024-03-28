@@ -18,7 +18,7 @@ from gridappsd.field_interface.context import LocalContext
 from gridappsd.field_interface.interfaces import FieldMessageBus, MessageBusDefinition
 import gridappsd.topics as gt
 import numpy as np
-from opendssdirect import dss
+import opendssdirect as dss
 import pandas as pd
 
 #TODO: query gridappsd-python for correct cim_profile instead of hardcoding it.
@@ -33,6 +33,16 @@ logging.basicConfig(format='%(asctime)s::%(levelname)s::%(name)s::%(filename)s::
                     level=logging.INFO,
                     encoding='utf-8')
 logger = logging.getLogger(__name__)
+# dss.Basic.AllowChangeDir(False)
+# dss.Basic.AllowEditor(False)
+# dss.Basic.AllowForms(False)
+dssContext = dss
+dssContext.run_command("Clear")
+openDssFile = Path(__file__).parent.resolve() / '123Bus' / 'Run_IEEE123Bus.dss'
+dssContext.run_command(f'Redirect {str(openDssFile)}')
+dssContext.run_command(f'Compile {str(openDssFile)}')
+dssContext.Solution.SolveNoControl()
+
 
 
 class FeederAgentLevelRdbmService(FeederAgent):
@@ -68,12 +78,12 @@ class FeederAgentLevelRdbmService(FeederAgent):
         self.emissions_lng = 0.97
         csvDataFile = Path(__file__).parent.parent.parent.resolve() / 'sim-starter' / 'time-series.csv'
         self.csvData = pd.read_csv(csvDataFile)
-        # self.dssContext = dss.NewContext()
-        # self.dssContext.run_command("Clear")
+        # dssContext = dss.NewContext()
+        # dssContext.run_command("Clear")
         # openDssFile = Path(__file__).parent.resolve() / '123Bus' / 'Run_IEEE123Bus.dss'
-        # self.dssContext.run_command(f'Redirect {str(openDssFile)}')
-        # self.dssContext.run_command(f'Compile {str(openDssFile)}')
-        # self.dssContext.Solution.SolveNoControl()
+        # dssContext.run_command(f'Redirect {str(openDssFile)}')
+        # dssContext.run_command(f'Compile {str(openDssFile)}')
+        # dssContext.Solution.SolveNoControl()
         self.rVector = np.empty((FeederAgentLevelRdbmService.numberOfMetrics, 1))
         self.calculateCriteriaPreferenceWeightVector()
         self.resolutionDict = {}
@@ -327,7 +337,7 @@ class FeederAgentLevelRdbmService(FeederAgent):
 
     def deconflict(self, conflictMatrix: Dict):
         deconflictStart = time.perf_counter()
-        self.conflictMatrix = conflictMatrix
+        self.conflictMatrix = deepcopy(conflictMatrix)
         for timeVal in self.conflictMatrix.get("timestamps", {}).values():
             self.conflictTime = max(self.conflictTime, timeVal)
         distributedConflictMatrix = {"setpoints": {}}
@@ -349,15 +359,22 @@ class FeederAgentLevelRdbmService(FeederAgent):
                 simulationData["solar"] = float(self.csvData.at[i, "Solar"])
                 simulationData["price"] = float(self.csvData.at[i, "Price"])
                 break
-        #TODO: update model with current measurements not data from this csvfile.
-        #-----------------------------------------------------------------------
-        dssContext.run_command(f'BatchEdit PVsystem..* irradiance={simulationData["solar"]}')
-        dssContext.run_command(f'set loadmult = {simulationData["load"]}')
-        #-----------------------------------------------------------------------
         distributedResolutionVector = {}
         resolutionVector = {"setpoints": {}, "timestamps": {}}
         deconflictionFailed = False
+        # dssContext.run_command("Clear")
+        # openDssFile = Path(__file__).parent.resolve() / '123Bus' / 'Run_IEEE123Bus.dss'
+        # dssContext.run_command(f'Redirect {str(openDssFile)}')
+        # dssContext.run_command(f'Compile {str(openDssFile)}')
+        # dssContext.Solution.SolveNoControl()
+
         if len(distributedConflictMatrix.get("setpoints", {}).keys()) > 0:
+            
+            #TODO: update model with current measurements not data from this csvfile.
+            #-----------------------------------------------------------------------
+            dssContext.run_command(f'BatchEdit PVsystem..* irradiance={simulationData["solar"]}')
+            dssContext.run_command(f'set loadmult = {simulationData["load"]}')
+            #-----------------------------------------------------------------------
             print(f"deconflicting area {self.downstream_message_bus_def.id}...")
             self.setpointSetVector = self.buildSetpointsVector(distributedConflictMatrix)
             self.numberOfSets = len(self.setpointSetVector.get("setpointSets", []))
@@ -403,18 +420,18 @@ class FeederAgentLevelRdbmService(FeederAgent):
                         pastResolutionVector["setpoints"][self.setpointSetVector["setpointIndexMap"][i]]
             # update opendssmodel with resolved setpoints for next conflict
             self.runPowerFlowSnapshot(resolutionSetpointSet, self.setpointSetVector["setpointIndexMap"], simulationData)
-        localContextResponse = LocalContext.get_agents(self.downstream_message_bus)
-        for agent_id, agent_details in localContextResponse.items():
-            if agent_details.get("app_id") == self.app_id and agent_id != self.agent_id:
-                switchAreaRequestTopic = gt.field_agent_request_queue(self.downstream_message_bus.id, agent_id)
-                switchAreaRequestMessage = {"requestType": "Deconflict","conflictMatrix": self.conflictMatrix}
-                deconflictionResponse = self.downstream_message_bus.get_response(switchAreaRequestTopic,
-                                                                                 switchAreaRequestMessage,
-                                                                                 timeout=60)
-                distributedResolutionVector = deconflictionResponse.get("resolutionVector", 
-                                                                        {"setpoints": {}, "timestamps": {}})
-                resolutionVector["setpoints"].update(distributedResolutionVector["setpoints"])
-                resolutionVector["timestamps"].update(distributedResolutionVector["timestamps"])
+        # localContextResponse = LocalContext.get_agents(self.downstream_message_bus)
+        # for agent_id, agent_details in localContextResponse.items():
+        #     if agent_details.get("app_id") == self.app_id and agent_id != self.agent_id:
+        #         switchAreaRequestTopic = gt.field_agent_request_queue(self.downstream_message_bus.id, agent_id)
+        #         switchAreaRequestMessage = {"requestType": "Deconflict","conflictMatrix": self.conflictMatrix}
+        #         deconflictionResponse = self.downstream_message_bus.get_response(switchAreaRequestTopic,
+        #                                                                          switchAreaRequestMessage,
+        #                                                                          timeout=60)
+        #         distributedResolutionVector = deconflictionResponse.get("resolutionVector", 
+        #                                                                 {"setpoints": {}, "timestamps": {}})
+        #         resolutionVector["setpoints"].update(distributedResolutionVector["setpoints"])
+        #         resolutionVector["timestamps"].update(distributedResolutionVector["timestamps"])
         deconflictTime = time.perf_counter() - deconflictStart
         p_loss = self.extractPowerLosses()
         profit, emissions = self.extractProfitAndEmissions()
@@ -477,12 +494,12 @@ class SwitchAreaAgentLevelRbdmService(SwitchAreaAgent):
         self.emissions_lng = 0.97
         csvDataFile = Path(__file__).parent.parent.parent.resolve() / 'sim-starter' / 'time-series.csv'
         self.csvData = pd.read_csv(csvDataFile)
-        # self.dssContext = dss.NewContext()
-        # self.dssContext.run_command("Clear")
+        # dssContext = dss.NewContext()
+        # dssContext.run_command("Clear")
         # openDssFile = Path(__file__).parent.resolve() / '123Bus' / 'Run_IEEE123Bus.dss'
-        # self.dssContext.run_command(f'Redirect {str(openDssFile)}')
-        # self.dssContext.run_command(f'Compile {str(openDssFile)}')
-        # self.dssContext.Solution.SolveNoControl()
+        # dssContext.run_command(f'Redirect {str(openDssFile)}')
+        # dssContext.run_command(f'Compile {str(openDssFile)}')
+        # dssContext.Solution.SolveNoControl()
         self.rVector = np.empty((SwitchAreaAgentLevelRbdmService.numberOfMetrics, 1))
         self.calculateCriteriaPreferenceWeightVector()
         self.resolutionDict = {}
@@ -735,7 +752,7 @@ class SwitchAreaAgentLevelRbdmService(SwitchAreaAgent):
 
     def deconflict(self, conflictMatrix: Dict):
         deconflictStart = time.perf_counter()
-        self.conflictMatrix = conflictMatrix
+        self.conflictMatrix = deepcopy(conflictMatrix)
         for timeVal in self.conflictMatrix.get("timestamps", {}).values():
             self.conflictTime = max(self.conflictTime, timeVal)
         distributedConflictMatrix = {"setpoints": {}}
@@ -755,15 +772,22 @@ class SwitchAreaAgentLevelRbdmService(SwitchAreaAgent):
                 simulationData["solar"] = float(self.csvData.at[i, "Solar"])
                 simulationData["price"] = float(self.csvData.at[i, "Price"])
                 break
-        #TODO: update model with current measurements not data from this csvfile.
-        #-----------------------------------------------------------------------
-        # dssContext.run_command(f'BatchEdit PVsystem..* irradiance={simulationData["solar"]}')
-        # dssContext.run_command(f'set loadmult = {simulationData["load"]}')
-        #-----------------------------------------------------------------------
         distributedResolutionVector = {}
         resolutionVector = {"setpoints": {}, "timestamps": {}}
         deconflictionFailed = False
+        # dssContext = dss.NewContext()
+        # dssContext.run_command("Clear")
+        # openDssFile = Path(__file__).parent.resolve() / '123Bus' / 'Run_IEEE123Bus.dss'
+        # dssContext.run_command(f'Redirect {str(openDssFile)}')
+        # dssContext.run_command(f'Compile {str(openDssFile)}')
+        # dssContext.Solution.SolveNoControl()
+
         if len(distributedConflictMatrix.get("setpoints", {}).keys()) > 0:
+            #TODO: update model with current measurements not data from this csvfile.
+            #-----------------------------------------------------------------------
+            dssContext.run_command(f'BatchEdit PVsystem..* irradiance={simulationData["solar"]}')
+            dssContext.run_command(f'set loadmult = {simulationData["load"]}')
+            #-----------------------------------------------------------------------
             print(f"deconflicting area {self.downstream_message_bus_def.id}...")
             self.setpointSetVector = self.buildSetpointsVector(distributedConflictMatrix)
             self.numberOfSets = len(self.setpointSetVector.get("setpointSets", []))
@@ -809,18 +833,18 @@ class SwitchAreaAgentLevelRbdmService(SwitchAreaAgent):
                         pastResolutionVector["setpoints"][self.setpointSetVector["setpointIndexMap"][i]]
             # update opendssmodel with resolved setpoints for next conflict
             self.runPowerFlowSnapshot(resolutionSetpointSet, self.setpointSetVector["setpointIndexMap"], simulationData)
-        localContextResponse = LocalContext.get_agents(self.downstream_message_bus)
-        for agent_id, agent_details in localContextResponse.items():
-            if agent_details.get("app_id") == self.app_id and agent_id != self.agent_id:
-                secondaryAreaRequestTopic = gt.field_agent_request_queue(self.downstream_message_bus.id, agent_id)
-                secondaryAreaRequestMessage = {"requestType": "Deconflict","conflictMatrix": self.conflictMatrix}
-                deconflictionResponse = self.downstream_message_bus.get_response(secondaryAreaRequestTopic,
-                                                                                 secondaryAreaRequestMessage,
-                                                                                 timeout=60)
-                distributedResolutionVector = deconflictionResponse.get("resolutionVector", 
-                                                                        {"setpoints": {}, "timestamps": {}})
-                resolutionVector["setpoints"].update(distributedResolutionVector["setpoints"])
-                resolutionVector["timestamps"].update(distributedResolutionVector["timestamps"])
+        # localContextResponse = LocalContext.get_agents(self.downstream_message_bus)
+        # for agent_id, agent_details in localContextResponse.items():
+        #     if agent_details.get("app_id") == self.app_id and agent_id != self.agent_id:
+        #         secondaryAreaRequestTopic = gt.field_agent_request_queue(self.downstream_message_bus.id, agent_id)
+        #         secondaryAreaRequestMessage = {"requestType": "Deconflict","conflictMatrix": self.conflictMatrix}
+        #         deconflictionResponse = self.downstream_message_bus.get_response(secondaryAreaRequestTopic,
+        #                                                                          secondaryAreaRequestMessage,
+        #                                                                          timeout=60)
+        #         distributedResolutionVector = deconflictionResponse.get("resolutionVector", 
+        #                                                                 {"setpoints": {}, "timestamps": {}})
+        #         resolutionVector["setpoints"].update(distributedResolutionVector["setpoints"])
+        #         resolutionVector["timestamps"].update(distributedResolutionVector["timestamps"])
         deconflictTime = time.perf_counter() - deconflictStart
         p_loss = self.extractPowerLosses()
         profit, emissions = self.extractProfitAndEmissions()
@@ -883,12 +907,12 @@ class SecondaryAreaAgentLevelRbdmService(SecondaryAreaAgent):
         self.emissions_lng = 0.97
         csvDataFile = Path(__file__).parent.parent.parent.resolve() / 'sim-starter' / 'time-series.csv'
         self.csvData = pd.read_csv(csvDataFile)
-        # self.dssContext = dss.NewContext()
-        # self.dssContext.run_command("Clear")
+        # dssContext = dss.NewContext()
+        # dssContext.run_command("Clear")
         # openDssFile = Path(__file__).parent.resolve() / '123Bus' / 'Run_IEEE123Bus.dss'
-        # self.dssContext.run_command(f'Redirect {str(openDssFile)}')
-        # self.dssContext.run_command(f'Compile {str(openDssFile)}')
-        # self.dssContext.Solution.SolveNoControl()
+        # dssContext.run_command(f'Redirect {str(openDssFile)}')
+        # dssContext.run_command(f'Compile {str(openDssFile)}')
+        # dssContext.Solution.SolveNoControl()
         self.rVector = np.empty((SecondaryAreaAgentLevelRbdmService.numberOfMetrics, 1))
         self.calculateCriteriaPreferenceWeightVector()
         self.resolutionDict = {}
@@ -1142,7 +1166,7 @@ class SecondaryAreaAgentLevelRbdmService(SecondaryAreaAgent):
 
     def deconflict(self, conflictMatrix: Dict):
         deconflictStart = time.perf_counter()
-        self.conflictMatrix = conflictMatrix
+        self.conflictMatrix = deepcopy(conflictMatrix)
         for timeVal in self.conflictMatrix.get("timestamps", {}).values():
             self.conflictTime = max(self.conflictTime, timeVal)
         distributedConflictMatrix = {"setpoints": {}}
@@ -1163,15 +1187,21 @@ class SecondaryAreaAgentLevelRbdmService(SecondaryAreaAgent):
                 simulationData["solar"] = float(self.csvData.at[i, "Solar"])
                 simulationData["price"] = float(self.csvData.at[i, "Price"])
                 break
-        #TODO: update model with current measurements not data from this csvfile.
-        #-----------------------------------------------------------------------
-        # dssContext.run_command(f'BatchEdit PVsystem..* irradiance={simulationData["solar"]}')
-        # dssContext.run_command(f'set loadmult = {simulationData["load"]}')
-        #-----------------------------------------------------------------------
         distributedResolutionVector = {}
         resolutionVector = {"setpoints": {}, "timestamps": {}}
         deconflictionFailed = False
+        # dssContext.run_command("Clear")
+        # openDssFile = Path(__file__).parent.resolve() / '123Bus' / 'Run_IEEE123Bus.dss'
+        # dssContext.run_command(f'Redirect {str(openDssFile)}')
+        # dssContext.run_command(f'Compile {str(openDssFile)}')
+        # dssContext.Solution.SolveNoControl()
+
         if len(distributedConflictMatrix.get("setpoints", {}).keys()) > 0:
+            #TODO: update model with current measurements not data from this csvfile.
+            #-----------------------------------------------------------------------
+            dssContext.run_command(f'BatchEdit PVsystem..* irradiance={simulationData["solar"]}')
+            dssContext.run_command(f'set loadmult = {simulationData["load"]}')
+            #-----------------------------------------------------------------------
             print(f"deconflicting area {self.downstream_message_bus_def.id}...")
             self.setpointSetVector = self.buildSetpointsVector(distributedConflictMatrix)
             self.numberOfSets = len(self.setpointSetVector.get("setpointSets", []))
@@ -1282,7 +1312,7 @@ def getPeakShavingSetpoint(timestep: int, deviceName: str) -> Dict:
 
 
 def main(**kwargs):
-    global dssContext
+    # global dssContext
     servicesAreRunning = False
     runningServiceInfo = []
     runningServiceInstances = []
@@ -1318,15 +1348,7 @@ def main(**kwargs):
         errorStr = f"model_mrid is not a string.\ntype: {type(modelMrid)}"
         logger.error(errorStr)
         raise TypeError(errorStr)
-    dss.Basic.AllowChangeDir(False)
-    # dss.Basic.AllowEditor(False)
-    # dss.Basic.AllowForms(False)
-    dssContext = dss.NewContext()
-    dssContext.run_command("Clear")
-    openDssFile = Path(__file__).parent.resolve() / '123Bus' / 'Run_IEEE123Bus.dss'
-    dssContext.run_command(f'Redirect {str(openDssFile)}')
-    dssContext.run_command(f'Compile {str(openDssFile)}')
-    dssContext.Solution.SolveNoControl()
+    
     if modelMrid is None:
         if systemMessageBusConfigFile is not None and feederMessageBusConfigFile is not None:
             systemMessageBusDef = MessageBusDefinition.load(systemMessageBusConfigFile)
@@ -1368,7 +1390,8 @@ def main(**kwargs):
         runningServiceInstances.append(feederService)
         for switchArea in feederService.agent_area_dict.get('switch_areas', []):
             switchAreaId = switchArea.get('message_bus_id')
-            if switchAreaId is not None:
+            # if switchAreaId is not None:
+            if switchAreaId == '_E3D03A27-B988-4D79-BFAB-F9D37FB289F7.1':
                 switchAreaMessageBusDef = getMessageBusDefinition(switchAreaId)
                 logger.info(f"Creating Switch Area Rules Based Deconfliction Service for area id: {switchAreaMessageBusDef.id}")
                 switchAreaService = SwitchAreaAgentLevelRbdmService(feederMessageBusDef, switchAreaMessageBusDef,
@@ -1397,8 +1420,11 @@ def main(**kwargs):
         centralizedConflictMatrix = {}
         with centralizedConflictMatrixFile.open(mode='r') as fh:
             centralizedConflictMatrix = json.load(fh)
-        feederUpstreamRequestTopic = gt.field_agent_request_queue(feederService.upstream_message_bus.id, feederService.agent_id)
-        rv = feederService.deconflict(centralizedConflictMatrix)
+        aggregatedResolutionVector = {"setpoints": {}, "timestamps": {}}
+        for service in runningServiceInstances:
+            rv = service.deconflict(centralizedConflictMatrix)
+            aggregatedResolutionVector.update(rv[1])
+        dssContext.run_command("Clear")
     while servicesAreRunning:
         try:
             for service in runningServiceInstances:
@@ -1457,7 +1483,15 @@ if __name__ == "__main__":
         feederBusConfigFile = mainArgs.get("FEEDER_BUS_CONFIG_FILE")
         switchBusConfigFile = mainArgs.get("SWITCH_BUS_CONFIG_FILE")
         secondaryBusConfigFile = mainArgs.get("SECONDARY_BUS_CONFIG_FILE")
-        main(system_bus_config_file=Path(systemBusConfigFile),
-            feeder_bus_config_file=Path(feederBusConfigFile),
-            switch_bus_config_file=Path(switchBusConfigFile),
-            secondary_bus_config_file=Path(secondaryBusConfigFile))
+        if systemBusConfigFile is not None:
+            systemBusConfigFile = Path(systemBusConfigFile)
+        if feederBusConfigFile is not None:
+            feederBusConfigFile = Path(feederBusConfigFile)
+        if switchBusConfigFile is not None:
+            switchBusConfigFile = Path(switchBusConfigFile)
+        if secondaryBusConfigFile is not None:
+            secondaryBusConfigFile = Path(secondaryBusConfigFile)
+        main(system_bus_config_file=systemBusConfigFile,
+            feeder_bus_config_file=feederBusConfigFile,
+            switch_bus_config_file=switchBusConfigFile,
+            secondary_bus_config_file=secondaryBusConfigFile)

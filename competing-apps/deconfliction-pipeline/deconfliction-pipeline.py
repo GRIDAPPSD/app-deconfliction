@@ -784,7 +784,8 @@ class DeconflictionPipeline(GridAPPSD):
 
     DeconflictionMethod = getattr(importlib.import_module(basename),
                                   'DeconflictionMethod')
-    self.decon_method = DeconflictionMethod(gapps, self.ConflictMatrix)
+    # self.decon_method = DeconflictionMethod(gapps, self.ConflictMatrix)
+    self.decon_method = DeconflictionMethod(self.ConflictMatrix)
 
     if self.testDeconMethodFlag:
       if method_test.endswith('.py'):
