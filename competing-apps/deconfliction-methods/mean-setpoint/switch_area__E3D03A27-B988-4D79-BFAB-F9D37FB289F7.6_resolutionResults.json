@@ -1,0 +1,962 @@
+{
+    "1": {
+        "deconflictTime": 0.24062412700004643,
+        "deconflictionFailed": false,
+        "setpoints": {
+            "BatteryUnit.battery4": 0.0
+        },
+        "timestamps": {
+            "BatteryUnit.battery4": 1
+        }
+    },
+    "2": {
+        "deconflictTime": 0.35530956000002334,
+        "deconflictionFailed": false,
+        "setpoints": {
+            "BatteryUnit.battery4": 0.0
+        },
+        "timestamps": {
+            "BatteryUnit.battery4": 2
+        }
+    },
+    "3": {
+        "deconflictTime": 0.1951547749999918,
+        "deconflictionFailed": false,
+        "setpoints": {
+            "BatteryUnit.battery4": 0.0
+        },
+        "timestamps": {
+            "BatteryUnit.battery4": 3
+        }
+    },
+    "4": {
+        "deconflictTime": 0.2615855340000053,
+        "deconflictionFailed": false,
+        "setpoints": {
+            "BatteryUnit.battery4": 0.0
+        },
+        "timestamps": {
+            "BatteryUnit.battery4": 4
+        }
+    },
+    "5": {
+        "deconflictTime": 0.29170310399968,
+        "deconflictionFailed": false,
+        "setpoints": {
+            "BatteryUnit.battery4": 0.0
+        },
+        "timestamps": {
+            "BatteryUnit.battery4": 5
+        }
+    },
+    "6": {
+        "deconflictTime": 0.25392035699996995,
+        "deconflictionFailed": false,
+        "setpoints": {
+            "BatteryUnit.battery4": 48.767640633333336
+        },
+        "timestamps": {
+            "BatteryUnit.battery4": 6
+        }
+    },
+    "7": {
+        "deconflictTime": 0.2935011720001057,
+        "deconflictionFailed": false,
+        "setpoints": {
+            "BatteryUnit.battery4": 50.0
+        },
+        "timestamps": {
+            "BatteryUnit.battery4": 7
+        }
+    },
+    "8": {
+        "deconflictTime": 0.2722768939997877,
+        "deconflictionFailed": false,
+        "setpoints": {
+            "BatteryUnit.battery4": 0.0
+        },
+        "timestamps": {
+            "BatteryUnit.battery4": 8
+        }
+    },
+    "9": {
+        "deconflictTime": 0.40200668599982237,
+        "deconflictionFailed": false,
+        "setpoints": {
+            "BatteryUnit.battery4": 0.0
+        },
+        "timestamps": {
+            "BatteryUnit.battery4": 9
+        }
+    },
+    "10": {
+        "deconflictTime": 0.25981396200040763,
+        "deconflictionFailed": false,
+        "setpoints": {
+            "BatteryUnit.battery4": 0.0
+        },
+        "timestamps": {
+            "BatteryUnit.battery4": 10
+        }
+    },
+    "11": {
+        "deconflictTime": 0.29084801499993773,
+        "deconflictionFailed": false,
+        "setpoints": {
+            "BatteryUnit.battery4": 0.0
+        },
+        "timestamps": {
+            "BatteryUnit.battery4": 11
+        }
+    },
+    "12": {
+        "deconflictTime": 0.1671622409999145,
+        "deconflictionFailed": false,
+        "setpoints": {
+            "BatteryUnit.battery4": 0.0
+        },
+        "timestamps": {
+            "BatteryUnit.battery4": 12
+        }
+    },
+    "13": {
+        "deconflictTime": 0.1299570890000723,
+        "deconflictionFailed": false,
+        "setpoints": {
+            "BatteryUnit.battery4": 50.0
+        },
+        "timestamps": {
+            "BatteryUnit.battery4": 13
+        }
+    },
+    "14": {
+        "deconflictTime": 0.3852241600002344,
+        "deconflictionFailed": false,
+        "setpoints": {
+            "BatteryUnit.battery4": 50.0
+        },
+        "timestamps": {
+            "BatteryUnit.battery4": 14
+        }
+    },
+    "15": {
+        "deconflictTime": 0.31444940499977747,
+        "deconflictionFailed": false,
+        "setpoints": {
+            "BatteryUnit.battery4": 0.0
+        },
+        "timestamps": {
+            "BatteryUnit.battery4": 15
+        }
+    },
+    "16": {
+        "deconflictTime": 0.2501727899998514,
+        "deconflictionFailed": false,
+        "setpoints": {
+            "BatteryUnit.battery4": 0.0
+        },
+        "timestamps": {
+            "BatteryUnit.battery4": 16
+        }
+    },
+    "17": {
+        "deconflictTime": 0.5349169290002465,
+        "deconflictionFailed": false,
+        "setpoints": {
+            "BatteryUnit.battery4": 0.0
+        },
+        "timestamps": {
+            "BatteryUnit.battery4": 17
+        }
+    },
+    "18": {
+        "deconflictTime": 0.29342430299993794,
+        "deconflictionFailed": false,
+        "setpoints": {
+            "BatteryUnit.battery4": 0.0
+        },
+        "timestamps": {
+            "BatteryUnit.battery4": 18
+        }
+    },
+    "19": {
+        "deconflictTime": 0.34558901900027195,
+        "deconflictionFailed": false,
+        "setpoints": {
+            "BatteryUnit.battery4": 0.0
+        },
+        "timestamps": {
+            "BatteryUnit.battery4": 19
+        }
+    },
+    "20": {
+        "deconflictTime": 0.12256991200001721,
+        "deconflictionFailed": false,
+        "setpoints": {
+            "BatteryUnit.battery4": 0.0
+        },
+        "timestamps": {
+            "BatteryUnit.battery4": 20
+        }
+    },
+    "21": {
+        "deconflictTime": 0.23393611800020153,
+        "deconflictionFailed": false,
+        "setpoints": {
+            "BatteryUnit.battery4": 0.0
+        },
+        "timestamps": {
+            "BatteryUnit.battery4": 21
+        }
+    },
+    "22": {
+        "deconflictTime": 0.2848639320000075,
+        "deconflictionFailed": false,
+        "setpoints": {
+            "BatteryUnit.battery4": 0.0
+        },
+        "timestamps": {
+            "BatteryUnit.battery4": 22
+        }
+    },
+    "23": {
+        "deconflictTime": 0.27034377200016024,
+        "deconflictionFailed": false,
+        "setpoints": {
+            "BatteryUnit.battery4": 0.0
+        },
+        "timestamps": {
+            "BatteryUnit.battery4": 23
+        }
+    },
+    "24": {
+        "deconflictTime": 0.2127295789996424,
+        "deconflictionFailed": false,
+        "setpoints": {
+            "BatteryUnit.battery4": 0.0
+        },
+        "timestamps": {
+            "BatteryUnit.battery4": 24
+        }
+    },
+    "25": {
+        "deconflictTime": 0.37293406100025095,
+        "deconflictionFailed": false,
+        "setpoints": {
+            "BatteryUnit.battery4": 0.0
+        },
+        "timestamps": {
+            "BatteryUnit.battery4": 25
+        }
+    },
+    "26": {
+        "deconflictTime": 0.3280688499999087,
+        "deconflictionFailed": false,
+        "setpoints": {
+            "BatteryUnit.battery4": 0.0
+        },
+        "timestamps": {
+            "BatteryUnit.battery4": 26
+        }
+    },
+    "27": {
+        "deconflictTime": 0.15001746400002958,
+        "deconflictionFailed": false,
+        "setpoints": {
+            "BatteryUnit.battery4": 0.0
+        },
+        "timestamps": {
+            "BatteryUnit.battery4": 27
+        }
+    },
+    "28": {
+        "deconflictTime": 0.3161399390000952,
+        "deconflictionFailed": false,
+        "setpoints": {
+            "BatteryUnit.battery4": 0.0
+        },
+        "timestamps": {
+            "BatteryUnit.battery4": 28
+        }
+    },
+    "29": {
+        "deconflictTime": 0.34224640499996895,
+        "deconflictionFailed": false,
+        "setpoints": {
+            "BatteryUnit.battery4": 0.0
+        },
+        "timestamps": {
+            "BatteryUnit.battery4": 29
+        }
+    },
+    "30": {
+        "deconflictTime": 0.33002276399975017,
+        "deconflictionFailed": false,
+        "setpoints": {
+            "BatteryUnit.battery4": 0.0
+        },
+        "timestamps": {
+            "BatteryUnit.battery4": 30
+        }
+    },
+    "31": {
+        "deconflictTime": 0.18168860900004802,
+        "deconflictionFailed": false,
+        "setpoints": {
+            "BatteryUnit.battery4": 0.0
+        },
+        "timestamps": {
+            "BatteryUnit.battery4": 31
+        }
+    },
+    "32": {
+        "deconflictTime": 0.17958176899992395,
+        "deconflictionFailed": false,
+        "setpoints": {
+            "BatteryUnit.battery4": 16527.293333333335
+        },
+        "timestamps": {
+            "BatteryUnit.battery4": 32
+        }
+    },
+    "33": {
+        "deconflictTime": 0.3119350359997952,
+        "deconflictionFailed": false,
+        "setpoints": {
+            "BatteryUnit.battery4": 115.25333333333644
+        },
+        "timestamps": {
+            "BatteryUnit.battery4": 33
+        }
+    },
+    "34": {
+        "deconflictTime": 0.20158509100019728,
+        "deconflictionFailed": false,
+        "setpoints": {
+            "BatteryUnit.battery4": 27637.786666666667
+        },
+        "timestamps": {
+            "BatteryUnit.battery4": 34
+        }
+    },
+    "35": {
+        "deconflictTime": 0.2576235519995862,
+        "deconflictionFailed": false,
+        "setpoints": {
+            "BatteryUnit.battery4": 39501.24
+        },
+        "timestamps": {
+            "BatteryUnit.battery4": 35
+        }
+    },
+    "36": {
+        "deconflictTime": 0.30741807499998686,
+        "deconflictionFailed": false,
+        "setpoints": {
+            "BatteryUnit.battery4": 27654.76
+        },
+        "timestamps": {
+            "BatteryUnit.battery4": 36
+        }
+    },
+    "37": {
+        "deconflictTime": 0.21406405800007633,
+        "deconflictionFailed": false,
+        "setpoints": {
+            "BatteryUnit.battery4": 86780.40666666666
+        },
+        "timestamps": {
+            "BatteryUnit.battery4": 37
+        }
+    },
+    "38": {
+        "deconflictTime": 0.1980957179998768,
+        "deconflictionFailed": false,
+        "setpoints": {
+            "BatteryUnit.battery4": 63655.343666666675
+        },
+        "timestamps": {
+            "BatteryUnit.battery4": 38
+        }
+    },
+    "39": {
+        "deconflictTime": 0.1271673930000361,
+        "deconflictionFailed": false,
+        "setpoints": {
+            "BatteryUnit.battery4": 28980.40233333333
+        },
+        "timestamps": {
+            "BatteryUnit.battery4": 39
+        }
+    },
+    "40": {
+        "deconflictTime": 0.40136642000015854,
+        "deconflictionFailed": false,
+        "setpoints": {
+            "BatteryUnit.battery4": 100000.0
+        },
+        "timestamps": {
+            "BatteryUnit.battery4": 40
+        }
+    },
+    "41": {
+        "deconflictTime": 0.2963987090001865,
+        "deconflictionFailed": false,
+        "setpoints": {
+            "BatteryUnit.battery4": 100000.0
+        },
+        "timestamps": {
+            "BatteryUnit.battery4": 41
+        }
+    },
+    "42": {
+        "deconflictTime": 0.1668255289996523,
+        "deconflictionFailed": false,
+        "setpoints": {
+            "BatteryUnit.battery4": 100000.0
+        },
+        "timestamps": {
+            "BatteryUnit.battery4": 42
+        }
+    },
+    "43": {
+        "deconflictTime": 0.21400881899990054,
+        "deconflictionFailed": false,
+        "setpoints": {
+            "BatteryUnit.battery4": 100000.0
+        },
+        "timestamps": {
+            "BatteryUnit.battery4": 43
+        }
+    },
+    "44": {
+        "deconflictTime": 0.16951909199997317,
+        "deconflictionFailed": false,
+        "setpoints": {
+            "BatteryUnit.battery4": 100000.0
+        },
+        "timestamps": {
+            "BatteryUnit.battery4": 44
+        }
+    },
+    "45": {
+        "deconflictTime": 0.23244876399985515,
+        "deconflictionFailed": false,
+        "setpoints": {
+            "BatteryUnit.battery4": 100000.0
+        },
+        "timestamps": {
+            "BatteryUnit.battery4": 45
+        }
+    },
+    "46": {
+        "deconflictTime": 0.36571935199981453,
+        "deconflictionFailed": false,
+        "setpoints": {
+            "BatteryUnit.battery4": 100000.0
+        },
+        "timestamps": {
+            "BatteryUnit.battery4": 46
+        }
+    },
+    "47": {
+        "deconflictTime": 0.29823972699978185,
+        "deconflictionFailed": false,
+        "setpoints": {
+            "BatteryUnit.battery4": 100000.0
+        },
+        "timestamps": {
+            "BatteryUnit.battery4": 47
+        }
+    },
+    "48": {
+        "deconflictTime": 0.30165088900002957,
+        "deconflictionFailed": false,
+        "setpoints": {
+            "BatteryUnit.battery4": 100000.0
+        },
+        "timestamps": {
+            "BatteryUnit.battery4": 48
+        }
+    },
+    "49": {
+        "deconflictTime": 0.29088080999963495,
+        "deconflictionFailed": false,
+        "setpoints": {
+            "BatteryUnit.battery4": 100000.0
+        },
+        "timestamps": {
+            "BatteryUnit.battery4": 49
+        }
+    },
+    "50": {
+        "deconflictTime": 0.3420403689997329,
+        "deconflictionFailed": false,
+        "setpoints": {
+            "BatteryUnit.battery4": 100000.0
+        },
+        "timestamps": {
+            "BatteryUnit.battery4": 50
+        }
+    },
+    "51": {
+        "deconflictTime": 0.2736479680006596,
+        "deconflictionFailed": false,
+        "setpoints": {
+            "BatteryUnit.battery4": 100000.0
+        },
+        "timestamps": {
+            "BatteryUnit.battery4": 51
+        }
+    },
+    "52": {
+        "deconflictTime": 0.26613853100025153,
+        "deconflictionFailed": false,
+        "setpoints": {
+            "BatteryUnit.battery4": 100000.0
+        },
+        "timestamps": {
+            "BatteryUnit.battery4": 52
+        }
+    },
+    "53": {
+        "deconflictTime": 0.27515212900016195,
+        "deconflictionFailed": false,
+        "setpoints": {
+            "BatteryUnit.battery4": 100000.0
+        },
+        "timestamps": {
+            "BatteryUnit.battery4": 53
+        }
+    },
+    "54": {
+        "deconflictTime": 0.1431726160008111,
+        "deconflictionFailed": false,
+        "setpoints": {
+            "BatteryUnit.battery4": 100000.0
+        },
+        "timestamps": {
+            "BatteryUnit.battery4": 54
+        }
+    },
+    "55": {
+        "deconflictTime": 0.26037735099998827,
+        "deconflictionFailed": false,
+        "setpoints": {
+            "BatteryUnit.battery4": 100000.0
+        },
+        "timestamps": {
+            "BatteryUnit.battery4": 55
+        }
+    },
+    "56": {
+        "deconflictTime": 0.23674638800002867,
+        "deconflictionFailed": false,
+        "setpoints": {
+            "BatteryUnit.battery4": 100000.0
+        },
+        "timestamps": {
+            "BatteryUnit.battery4": 56
+        }
+    },
+    "57": {
+        "deconflictTime": 0.25764705799974763,
+        "deconflictionFailed": false,
+        "setpoints": {
+            "BatteryUnit.battery4": 100000.0
+        },
+        "timestamps": {
+            "BatteryUnit.battery4": 57
+        }
+    },
+    "58": {
+        "deconflictTime": 0.3045595530002174,
+        "deconflictionFailed": false,
+        "setpoints": {
+            "BatteryUnit.battery4": 100000.0
+        },
+        "timestamps": {
+            "BatteryUnit.battery4": 58
+        }
+    },
+    "59": {
+        "deconflictTime": 0.30492845400021906,
+        "deconflictionFailed": false,
+        "setpoints": {
+            "BatteryUnit.battery4": 100000.0
+        },
+        "timestamps": {
+            "BatteryUnit.battery4": 59
+        }
+    },
+    "60": {
+        "deconflictTime": 0.20022116400014056,
+        "deconflictionFailed": false,
+        "setpoints": {
+            "BatteryUnit.battery4": 100000.0
+        },
+        "timestamps": {
+            "BatteryUnit.battery4": 60
+        }
+    },
+    "61": {
+        "deconflictTime": 0.23759854499985522,
+        "deconflictionFailed": false,
+        "setpoints": {
+            "BatteryUnit.battery4": 100000.0
+        },
+        "timestamps": {
+            "BatteryUnit.battery4": 61
+        }
+    },
+    "62": {
+        "deconflictTime": 0.5411076119999052,
+        "deconflictionFailed": false,
+        "setpoints": {
+            "BatteryUnit.battery4": 100000.0
+        },
+        "timestamps": {
+            "BatteryUnit.battery4": 62
+        }
+    },
+    "63": {
+        "deconflictTime": 0.2442074410000714,
+        "deconflictionFailed": false,
+        "setpoints": {
+            "BatteryUnit.battery4": 100000.0
+        },
+        "timestamps": {
+            "BatteryUnit.battery4": 63
+        }
+    },
+    "64": {
+        "deconflictTime": 0.28244486800031154,
+        "deconflictionFailed": false,
+        "setpoints": {
+            "BatteryUnit.battery4": 100000.0
+        },
+        "timestamps": {
+            "BatteryUnit.battery4": 64
+        }
+    },
+    "65": {
+        "deconflictTime": 0.4414115549998314,
+        "deconflictionFailed": false,
+        "setpoints": {
+            "BatteryUnit.battery4": 100000.0
+        },
+        "timestamps": {
+            "BatteryUnit.battery4": 65
+        }
+    },
+    "66": {
+        "deconflictTime": 0.2782711569998355,
+        "deconflictionFailed": false,
+        "setpoints": {
+            "BatteryUnit.battery4": 99950.0
+        },
+        "timestamps": {
+            "BatteryUnit.battery4": 66
+        }
+    },
+    "67": {
+        "deconflictTime": 0.2841271970000889,
+        "deconflictionFailed": false,
+        "setpoints": {
+            "BatteryUnit.battery4": 99950.0
+        },
+        "timestamps": {
+            "BatteryUnit.battery4": 67
+        }
+    },
+    "68": {
+        "deconflictTime": 0.15975864099982573,
+        "deconflictionFailed": false,
+        "setpoints": {
+            "BatteryUnit.battery4": 99950.0
+        },
+        "timestamps": {
+            "BatteryUnit.battery4": 68
+        }
+    },
+    "69": {
+        "deconflictTime": 0.35524274699946545,
+        "deconflictionFailed": false,
+        "setpoints": {
+            "BatteryUnit.battery4": 99950.0
+        },
+        "timestamps": {
+            "BatteryUnit.battery4": 69
+        }
+    },
+    "70": {
+        "deconflictTime": 0.21138751799935562,
+        "deconflictionFailed": false,
+        "setpoints": {
+            "BatteryUnit.battery4": 99950.0
+        },
+        "timestamps": {
+            "BatteryUnit.battery4": 70
+        }
+    },
+    "71": {
+        "deconflictTime": 0.3041859430004479,
+        "deconflictionFailed": false,
+        "setpoints": {
+            "BatteryUnit.battery4": 99950.0
+        },
+        "timestamps": {
+            "BatteryUnit.battery4": 71
+        }
+    },
+    "72": {
+        "deconflictTime": 0.18869662699944456,
+        "deconflictionFailed": false,
+        "setpoints": {
+            "BatteryUnit.battery4": 99950.0
+        },
+        "timestamps": {
+            "BatteryUnit.battery4": 72
+        }
+    },
+    "73": {
+        "deconflictTime": 0.33504817500033823,
+        "deconflictionFailed": false,
+        "setpoints": {
+            "BatteryUnit.battery4": 99950.0
+        },
+        "timestamps": {
+            "BatteryUnit.battery4": 73
+        }
+    },
+    "74": {
+        "deconflictTime": 0.3478374679998524,
+        "deconflictionFailed": false,
+        "setpoints": {
+            "BatteryUnit.battery4": 99950.0
+        },
+        "timestamps": {
+            "BatteryUnit.battery4": 74
+        }
+    },
+    "75": {
+        "deconflictTime": 0.09968705699975544,
+        "deconflictionFailed": false,
+        "setpoints": {
+            "BatteryUnit.battery4": 99950.0
+        },
+        "timestamps": {
+            "BatteryUnit.battery4": 75
+        }
+    },
+    "76": {
+        "deconflictTime": 0.41385050600001705,
+        "deconflictionFailed": false,
+        "setpoints": {
+            "BatteryUnit.battery4": 87493.77
+        },
+        "timestamps": {
+            "BatteryUnit.battery4": 76
+        }
+    },
+    "77": {
+        "deconflictTime": 0.26607901500028674,
+        "deconflictionFailed": false,
+        "setpoints": {
+            "BatteryUnit.battery4": 50000.0
+        },
+        "timestamps": {
+            "BatteryUnit.battery4": 77
+        }
+    },
+    "78": {
+        "deconflictTime": 0.17618635799954063,
+        "deconflictionFailed": false,
+        "setpoints": {
+            "BatteryUnit.battery4": 87082.32333333333
+        },
+        "timestamps": {
+            "BatteryUnit.battery4": 78
+        }
+    },
+    "79": {
+        "deconflictTime": 0.39157483899998624,
+        "deconflictionFailed": false,
+        "setpoints": {
+            "BatteryUnit.battery4": 96081.29333333333
+        },
+        "timestamps": {
+            "BatteryUnit.battery4": 79
+        }
+    },
+    "80": {
+        "deconflictTime": 0.2956356169997889,
+        "deconflictionFailed": false,
+        "setpoints": {
+            "BatteryUnit.battery4": 49950.0
+        },
+        "timestamps": {
+            "BatteryUnit.battery4": 80
+        }
+    },
+    "81": {
+        "deconflictTime": 0.35272792500018113,
+        "deconflictionFailed": false,
+        "setpoints": {
+            "BatteryUnit.battery4": 16331.253333333332
+        },
+        "timestamps": {
+            "BatteryUnit.battery4": 81
+        }
+    },
+    "82": {
+        "deconflictTime": 0.26537851200009754,
+        "deconflictionFailed": false,
+        "setpoints": {
+            "BatteryUnit.battery4": 2253.993333333337
+        },
+        "timestamps": {
+            "BatteryUnit.battery4": 82
+        }
+    },
+    "83": {
+        "deconflictTime": 0.217012240999793,
+        "deconflictionFailed": false,
+        "setpoints": {
+            "BatteryUnit.battery4": 0.0
+        },
+        "timestamps": {
+            "BatteryUnit.battery4": 83
+        }
+    },
+    "84": {
+        "deconflictTime": 0.3699774050000997,
+        "deconflictionFailed": false,
+        "setpoints": {
+            "BatteryUnit.battery4": 289.06999999999726
+        },
+        "timestamps": {
+            "BatteryUnit.battery4": 84
+        }
+    },
+    "85": {
+        "deconflictTime": 0.17799795399969298,
+        "deconflictionFailed": false,
+        "setpoints": {
+            "BatteryUnit.battery4": 0.0
+        },
+        "timestamps": {
+            "BatteryUnit.battery4": 85
+        }
+    },
+    "86": {
+        "deconflictTime": 0.20634707799945318,
+        "deconflictionFailed": false,
+        "setpoints": {
+            "BatteryUnit.battery4": 0.0
+        },
+        "timestamps": {
+            "BatteryUnit.battery4": 86
+        }
+    },
+    "87": {
+        "deconflictTime": 0.3211790960003782,
+        "deconflictionFailed": false,
+        "setpoints": {
+            "BatteryUnit.battery4": 0.0
+        },
+        "timestamps": {
+            "BatteryUnit.battery4": 87
+        }
+    },
+    "88": {
+        "deconflictTime": 0.29901137500019104,
+        "deconflictionFailed": false,
+        "setpoints": {
+            "BatteryUnit.battery4": 0.0
+        },
+        "timestamps": {
+            "BatteryUnit.battery4": 88
+        }
+    },
+    "89": {
+        "deconflictTime": 0.4616477380004653,
+        "deconflictionFailed": false,
+        "setpoints": {
+            "BatteryUnit.battery4": 0.0
+        },
+        "timestamps": {
+            "BatteryUnit.battery4": 89
+        }
+    },
+    "90": {
+        "deconflictTime": 0.12635511999997107,
+        "deconflictionFailed": false,
+        "setpoints": {
+            "BatteryUnit.battery4": 0.0
+        },
+        "timestamps": {
+            "BatteryUnit.battery4": 90
+        }
+    },
+    "91": {
+        "deconflictTime": 0.13191977999940718,
+        "deconflictionFailed": false,
+        "setpoints": {
+            "BatteryUnit.battery4": 0.0
+        },
+        "timestamps": {
+            "BatteryUnit.battery4": 91
+        }
+    },
+    "92": {
+        "deconflictTime": 0.36289860799934104,
+        "deconflictionFailed": false,
+        "setpoints": {
+            "BatteryUnit.battery4": 0.0
+        },
+        "timestamps": {
+            "BatteryUnit.battery4": 92
+        }
+    },
+    "93": {
+        "deconflictTime": 0.21130412799993792,
+        "deconflictionFailed": false,
+        "setpoints": {
+            "BatteryUnit.battery4": 0.0
+        },
+        "timestamps": {
+            "BatteryUnit.battery4": 93
+        }
+    },
+    "94": {
+        "deconflictTime": 0.19473595199997362,
+        "deconflictionFailed": false,
+        "setpoints": {
+            "BatteryUnit.battery4": 0.0
+        },
+        "timestamps": {
+            "BatteryUnit.battery4": 94
+        }
+    },
+    "95": {
+        "deconflictTime": 0.25141175299995666,
+        "deconflictionFailed": false,
+        "setpoints": {
+            "BatteryUnit.battery4": -50.0
+        },
+        "timestamps": {
+            "BatteryUnit.battery4": 95
+        }
+    },
+    "96": {
+        "deconflictTime": 1.2000056440001572,
+        "deconflictionFailed": false,
+        "setpoints": {
+            "BatteryUnit.battery4": 0.0
+        },
+        "timestamps": {
+            "BatteryUnit.battery4": 96
+        }
+    }
+}

@@ -4,6 +4,7 @@ import csv
 import itertools
 import json
 import math
+import os
 from pathlib import Path
 import sys
 import time
@@ -40,14 +41,12 @@ class DeconflictionMethod:
             "setpoints": {},
             "timestamps": {}
         }
-        systemBusRequestTopic = gt.field_agent_request_queue("_E3D03A27-B988-4D79-BFAB-F9D37FB289F7",
+        systemBusRequestTopic = gt.field_message_bus_agent_topic("ot_bus",
                                                              'da_mean_setpoint_deconfliction_service_'
                                                              '_E3D03A27-B988-4D79-BFAB-F9D37FB289F7')
         print('SYSTEM BUS', systemBusRequestTopic)
         systemBusRequestMessage = {"requestType": "Deconflict","conflictMatrix": self.conflictMatrix}
         deconflictionResponse = self.gapps.send(systemBusRequestTopic, systemBusRequestMessage)#, timeout=30)
-        
-
 
     def on_resolution_message(self, headers, message):
         deconflictionResponse = message
@@ -73,6 +72,25 @@ class DeconflictionMethod:
             conflictFile = Path(__file__).parent.resolve() / 'conflictResults.json'
             with conflictFile.open(mode="w") as rf:
                 json.dump(self.conflictDump, rf, indent=4, sort_keys=True)
-        print('returned resolution vector')
+        print(f'returned resolution vector: {json.dumps(self.resolutionVector, indent=4, sort_keys=True)}')
         self.gapps.send('goss.gridappsd.request.data.resolution_vector', self.resolutionVector)
     
+if __name__ == '__main__':
+    centralizedCtMatrixFile = Path(__file__).parent.resolve() / "ConflictMatrix.json"
+    centralizedConflictMatrix = {}
+    with centralizedCtMatrixFile.open(mode='r') as fh:
+        centralizedConflictMatrix = json.load(fh)
+    # authenticate with GridAPPS-D Platform
+    os.environ['GRIDAPPSD_APPLICATION_ID'] = 'gridappsd-deconfliction-pipeline'
+    os.environ['GRIDAPPSD_APPLICATION_STATUS'] = 'STARTED'
+    os.environ['GRIDAPPSD_USER'] = 'system'
+    os.environ['GRIDAPPSD_PASSWORD'] = 'manager'
+    gapps = GridAPPSD()
+    deconflictionMethod = DeconflictionMethod(gapps, centralizedConflictMatrix)
+    deconflictionMethod.deconflict("blahBlahApp", 1)
+    while True:
+        try:
+            time.sleep(0.01)
+        except KeyboardInterrupt:
+            exitStr = "Manually exiting central mean setpoint deconfliction service."
+            break

@@ -27,14 +27,14 @@ agents_mod.set_cim_profile(cim_profile, iec61970_301=7)
 # agents_mod.set_cim_profile(cim_profile, iec61970_301=8)
 cim = agents_mod.cim
 logging.basicConfig(format='%(asctime)s::%(levelname)s::%(name)s::%(filename)s::%(lineno)d::%(message)s',
-                    filename='DistributedAverageSetpointsService.log',
+                    filename='DistributedMeanSetpointService.log',
                     filemode='w',
                     level=logging.INFO,
                     encoding='utf-8')
 logger = logging.getLogger(__name__)
 
 
-class FeederAgentLevelAverageSetpointsService(FeederAgent):
+class FeederAgentLevelMeanSetpointService(FeederAgent):
 
     def __init__(self,
                  upstream_message_bus_def: MessageBusDefinition,
@@ -44,10 +44,6 @@ class FeederAgentLevelAverageSetpointsService(FeederAgent):
                  simulation_id: Optional[str] = None):
         super().__init__(upstream_message_bus_def, downstream_message_bus_def,
                          service_config, feeder_dict, simulation_id)
-        os.environ['GRIDAPPSD_USER'] = 'system'
-        os.environ['GRIDAPPSD_PASSWORD'] = 'manager'
-        self.gapps = GridAPPSD()
-        assert self.gapps.connected
         self.isServiceInitialized = False
         self.conflictMatrix = {}
         self.conflictTime = -1
@@ -55,6 +51,10 @@ class FeederAgentLevelAverageSetpointsService(FeederAgent):
         self.maxDeconflictionTime = -1
         self.conflictDump = {}
         self.addressableEquipmentNames = []
+        self.resolutionVector = {}
+        self.deconflictionCounter = 0
+        upstream_field_agent_topic = gt.field_message_bus_agent_topic("ot_bus",self.agent_id)
+        self.upstream_message_bus.subscribe(upstream_field_agent_topic, self.on_upstream_message)
         if self.feeder_area is not None:
             populateAddressableEquipment(self.feeder_area)
             for c, objDict in self.feeder_area.addressable_equipment.items():
@@ -64,13 +64,27 @@ class FeederAgentLevelAverageSetpointsService(FeederAgent):
                     self.addressableEquipmentNames.append(obj.name)
             self.isServiceInitialized = True
 
+    def on_upstream_message(self, headers: Dict, message: Dict):
+        if message.get("requestType", "") == "Deconflict":
+            resolutionFailed, resolutionVector = self.deconflict(message.get("conflictMatrix", {}))
+            returnMessage = {"resolutionFailed": resolutionFailed, "resolutionVector": resolutionVector}
+            # print(headers.get('reply-to'))
+            self.upstream_message_bus.send('goss.gridappsd.request.data.resolution',returnMessage)
+            print('returned resolution vector message')
+
+    def on_downstream_message(self, headers: Dict, message: Dict):
+        distributedResolutionVector = message.get("resolutionVector")
+        if distributedResolutionVector is not None:
+            self.resolutionVector["setpoints"].update(distributedResolutionVector["setpoints"])
+            self.resolutionVector["timestamps"].update(distributedResolutionVector["timestamps"])
+            self.deconflictionCounter -= 1
+
     def on_request(self, message_bus: FieldMessageBus, headers: Dict, message: Dict):
         if message.get("requestType", "") == "Deconflict":
             resolutionFailed, resolutionVector = self.deconflict(message.get("conflictMatrix", {}))
             returnMessage = {"resolutionFailed": resolutionFailed, "resolutionVector": resolutionVector}
             print(headers.get('reply-to'))
-            # message_bus.send(headers.get('reply-to'), returnMessage)
-            self.gapps.send('goss.gridappsd.request.data.resolution',returnMessage)
+            message_bus.send(headers.get('reply-to'), returnMessage)
             print('returned resolution vector message')
         if message.get("requestType", "") == "is_initialized":
             response = {"is_initialized": self.isServiceInitialized}
@@ -78,7 +92,7 @@ class FeederAgentLevelAverageSetpointsService(FeederAgent):
 
     def deconflict(self, conflictMatrix: Dict):
         deconflictStart = time.perf_counter()
-        self.conflictMatrix = conflictMatrix
+        self.conflictMatrix = deepcopy(conflictMatrix)
         for timeVal in self.conflictMatrix.get("timestamps", {}).values():
             self.conflictTime = max(self.conflictTime, timeVal)
         distributedConflictMatrix = {"setpoints": {}}
@@ -93,7 +107,7 @@ class FeederAgentLevelAverageSetpointsService(FeederAgent):
         for device in distributedConflictMatrix.get("setpoints", {}).keys():
             del self.conflictMatrix["setpoints"][device]
         distributedResolutionVector = {}
-        resolutionVector = {"setpoints": {}, "timestamps": {}}
+        self.resolutionVector = {"setpoints": {}, "timestamps": {}}
         deconflictionFailed = False
         if len(distributedConflictMatrix.get("setpoints", {}).keys()) > 0:
             distributedResolutionVector = {"setpoints": {}, "timestamps": {}}
@@ -104,23 +118,31 @@ class FeederAgentLevelAverageSetpointsService(FeederAgent):
                     setpointSum += distributedConflictMatrix['setpoints'][device][app]
                 distributedResolutionVector["setpoints"][device] = setpointSum / appCount
                 distributedResolutionVector["timestamps"][device] = self.conflictTime
-            resolutionVector["setpoints"].update(distributedResolutionVector["setpoints"])
-            resolutionVector["timestamps"].update(distributedResolutionVector["timestamps"])
-        localContextResponse = LocalContext.get_agents(self.downstream_message_bus)
-        for agent_id, agent_details in localContextResponse.items():
-            if agent_details.get("app_id") == self.app_id and agent_id != self.agent_id:
-                switchAreaRequestTopic = gt.field_agent_request_queue(self.downstream_message_bus.id, agent_id)
+            self.resolutionVector["setpoints"].update(distributedResolutionVector["setpoints"])
+            self.resolutionVector["timestamps"].update(distributedResolutionVector["timestamps"])
+        # localContextResponse = LocalContext.get_agents(self.downstream_message_bus)
+        # for agent_id, agent_details in localContextResponse.items():
+        for switchArea in self.agent_area_dict.get("switch_areas",[]):
+            switchAreaId = switchArea.get('message_bus_id')
+            if switchAreaId is not None:
+                self.deconflictionCounter += 1
+                agent_id = f'da_mean_setpoint_deconfliction_service_{switchAreaId}'
+            # if agent_details.get("app_id") == self.app_id and agent_id != self.agent_id:
+                switchAreaRequestTopic = gt.field_message_bus_agent_topic(self.downstream_message_bus.id, agent_id)
                 switchAreaRequestMessage = {"requestType": "Deconflict","conflictMatrix": self.conflictMatrix}
-                deconflictionResponse = self.downstream_message_bus.get_response(switchAreaRequestTopic,
-                                                                                 switchAreaRequestMessage,
-                                                                                 timeout=60)
-                distributedResolutionVector = deconflictionResponse.get("resolutionVector", 
-                                                                        {"setpoints": {}, "timestamps": {}})
-                resolutionVector["setpoints"].update(distributedResolutionVector["setpoints"])
-                resolutionVector["timestamps"].update(distributedResolutionVector["timestamps"])
+                self.downstream_message_bus.send(switchAreaRequestTopic, switchAreaRequestMessage)
+                # deconflictionResponse = self.downstream_message_bus.get_response(switchAreaRequestTopic,
+                #                                                                  switchAreaRequestMessage,
+                #                                                                  timeout=60)
+                # distributedResolutionVector = deconflictionResponse.get("resolutionVector", 
+                #                                                         {"setpoints": {}, "timestamps": {}})
+                # self.resolutionVector["setpoints"].update(distributedResolutionVector["setpoints"])
+                # self.resolutionVector["timestamps"].update(distributedResolutionVector["timestamps"])
+        while self.deconflictionCounter > 0:
+            pass
         deconflictTime = time.perf_counter() - deconflictStart
         print(f"{self.agent_id}:deconfliction for timestamp, {self.conflictTime}, took {deconflictTime}s.\n\n\n")
-        self.resolutionDict[self.conflictTime] = resolutionVector
+        self.resolutionDict[self.conflictTime] = self.resolutionVector
         self.resolutionDict[self.conflictTime]["deconflictTime"] = deconflictTime
         self.resolutionDict[self.conflictTime]["deconflictionFailed"] = deconflictionFailed
         self.maxDeconflictionTime = max(self.maxDeconflictionTime, deconflictTime)
@@ -136,10 +158,10 @@ class FeederAgentLevelAverageSetpointsService(FeederAgent):
                                                                 'conflictResults.json'
             with conflictFile.open(mode="w") as rf:
                 json.dump(self.conflictDump, rf, indent=4, sort_keys=True)
-        return (False, resolutionVector)
+        return (False, self.resolutionVector)
 
 
-class SwitchAreaAgentLevelAverageSetpointsService(SwitchAreaAgent):
+class SwitchAreaAgentLevelMeanSetpointService(SwitchAreaAgent):
 
     def __init__(self,
                  upstream_message_bus_def: MessageBusDefinition,
@@ -156,6 +178,8 @@ class SwitchAreaAgentLevelAverageSetpointsService(SwitchAreaAgent):
         self.maxDeconflictionTime = -1
         self.conflictDump = {}
         self.addressableEquipmentNames = []
+        self.resolutionVector = {}
+        self.deconflictionCounter = 0
         if self.switch_area is not None:
             populateAddressableEquipment(self.switch_area)
             for c, objDict in self.switch_area.addressable_equipment.items():
@@ -164,18 +188,38 @@ class SwitchAreaAgentLevelAverageSetpointsService(SwitchAreaAgent):
                     self.addressableEquipmentNames.append(obj.name)
             self.isServiceInitialized = True
 
+    def on_upstream_message(self, headers: Dict, message: Dict):
+        if message.get("requestType", "") == "Deconflict":
+            resolutionFailed, resolutionVector = self.deconflict(message.get("conflictMatrix", {}))
+            returnMessage = {"resolutionFailed": resolutionFailed, "resolutionVector": resolutionVector}
+            # print(headers.get('reply-to'))
+            splitSwitchId = self.agent_id.split('.')
+            feederId = splitSwitchId[0]
+            feederResolutionReturnTopic = gt.field_message_bus_agent_topic(self.upstream_message_bus.id, feederId)
+            self.upstream_message_bus.send(feederResolutionReturnTopic,returnMessage)
+            print('returned resolution vector message')
+
+    def on_downstream_message(self, headers: Dict, message: Dict):
+        distributedResolutionVector = message.get("resolutionVector")
+        if distributedResolutionVector is not None:
+            self.resolutionVector["setpoints"].update(distributedResolutionVector["setpoints"])
+            self.resolutionVector["timestamps"].update(distributedResolutionVector["timestamps"])
+            self.deconflictionCounter -= 1
+
     def on_request(self, message_bus: FieldMessageBus, headers: Dict, message: Dict):
         if message.get("requestType", "") == "Deconflict":
             resolutionFailed, resolutionVector = self.deconflict(message.get("conflictMatrix", {}))
             returnMessage = {"resolutionFailed": resolutionFailed, "resolutionVector": resolutionVector}
+            print(headers.get('reply-to'))
             message_bus.send(headers.get('reply-to'), returnMessage)
+            print('returned resolution vector message')
         if message.get("requestType", "") == "is_initialized":
             response = {"is_initialized": self.isServiceInitialized}
             message_bus.send(headers.get('reply-to'), response)
 
     def deconflict(self, conflictMatrix: Dict):
         deconflictStart = time.perf_counter()
-        self.conflictMatrix = conflictMatrix
+        self.conflictMatrix = deepcopy(conflictMatrix)
         for timeVal in self.conflictMatrix.get("timestamps", {}).values():
             self.conflictTime = max(self.conflictTime, timeVal)
         distributedConflictMatrix = {"setpoints": {}}
@@ -189,7 +233,7 @@ class SwitchAreaAgentLevelAverageSetpointsService(SwitchAreaAgent):
         for device in distributedConflictMatrix.get("setpoints", {}).keys():
             del self.conflictMatrix["setpoints"][device]
         distributedResolutionVector = {}
-        resolutionVector = {"setpoints": {}, "timestamps": {}}
+        self.resolutionVector = {"setpoints": {}, "timestamps": {}}
         deconflictionFailed = False
         if len(distributedConflictMatrix.get("setpoints", {}).keys()) > 0:
             distributedResolutionVector = {"setpoints": {}, "timestamps": {}}
@@ -200,23 +244,31 @@ class SwitchAreaAgentLevelAverageSetpointsService(SwitchAreaAgent):
                     setpointSum += distributedConflictMatrix['setpoints'][device][app]
                 distributedResolutionVector["setpoints"][device] = setpointSum / appCount
                 distributedResolutionVector["timestamps"][device] = self.conflictTime
-            resolutionVector["setpoints"].update(distributedResolutionVector["setpoints"])
-            resolutionVector["timestamps"].update(distributedResolutionVector["timestamps"])
-        localContextResponse = LocalContext.get_agents(self.downstream_message_bus)
-        for agent_id, agent_details in localContextResponse.items():
-            if agent_details.get("app_id") == self.app_id and agent_id != self.agent_id:
-                secondaryAreaRequestTopic = gt.field_agent_request_queue(self.downstream_message_bus.id, agent_id)
+            self.resolutionVector["setpoints"].update(distributedResolutionVector["setpoints"])
+            self.resolutionVector["timestamps"].update(distributedResolutionVector["timestamps"])
+        # localContextResponse = LocalContext.get_agents(self.downstream_message_bus)
+        # for agent_id, agent_details in localContextResponse.items():
+        #     if agent_details.get("app_id") == self.app_id and agent_id != self.agent_id:
+        for secondaryArea in self.agent_area_dict.get('secondary_areas', []):
+            secondaryAreaId = secondaryArea.get('message_bus_id')
+            if secondaryAreaId is not None:
+                self.deconflictionCounter += 1
+                agent_id = f'da_mean_setpoint_deconfliction_service_{secondaryAreaId}'
+                secondaryAreaRequestTopic = gt.field_message_bus_agent_topic(self.downstream_message_bus.id,agent_id)
                 secondaryAreaRequestMessage = {"requestType": "Deconflict","conflictMatrix": self.conflictMatrix}
-                deconflictionResponse = self.downstream_message_bus.get_response(secondaryAreaRequestTopic,
-                                                                                 secondaryAreaRequestMessage,
-                                                                                 timeout=60)
-                distributedResolutionVector = deconflictionResponse.get("resolutionVector", 
-                                                                        {"setpoints": {}, "timestamps": {}})
-                resolutionVector["setpoints"].update(distributedResolutionVector["setpoints"])
-                resolutionVector["timestamps"].update(distributedResolutionVector["timestamps"])
+                self.downstream_message_bus.send(secondaryAreaRequestTopic, secondaryAreaRequestMessage)
+                # deconflictionResponse = self.downstream_message_bus.get_response(secondaryAreaRequestTopic,
+                #                                                                  secondaryAreaRequestMessage,
+                #                                                                  timeout=60)
+                # distributedResolutionVector = deconflictionResponse.get("resolutionVector", 
+                #                                                         {"setpoints": {}, "timestamps": {}})
+                # self.resolutionVector["setpoints"].update(distributedResolutionVector["setpoints"])
+                # self.resolutionVector["timestamps"].update(distributedResolutionVector["timestamps"])
+        while self.deconflictionCounter > 0:
+            pass
         deconflictTime = time.perf_counter() - deconflictStart
         print(f"{self.agent_id}:deconfliction for timestamp, {self.conflictTime}, took {deconflictTime}s.\n\n\n")
-        self.resolutionDict[self.conflictTime] = resolutionVector
+        self.resolutionDict[self.conflictTime] = self.resolutionVector
         self.resolutionDict[self.conflictTime]["deconflictTime"] = deconflictTime
         self.resolutionDict[self.conflictTime]["deconflictionFailed"] = deconflictionFailed
         self.maxDeconflictionTime = max(self.maxDeconflictionTime, deconflictTime)
@@ -232,10 +284,10 @@ class SwitchAreaAgentLevelAverageSetpointsService(SwitchAreaAgent):
                            / f'switch_area_{self.downstream_message_bus_def.id}_conflictResults.json'
             with conflictFile.open(mode="w") as rf:
                 json.dump(self.conflictDump, rf, indent=4, sort_keys=True)
-        return (False, resolutionVector)
+        return (False, self.resolutionVector)
 
 
-class SecondaryAreaAgentLevelAverageSetpointsService(SecondaryAreaAgent):
+class SecondaryAreaAgentLevelMeanSetpointService(SecondaryAreaAgent):
 
     def __init__(self,
                  upstream_message_bus_def: MessageBusDefinition,
@@ -260,6 +312,17 @@ class SecondaryAreaAgentLevelAverageSetpointsService(SecondaryAreaAgent):
                                 f"{self.secondary_area.container.mRID}.")
                     self.addressableEquipmentNames.append(obj.name)
             self.isServiceInitialized = True
+    
+    def on_upstream_message(self, headers: Dict, message: Dict):
+        if message.get("requestType", "") == "Deconflict":
+            resolutionFailed, resolutionVector = self.deconflict(message.get("conflictMatrix", {}))
+            returnMessage = {"resolutionFailed": resolutionFailed, "resolutionVector": resolutionVector}
+            # print(headers.get('reply-to'))
+            splitSecondaryId = self.agent_id.split('.')
+            switchId = f'{splitSecondaryId[0]}.{splitSecondaryId[1]}'
+            feederResolutionReturnTopic = gt.field_message_bus_agent_topic(self.upstream_message_bus.id, switchId)
+            self.upstream_message_bus.send(feederResolutionReturnTopic,returnMessage)
+            print('returned resolution vector message')
 
     def on_request(self, message_bus: FieldMessageBus, headers: Dict, message: Dict):
         if message.get("requestType", "") == "Deconflict":
@@ -272,7 +335,7 @@ class SecondaryAreaAgentLevelAverageSetpointsService(SecondaryAreaAgent):
 
     def deconflict(self, conflictMatrix: Dict):
         deconflictStart = time.perf_counter()
-        self.conflictMatrix = conflictMatrix
+        self.conflictMatrix = deepcopy(conflictMatrix)
         for timeVal in self.conflictMatrix.get("timestamps", {}).values():
             self.conflictTime = max(self.conflictTime, timeVal)
         distributedConflictMatrix = {"setpoints": {}}
@@ -398,7 +461,7 @@ def main(**kwargs):
             systemMessageBusDef = MessageBusDefinition.load(systemMessageBusConfigFile)
             feederMessageBusDef = MessageBusDefinition.load(feederMessageBusConfigFile)
             logger.info(f"Creating Feeder Area Mean Setpoint Deconfliction Service for area id: {feederMessageBusDef.id}")
-            feederService = FeederAgentLevelAverageSetpointsService(systemMessageBusDef, feederMessageBusDef, serviceMetadata)
+            feederService = FeederAgentLevelMeanSetpointService(systemMessageBusDef, feederMessageBusDef, serviceMetadata)
             runningServiceInfo.append(f"{type(feederService).__name__}:{feederMessageBusDef.id}")
             runningServiceInstances.append(feederService)
         if switchAreaMessageBusConfigFile is not None and feederMessageBusConfigFile is not None:
@@ -407,7 +470,7 @@ def main(**kwargs):
             switchAreaMessageBusDef = MessageBusDefinition.load(switchAreaMessageBusConfigFile)
             logger.info("Creating Switch Area Mean Setpoint Deconfliction Service for area id: "
                         f"{switchAreaMessageBusDef.id}")
-            switchAreaService = SwitchAreaAgentLevelAverageSetpointsService(feederMessageBusDef, switchAreaMessageBusDef,
+            switchAreaService = SwitchAreaAgentLevelMeanSetpointService(feederMessageBusDef, switchAreaMessageBusDef,
                                                                 serviceMetadata)
             runningServiceInfo.append(f"{type(switchAreaService).__name__}:{switchAreaMessageBusDef.id}")
             runningServiceInstances.append(switchAreaService)
@@ -417,7 +480,7 @@ def main(**kwargs):
             secondaryAreaMessageBusDef = MessageBusDefinition.load(secondaryAreaMessageBusConfigFile)
             logger.info("Creating Secondary Area Mean Setpoint Deconfliction Service for area id: "
                         f"{secondaryAreaMessageBusDef.id}")
-            secondaryAreaService = SecondaryAreaAgentLevelAverageSetpointsService(switchAreaMessageBusDef,
+            secondaryAreaService = SecondaryAreaAgentLevelMeanSetpointService(switchAreaMessageBusDef,
                                                                       secondaryAreaMessageBusDef, serviceMetadata)
             if len(secondaryAreaService.agent_area_dict['addressable_equipment']) == 0 and \
                     len(secondaryAreaService.agent_area_dict['unaddressable_equipment']) == 0:
@@ -428,8 +491,8 @@ def main(**kwargs):
     else:
         systemMessageBusDef = getMessageBusDefinition(modelMrid)
         feederMessageBusDef = getMessageBusDefinition(modelMrid)
-        logger.info(f"Creating Feeder Area Rules Based Deconfliction Service for area id: {feederMessageBusDef.id}")
-        feederService = FeederAgentLevelAverageSetpointsService(systemMessageBusDef, feederMessageBusDef, serviceMetadata)
+        logger.info(f"Creating Feeder Area Mean Setpoint Deconfliction Service for area id: {feederMessageBusDef.id}")
+        feederService = FeederAgentLevelMeanSetpointService(systemMessageBusDef, feederMessageBusDef, serviceMetadata)
         runningServiceInfo.append(f"{type(feederService).__name__}:{feederMessageBusDef.id}")
         runningServiceInstances.append(feederService)
         for switchArea in feederService.agent_area_dict.get('switch_areas', []):
@@ -437,8 +500,8 @@ def main(**kwargs):
             if switchAreaId is not None:
             # if switchAreaId == '_E3D03A27-B988-4D79-BFAB-F9D37FB289F7.1':
                 switchAreaMessageBusDef = getMessageBusDefinition(switchAreaId)
-                logger.info(f"Creating Switch Area Rules Based Deconfliction Service for area id: {switchAreaMessageBusDef.id}")
-                switchAreaService = SwitchAreaAgentLevelAverageSetpointsService(feederMessageBusDef, switchAreaMessageBusDef,
+                logger.info(f"Creating Switch Area Mean Setpoint Deconfliction Service for area id: {switchAreaMessageBusDef.id}")
+                switchAreaService = SwitchAreaAgentLevelMeanSetpointService(feederMessageBusDef, switchAreaMessageBusDef,
                                                                     serviceMetadata)
                 runningServiceInfo.append(f"{type(switchAreaService).__name__}:{switchAreaMessageBusDef.id}")
                 runningServiceInstances.append(switchAreaService)
@@ -447,8 +510,8 @@ def main(**kwargs):
                     if secondaryAreaId is not None:
                         secondaryAreaMessageBusDef = getMessageBusDefinition(secondaryAreaId)
                         logger.info(
-                            f"Creating Secondary Area Rules Based Deconfliction Service for area id: {secondaryAreaMessageBusDef.id}")
-                        secondaryAreaService = SecondaryAreaAgentLevelAverageSetpointsService(
+                            f"Creating Secondary Area Mean Setpoint Deconfliction Service for area id: {secondaryAreaMessageBusDef.id}")
+                        secondaryAreaService = SecondaryAreaAgentLevelMeanSetpointService(
                             switchAreaMessageBusDef, secondaryAreaMessageBusDef, serviceMetadata)
                         if len(secondaryAreaService.agent_area_dict['addressable_equipment']) == 0 and \
                                 len(secondaryAreaService.agent_area_dict['unaddressable_equipment']) == 0:
@@ -460,11 +523,11 @@ def main(**kwargs):
     if len(runningServiceInstances) > 0:
         servicesAreRunning = True
         print("mean setpoint deconfliction services are running!")
-        # centralizedConflicalizedConflictMatrixFile.open(mode='r') as fh:
-        # #     centralizedCtMatrixFile = Path(__file__).parent.resolve() / "ConflictMatrix.json"
+        # centralizedCtMatrixFile = Path(__file__).parent.resolve() / "ConflictMatrix.json"
         # centralizedConflictMatrix = {}
-        # with centronflictMatrix = json.load(fh)
-        # if f"{FeederAgentLevelAverageSetpointsService.__name__}:_E3D03A27-B988-4D79-BFAB-F9D37FB289F7" in runningServiceInfo:
+        # with centralizedCtMatrixFile.open(mode='r') as fh:
+        #     centralizedConflictMatrix = json.load(fh)
+        # if f"{FeederAgentLevelMeanSetpointService.__name__}:_E3D03A27-B988-4D79-BFAB-F9D37FB289F7" in runningServiceInfo:
         #     rv = feederService.deconflict(centralizedConflictMatrix)
     while servicesAreRunning:
         try:

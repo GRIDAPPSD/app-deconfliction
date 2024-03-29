@@ -1,0 +1,578 @@
+{
+    "1": {
+        "deconflictTime": 0.00010098999973706668,
+        "deconflictionFailed": false,
+        "setpoints": {},
+        "timestamps": {}
+    },
+    "2": {
+        "deconflictTime": 0.00010800000018207356,
+        "deconflictionFailed": false,
+        "setpoints": {},
+        "timestamps": {}
+    },
+    "3": {
+        "deconflictTime": 0.00011271199991824687,
+        "deconflictionFailed": false,
+        "setpoints": {},
+        "timestamps": {}
+    },
+    "4": {
+        "deconflictTime": 0.00015537200033577392,
+        "deconflictionFailed": false,
+        "setpoints": {},
+        "timestamps": {}
+    },
+    "5": {
+        "deconflictTime": 0.00011096799971710425,
+        "deconflictionFailed": false,
+        "setpoints": {},
+        "timestamps": {}
+    },
+    "6": {
+        "deconflictTime": 0.00010274400028720265,
+        "deconflictionFailed": false,
+        "setpoints": {},
+        "timestamps": {}
+    },
+    "7": {
+        "deconflictTime": 0.0001170229998024297,
+        "deconflictionFailed": false,
+        "setpoints": {},
+        "timestamps": {}
+    },
+    "8": {
+        "deconflictTime": 0.00010387400016043102,
+        "deconflictionFailed": false,
+        "setpoints": {},
+        "timestamps": {}
+    },
+    "9": {
+        "deconflictTime": 0.0001988090002669196,
+        "deconflictionFailed": false,
+        "setpoints": {},
+        "timestamps": {}
+    },
+    "10": {
+        "deconflictTime": 9.75479997578077e-05,
+        "deconflictionFailed": false,
+        "setpoints": {},
+        "timestamps": {}
+    },
+    "11": {
+        "deconflictTime": 0.00011667599983411492,
+        "deconflictionFailed": false,
+        "setpoints": {},
+        "timestamps": {}
+    },
+    "12": {
+        "deconflictTime": 9.194100039167097e-05,
+        "deconflictionFailed": false,
+        "setpoints": {},
+        "timestamps": {}
+    },
+    "13": {
+        "deconflictTime": 0.00011649500038402039,
+        "deconflictionFailed": false,
+        "setpoints": {},
+        "timestamps": {}
+    },
+    "14": {
+        "deconflictTime": 0.00011941999991904595,
+        "deconflictionFailed": false,
+        "setpoints": {},
+        "timestamps": {}
+    },
+    "15": {
+        "deconflictTime": 9.645299996918766e-05,
+        "deconflictionFailed": false,
+        "setpoints": {},
+        "timestamps": {}
+    },
+    "16": {
+        "deconflictTime": 0.0001115180002670968,
+        "deconflictionFailed": false,
+        "setpoints": {},
+        "timestamps": {}
+    },
+    "17": {
+        "deconflictTime": 0.00013528099998438847,
+        "deconflictionFailed": false,
+        "setpoints": {},
+        "timestamps": {}
+    },
+    "18": {
+        "deconflictTime": 0.00010734799980127718,
+        "deconflictionFailed": false,
+        "setpoints": {},
+        "timestamps": {}
+    },
+    "19": {
+        "deconflictTime": 0.00011779800024669385,
+        "deconflictionFailed": false,
+        "setpoints": {},
+        "timestamps": {}
+    },
+    "20": {
+        "deconflictTime": 9.804100000110338e-05,
+        "deconflictionFailed": false,
+        "setpoints": {},
+        "timestamps": {}
+    },
+    "21": {
+        "deconflictTime": 9.567699999024626e-05,
+        "deconflictionFailed": false,
+        "setpoints": {},
+        "timestamps": {}
+    },
+    "22": {
+        "deconflictTime": 0.00011122500018245773,
+        "deconflictionFailed": false,
+        "setpoints": {},
+        "timestamps": {}
+    },
+    "23": {
+        "deconflictTime": 0.00012154300020483788,
+        "deconflictionFailed": false,
+        "setpoints": {},
+        "timestamps": {}
+    },
+    "24": {
+        "deconflictTime": 9.844800024438882e-05,
+        "deconflictionFailed": false,
+        "setpoints": {},
+        "timestamps": {}
+    },
+    "25": {
+        "deconflictTime": 9.940399968400015e-05,
+        "deconflictionFailed": false,
+        "setpoints": {},
+        "timestamps": {}
+    },
+    "26": {
+        "deconflictTime": 0.00012564899998324108,
+        "deconflictionFailed": false,
+        "setpoints": {},
+        "timestamps": {}
+    },
+    "27": {
+        "deconflictTime": 0.0001399630000378238,
+        "deconflictionFailed": false,
+        "setpoints": {},
+        "timestamps": {}
+    },
+    "28": {
+        "deconflictTime": 9.316900013800478e-05,
+        "deconflictionFailed": false,
+        "setpoints": {},
+        "timestamps": {}
+    },
+    "29": {
+        "deconflictTime": 0.00010375800002293545,
+        "deconflictionFailed": false,
+        "setpoints": {},
+        "timestamps": {}
+    },
+    "30": {
+        "deconflictTime": 0.00010757199970612419,
+        "deconflictionFailed": false,
+        "setpoints": {},
+        "timestamps": {}
+    },
+    "31": {
+        "deconflictTime": 9.953400012818747e-05,
+        "deconflictionFailed": false,
+        "setpoints": {},
+        "timestamps": {}
+    },
+    "32": {
+        "deconflictTime": 0.00010038999971584417,
+        "deconflictionFailed": false,
+        "setpoints": {},
+        "timestamps": {}
+    },
+    "33": {
+        "deconflictTime": 0.00010501999986445298,
+        "deconflictionFailed": false,
+        "setpoints": {},
+        "timestamps": {}
+    },
+    "34": {
+        "deconflictTime": 9.324599977844628e-05,
+        "deconflictionFailed": false,
+        "setpoints": {},
+        "timestamps": {}
+    },
+    "35": {
+        "deconflictTime": 9.587400018062908e-05,
+        "deconflictionFailed": false,
+        "setpoints": {},
+        "timestamps": {}
+    },
+    "36": {
+        "deconflictTime": 0.00010674600025595282,
+        "deconflictionFailed": false,
+        "setpoints": {},
+        "timestamps": {}
+    },
+    "37": {
+        "deconflictTime": 9.716499971546e-05,
+        "deconflictionFailed": false,
+        "setpoints": {},
+        "timestamps": {}
+    },
+    "38": {
+        "deconflictTime": 9.860299996944377e-05,
+        "deconflictionFailed": false,
+        "setpoints": {},
+        "timestamps": {}
+    },
+    "39": {
+        "deconflictTime": 9.689499984233407e-05,
+        "deconflictionFailed": false,
+        "setpoints": {},
+        "timestamps": {}
+    },
+    "40": {
+        "deconflictTime": 0.0001062259998434456,
+        "deconflictionFailed": false,
+        "setpoints": {},
+        "timestamps": {}
+    },
+    "41": {
+        "deconflictTime": 9.740899986354634e-05,
+        "deconflictionFailed": false,
+        "setpoints": {},
+        "timestamps": {}
+    },
+    "42": {
+        "deconflictTime": 0.00011939300020458177,
+        "deconflictionFailed": false,
+        "setpoints": {},
+        "timestamps": {}
+    },
+    "43": {
+        "deconflictTime": 0.0001000249999378866,
+        "deconflictionFailed": false,
+        "setpoints": {},
+        "timestamps": {}
+    },
+    "44": {
+        "deconflictTime": 9.418299987373757e-05,
+        "deconflictionFailed": false,
+        "setpoints": {},
+        "timestamps": {}
+    },
+    "45": {
+        "deconflictTime": 0.00010448500006532413,
+        "deconflictionFailed": false,
+        "setpoints": {},
+        "timestamps": {}
+    },
+    "46": {
+        "deconflictTime": 9.655900021243724e-05,
+        "deconflictionFailed": false,
+        "setpoints": {},
+        "timestamps": {}
+    },
+    "47": {
+        "deconflictTime": 0.00011161499969603028,
+        "deconflictionFailed": false,
+        "setpoints": {},
+        "timestamps": {}
+    },
+    "48": {
+        "deconflictTime": 0.00010231999976895167,
+        "deconflictionFailed": false,
+        "setpoints": {},
+        "timestamps": {}
+    },
+    "49": {
+        "deconflictTime": 0.00019063800027652178,
+        "deconflictionFailed": false,
+        "setpoints": {},
+        "timestamps": {}
+    },
+    "50": {
+        "deconflictTime": 0.00010630199994920986,
+        "deconflictionFailed": false,
+        "setpoints": {},
+        "timestamps": {}
+    },
+    "51": {
+        "deconflictTime": 0.00011226900005567586,
+        "deconflictionFailed": false,
+        "setpoints": {},
+        "timestamps": {}
+    },
+    "52": {
+        "deconflictTime": 9.622100060369121e-05,
+        "deconflictionFailed": false,
+        "setpoints": {},
+        "timestamps": {}
+    },
+    "53": {
+        "deconflictTime": 0.00027666500045597786,
+        "deconflictionFailed": false,
+        "setpoints": {},
+        "timestamps": {}
+    },
+    "54": {
+        "deconflictTime": 9.116000001085922e-05,
+        "deconflictionFailed": false,
+        "setpoints": {},
+        "timestamps": {}
+    },
+    "55": {
+        "deconflictTime": 0.00010492999990674434,
+        "deconflictionFailed": false,
+        "setpoints": {},
+        "timestamps": {}
+    },
+    "56": {
+        "deconflictTime": 0.00010097700032929424,
+        "deconflictionFailed": false,
+        "setpoints": {},
+        "timestamps": {}
+    },
+    "57": {
+        "deconflictTime": 0.00011186699975951342,
+        "deconflictionFailed": false,
+        "setpoints": {},
+        "timestamps": {}
+    },
+    "58": {
+        "deconflictTime": 0.00011602100039453944,
+        "deconflictionFailed": false,
+        "setpoints": {},
+        "timestamps": {}
+    },
+    "59": {
+        "deconflictTime": 0.0001036710000335006,
+        "deconflictionFailed": false,
+        "setpoints": {},
+        "timestamps": {}
+    },
+    "60": {
+        "deconflictTime": 9.446300009585684e-05,
+        "deconflictionFailed": false,
+        "setpoints": {},
+        "timestamps": {}
+    },
+    "61": {
+        "deconflictTime": 0.00010893599937844556,
+        "deconflictionFailed": false,
+        "setpoints": {},
+        "timestamps": {}
+    },
+    "62": {
+        "deconflictTime": 0.00010030100020230748,
+        "deconflictionFailed": false,
+        "setpoints": {},
+        "timestamps": {}
+    },
+    "63": {
+        "deconflictTime": 0.0001105820001612301,
+        "deconflictionFailed": false,
+        "setpoints": {},
+        "timestamps": {}
+    },
+    "64": {
+        "deconflictTime": 8.91049994606874e-05,
+        "deconflictionFailed": false,
+        "setpoints": {},
+        "timestamps": {}
+    },
+    "65": {
+        "deconflictTime": 9.901300018100301e-05,
+        "deconflictionFailed": false,
+        "setpoints": {},
+        "timestamps": {}
+    },
+    "66": {
+        "deconflictTime": 0.0001056159999279771,
+        "deconflictionFailed": false,
+        "setpoints": {},
+        "timestamps": {}
+    },
+    "67": {
+        "deconflictTime": 0.00011667800026771147,
+        "deconflictionFailed": false,
+        "setpoints": {},
+        "timestamps": {}
+    },
+    "68": {
+        "deconflictTime": 0.00010656399990693899,
+        "deconflictionFailed": false,
+        "setpoints": {},
+        "timestamps": {}
+    },
+    "69": {
+        "deconflictTime": 9.927300015988294e-05,
+        "deconflictionFailed": false,
+        "setpoints": {},
+        "timestamps": {}
+    },
+    "70": {
+        "deconflictTime": 0.00010603100054140668,
+        "deconflictionFailed": false,
+        "setpoints": {},
+        "timestamps": {}
+    },
+    "71": {
+        "deconflictTime": 0.0001350270003968035,
+        "deconflictionFailed": false,
+        "setpoints": {},
+        "timestamps": {}
+    },
+    "72": {
+        "deconflictTime": 0.00010438399931445019,
+        "deconflictionFailed": false,
+        "setpoints": {},
+        "timestamps": {}
+    },
+    "73": {
+        "deconflictTime": 9.271299950341927e-05,
+        "deconflictionFailed": false,
+        "setpoints": {},
+        "timestamps": {}
+    },
+    "74": {
+        "deconflictTime": 0.00010881699927267618,
+        "deconflictionFailed": false,
+        "setpoints": {},
+        "timestamps": {}
+    },
+    "75": {
+        "deconflictTime": 0.00010467399988556281,
+        "deconflictionFailed": false,
+        "setpoints": {},
+        "timestamps": {}
+    },
+    "76": {
+        "deconflictTime": 0.000111520000245946,
+        "deconflictionFailed": false,
+        "setpoints": {},
+        "timestamps": {}
+    },
+    "77": {
+        "deconflictTime": 9.950999992724974e-05,
+        "deconflictionFailed": false,
+        "setpoints": {},
+        "timestamps": {}
+    },
+    "78": {
+        "deconflictTime": 9.381600011693081e-05,
+        "deconflictionFailed": false,
+        "setpoints": {},
+        "timestamps": {}
+    },
+    "79": {
+        "deconflictTime": 9.047599996847566e-05,
+        "deconflictionFailed": false,
+        "setpoints": {},
+        "timestamps": {}
+    },
+    "80": {
+        "deconflictTime": 0.00010524200024519814,
+        "deconflictionFailed": false,
+        "setpoints": {},
+        "timestamps": {}
+    },
+    "81": {
+        "deconflictTime": 0.0001280070000575506,
+        "deconflictionFailed": false,
+        "setpoints": {},
+        "timestamps": {}
+    },
+    "82": {
+        "deconflictTime": 0.00010308099990652408,
+        "deconflictionFailed": false,
+        "setpoints": {},
+        "timestamps": {}
+    },
+    "83": {
+        "deconflictTime": 0.00011850699956994504,
+        "deconflictionFailed": false,
+        "setpoints": {},
+        "timestamps": {}
+    },
+    "84": {
+        "deconflictTime": 0.00010400599967397284,
+        "deconflictionFailed": false,
+        "setpoints": {},
+        "timestamps": {}
+    },
+    "85": {
+        "deconflictTime": 9.953900007531047e-05,
+        "deconflictionFailed": false,
+        "setpoints": {},
+        "timestamps": {}
+    },
+    "86": {
+        "deconflictTime": 9.930899977916852e-05,
+        "deconflictionFailed": false,
+        "setpoints": {},
+        "timestamps": {}
+    },
+    "87": {
+        "deconflictTime": 0.00016357900040020468,
+        "deconflictionFailed": false,
+        "setpoints": {},
+        "timestamps": {}
+    },
+    "88": {
+        "deconflictTime": 9.867400058283238e-05,
+        "deconflictionFailed": false,
+        "setpoints": {},
+        "timestamps": {}
+    },
+    "89": {
+        "deconflictTime": 0.00010386899975856068,
+        "deconflictionFailed": false,
+        "setpoints": {},
+        "timestamps": {}
+    },
+    "90": {
+        "deconflictTime": 0.00010097999984282069,
+        "deconflictionFailed": false,
+        "setpoints": {},
+        "timestamps": {}
+    },
+    "91": {
+        "deconflictTime": 0.00010286300039297203,
+        "deconflictionFailed": false,
+        "setpoints": {},
+        "timestamps": {}
+    },
+    "92": {
+        "deconflictTime": 0.00010224700054095592,
+        "deconflictionFailed": false,
+        "setpoints": {},
+        "timestamps": {}
+    },
+    "93": {
+        "deconflictTime": 8.985299973574001e-05,
+        "deconflictionFailed": false,
+        "setpoints": {},
+        "timestamps": {}
+    },
+    "94": {
+        "deconflictTime": 9.81820003289613e-05,
+        "deconflictionFailed": false,
+        "setpoints": {},
+        "timestamps": {}
+    },
+    "95": {
+        "deconflictTime": 0.00011473700033093337,
+        "deconflictionFailed": false,
+        "setpoints": {},
+        "timestamps": {}
+    },
+    "96": {
+        "deconflictTime": 0.0001259299997400376,
+        "deconflictionFailed": false,
+        "setpoints": {},
+        "timestamps": {}
+    }
+}
