@@ -1,576 +1,576 @@
 {
     "1": {
-        "deconflictTime": 0.00010435400008645956,
+        "deconflictTime": 9.855600001174025e-05,
         "deconflictionFailed": false,
         "setpoints": {},
         "timestamps": {}
     },
     "2": {
-        "deconflictTime": 0.00010468100026628235,
+        "deconflictTime": 9.503099954599747e-05,
         "deconflictionFailed": false,
         "setpoints": {},
         "timestamps": {}
     },
     "3": {
-        "deconflictTime": 9.649899993746658e-05,
+        "deconflictTime": 0.00010360299984313315,
         "deconflictionFailed": false,
         "setpoints": {},
         "timestamps": {}
     },
     "4": {
-        "deconflictTime": 0.00012481200019465177,
+        "deconflictTime": 8.8240000877704e-05,
         "deconflictionFailed": false,
         "setpoints": {},
         "timestamps": {}
     },
     "5": {
-        "deconflictTime": 0.00010614199982228456,
+        "deconflictTime": 9.87900002655806e-05,
         "deconflictionFailed": false,
         "setpoints": {},
         "timestamps": {}
     },
     "6": {
-        "deconflictTime": 0.00012248499979250482,
+        "deconflictTime": 0.00013980400035507046,
         "deconflictionFailed": false,
         "setpoints": {},
         "timestamps": {}
     },
     "7": {
-        "deconflictTime": 0.00015080000002853922,
+        "deconflictTime": 0.00011135900058434345,
         "deconflictionFailed": false,
         "setpoints": {},
         "timestamps": {}
     },
     "8": {
-        "deconflictTime": 9.257900001102826e-05,
+        "deconflictTime": 0.00010579100035101874,
         "deconflictionFailed": false,
         "setpoints": {},
         "timestamps": {}
     },
     "9": {
-        "deconflictTime": 0.00010766900004455238,
+        "deconflictTime": 9.9176999356132e-05,
         "deconflictionFailed": false,
         "setpoints": {},
         "timestamps": {}
     },
     "10": {
-        "deconflictTime": 0.00010030400017058128,
+        "deconflictTime": 0.00010233700049866457,
         "deconflictionFailed": false,
         "setpoints": {},
         "timestamps": {}
     },
     "11": {
-        "deconflictTime": 0.00012334900020505302,
+        "deconflictTime": 9.393399977852823e-05,
         "deconflictionFailed": false,
         "setpoints": {},
         "timestamps": {}
     },
     "12": {
-        "deconflictTime": 0.00010033699982159305,
+        "deconflictTime": 0.00014717900012328755,
         "deconflictionFailed": false,
         "setpoints": {},
         "timestamps": {}
     },
     "13": {
-        "deconflictTime": 8.920700020098593e-05,
+        "deconflictTime": 0.00011962799999309937,
         "deconflictionFailed": false,
         "setpoints": {},
         "timestamps": {}
     },
     "14": {
-        "deconflictTime": 0.0001919070000440115,
+        "deconflictTime": 9.086099998967256e-05,
         "deconflictionFailed": false,
         "setpoints": {},
         "timestamps": {}
     },
     "15": {
-        "deconflictTime": 0.0001150739999502548,
+        "deconflictTime": 0.00010271700011799112,
         "deconflictionFailed": false,
         "setpoints": {},
         "timestamps": {}
     },
     "16": {
-        "deconflictTime": 0.00011981099987679045,
+        "deconflictTime": 0.00010797899994940963,
         "deconflictionFailed": false,
         "setpoints": {},
         "timestamps": {}
     },
     "17": {
-        "deconflictTime": 9.826199993767659e-05,
+        "deconflictTime": 0.00013390000003710156,
         "deconflictionFailed": false,
         "setpoints": {},
         "timestamps": {}
     },
     "18": {
-        "deconflictTime": 9.228399994754e-05,
+        "deconflictTime": 0.00010442599977977807,
         "deconflictionFailed": false,
         "setpoints": {},
         "timestamps": {}
     },
     "19": {
-        "deconflictTime": 9.859600004347158e-05,
+        "deconflictTime": 0.00011634699967544293,
         "deconflictionFailed": false,
         "setpoints": {},
         "timestamps": {}
     },
     "20": {
-        "deconflictTime": 9.650899983171257e-05,
+        "deconflictTime": 0.0001222000000780099,
         "deconflictionFailed": false,
         "setpoints": {},
         "timestamps": {}
     },
     "21": {
-        "deconflictTime": 0.00010399299981145305,
+        "deconflictTime": 0.00010674500026652822,
         "deconflictionFailed": false,
         "setpoints": {},
         "timestamps": {}
     },
     "22": {
-        "deconflictTime": 0.00011223199999221833,
+        "deconflictTime": 9.772599969437579e-05,
         "deconflictionFailed": false,
         "setpoints": {},
         "timestamps": {}
     },
     "23": {
-        "deconflictTime": 0.00016588600010436494,
+        "deconflictTime": 0.0001165430003311485,
         "deconflictionFailed": false,
         "setpoints": {},
         "timestamps": {}
     },
     "24": {
-        "deconflictTime": 0.00010126999995918595,
+        "deconflictTime": 9.697699988464592e-05,
         "deconflictionFailed": false,
         "setpoints": {},
         "timestamps": {}
     },
     "25": {
-        "deconflictTime": 0.00010033099988504546,
+        "deconflictTime": 0.00011171400001330767,
         "deconflictionFailed": false,
         "setpoints": {},
         "timestamps": {}
     },
     "26": {
-        "deconflictTime": 0.0001091019998966658,
+        "deconflictTime": 0.00011921499935851898,
         "deconflictionFailed": false,
         "setpoints": {},
         "timestamps": {}
     },
     "27": {
-        "deconflictTime": 0.00013589300033345353,
+        "deconflictTime": 0.00011151099988637725,
         "deconflictionFailed": false,
         "setpoints": {},
         "timestamps": {}
     },
     "28": {
-        "deconflictTime": 9.568999985276605e-05,
+        "deconflictTime": 0.0001322739999523037,
         "deconflictionFailed": false,
         "setpoints": {},
         "timestamps": {}
     },
     "29": {
-        "deconflictTime": 9.491499986324925e-05,
+        "deconflictTime": 0.0001019040000755922,
         "deconflictionFailed": false,
         "setpoints": {},
         "timestamps": {}
     },
     "30": {
-        "deconflictTime": 9.765200002220809e-05,
+        "deconflictTime": 0.00010460199973749695,
         "deconflictionFailed": false,
         "setpoints": {},
         "timestamps": {}
     },
     "31": {
-        "deconflictTime": 0.00011490799988678191,
+        "deconflictTime": 0.00010497099992790027,
         "deconflictionFailed": false,
         "setpoints": {},
         "timestamps": {}
     },
     "32": {
-        "deconflictTime": 0.00012060300014127279,
+        "deconflictTime": 0.000101902000096743,
         "deconflictionFailed": false,
         "setpoints": {},
         "timestamps": {}
     },
     "33": {
-        "deconflictTime": 9.627200006434578e-05,
+        "deconflictTime": 9.799600047699641e-05,
         "deconflictionFailed": false,
         "setpoints": {},
         "timestamps": {}
     },
     "34": {
-        "deconflictTime": 0.00010000500014939462,
+        "deconflictTime": 0.00011582999923120951,
         "deconflictionFailed": false,
         "setpoints": {},
         "timestamps": {}
     },
     "35": {
-        "deconflictTime": 0.00018016900003203773,
+        "deconflictTime": 9.803499960980844e-05,
         "deconflictionFailed": false,
         "setpoints": {},
         "timestamps": {}
     },
     "36": {
-        "deconflictTime": 0.00010325299990654457,
+        "deconflictTime": 0.00022204600008990383,
         "deconflictionFailed": false,
         "setpoints": {},
         "timestamps": {}
     },
     "37": {
-        "deconflictTime": 9.335400000054506e-05,
+        "deconflictTime": 0.0001061590000972501,
         "deconflictionFailed": false,
         "setpoints": {},
         "timestamps": {}
     },
     "38": {
-        "deconflictTime": 0.00011874299980263459,
+        "deconflictTime": 0.00010263799958920572,
         "deconflictionFailed": false,
         "setpoints": {},
         "timestamps": {}
     },
     "39": {
-        "deconflictTime": 0.00012655199998334865,
+        "deconflictTime": 0.00010438999925099779,
         "deconflictionFailed": false,
         "setpoints": {},
         "timestamps": {}
     },
     "40": {
-        "deconflictTime": 0.00020406900011948892,
+        "deconflictTime": 0.00010796700007631443,
         "deconflictionFailed": false,
         "setpoints": {},
         "timestamps": {}
     },
     "41": {
-        "deconflictTime": 0.00011101399968538317,
+        "deconflictTime": 0.00010753500009741401,
         "deconflictionFailed": false,
         "setpoints": {},
         "timestamps": {}
     },
     "42": {
-        "deconflictTime": 0.00011242400023547816,
+        "deconflictTime": 0.00012072399931639666,
         "deconflictionFailed": false,
         "setpoints": {},
         "timestamps": {}
     },
     "43": {
-        "deconflictTime": 9.520200001134071e-05,
+        "deconflictTime": 0.00011714499942172552,
         "deconflictionFailed": false,
         "setpoints": {},
         "timestamps": {}
     },
     "44": {
-        "deconflictTime": 0.0001088010003513773,
+        "deconflictTime": 0.0001261670004168991,
         "deconflictionFailed": false,
         "setpoints": {},
         "timestamps": {}
     },
     "45": {
-        "deconflictTime": 0.00010129200018127449,
+        "deconflictTime": 0.00012184299976070179,
         "deconflictionFailed": false,
         "setpoints": {},
         "timestamps": {}
     },
     "46": {
-        "deconflictTime": 0.00010060199974759598,
+        "deconflictTime": 0.0001146060003520688,
         "deconflictionFailed": false,
         "setpoints": {},
         "timestamps": {}
     },
     "47": {
-        "deconflictTime": 9.735599996929523e-05,
+        "deconflictTime": 0.00010240999927191297,
         "deconflictionFailed": false,
         "setpoints": {},
         "timestamps": {}
     },
     "48": {
-        "deconflictTime": 0.00012246899996171123,
+        "deconflictTime": 9.871000020211795e-05,
         "deconflictionFailed": false,
         "setpoints": {},
         "timestamps": {}
     },
     "49": {
-        "deconflictTime": 8.836200004225248e-05,
+        "deconflictTime": 0.00011222600005567074,
         "deconflictionFailed": false,
         "setpoints": {},
         "timestamps": {}
     },
     "50": {
-        "deconflictTime": 0.00010151800051971804,
+        "deconflictTime": 0.00020559699987643398,
         "deconflictionFailed": false,
         "setpoints": {},
         "timestamps": {}
     },
     "51": {
-        "deconflictTime": 9.941699954651995e-05,
+        "deconflictTime": 9.742700058268383e-05,
         "deconflictionFailed": false,
         "setpoints": {},
         "timestamps": {}
     },
     "52": {
-        "deconflictTime": 0.00012306799999350915,
+        "deconflictTime": 0.00011182700018252945,
         "deconflictionFailed": false,
         "setpoints": {},
         "timestamps": {}
     },
     "53": {
-        "deconflictTime": 9.28899999053101e-05,
+        "deconflictTime": 0.00010993700016115326,
         "deconflictionFailed": false,
         "setpoints": {},
         "timestamps": {}
     },
     "54": {
-        "deconflictTime": 0.00011552700016181916,
+        "deconflictTime": 9.561000024405075e-05,
         "deconflictionFailed": false,
         "setpoints": {},
         "timestamps": {}
     },
     "55": {
-        "deconflictTime": 0.00011110900049970951,
+        "deconflictTime": 0.00018259100033901632,
         "deconflictionFailed": false,
         "setpoints": {},
         "timestamps": {}
     },
     "56": {
-        "deconflictTime": 0.00010589400062599452,
+        "deconflictTime": 0.00011314200037304545,
         "deconflictionFailed": false,
         "setpoints": {},
         "timestamps": {}
     },
     "57": {
-        "deconflictTime": 9.395300003234297e-05,
+        "deconflictTime": 0.00011210299999220297,
         "deconflictionFailed": false,
         "setpoints": {},
         "timestamps": {}
     },
     "58": {
-        "deconflictTime": 9.852999937720597e-05,
+        "deconflictTime": 0.00010295599986420712,
         "deconflictionFailed": false,
         "setpoints": {},
         "timestamps": {}
     },
     "59": {
-        "deconflictTime": 0.00010751899935712572,
+        "deconflictTime": 0.00011820199961221078,
         "deconflictionFailed": false,
         "setpoints": {},
         "timestamps": {}
     },
     "60": {
-        "deconflictTime": 0.00010237500009679934,
+        "deconflictTime": 0.00011210899992875056,
         "deconflictionFailed": false,
         "setpoints": {},
         "timestamps": {}
     },
     "61": {
-        "deconflictTime": 9.791499996936182e-05,
+        "deconflictTime": 0.00011313000049995026,
         "deconflictionFailed": false,
         "setpoints": {},
         "timestamps": {}
     },
     "62": {
-        "deconflictTime": 9.781199969438603e-05,
+        "deconflictTime": 0.00010550000024522888,
         "deconflictionFailed": false,
         "setpoints": {},
         "timestamps": {}
     },
     "63": {
-        "deconflictTime": 0.0001083349998225458,
+        "deconflictTime": 0.00011274499956925865,
         "deconflictionFailed": false,
         "setpoints": {},
         "timestamps": {}
     },
     "64": {
-        "deconflictTime": 0.00010060800013889093,
+        "deconflictTime": 0.0001054599997587502,
         "deconflictionFailed": false,
         "setpoints": {},
         "timestamps": {}
     },
     "65": {
-        "deconflictTime": 0.00010103600016009295,
+        "deconflictTime": 0.00011563199950614944,
         "deconflictionFailed": false,
         "setpoints": {},
         "timestamps": {}
     },
     "66": {
-        "deconflictTime": 0.00010644600024534157,
+        "deconflictTime": 0.00010674399982235627,
         "deconflictionFailed": false,
         "setpoints": {},
         "timestamps": {}
     },
     "67": {
-        "deconflictTime": 9.652300013840431e-05,
+        "deconflictTime": 0.00011019200064765755,
         "deconflictionFailed": false,
         "setpoints": {},
         "timestamps": {}
     },
     "68": {
-        "deconflictTime": 0.00010990999999194173,
+        "deconflictTime": 0.00013800499982608017,
         "deconflictionFailed": false,
         "setpoints": {},
         "timestamps": {}
     },
     "69": {
-        "deconflictTime": 0.00010024200037150877,
+        "deconflictTime": 9.614299960958306e-05,
         "deconflictionFailed": false,
         "setpoints": {},
         "timestamps": {}
     },
     "70": {
-        "deconflictTime": 9.465800030739047e-05,
+        "deconflictTime": 9.8251000054006e-05,
         "deconflictionFailed": false,
         "setpoints": {},
         "timestamps": {}
     },
     "71": {
-        "deconflictTime": 0.00010331300018151524,
+        "deconflictTime": 0.00011765700037358329,
         "deconflictionFailed": false,
         "setpoints": {},
         "timestamps": {}
     },
     "72": {
-        "deconflictTime": 9.862299975793576e-05,
+        "deconflictTime": 0.00011811900003522169,
         "deconflictionFailed": false,
         "setpoints": {},
         "timestamps": {}
     },
     "73": {
-        "deconflictTime": 0.0001674070008448325,
+        "deconflictTime": 0.00010149399986403296,
         "deconflictionFailed": false,
         "setpoints": {},
         "timestamps": {}
     },
     "74": {
-        "deconflictTime": 9.177999982057372e-05,
+        "deconflictTime": 0.0001078670002243598,
         "deconflictionFailed": false,
         "setpoints": {},
         "timestamps": {}
     },
     "75": {
-        "deconflictTime": 9.73090000115917e-05,
+        "deconflictTime": 0.00011063200054195477,
         "deconflictionFailed": false,
         "setpoints": {},
         "timestamps": {}
     },
     "76": {
-        "deconflictTime": 0.0001073989997166791,
+        "deconflictTime": 0.00012721700022666482,
         "deconflictionFailed": false,
         "setpoints": {},
         "timestamps": {}
     },
     "77": {
-        "deconflictTime": 9.491499986324925e-05,
+        "deconflictTime": 0.00011044199982279679,
         "deconflictionFailed": false,
         "setpoints": {},
         "timestamps": {}
     },
     "78": {
-        "deconflictTime": 0.00010596799984341487,
+        "deconflictTime": 0.00012103000062779756,
         "deconflictionFailed": false,
         "setpoints": {},
         "timestamps": {}
     },
     "79": {
-        "deconflictTime": 0.00010190699958911864,
+        "deconflictTime": 0.0001048479998644325,
         "deconflictionFailed": false,
         "setpoints": {},
         "timestamps": {}
     },
     "80": {
-        "deconflictTime": 0.000127573000099801,
+        "deconflictTime": 0.00010849699992832029,
         "deconflictionFailed": false,
         "setpoints": {},
         "timestamps": {}
     },
     "81": {
-        "deconflictTime": 0.00010993199975928292,
+        "deconflictTime": 0.00011668200022540987,
         "deconflictionFailed": false,
         "setpoints": {},
         "timestamps": {}
     },
     "82": {
-        "deconflictTime": 0.0001123530000768369,
+        "deconflictTime": 0.00012457200045901118,
         "deconflictionFailed": false,
         "setpoints": {},
         "timestamps": {}
     },
     "83": {
-        "deconflictTime": 0.0001135239999712212,
+        "deconflictTime": 9.794999914447544e-05,
         "deconflictionFailed": false,
         "setpoints": {},
         "timestamps": {}
     },
     "84": {
-        "deconflictTime": 9.718699948280118e-05,
+        "deconflictTime": 0.00010819499948411249,
         "deconflictionFailed": false,
         "setpoints": {},
         "timestamps": {}
     },
     "85": {
-        "deconflictTime": 9.112999941862654e-05,
+        "deconflictTime": 0.00011138399986521108,
         "deconflictionFailed": false,
         "setpoints": {},
         "timestamps": {}
     },
     "86": {
-        "deconflictTime": 0.00010284700056217844,
+        "deconflictTime": 9.460900037083775e-05,
         "deconflictionFailed": false,
         "setpoints": {},
         "timestamps": {}
     },
     "87": {
-        "deconflictTime": 9.929899988492252e-05,
+        "deconflictTime": 0.00012315499952819664,
         "deconflictionFailed": false,
         "setpoints": {},
         "timestamps": {}
     },
     "88": {
-        "deconflictTime": 0.00017400300021108706,
+        "deconflictTime": 0.00014494999959424604,
         "deconflictionFailed": false,
         "setpoints": {},
         "timestamps": {}
     },
     "89": {
-        "deconflictTime": 0.0001019709998217877,
+        "deconflictTime": 9.742800011736108e-05,
         "deconflictionFailed": false,
         "setpoints": {},
         "timestamps": {}
     },
     "90": {
-        "deconflictTime": 9.923099969455507e-05,
+        "deconflictTime": 0.0001027509997584275,
         "deconflictionFailed": false,
         "setpoints": {},
         "timestamps": {}
     },
     "91": {
-        "deconflictTime": 9.897299969452433e-05,
+        "deconflictTime": 0.00010968599963234738,
         "deconflictionFailed": false,
         "setpoints": {},
         "timestamps": {}
     },
     "92": {
-        "deconflictTime": 9.752400001161732e-05,
+        "deconflictTime": 0.00010440799997013528,
         "deconflictionFailed": false,
         "setpoints": {},
         "timestamps": {}
     },
     "93": {
-        "deconflictTime": 9.689299986348487e-05,
+        "deconflictTime": 0.0001265680002688896,
         "deconflictionFailed": false,
         "setpoints": {},
         "timestamps": {}
     },
     "94": {
-        "deconflictTime": 0.0001156960006483132,
+        "deconflictTime": 0.00011427400022512302,
         "deconflictionFailed": false,
         "setpoints": {},
         "timestamps": {}
     },
     "95": {
-        "deconflictTime": 0.00013637200027005747,
+        "deconflictTime": 0.0001026720001391368,
         "deconflictionFailed": false,
         "setpoints": {},
         "timestamps": {}
     },
     "96": {
-        "deconflictTime": 0.00012122699990868568,
+        "deconflictTime": 9.175200011668494e-05,
         "deconflictionFailed": false,
         "setpoints": {},
         "timestamps": {}

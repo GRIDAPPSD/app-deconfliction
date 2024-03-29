@@ -150,11 +150,11 @@ class FeederAgentLevelMeanSetpointService(FeederAgent):
         if self.conflictTime == 96:
             #TODO: move all this to a __del__() method when deconfliction pipeline service properly implements a clean exit
             print(f"Maximum deconfliction time was {self.maxDeconflictionTime}")
-            resultFile = Path(__file__).parent.resolve() / f'feeder_area_{self.downstream_message_bus_def.id}_' \
+            resultFile = Path(__file__).parent.resolve() / f'feeder_area_{self.agent_id}_' \
                                                             'resolutionResults.json'
             with resultFile.open(mode="w") as rf:
                 json.dump(self.resolutionDict, rf, indent=4, sort_keys=True)
-            conflictFile = Path(__file__).parent.resolve() / f'feeder_area_{self.downstream_message_bus_def.id}_' \
+            conflictFile = Path(__file__).parent.resolve() / f'feeder_area_{self.agent_id}_' \
                                                                 'conflictResults.json'
             with conflictFile.open(mode="w") as rf:
                 json.dump(self.conflictDump, rf, indent=4, sort_keys=True)
@@ -277,11 +277,11 @@ class SwitchAreaAgentLevelMeanSetpointService(SwitchAreaAgent):
             #TODO: move all this to a __del__() method when deconfliction pipeline service properly implements a clean exit
             print(f"Maximum deconfliction time was {self.maxDeconflictionTime}")
             resultFile = Path(__file__).parent.resolve() \
-                         / f'switch_area_{self.downstream_message_bus_def.id}_resolutionResults.json'
+                         / f'switch_area_{self.agent_id}_resolutionResults.json'
             with resultFile.open(mode="w") as rf:
                 json.dump(self.resolutionDict, rf, indent=4, sort_keys=True)
             conflictFile = Path(__file__).parent.resolve() \
-                           / f'switch_area_{self.downstream_message_bus_def.id}_conflictResults.json'
+                           / f'switch_area_{self.agent_id}_conflictResults.json'
             with conflictFile.open(mode="w") as rf:
                 json.dump(self.conflictDump, rf, indent=4, sort_keys=True)
         return (False, self.resolutionVector)
@@ -373,11 +373,11 @@ class SecondaryAreaAgentLevelMeanSetpointService(SecondaryAreaAgent):
             #TODO: move all this to a __del__() method when deconfliction pipeline service properly implements a clean exit
             print(f"Maximum deconfliction time was {self.maxDeconflictionTime}")
             resultFile = Path(__file__).parent.resolve() \
-                         / f'secondary_area_{self.downstream_message_bus_def.id}_resolutionResults.json'
+                         / f'secondary_area_{self.agent_id}_resolutionResults.json'
             with resultFile.open(mode="w") as rf:
                 json.dump(self.resolutionDict, rf, indent=4, sort_keys=True)
             conflictFile = Path(__file__).parent.resolve() \
-                           / f'secondary_area_{self.downstream_message_bus_def.id}_conflictResults.json'
+                           / f'secondary_area_{self.agent_id}_conflictResults.json'
             with conflictFile.open(mode="w") as rf:
                 json.dump(self.conflictDump, rf, indent=4, sort_keys=True)
         return (False, resolutionVector)
@@ -413,7 +413,7 @@ def getPeakShavingSetpoint(timestep: int, deviceName: str) -> Dict:
     data = pd.read_csv(dataFile)
     for i in data.index:
         if data.at[i, "time"] == timestep:
-            rv["peak_shaving-app"] = float(data.at[i, deviceName])
+            rv["peak_shaving-app"] = float(data.at[i, deviceName]) * 1000.0
             break
     return rv
 
