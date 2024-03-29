@@ -28,29 +28,37 @@ class DeconflictionMethod:
         self.resolutionDict = {}
         self.maxDeconflictionTime = -1
         self.conflictDump = {}
+        self.gapps.subscribe('goss.gridappsd.request.data.resolution', self.on_resolution_message)
     
     def deconflict(self, app_name: str, currentTime: int) -> Dict:
-        deconflictStart = time.perf_counter()
+        self.deconflictStart = time.perf_counter()
         for timeVal in self.conflictMatrix.get("timestamps",{}).values():
             self.conflictTime = max(self.conflictTime, timeVal)
-        deconflictionFailed = False
-        distributedResolutionVector = {}
-        resolutionVector = {
+        self.deconflictionFailed = False
+        self.distributedResolutionVector = {}
+        self.resolutionVector = {
             "setpoints": {},
             "timestamps": {}
         }
         systemBusRequestTopic = gt.field_agent_request_queue("_E3D03A27-B988-4D79-BFAB-F9D37FB289F7",
                                                              'da_mean_setpoint_deconfliction_service_'
                                                              '_E3D03A27-B988-4D79-BFAB-F9D37FB289F7')
+        print('SYSTEM BUS', systemBusRequestTopic)
         systemBusRequestMessage = {"requestType": "Deconflict","conflictMatrix": self.conflictMatrix}
-        deconflictionResponse = self.gapps.get_response(systemBusRequestTopic, systemBusRequestMessage, timeout=60)
+        deconflictionResponse = self.gapps.send(systemBusRequestTopic, systemBusRequestMessage)#, timeout=30)
+        
+
+
+    def on_resolution_message(self, headers, message):
+        deconflictionResponse = message
+        print('received resolution vector')
         distributedResolutionVector = deconflictionResponse.get("resolutionVector", 
                                                                 {"setpoints": {}, "timestamps": {}})
-        resolutionVector["setpoints"].update(distributedResolutionVector["setpoints"])
-        resolutionVector["timestamps"].update(distributedResolutionVector["timestamps"])
-        deconflictTime = time.perf_counter() - deconflictStart
+        self.resolutionVector["setpoints"].update(distributedResolutionVector["setpoints"])
+        self.resolutionVector["timestamps"].update(distributedResolutionVector["timestamps"])
+        deconflictTime = time.perf_counter() - self.deconflictStart
         print(f"deconfliction for timestamp, {self.conflictTime}, took {deconflictTime}s.\n\n\n")
-        self.resolutionDict[self.conflictTime] = resolutionVector
+        self.resolutionDict[self.conflictTime] = self.resolutionVector
         self.resolutionDict[self.conflictTime]["deconflictTime"] = deconflictTime
         self.resolutionDict[self.conflictTime]["deconflictionFailed"] = deconflictionFailed = False
         self.maxDeconflictionTime = max(self.maxDeconflictionTime, deconflictTime)
@@ -65,4 +73,6 @@ class DeconflictionMethod:
             conflictFile = Path(__file__).parent.resolve() / 'conflictResults.json'
             with conflictFile.open(mode="w") as rf:
                 json.dump(self.conflictDump, rf, indent=4, sort_keys=True)
-        return (False, resolutionVector)
+        print('returned resolution vector')
+        self.gapps.send('goss.gridappsd.request.data.resolution_vector', self.resolutionVector)
+    

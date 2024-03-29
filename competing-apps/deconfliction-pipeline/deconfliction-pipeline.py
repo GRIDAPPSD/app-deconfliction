@@ -228,14 +228,20 @@ class DeconflictionPipeline(GridAPPSD):
   def DeconflictionToResolution(self, app_name, timestamp, set_points):
     # If there is a conflict, then the call the deconflict method for the given
     # methodology to produce a resolution
-    fullResolutionFlag = True
+    self.timestamp = timestamp
+    self.set_points = set_points
     if len(MethodUtil.ConflictSubMatrix['setpoints']) > 0:
       returned = self.decon_method.deconflict(app_name, timestamp)
-      if type(returned) is tuple:
-        fullResolutionFlag = returned[0]
-        newResolutionVector = returned[1]
-      else:
-        newResolutionVector = returned
+
+  def on_resolution_message(self, headers, message):
+    returned = message
+    if type(returned) is tuple:
+      fullResolutionFlag = returned[0]
+      newResolutionVector = returned[1]
+    else:
+      newResolutionVector = returned
+      fullResolutionFlag = False
+
 
       # GDB 6/2/23 The logic that updates ConflictMatrix below is flawed
       # in that updates effectively indicate that apps are happy with the
@@ -279,12 +285,12 @@ class DeconflictionPipeline(GridAPPSD):
       # next copy the new set-points over top of the previous resolution
       # which handles any devices where there was no conflict and if there
       # is conflict, we are counting on newResolutionVector to override those
-      for device, value in set_points.items():
+      for device, value in self.set_points.items():
         # uncomment the following line to only include batteries in resolution
         # for testing
         #if device.startswith('BatteryUnit.'):
           fullResolutionVector['setpoints'][device] = value
-          fullResolutionVector['timestamps'][device] = timestamp
+          fullResolutionVector['timestamps'][device] = self.timestamp
 
       # finally, if there were conflicts, then overlay the resolution to those
       if len(MethodUtil.ConflictSubMatrix['setpoints']) > 0:
@@ -327,7 +333,7 @@ class DeconflictionPipeline(GridAPPSD):
     if self.testDeconMethodFlag:
       testFullResolutionFlag = True
       if len(MethodUtil.ConflictSubMatrix['setpoints']) > 0:
-        testReturned = self.decon_method_test.deconflict(timestamp)
+        testReturned = self.decon_method_test.deconflict(self.timestamp)
         if type(testReturned) is tuple:
           testFullResolutionFlag = returned[0]
           testNewResolutionVector = returned[1]
@@ -341,12 +347,12 @@ class DeconflictionPipeline(GridAPPSD):
          not testFullResolutionFlag:
         testFullResolutionVector = copy.deepcopy(self.ResolutionVector)
 
-        for device, value in set_points.items():
+        for device, value in self.set_points.items():
           # uncomment the following line to only include batteries in resolution
           # for testing
           #if device.startswith('BatteryUnit.'):
             testFullResolutionVector['setpoints'][device] = value
-            testFullResolutionVector['timestamps'][device] = timestamp
+            testFullResolutionVector['timestamps'][device] = self.timestamp
 
         if len(MethodUtil.ConflictSubMatrix['setpoints']) > 0:
           for device in testNewResolutionVector['setpoints']:
@@ -382,8 +388,10 @@ class DeconflictionPipeline(GridAPPSD):
         print('!!!!!!!!!!!!!!!!!!!!!!!!! DIFF TEST ResolutionVector: ' +
               str(testFullResolutionVector), flush=True)
         exit()
-
-    return fullResolutionVector
+    self.ResolutionVector = newResolutionVector
+    self.DeviceDispatcher(self.timestamp, newResolutionVector)
+    
+    # return fullResolutionVector
 
 
   ''' SOC MOVE
@@ -541,7 +549,7 @@ class DeconflictionPipeline(GridAPPSD):
 
         if self.testDevice and device==self.testDevice:
             print('~TEST: Dispatching to device: ' + device + ', timestamp: ' +
-                  str(timetstamp) + ', value: ' + str(value), flush=True)
+                  str(timestamp) + ', value: ' + str(value), flush=True)
 
     # it's also possible a device from the last resolution does not appear
     # in the new resolution.  In this case it's a "don't care" for the new
@@ -623,7 +631,7 @@ class DeconflictionPipeline(GridAPPSD):
 
 
   def on_setpoints_message(self, headers, message):
-    print('Received set-points message: ' + str(message), flush=True)
+    # print('Received set-points message: ' + str(message), flush=True)
 
     # for SHIVA conflict metric testing
     #realTime = round(time.time(), 4)
@@ -634,7 +642,7 @@ class DeconflictionPipeline(GridAPPSD):
 
     # GDB 8/14/23 Comment this out while we get cvxpy optimization working
     #MethodUtil.OptimizationProblem = message['opt_prob']
-    MethodUtil.Objective = message['objective']
+    # MethodUtil.Objective = message['objective']
 
     # for checking order of messages received
     print('~ORDER: timestamp: ' + str(timestamp) + ', app: ' + app_name,
@@ -674,6 +682,7 @@ class DeconflictionPipeline(GridAPPSD):
     self.ConflictIdentification(app_name, timestamp, set_points)
 
     # Steps 3.2 and 3.3: Deconfliction Solution and Resolution
+    
     newResolutionVector = self.DeconflictionToResolution(app_name, timestamp,
                                                          set_points)
 
@@ -683,7 +692,7 @@ class DeconflictionPipeline(GridAPPSD):
     ''' SOC MOVE
     revised_socs = self.DeviceDispatcher(timestamp, newResolutionVector)
     '''
-    self.DeviceDispatcher(timestamp, newResolutionVector)
+    # self.DeviceDispatcher(timestamp, newResolutionVector)
 
     ''' SOC MOVE
     # Feedback loop with competing apps through revised SoC values so they
@@ -695,8 +704,8 @@ class DeconflictionPipeline(GridAPPSD):
 
     # Update the current resolution to the new resolution to be ready for the
     # next set-points message
-    self.ResolutionVector.clear()
-    self.ResolutionVector = newResolutionVector
+    # self.ResolutionVector.clear()
+    # self.ResolutionVector = newResolutionVector
 
     # for SHIVA conflict metric testing
     #self.TimeConflictMatrix[realTime] = copy.deepcopy(self.ConflictMatrix)
@@ -784,8 +793,8 @@ class DeconflictionPipeline(GridAPPSD):
 
     DeconflictionMethod = getattr(importlib.import_module(basename),
                                   'DeconflictionMethod')
-    # self.decon_method = DeconflictionMethod(gapps, self.ConflictMatrix)
-    self.decon_method = DeconflictionMethod(self.ConflictMatrix)
+    self.decon_method = DeconflictionMethod(gapps, self.ConflictMatrix)
+    # self.decon_method = DeconflictionMethod(self.ConflictMatrix)
 
     if self.testDeconMethodFlag:
       if method_test.endswith('.py'):
@@ -814,6 +823,8 @@ class DeconflictionPipeline(GridAPPSD):
     # subscribe to competing app set-points messages
     gapps.subscribe(service_output_topic('gridappsd-competing-app',
                                       simulation_id), self.on_setpoints_message)
+    
+    gapps.subscribe('goss.gridappsd.request.data.resolution_vector', self.on_resolution_message)
 
     # subscribe to simulation output messages to get updated SoC values
     gapps.subscribe(service_output_topic('gridappsd-sim-sim', simulation_id),

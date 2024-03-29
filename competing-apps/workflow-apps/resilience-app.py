@@ -197,7 +197,7 @@ class CompetingApp(GridAPPSD):
     BatterySoC = in_message['BatterySoC']
     #print('time series time: ' + str(time) + ', loadshape: ' + str(loadshape) + ', solar: ' + str(solar) + ', price: ' + str(price) + ', BatterySoC: ' + str(BatterySoC), flush=True)
 
-    self.updateSoC(BatterySoC)
+    self.updateSoC(BatterySoC, self.Batteries)
 
     self.t_plot.append(AppUtil.to_datetime(time)) # plotting
 

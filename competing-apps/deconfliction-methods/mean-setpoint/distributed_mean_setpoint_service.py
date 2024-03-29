@@ -8,7 +8,7 @@ import os
 from pathlib import Path
 import time
 from typing import Dict, List, Optional
-
+from gridappsd import GridAPPSD
 from cimgraph.data_profile import CIM_PROFILE
 from cimgraph.models import DistributedArea
 import cimgraph.utils as cimUtils
@@ -44,6 +44,10 @@ class FeederAgentLevelAverageSetpointsService(FeederAgent):
                  simulation_id: Optional[str] = None):
         super().__init__(upstream_message_bus_def, downstream_message_bus_def,
                          service_config, feeder_dict, simulation_id)
+        os.environ['GRIDAPPSD_USER'] = 'system'
+        os.environ['GRIDAPPSD_PASSWORD'] = 'manager'
+        self.gapps = GridAPPSD()
+        assert self.gapps.connected
         self.isServiceInitialized = False
         self.conflictMatrix = {}
         self.conflictTime = -1
@@ -64,7 +68,10 @@ class FeederAgentLevelAverageSetpointsService(FeederAgent):
         if message.get("requestType", "") == "Deconflict":
             resolutionFailed, resolutionVector = self.deconflict(message.get("conflictMatrix", {}))
             returnMessage = {"resolutionFailed": resolutionFailed, "resolutionVector": resolutionVector}
-            message_bus.send(headers.get('reply-to'), returnMessage)
+            print(headers.get('reply-to'))
+            # message_bus.send(headers.get('reply-to'), returnMessage)
+            self.gapps.send('goss.gridappsd.request.data.resolution',returnMessage)
+            print('returned resolution vector message')
         if message.get("requestType", "") == "is_initialized":
             response = {"is_initialized": self.isServiceInitialized}
             message_bus.send(headers.get('reply-to'), response)
@@ -314,10 +321,10 @@ class SecondaryAreaAgentLevelAverageSetpointsService(SecondaryAreaAgent):
 
 
 def populateAddressableEquipment(distributedArea: DistributedArea):
-    cimUtils.get_all_transformer_data(distributedArea)
-    cimUtils.get_all_load_data(distributedArea)
+    # cimUtils.get_all_transformer_data(distributedArea)
+    # cimUtils.get_all_load_data(distributedArea)
     cimUtils.get_all_inverter_data(distributedArea)
-    cimUtils.get_all_switch_data(distributedArea)
+    # cimUtils.get_all_switch_data(distributedArea)
 
 
 def getMessageBusDefinition(areaId: str) -> MessageBusDefinition:
@@ -453,12 +460,12 @@ def main(**kwargs):
     if len(runningServiceInstances) > 0:
         servicesAreRunning = True
         print("mean setpoint deconfliction services are running!")
-        centralizedConflictMatrixFile = Path(__file__).parent.resolve() / "ConflictMatrix.json"
-        centralizedConflictMatrix = {}
-        with centralizedConflictMatrixFile.open(mode='r') as fh:
-            centralizedConflictMatrix = json.load(fh)
-        if f"{FeederAgentLevelAverageSetpointsService.__name__}:_E3D03A27-B988-4D79-BFAB-F9D37FB289F7" in runningServiceInfo:
-            rv = feederService.deconflict(centralizedConflictMatrix)
+        # centralizedConflicalizedConflictMatrixFile.open(mode='r') as fh:
+        # #     centralizedCtMatrixFile = Path(__file__).parent.resolve() / "ConflictMatrix.json"
+        # centralizedConflictMatrix = {}
+        # with centronflictMatrix = json.load(fh)
+        # if f"{FeederAgentLevelAverageSetpointsService.__name__}:_E3D03A27-B988-4D79-BFAB-F9D37FB289F7" in runningServiceInfo:
+        #     rv = feederService.deconflict(centralizedConflictMatrix)
     while servicesAreRunning:
         try:
             for service in runningServiceInstances:
