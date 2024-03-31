@@ -1,0 +1,96 @@
+! Annotated Master file for Area 3 of the IEEE 123-bus test case.
+!
+! This file is meant to be invoked from the Compile command in the "master_2.DSS"  file.
+! 
+! Note: DSS commands, property names, etc., are NOT case sensitive. Capitalize as you please.
+! You should always do a "Clear" before making a new circuit:
+
+Clear
+
+! INSTANTIATE A NEW CIRCUIT AND DEFINE A STIFF 4160V SOURCE
+! The new circuit is called "master_2"
+! This creates a Vsource object connected to "sourcebus". This is now the active circuit element, so
+! you can simply continue to edit its property value. 
+! The basekV is redefined to 4.16 kV. The bus name is changed to "150" to match one of the buses in the test feeder.
+! The source is set for 1.0 per unit and the Short circuit impedance is set to a small value (0.0001 ohms)
+! The ~ is just shorthad for "more" for the New or Edit commands
+
+New object=circuit.ieee123_area_2
+~ basekv=4.16 Bus1=18 pu=1.00 R1=0 X1=0.0001 R0=0 X0=0.0001
+
+! REDIRECT INPUT STREAM TO FILE CONTAINING DEFINITIONS OF LINECODES
+! This file defines the line impedances is a similar manner to the description in the test case.
+
+Redirect        IEEELinecodes.DSS
+
+! LINE DEFINITIONS
+! Lines are defined by referring to a "linecode" that contains the impedances per unit length
+! So the only properties required are the LineCode name and Length.  Units are assumed to match the definition
+! since no units property is defined in either the Linecodes file or this file.
+! Note that it is not necessary to explicitly specify the node connections for the 3-phase lines
+! unless they are not ".1.2.3". However, they are spelled out here for clarity.
+! The DSS assumes .1.2.3.0.0 ... for connections of 3 or more phases.
+! Likewise, .1 is not necessary for 1-phase lines connected to phase 1. However, if it is connected
+! to any other phase, it must be specified. For completeness, everything is spelled out here.
+!
+! Note that it is recommended that the "units=" property be used here and in the Linecode definition as well
+! to avoid confusion in the future
+
+New Line.L35    Phases=2 Bus1=35.1.2     Bus2=36.1.2     LineCode=8    Length=0.65
+New Line.L36    Phases=3 Bus1=35.1.2.3   Bus2=40.1.2.3   LineCode=1    Length=0.25
+New Line.L37    Phases=1 Bus1=36.1       Bus2=37.1       LineCode=9    Length=0.3
+New Line.L38    Phases=1 Bus1=36.2       Bus2=38.2       LineCode=10   Length=0.25
+New Line.L39    Phases=1 Bus1=38.2       Bus2=39.2       LineCode=10   Length=0.325
+New Line.L40    Phases=1 Bus1=40.3       Bus2=41.3       LineCode=11   Length=0.325
+New Line.L41    Phases=3 Bus1=40.1.2.3   Bus2=42.1.2.3   LineCode=1    Length=0.25
+New Line.L42    Phases=1 Bus1=42.2       Bus2=43.2       LineCode=10   Length=0.5
+New Line.L43    Phases=3 Bus1=42.1.2.3   Bus2=44.1.2.3   LineCode=1    Length=0.2
+New Line.L44    Phases=1 Bus1=44.1       Bus2=45.1       LineCode=9    Length=0.2
+New Line.L45    Phases=3 Bus1=44.1.2.3   Bus2=47.1.2.3   LineCode=1    Length=0.25
+New Line.L46    Phases=1 Bus1=45.1       Bus2=46.1       LineCode=9    Length=0.3
+New Line.L47    Phases=3 Bus1=47.1.2.3   Bus2=48.1.2.3   LineCode=4    Length=0.15
+New Line.L48    Phases=3 Bus1=47.1.2.3   Bus2=49.1.2.3   LineCode=4    Length=0.25
+New Line.L49    Phases=3 Bus1=49.1.2.3   Bus2=50.1.2.3   LineCode=4    Length=0.25
+New Line.L50    Phases=3 Bus1=50.1.2.3   Bus2=51.1.2.3   LineCode=4    Length=0.25
+New Line.L51    Phases=3 Bus1=51.1.2.3   Bus2=151.1.2.3  LineCode=4    Length=0.5
+New Line.L114   Phases=3 Bus1=135.1.2.3  Bus2=35.1.2.3   LineCode=4    Length=0.375
+
+New Load.S35a  Bus1=35.1   Phases=1 Conn=Wye   Model=1 kV=2.4   kW=40.0  kvar=20.0  
+New Load.S37a  Bus1=37.1   Phases=1 Conn=Wye   Model=2 kV=2.4   kW=40.0  kvar=20.0  
+New Load.S38b  Bus1=38.2   Phases=1 Conn=Wye   Model=5 kV=2.4   kW=20.0  kvar=10.0  
+New Load.S39b  Bus1=39.2   Phases=1 Conn=Wye   Model=1 kV=2.4   kW=20.0  kvar=10.0  
+New Load.S41c  Bus1=41.3   Phases=1 Conn=Wye   Model=1 kV=2.4   kW=20.0  kvar=10.0  
+New Load.S42a  Bus1=42.1   Phases=1 Conn=Wye   Model=1 kV=2.4   kW=20.0  kvar=10.0  
+New Load.S43b  Bus1=43.2   Phases=1 Conn=Wye   Model=2 kV=2.4   kW=40.0  kvar=20.0  
+New Load.S45a  Bus1=45.1   Phases=1 Conn=Wye   Model=5 kV=2.4   kW=20.0  kvar=10.0  
+New Load.S46a  Bus1=46.1   Phases=1 Conn=Wye   Model=1 kV=2.4   kW=20.0  kvar=10.0  
+New Load.S47   Bus1=47     Phases=3 Conn=Wye   Model=5 kV=4.160 kW=105.0 kvar=75.0  
+New Load.S48   Bus1=48     Phases=3 Conn=Wye   Model=2 kV=4.160 kW=210.0 kVAR=150.0 
+New Load.S49a  Bus1=49.1   Phases=1 Conn=Wye   Model=1 kV=2.4   kW=35.0  kvar=25.0  
+New Load.S49b  Bus1=49.2   Phases=1 Conn=Wye   Model=1 kV=2.4   kW=70.0  kvar=50.0  
+New Load.S49c  Bus1=49.3   Phases=1 Conn=Wye   Model=1 kV=2.4   kW=35.0  kvar=20.0  ! used to be 25 in on-line document
+New Load.S50c  Bus1=50.3   Phases=1 Conn=Wye   Model=1 kV=2.4   kW=40.0  kvar=20.0  
+New Load.S51a  Bus1=51.1   Phases=1 Conn=Wye   Model=1 kV=2.4   kW=20.0  kvar=10.0    
+
+New Storage.Battery2 phases=1 bus1=44.2 kVA=200 kV=2.4
+~ kWrated=200 kWHrated=600 %reserve=30 %stored=40
+~ state=charge kW=-0.0 PF=1
+
+New "PVSystem.dg_30" bus1=43.2 phases=1 kv=2.4 Pmpp=300 kVA=300 pf=1 irradiance=1 %Cutin=0.1 %Cutout=0.1
+New "PVSystem.dg_36" bus1=49.2 phases=1 kv=2.4 Pmpp=400 kVA=400 pf=1 irradiance=1 %Cutin=0.1 %Cutout=0.1
+
+! NORMALLY CLOSED SWITCHES ARE DEFINED AS SHORT LINES
+! Could also be defned by setting the Switch=Yes property
+
+New Line.Sw3    phases=3  Bus1=18     Bus2=135    switch=True r1=0.001 r0=0.001 x1=0.001 x0=0.001 C1=0 C0=0 length=0.001 
+
+! NORMALLY OPEN SWITCHES; DEFINED AS SHORT LINE TO OPEN BUS SO WE CAN SEE OPEN POINT VOLTAGES. 
+! COULD ALSO BE DEFINED AS DISABLED OR THE TERMINCAL COULD BE OPENED AFTER BEING DEFINED
+
+!New Line.Sw7    phases=3  Bus1=151    Bus2=300_OPEN   r1=1e-3 r0=1e-3  x1=0.000 x0=0.000 c1=0.000 c0=0.000 Length=0.001
+
+
+Set VoltageBases = [4.16, 0.48]    ! ARRAY OF VOLTAGES IN KV
+CalcVoltageBases  ! PERFORMS ZERO LOAD POWER FLOW TO ESTIMATE VOLTAGE BASES
+
+solve

@@ -1,0 +1,98 @@
+! Annotated Master file for Area 3 of the IEEE 123-bus test case.
+!
+! This file is meant to be invoked from the Compile command in the "master_3.DSS"  file.
+! 
+! Note: DSS commands, property names, etc., are NOT case sensitive. Capitalize as you please.
+! You should always do a "Clear" before making a new circuit:
+
+Clear
+
+! INSTANTIATE A NEW CIRCUIT AND DEFINE A STIFF 4160V SOURCE
+! The new circuit is called "master_3"
+! This creates a Vsource object connected to "sourcebus". This is now the active circuit element, so
+! you can simply continue to edit its property value. 
+! The basekV is redefined to 4.16 kV. The bus name is changed to "150" to match one of the buses in the test feeder.
+! The source is set for 1.0 per unit and the Short circuit impedance is set to a small value (0.0001 ohms)
+! The ~ is just shorthad for "more" for the New or Edit commands
+
+New object=circuit.ieee123_area_3
+~ basekv=4.16 Bus1=13 pu=1.00 R1=0 X1=0.0001 R0=0 X0=0.0001
+
+! REDIRECT INPUT STREAM TO FILE CONTAINING DEFINITIONS OF LINECODES
+! This file defines the line impedances is a similar manner to the description in the test case.
+
+Redirect        IEEELinecodes.DSS
+
+! LINE DEFINITIONS
+! Lines are defined by referring to a "linecode" that contains the impedances per unit length
+! So the only properties required are the LineCode name and Length.  Units are assumed to match the definition
+! since no units property is defined in either the Linecodes file or this file.
+! Note that it is not necessary to explicitly specify the node connections for the 3-phase lines
+! unless they are not ".1.2.3". However, they are spelled out here for clarity.
+! The DSS assumes .1.2.3.0.0 ... for connections of 3 or more phases.
+! Likewise, .1 is not necessary for 1-phase lines connected to phase 1. However, if it is connected
+! to any other phase, it must be specified. For completeness, everything is spelled out here.
+!
+! Note that it is recommended that the "units=" property be used here and in the Linecode definition as well
+! to avoid confusion in the future
+
+New Line.L52    Phases=3 Bus1=52.1.2.3   Bus2=53.1.2.3   LineCode=1    Length=0.2
+New Line.L53    Phases=3 Bus1=53.1.2.3   Bus2=54.1.2.3   LineCode=1    Length=0.125
+New Line.L54    Phases=3 Bus1=54.1.2.3   Bus2=55.1.2.3   LineCode=1    Length=0.275
+New Line.L55    Phases=3 Bus1=54.1.2.3   Bus2=57.1.2.3   LineCode=3    Length=0.35
+New Line.L56    Phases=3 Bus1=55.1.2.3   Bus2=56.1.2.3   LineCode=1    Length=0.275
+New Line.L57    Phases=1 Bus1=57.2       Bus2=58.2       LineCode=10   Length=0.25
+New Line.L58    Phases=3 Bus1=57.1.2.3   Bus2=60.1.2.3   LineCode=3    Length=0.75
+New Line.L59    Phases=1 Bus1=58.2       Bus2=59.2       LineCode=10   Length=0.25
+New Line.L60    Phases=3 Bus1=60.1.2.3   Bus2=61.1.2.3   LineCode=5    Length=0.55
+New Line.L61    Phases=3 Bus1=60.1.2.3   Bus2=62.1.2.3   LineCode=12   Length=0.25
+New Line.L62    Phases=3 Bus1=62.1.2.3   Bus2=63.1.2.3   LineCode=12   Length=0.175
+New Line.L63    Phases=3 Bus1=63.1.2.3   Bus2=64.1.2.3   LineCode=12   Length=0.35
+New Line.L64    Phases=3 Bus1=64.1.2.3   Bus2=65.1.2.3   LineCode=12   Length=0.425
+New Line.L65    Phases=3 Bus1=65.1.2.3   Bus2=66.1.2.3   LineCode=12   Length=0.325
+New Line.L116   Phases=3 Bus1=152.1.2.3  Bus2=52.1.2.3   LineCode=1    Length=0.4
+
+! LOAD TRANSFORMER AT 61s/610
+! This is a 150 kVA Delta-Delta stepdown from 4160V to 480V.
+! Removing this transformer..
+!New Transformer.XFM1  Phases=3   Windings=2 Xhl=2.72
+!~ wdg=1 bus=61s       conn=Delta kv=4.16    kva=150    %r=0.635
+!~ wdg=2 bus=610       conn=Delta kv=0.48    kva=150    %r=0.635
+
+New Load.S52a  Bus1=52.1   Phases=1 Conn=Wye   Model=1 kV=2.4   kW=40.0  kvar=20.0  
+New Load.S53a  Bus1=53.1   Phases=1 Conn=Wye   Model=1 kV=2.4   kW=40.0  kvar=20.0  
+New Load.S55a  Bus1=55.1   Phases=1 Conn=Wye   Model=2 kV=2.4   kW=20.0  kvar=10.0  
+New Load.S56b  Bus1=56.2   Phases=1 Conn=Wye   Model=1 kV=2.4   kW=20.0  kvar=10.0  
+New Load.S58b  Bus1=58.2   Phases=1 Conn=Wye   Model=5 kV=2.4   kW=20.0  kvar=10.0  
+New Load.S59b  Bus1=59.2   Phases=1 Conn=Wye   Model=1 kV=2.4   kW=20.0  kvar=10.0  
+New Load.S60a  Bus1=60.1   Phases=1 Conn=Wye   Model=1 kV=2.4   kW=20.0  kvar=10.0  
+New Load.S62c  Bus1=62.3   Phases=1 Conn=Wye   Model=2 kV=2.4   kW=40.0  kvar=20.0  
+New Load.S63a  Bus1=63.1   Phases=1 Conn=Wye   Model=1 kV=2.4   kW=40.0  kvar=20.0  
+New Load.S64b  Bus1=64.2   Phases=1 Conn=Wye   Model=5 kV=2.4   kW=75.0  kvar=35.0  
+New Load.S65a  Bus1=65.1   Phases=1 Conn=Wye   Model=2 kV=2.4   kW=35.0  kvar=25.0  
+New Load.S65b  Bus1=65.2   Phases=1 Conn=Wye   Model=2 kV=2.4   kW=35.0  kvar=25.0  
+New Load.S65c  Bus1=65.3   Phases=1 Conn=Wye   Model=2 kV=2.4   kW=70.0  kvar=50.0  
+New Load.S66c  Bus1=66.3   Phases=1 Conn=Wye   Model=1 kV=2.4   kW=75.0  kvar=35.0  
+
+New Storage.Battery3 phases=1 bus1=65.3 kVA=100 kV=2.4
+~ kWrated=100 kWHrated=400 %reserve=30 %stored=35
+~ state=charge kW=0.0 PF=1
+
+New "PVSystem.dg_42" bus1=55.1 phases=1 kv=2.4 Pmpp=150 kVA=150 pf=1 irradiance=1 %Cutin=0.1 %Cutout=0.1
+New "PVSystem.dg_48" bus1=63.1 phases=1 kv=2.4 Pmpp=250 kVA=250 pf=1 irradiance=1 %Cutin=0.1 %Cutout=0.1
+
+! NORMALLY CLOSED SWITCHES ARE DEFINED AS SHORT LINES
+! Could also be defned by setting the Switch=Yes property
+
+New Line.Sw2    phases=3  Bus1=13     Bus2=152    switch=True r1=0.001 r0=0.001 x1=0.001 x0=0.001 C1=0 C0=0 length=0.001  
+
+! NORMALLY OPEN SWITCHES; DEFINED AS SHORT LINE TO OPEN BUS SO WE CAN SEE OPEN POINT VOLTAGES. 
+! COULD ALSO BE DEFINED AS DISABLED OR THE TERMINCAL COULD BE OPENED AFTER BEING DEFINED
+
+!New Line.Sw8    phases=1  Bus1=54.1   Bus2=94_OPEN.1  r1=1e-3 r0=1e-3  x1=0.000 x0=0.000 c1=0.000 c0=0.000 Length=0.001
+
+
+Set VoltageBases = [4.16, 0.48]    ! ARRAY OF VOLTAGES IN KV
+CalcVoltageBases  ! PERFORMS ZERO LOAD POWER FLOW TO ESTIMATE VOLTAGE BASES
+
+solve

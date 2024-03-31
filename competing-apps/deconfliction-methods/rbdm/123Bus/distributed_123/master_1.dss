@@ -1,0 +1,138 @@
+! Annotated Master file for Area 1 of the IEEE 123-bus test case.
+!
+! This file is meant to be invoked from the Compile command in the "master_1.DSS"  file.
+! 
+! Note: DSS commands, property names, etc., are NOT case sensitive. Capitalize as you please.
+! You should always do a "Clear" before making a new circuit:
+
+Clear
+
+! INSTANTIATE A NEW CIRCUIT AND DEFINE A STIFF 4160V SOURCE
+! The new circuit is called "master_1"
+! This creates a Vsource object connected to "sourcebus". This is now the active circuit element, so
+! you can simply continue to edit its property value. 
+! The basekV is redefined to 4.16 kV. The bus name is changed to "150" to match one of the buses in the test feeder.
+! The source is set for 1.0 per unit and the Short circuit impedance is set to a small value (0.0001 ohms)
+! The ~ is just shorthad for "more" for the New or Edit commands
+
+New object=circuit.ieee123_area_1
+~ basekv=4.16 Bus1=150 pu=1.00 R1=0 X1=0.0001 R0=0 X0=0.0001
+
+! 3-PHASE GANGED REGULATOR AT HEAD OF FEEDER (KERSTING ASSUMES NO IMPEDANCE IN THE REGULATOR)
+! the first line defines the 3-phase transformer to be controlled by the regulator control.
+! The 2nd line defines the properties of the regulator control according to the test case
+
+new transformer.reg1a phases=3 windings=2 buses=[150 150r] conns=[wye wye] kvs=[4.16 4.16] kvas=[5000 5000] XHL=.001 %LoadLoss=0.00001 ppm=0.0
+new regcontrol.creg1a transformer=reg1a winding=2 vreg=120 band=2 ptratio=20 ctprim=700 R=3 X=7.5
+
+! REDIRECT INPUT STREAM TO FILE CONTAINING DEFINITIONS OF LINECODES
+! This file defines the line impedances is a similar manner to the description in the test case.
+
+Redirect        IEEELinecodes.DSS
+
+! LINE DEFINITIONS
+! Lines are defined by referring to a "linecode" that contains the impedances per unit length
+! So the only properties required are the LineCode name and Length.  Units are assumed to match the definition
+! since no units property is defined in either the Linecodes file or this file.
+! Note that it is not necessary to explicitly specify the node connections for the 3-phase lines
+! unless they are not ".1.2.3". However, they are spelled out here for clarity.
+! The DSS assumes .1.2.3.0.0 ... for connections of 3 or more phases.
+! Likewise, .1 is not necessary for 1-phase lines connected to phase 1. However, if it is connected
+! to any other phase, it must be specified. For completeness, everything is spelled out here.
+!
+! Note that it is recommended that the "units=" property be used here and in the Linecode definition as well
+! to avoid confusion in the future
+
+! *** Original *** New Line.L115   Phases=3 Bus1=149.1.2.3  Bus2=1.1.2.3    LineCode=1    Length=0.4
+! Since the default is 3-phase, the definition of this line can be simpler:
+
+New Line.L115            Bus1=149        Bus2=1          LineCode=1    Length=0.4
+New Line.L1     Phases=1 Bus1=1.2        Bus2=2.2        LineCode=10   Length=0.175
+New Line.L2     Phases=1 Bus1=1.3        Bus2=3.3        LineCode=11   Length=0.25
+New Line.L3     Phases=3 Bus1=1.1.2.3    Bus2=7.1.2.3    LineCode=1    Length=0.3
+New Line.L4     Phases=1 Bus1=3.3        Bus2=4.3        LineCode=11   Length=0.2
+New Line.L5     Phases=1 Bus1=3.3        Bus2=5.3        LineCode=11   Length=0.325
+New Line.L6     Phases=1 Bus1=5.3        Bus2=6.3        LineCode=11   Length=0.25
+New Line.L7     Phases=3 Bus1=7.1.2.3    Bus2=8.1.2.3    LineCode=1    Length=0.2
+New Line.L8     Phases=1 Bus1=8.2        Bus2=12.2       LineCode=10   Length=0.225
+New Line.L9     Phases=1 Bus1=8.1        Bus2=9.1        LineCode=9    Length=0.225
+New Line.L10    Phases=3 Bus1=8.1.2.3    Bus2=13.1.2.3   LineCode=1    Length=0.3
+New Line.L11    Phases=1 Bus1=9r.1       Bus2=14.1       LineCode=9    Length=0.425
+New Line.L12    Phases=1 Bus1=13.3       Bus2=34.3       LineCode=11   Length=0.15
+New Line.L13    Phases=3 Bus1=13.1.2.3   Bus2=18.1.2.3   LineCode=2    Length=0.825
+New Line.L14    Phases=1 Bus1=14.1       Bus2=11.1       LineCode=9    Length=0.25
+New Line.L15    Phases=1 Bus1=14.1       Bus2=10.1       LineCode=9    Length=0.25
+New Line.L16    Phases=1 Bus1=15.3       Bus2=16.3       LineCode=11   Length=0.375
+New Line.L17    Phases=1 Bus1=15.3       Bus2=17.3       LineCode=11   Length=0.35
+New Line.L18    Phases=1 Bus1=18.1       Bus2=19.1       LineCode=9    Length=0.25
+New Line.L19    Phases=3 Bus1=18.1.2.3   Bus2=21.1.2.3   LineCode=2    Length=0.3
+New Line.L20    Phases=1 Bus1=19.1       Bus2=20.1       LineCode=9    Length=0.325
+New Line.L21    Phases=1 Bus1=21.2       Bus2=22.2       LineCode=10   Length=0.525
+New Line.L22    Phases=3 Bus1=21.1.2.3   Bus2=23.1.2.3   LineCode=2    Length=0.25
+New Line.L23    Phases=1 Bus1=23.3       Bus2=24.3       LineCode=11   Length=0.55
+New Line.L24    Phases=3 Bus1=23.1.2.3   Bus2=25.1.2.3   LineCode=2    Length=0.275
+New Line.L25    Phases=2 Bus1=25r.1.3    Bus2=26.1.3     LineCode=7    Length=0.35
+New Line.L26    Phases=3 Bus1=25.1.2.3   Bus2=28.1.2.3   LineCode=2    Length=0.2
+New Line.L27    Phases=2 Bus1=26.1.3     Bus2=27.1.3     LineCode=7    Length=0.275
+New Line.L28    Phases=1 Bus1=26.3       Bus2=31.3       LineCode=11   Length=0.225
+New Line.L29    Phases=1 Bus1=27.1       Bus2=33.1       LineCode=9    Length=0.5
+New Line.L30    Phases=3 Bus1=28.1.2.3   Bus2=29.1.2.3   LineCode=2    Length=0.3
+New Line.L31    Phases=3 Bus1=29.1.2.3   Bus2=30.1.2.3   LineCode=2    Length=0.35
+New Line.L32    Phases=3 Bus1=30.1.2.3   Bus2=250.1.2.3  LineCode=2    Length=0.2
+New Line.L33    Phases=1 Bus1=31.3       Bus2=32.3       LineCode=11   Length=0.3
+New Line.L34    Phases=1 Bus1=34.3       Bus2=15.3       LineCode=11   Length=0.1
+
+! NORMALLY CLOSED SWITCHES ARE DEFINED AS SHORT LINES
+! Could also be defned by setting the Switch=Yes property
+
+New Line.Sw1    phases=3  Bus1=150r   Bus2=149    r1=0.001 r0=0.001 x1=0.001 x0=0.001 C1=0 C0=0 length=0.001  
+New Line.Sw2    phases=3  Bus1=13     Bus2=152    switch=True r1=0.001 r0=0.001 x1=0.001 x0=0.001 C1=0 C0=0 length=0.001  
+New Line.Sw3    phases=3  Bus1=18     Bus2=135    switch=True r1=0.001 r0=0.001 x1=0.001 x0=0.001 C1=0 C0=0 length=0.001 
+
+New Load.S1a   Bus1=1.1    Phases=1 Conn=Wye   Model=1 kV=2.4   kW=40.0  kvar=20.0  
+New Load.S2b   Bus1=2.2    Phases=1 Conn=Wye   Model=1 kV=2.4   kW=20.0  kvar=10.0  
+New Load.S4c   Bus1=4.3    Phases=1 Conn=Wye   Model=1 kV=2.4   kW=40.0  kvar=20.0  
+New Load.S5c   Bus1=5.3    Phases=1 Conn=Wye   Model=5 kV=2.4   kW=20.0  kvar=10.0  
+New Load.S6c   Bus1=6.3    Phases=1 Conn=Wye   Model=1 kV=2.4   kW=40.0  kvar=20.0  
+New Load.S7a   Bus1=7.1    Phases=1 Conn=Wye   Model=1 kV=2.4   kW=20.0  kvar=10.0  
+New Load.S9a   Bus1=9.1    Phases=1 Conn=Wye   Model=1 kV=2.4   kW=40.0  kvar=20.0  
+New Load.S10a  Bus1=10.1   Phases=1 Conn=Wye   Model=5 kV=2.4   kW=20.0  kvar=10.0  
+New Load.S11a  Bus1=11.1   Phases=1 Conn=Wye   Model=2 kV=2.4   kW=40.0  kvar=20.0  
+New Load.S12b  Bus1=12.2   Phases=1 Conn=Wye   Model=1 kV=2.4   kW=20.0  kvar=10.0  
+New Load.S16c  Bus1=16.3   Phases=1 Conn=Wye   Model=1 kV=2.4   kW=40.0  kvar=20.0  
+New Load.S17c  Bus1=17.3   Phases=1 Conn=Wye   Model=1 kV=2.4   kW=20.0  kvar=10.0  
+New Load.S19a  Bus1=19.1   Phases=1 Conn=Wye   Model=1 kV=2.4   kW=40.0  kvar=20.0  
+New Load.S20a  Bus1=20.1   Phases=1 Conn=Wye   Model=5 kV=2.4   kW=40.0  kvar=20.0  
+New Load.S22b  Bus1=22.2   Phases=1 Conn=Wye   Model=2 kV=2.4   kW=40.0  kvar=20.0  
+New Load.S24c  Bus1=24.3   Phases=1 Conn=Wye   Model=1 kV=2.4   kW=40.0  kvar=20.0  
+New Load.S28a  Bus1=28.1   Phases=1 Conn=Wye   Model=5 kV=2.4   kW=40.0  kvar=20.0  
+New Load.S29a  Bus1=29.1   Phases=1 Conn=Wye   Model=2 kV=2.4   kW=40.0  kvar=20.0  
+New Load.S30c  Bus1=30.3   Phases=1 Conn=Wye   Model=1 kV=2.4   kW=40.0  kvar=20.0  
+New Load.S31c  Bus1=31.3   Phases=1 Conn=Wye   Model=1 kV=2.4   kW=20.0  kvar=10.0  
+New Load.S32c  Bus1=32.3   Phases=1 Conn=Wye   Model=1 kV=2.4   kW=20.0  kvar=10.0  
+New Load.S33a  Bus1=33.1   Phases=1 Conn=Wye   Model=5 kV=2.4   kW=40.0  kvar=20.0  
+New Load.S34c  Bus1=34.3   Phases=1 Conn=Wye   Model=2 kV=2.4   kW=40.0  kvar=20.0   
+
+New Storage.Battery1 phases=1 bus1=23.1 kVA=125 kV=2.4
+~ kWrated=125 kWHrated=500 %reserve=30 %stored=60
+~ state=charge kW=-0.0 PF=1
+
+New "PVSystem.dg_6" bus1=7.1 phases=1 kv=2.4 Pmpp=120 kVA=120 pf=1 irradiance=1 %Cutin=0.1 %Cutout=0.1
+New "PVSystem.dg_12" bus1=17.3 phases=1 kv=2.4 Pmpp=120 kVA=120 pf=1 irradiance=1 %Cutin=0.1 %Cutout=0.1
+New "PVSystem.dg_18" bus1=29.1 phases=1 kv=2.4 Pmpp=250 kVA=250 pf=1 irradiance=1 %Cutin=0.1 %Cutout=0.1
+
+new transformer.reg2a phases=1          windings=2        buses=[9.1     9r.1]   conns=[wye wye]       kvs=[2.402 2.402] kvas=[2000 2000] XHL=.01 %LoadLoss=0.00001 ppm=0.0 
+new transformer.reg3a phases=1          windings=2        buses=[25.1   25r.1]   conns=[wye wye]       kvs=[2.402 2.402] kvas=[2000 2000] XHL=.01 %LoadLoss=0.00001 ppm=0.0 
+
+new transformer.reg3c like=reg3a                          buses=[25.3   25r.3]      ppm=0.0 
+
+! POINT REGULATOR CONTROLS TO REGULATOR TRANSFORMER AND SET PARAMETERS
+new regcontrol.creg2a               transformer=reg2a winding=2         vreg=120     band=2  ptratio=20 ctprim=50  R=0.4   X=0.4  
+new regcontrol.creg3a               transformer=reg3a winding=2         vreg=120     band=1  ptratio=20 ctprim=50  R=0.4   X=0.4  
+new regcontrol.creg3c like=creg3a   transformer=reg3c
+
+
+Set VoltageBases = [4.16, 0.48]    ! ARRAY OF VOLTAGES IN KV
+CalcVoltageBases  ! PERFORMS ZERO LOAD POWER FLOW TO ESTIMATE VOLTAGE BASES
+
+solve

@@ -1,0 +1,4994 @@
+{
+    "1": {
+        "setpoints": {
+            "BatteryUnit.battery1": {
+                "decarbonization-app": -125000.0,
+                "resilience-app": 125000.0
+            },
+            "BatteryUnit.battery2": {
+                "decarbonization-app": -200000.0,
+                "resilience-app": 200000.0
+            },
+            "BatteryUnit.battery3": {
+                "decarbonization-app": -100000.0,
+                "resilience-app": 100000.0
+            },
+            "BatteryUnit.battery5": {
+                "decarbonization-app": -250000.0,
+                "resilience-app": 250000.0
+            },
+            "RatioTapChanger.reg1a": {
+                "decarbonization-app": 7,
+                "resilience-app": 0
+            },
+            "RatioTapChanger.reg2a": {
+                "decarbonization-app": -7,
+                "resilience-app": 2
+            },
+            "RatioTapChanger.reg3a": {
+                "decarbonization-app": -6,
+                "resilience-app": 6
+            },
+            "RatioTapChanger.reg3c": {
+                "decarbonization-app": -9,
+                "resilience-app": -5
+            },
+            "RatioTapChanger.reg4a": {
+                "decarbonization-app": -4,
+                "resilience-app": 3
+            },
+            "RatioTapChanger.reg4b": {
+                "decarbonization-app": -2,
+                "resilience-app": 5
+            },
+            "RatioTapChanger.reg4c": {
+                "decarbonization-app": -6,
+                "resilience-app": -1
+            }
+        },
+        "timestamps": {
+            "decarbonization-app": 1,
+            "resilience-app": 1
+        }
+    },
+    "2": {
+        "setpoints": {
+            "BatteryUnit.battery1": {
+                "decarbonization-app": -125000.0,
+                "resilience-app": 125000.0
+            },
+            "BatteryUnit.battery2": {
+                "decarbonization-app": -200000.0,
+                "resilience-app": 200000.0
+            },
+            "BatteryUnit.battery3": {
+                "decarbonization-app": -100000.0,
+                "resilience-app": 100000.0
+            },
+            "BatteryUnit.battery5": {
+                "decarbonization-app": -250000.0,
+                "resilience-app": 250000.0
+            },
+            "RatioTapChanger.reg1a": {
+                "decarbonization-app": -4,
+                "resilience-app": 0
+            },
+            "RatioTapChanger.reg2a": {
+                "decarbonization-app": 8,
+                "resilience-app": 2
+            },
+            "RatioTapChanger.reg3a": {
+                "decarbonization-app": 10,
+                "resilience-app": 14
+            },
+            "RatioTapChanger.reg3c": {
+                "decarbonization-app": 4,
+                "resilience-app": -1
+            },
+            "RatioTapChanger.reg4a": {
+                "decarbonization-app": 0,
+                "resilience-app": 3
+            },
+            "RatioTapChanger.reg4b": {
+                "decarbonization-app": 12,
+                "resilience-app": 5
+            },
+            "RatioTapChanger.reg4c": {
+                "decarbonization-app": 12,
+                "resilience-app": -2
+            }
+        },
+        "timestamps": {
+            "decarbonization-app": 2,
+            "resilience-app": 2
+        }
+    },
+    "3": {
+        "setpoints": {
+            "BatteryUnit.battery1": {
+                "decarbonization-app": -125000.0,
+                "resilience-app": 125000.0
+            },
+            "BatteryUnit.battery2": {
+                "decarbonization-app": -200000.0,
+                "resilience-app": 200000.0
+            },
+            "BatteryUnit.battery3": {
+                "decarbonization-app": -100000.0,
+                "resilience-app": 100000.0
+            },
+            "BatteryUnit.battery5": {
+                "decarbonization-app": -250000.0,
+                "resilience-app": 250000.0
+            },
+            "RatioTapChanger.reg1a": {
+                "decarbonization-app": 7,
+                "resilience-app": 4
+            },
+            "RatioTapChanger.reg2a": {
+                "decarbonization-app": -8,
+                "resilience-app": 2
+            },
+            "RatioTapChanger.reg3a": {
+                "decarbonization-app": -4,
+                "resilience-app": 4
+            },
+            "RatioTapChanger.reg3c": {
+                "decarbonization-app": -4,
+                "resilience-app": -7
+            },
+            "RatioTapChanger.reg4a": {
+                "decarbonization-app": -7,
+                "resilience-app": 3
+            },
+            "RatioTapChanger.reg4b": {
+                "decarbonization-app": -2,
+                "resilience-app": 5
+            },
+            "RatioTapChanger.reg4c": {
+                "decarbonization-app": -6,
+                "resilience-app": -2
+            }
+        },
+        "timestamps": {
+            "decarbonization-app": 3,
+            "resilience-app": 3
+        }
+    },
+    "4": {
+        "setpoints": {
+            "BatteryUnit.battery1": {
+                "decarbonization-app": -125000.0,
+                "resilience-app": 125000.0
+            },
+            "BatteryUnit.battery2": {
+                "decarbonization-app": -200000.0,
+                "resilience-app": 200000.0
+            },
+            "BatteryUnit.battery3": {
+                "decarbonization-app": -72668.571,
+                "resilience-app": 100000.0
+            },
+            "BatteryUnit.battery5": {
+                "decarbonization-app": -250000.0,
+                "resilience-app": 250000.0
+            },
+            "RatioTapChanger.reg1a": {
+                "decarbonization-app": -4,
+                "resilience-app": 7
+            },
+            "RatioTapChanger.reg2a": {
+                "decarbonization-app": 5,
+                "resilience-app": 2
+            },
+            "RatioTapChanger.reg3a": {
+                "decarbonization-app": 10,
+                "resilience-app": 4
+            },
+            "RatioTapChanger.reg3c": {
+                "decarbonization-app": 6,
+                "resilience-app": -8
+            },
+            "RatioTapChanger.reg4a": {
+                "decarbonization-app": 0,
+                "resilience-app": 3
+            },
+            "RatioTapChanger.reg4b": {
+                "decarbonization-app": 1,
+                "resilience-app": 2
+            },
+            "RatioTapChanger.reg4c": {
+                "decarbonization-app": 10,
+                "resilience-app": -1
+            }
+        },
+        "timestamps": {
+            "decarbonization-app": 4,
+            "resilience-app": 4
+        }
+    },
+    "5": {
+        "setpoints": {
+            "BatteryUnit.battery1": {
+                "decarbonization-app": -125000.0,
+                "resilience-app": 125000.0
+            },
+            "BatteryUnit.battery2": {
+                "decarbonization-app": -173908.57,
+                "resilience-app": 200000.0
+            },
+            "BatteryUnit.battery3": {
+                "decarbonization-app": -24666.939,
+                "resilience-app": 100000.0
+            },
+            "BatteryUnit.battery5": {
+                "decarbonization-app": -250000.0,
+                "resilience-app": 250000.0
+            },
+            "RatioTapChanger.reg1a": {
+                "decarbonization-app": 4,
+                "resilience-app": 0
+            },
+            "RatioTapChanger.reg2a": {
+                "decarbonization-app": -3,
+                "resilience-app": 10
+            },
+            "RatioTapChanger.reg3a": {
+                "decarbonization-app": 4,
+                "resilience-app": 14
+            },
+            "RatioTapChanger.reg3c": {
+                "decarbonization-app": 4,
+                "resilience-app": -3
+            },
+            "RatioTapChanger.reg4a": {
+                "decarbonization-app": -3,
+                "resilience-app": 3
+            },
+            "RatioTapChanger.reg4b": {
+                "decarbonization-app": -8,
+                "resilience-app": 5
+            },
+            "RatioTapChanger.reg4c": {
+                "decarbonization-app": -6,
+                "resilience-app": -2
+            }
+        },
+        "timestamps": {
+            "decarbonization-app": 5,
+            "resilience-app": 5
+        }
+    },
+    "6": {
+        "setpoints": {
+            "BatteryUnit.battery1": {
+                "decarbonization-app": -125000.0,
+                "resilience-app": 125000.0
+            },
+            "BatteryUnit.battery2": {
+                "decarbonization-app": -133538.78,
+                "resilience-app": 200000.0
+            },
+            "BatteryUnit.battery3": {
+                "decarbonization-app": -0.00014288041,
+                "resilience-app": 100000.0
+            },
+            "BatteryUnit.battery5": {
+                "decarbonization-app": -250000.0,
+                "resilience-app": 250000.0
+            },
+            "RatioTapChanger.reg1a": {
+                "decarbonization-app": 6,
+                "resilience-app": 0
+            },
+            "RatioTapChanger.reg2a": {
+                "decarbonization-app": 2,
+                "resilience-app": 10
+            },
+            "RatioTapChanger.reg3a": {
+                "decarbonization-app": -2,
+                "resilience-app": 13
+            },
+            "RatioTapChanger.reg3c": {
+                "decarbonization-app": 3,
+                "resilience-app": -5
+            },
+            "RatioTapChanger.reg4a": {
+                "decarbonization-app": -10,
+                "resilience-app": 3
+            },
+            "RatioTapChanger.reg4b": {
+                "decarbonization-app": 2,
+                "resilience-app": 5
+            },
+            "RatioTapChanger.reg4c": {
+                "decarbonization-app": -6,
+                "resilience-app": -2
+            }
+        },
+        "timestamps": {
+            "decarbonization-app": 6,
+            "resilience-app": 6
+        }
+    },
+    "7": {
+        "setpoints": {
+            "BatteryUnit.battery1": {
+                "decarbonization-app": -125000.0,
+                "resilience-app": 125000.0
+            },
+            "BatteryUnit.battery2": {
+                "decarbonization-app": -93168.981,
+                "resilience-app": 200000.0
+            },
+            "BatteryUnit.battery3": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 100000.0
+            },
+            "BatteryUnit.battery5": {
+                "decarbonization-app": -250000.0,
+                "resilience-app": 250000.0
+            },
+            "RatioTapChanger.reg1a": {
+                "decarbonization-app": 3,
+                "resilience-app": 1
+            },
+            "RatioTapChanger.reg2a": {
+                "decarbonization-app": 2,
+                "resilience-app": 8
+            },
+            "RatioTapChanger.reg3a": {
+                "decarbonization-app": 0,
+                "resilience-app": -1
+            },
+            "RatioTapChanger.reg3c": {
+                "decarbonization-app": -3,
+                "resilience-app": 6
+            },
+            "RatioTapChanger.reg4a": {
+                "decarbonization-app": -3,
+                "resilience-app": 7
+            },
+            "RatioTapChanger.reg4b": {
+                "decarbonization-app": -3,
+                "resilience-app": 5
+            },
+            "RatioTapChanger.reg4c": {
+                "decarbonization-app": 2,
+                "resilience-app": 0
+            }
+        },
+        "timestamps": {
+            "decarbonization-app": 7,
+            "resilience-app": 7
+        }
+    },
+    "8": {
+        "setpoints": {
+            "BatteryUnit.battery1": {
+                "decarbonization-app": -125000.0,
+                "resilience-app": 125000.0
+            },
+            "BatteryUnit.battery2": {
+                "decarbonization-app": -54926.996,
+                "resilience-app": 200000.0
+            },
+            "BatteryUnit.battery3": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 100000.0
+            },
+            "BatteryUnit.battery5": {
+                "decarbonization-app": -250000.0,
+                "resilience-app": 250000.0
+            },
+            "RatioTapChanger.reg1a": {
+                "decarbonization-app": 4,
+                "resilience-app": 0
+            },
+            "RatioTapChanger.reg2a": {
+                "decarbonization-app": 0,
+                "resilience-app": 11
+            },
+            "RatioTapChanger.reg3a": {
+                "decarbonization-app": 0,
+                "resilience-app": 2
+            },
+            "RatioTapChanger.reg3c": {
+                "decarbonization-app": -3,
+                "resilience-app": 3
+            },
+            "RatioTapChanger.reg4a": {
+                "decarbonization-app": -2,
+                "resilience-app": 7
+            },
+            "RatioTapChanger.reg4b": {
+                "decarbonization-app": 1,
+                "resilience-app": 4
+            },
+            "RatioTapChanger.reg4c": {
+                "decarbonization-app": -7,
+                "resilience-app": 0
+            }
+        },
+        "timestamps": {
+            "decarbonization-app": 8,
+            "resilience-app": 8
+        }
+    },
+    "9": {
+        "setpoints": {
+            "BatteryUnit.battery1": {
+                "decarbonization-app": -99371.429,
+                "resilience-app": 125000.0
+            },
+            "BatteryUnit.battery2": {
+                "decarbonization-app": -3639.2977,
+                "resilience-app": 200000.0
+            },
+            "BatteryUnit.battery3": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 100000.0
+            },
+            "BatteryUnit.battery5": {
+                "decarbonization-app": -250000.0,
+                "resilience-app": 250000.0
+            },
+            "RatioTapChanger.reg1a": {
+                "decarbonization-app": 0,
+                "resilience-app": 6
+            },
+            "RatioTapChanger.reg2a": {
+                "decarbonization-app": 2,
+                "resilience-app": 2
+            },
+            "RatioTapChanger.reg3a": {
+                "decarbonization-app": 0,
+                "resilience-app": 2
+            },
+            "RatioTapChanger.reg3c": {
+                "decarbonization-app": -3,
+                "resilience-app": -10
+            },
+            "RatioTapChanger.reg4a": {
+                "decarbonization-app": 1,
+                "resilience-app": 7
+            },
+            "RatioTapChanger.reg4b": {
+                "decarbonization-app": 3,
+                "resilience-app": -7
+            },
+            "RatioTapChanger.reg4c": {
+                "decarbonization-app": -4,
+                "resilience-app": -7
+            }
+        },
+        "timestamps": {
+            "decarbonization-app": 9,
+            "resilience-app": 9
+        }
+    },
+    "10": {
+        "setpoints": {
+            "BatteryUnit.battery1": {
+                "decarbonization-app": -27942.857,
+                "resilience-app": 125000.0
+            },
+            "BatteryUnit.battery2": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 200000.0
+            },
+            "BatteryUnit.battery3": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 100000.0
+            },
+            "BatteryUnit.battery5": {
+                "decarbonization-app": -250000.0,
+                "resilience-app": 250000.0
+            },
+            "RatioTapChanger.reg1a": {
+                "decarbonization-app": 4,
+                "resilience-app": 2
+            },
+            "RatioTapChanger.reg2a": {
+                "decarbonization-app": -4,
+                "resilience-app": 3
+            },
+            "RatioTapChanger.reg3a": {
+                "decarbonization-app": 4,
+                "resilience-app": 3
+            },
+            "RatioTapChanger.reg3c": {
+                "decarbonization-app": -2,
+                "resilience-app": -4
+            },
+            "RatioTapChanger.reg4a": {
+                "decarbonization-app": -9,
+                "resilience-app": 8
+            },
+            "RatioTapChanger.reg4b": {
+                "decarbonization-app": 0,
+                "resilience-app": 5
+            },
+            "RatioTapChanger.reg4c": {
+                "decarbonization-app": -2,
+                "resilience-app": 1
+            }
+        },
+        "timestamps": {
+            "decarbonization-app": 10,
+            "resilience-app": 10
+        }
+    },
+    "11": {
+        "setpoints": {
+            "BatteryUnit.battery1": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 125000.0
+            },
+            "BatteryUnit.battery2": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 200000.0
+            },
+            "BatteryUnit.battery3": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 100000.0
+            },
+            "BatteryUnit.battery5": {
+                "decarbonization-app": -250000.0,
+                "resilience-app": 250000.0
+            },
+            "RatioTapChanger.reg1a": {
+                "decarbonization-app": -2,
+                "resilience-app": 1
+            },
+            "RatioTapChanger.reg2a": {
+                "decarbonization-app": -2,
+                "resilience-app": 1
+            },
+            "RatioTapChanger.reg3a": {
+                "decarbonization-app": 5,
+                "resilience-app": 11
+            },
+            "RatioTapChanger.reg3c": {
+                "decarbonization-app": -1,
+                "resilience-app": 8
+            },
+            "RatioTapChanger.reg4a": {
+                "decarbonization-app": -1,
+                "resilience-app": 9
+            },
+            "RatioTapChanger.reg4b": {
+                "decarbonization-app": 2,
+                "resilience-app": 2
+            },
+            "RatioTapChanger.reg4c": {
+                "decarbonization-app": -2,
+                "resilience-app": 2
+            }
+        },
+        "timestamps": {
+            "decarbonization-app": 11,
+            "resilience-app": 11
+        }
+    },
+    "12": {
+        "setpoints": {
+            "BatteryUnit.battery1": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 125000.0
+            },
+            "BatteryUnit.battery2": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 200000.0
+            },
+            "BatteryUnit.battery3": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 100000.0
+            },
+            "BatteryUnit.battery5": {
+                "decarbonization-app": -250000.0,
+                "resilience-app": 250000.0
+            },
+            "RatioTapChanger.reg1a": {
+                "decarbonization-app": -1,
+                "resilience-app": -1
+            },
+            "RatioTapChanger.reg2a": {
+                "decarbonization-app": 10,
+                "resilience-app": 1
+            },
+            "RatioTapChanger.reg3a": {
+                "decarbonization-app": 5,
+                "resilience-app": 1
+            },
+            "RatioTapChanger.reg3c": {
+                "decarbonization-app": -1,
+                "resilience-app": 8
+            },
+            "RatioTapChanger.reg4a": {
+                "decarbonization-app": 0,
+                "resilience-app": 9
+            },
+            "RatioTapChanger.reg4b": {
+                "decarbonization-app": 2,
+                "resilience-app": 8
+            },
+            "RatioTapChanger.reg4c": {
+                "decarbonization-app": -3,
+                "resilience-app": 2
+            }
+        },
+        "timestamps": {
+            "decarbonization-app": 12,
+            "resilience-app": 12
+        }
+    },
+    "13": {
+        "setpoints": {
+            "BatteryUnit.battery1": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 125000.0
+            },
+            "BatteryUnit.battery2": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 200000.0
+            },
+            "BatteryUnit.battery3": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 100000.0
+            },
+            "BatteryUnit.battery5": {
+                "decarbonization-app": -250000.0,
+                "resilience-app": 250000.0
+            },
+            "RatioTapChanger.reg1a": {
+                "decarbonization-app": -2,
+                "resilience-app": -1
+            },
+            "RatioTapChanger.reg2a": {
+                "decarbonization-app": -2,
+                "resilience-app": 1
+            },
+            "RatioTapChanger.reg3a": {
+                "decarbonization-app": 5,
+                "resilience-app": 1
+            },
+            "RatioTapChanger.reg3c": {
+                "decarbonization-app": -1,
+                "resilience-app": 8
+            },
+            "RatioTapChanger.reg4a": {
+                "decarbonization-app": -1,
+                "resilience-app": 9
+            },
+            "RatioTapChanger.reg4b": {
+                "decarbonization-app": 2,
+                "resilience-app": 2
+            },
+            "RatioTapChanger.reg4c": {
+                "decarbonization-app": -2,
+                "resilience-app": 2
+            }
+        },
+        "timestamps": {
+            "decarbonization-app": 13,
+            "resilience-app": 13
+        }
+    },
+    "14": {
+        "setpoints": {
+            "BatteryUnit.battery1": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 125000.0
+            },
+            "BatteryUnit.battery2": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 200000.0
+            },
+            "BatteryUnit.battery3": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 100000.0
+            },
+            "BatteryUnit.battery5": {
+                "decarbonization-app": -250000.0,
+                "resilience-app": 250000.0
+            },
+            "RatioTapChanger.reg1a": {
+                "decarbonization-app": -1,
+                "resilience-app": -1
+            },
+            "RatioTapChanger.reg2a": {
+                "decarbonization-app": 10,
+                "resilience-app": 9
+            },
+            "RatioTapChanger.reg3a": {
+                "decarbonization-app": 5,
+                "resilience-app": 1
+            },
+            "RatioTapChanger.reg3c": {
+                "decarbonization-app": -1,
+                "resilience-app": 8
+            },
+            "RatioTapChanger.reg4a": {
+                "decarbonization-app": 0,
+                "resilience-app": 9
+            },
+            "RatioTapChanger.reg4b": {
+                "decarbonization-app": 2,
+                "resilience-app": 10
+            },
+            "RatioTapChanger.reg4c": {
+                "decarbonization-app": -3,
+                "resilience-app": 2
+            }
+        },
+        "timestamps": {
+            "decarbonization-app": 14,
+            "resilience-app": 14
+        }
+    },
+    "15": {
+        "setpoints": {
+            "BatteryUnit.battery1": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 125000.0
+            },
+            "BatteryUnit.battery2": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 200000.0
+            },
+            "BatteryUnit.battery3": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 100000.0
+            },
+            "BatteryUnit.battery5": {
+                "decarbonization-app": -250000.0,
+                "resilience-app": 250000.0
+            },
+            "RatioTapChanger.reg1a": {
+                "decarbonization-app": 1,
+                "resilience-app": -1
+            },
+            "RatioTapChanger.reg2a": {
+                "decarbonization-app": 5,
+                "resilience-app": 3
+            },
+            "RatioTapChanger.reg3a": {
+                "decarbonization-app": 5,
+                "resilience-app": 1
+            },
+            "RatioTapChanger.reg3c": {
+                "decarbonization-app": -1,
+                "resilience-app": 8
+            },
+            "RatioTapChanger.reg4a": {
+                "decarbonization-app": 6,
+                "resilience-app": 9
+            },
+            "RatioTapChanger.reg4b": {
+                "decarbonization-app": 2,
+                "resilience-app": 8
+            },
+            "RatioTapChanger.reg4c": {
+                "decarbonization-app": -5,
+                "resilience-app": 2
+            }
+        },
+        "timestamps": {
+            "decarbonization-app": 15,
+            "resilience-app": 15
+        }
+    },
+    "16": {
+        "setpoints": {
+            "BatteryUnit.battery1": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 125000.0
+            },
+            "BatteryUnit.battery2": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 200000.0
+            },
+            "BatteryUnit.battery3": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 100000.0
+            },
+            "BatteryUnit.battery5": {
+                "decarbonization-app": -250000.0,
+                "resilience-app": 250000.0
+            },
+            "RatioTapChanger.reg1a": {
+                "decarbonization-app": -2,
+                "resilience-app": 1
+            },
+            "RatioTapChanger.reg2a": {
+                "decarbonization-app": 5,
+                "resilience-app": 3
+            },
+            "RatioTapChanger.reg3a": {
+                "decarbonization-app": 11,
+                "resilience-app": 1
+            },
+            "RatioTapChanger.reg3c": {
+                "decarbonization-app": -1,
+                "resilience-app": 2
+            },
+            "RatioTapChanger.reg4a": {
+                "decarbonization-app": 3,
+                "resilience-app": 14
+            },
+            "RatioTapChanger.reg4b": {
+                "decarbonization-app": 2,
+                "resilience-app": 4
+            },
+            "RatioTapChanger.reg4c": {
+                "decarbonization-app": 4,
+                "resilience-app": 1
+            }
+        },
+        "timestamps": {
+            "decarbonization-app": 16,
+            "resilience-app": 16
+        }
+    },
+    "17": {
+        "setpoints": {
+            "BatteryUnit.battery1": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 125000.0
+            },
+            "BatteryUnit.battery2": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 200000.0
+            },
+            "BatteryUnit.battery3": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 100000.0
+            },
+            "BatteryUnit.battery5": {
+                "decarbonization-app": -250000.0,
+                "resilience-app": 250000.0
+            },
+            "RatioTapChanger.reg1a": {
+                "decarbonization-app": 3,
+                "resilience-app": 1
+            },
+            "RatioTapChanger.reg2a": {
+                "decarbonization-app": 3,
+                "resilience-app": 3
+            },
+            "RatioTapChanger.reg3a": {
+                "decarbonization-app": 5,
+                "resilience-app": 1
+            },
+            "RatioTapChanger.reg3c": {
+                "decarbonization-app": -1,
+                "resilience-app": 9
+            },
+            "RatioTapChanger.reg4a": {
+                "decarbonization-app": -8,
+                "resilience-app": 8
+            },
+            "RatioTapChanger.reg4b": {
+                "decarbonization-app": 2,
+                "resilience-app": 4
+            },
+            "RatioTapChanger.reg4c": {
+                "decarbonization-app": 7,
+                "resilience-app": 1
+            }
+        },
+        "timestamps": {
+            "decarbonization-app": 17,
+            "resilience-app": 17
+        }
+    },
+    "18": {
+        "setpoints": {
+            "BatteryUnit.battery1": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 125000.0
+            },
+            "BatteryUnit.battery2": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 200000.0
+            },
+            "BatteryUnit.battery3": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 100000.0
+            },
+            "BatteryUnit.battery5": {
+                "decarbonization-app": -250000.0,
+                "resilience-app": 250000.0
+            },
+            "RatioTapChanger.reg1a": {
+                "decarbonization-app": -3,
+                "resilience-app": 2
+            },
+            "RatioTapChanger.reg2a": {
+                "decarbonization-app": 5,
+                "resilience-app": 8
+            },
+            "RatioTapChanger.reg3a": {
+                "decarbonization-app": 5,
+                "resilience-app": 1
+            },
+            "RatioTapChanger.reg3c": {
+                "decarbonization-app": -1,
+                "resilience-app": 3
+            },
+            "RatioTapChanger.reg4a": {
+                "decarbonization-app": 6,
+                "resilience-app": 9
+            },
+            "RatioTapChanger.reg4b": {
+                "decarbonization-app": 2,
+                "resilience-app": 2
+            },
+            "RatioTapChanger.reg4c": {
+                "decarbonization-app": 3,
+                "resilience-app": -6
+            }
+        },
+        "timestamps": {
+            "decarbonization-app": 18,
+            "resilience-app": 18
+        }
+    },
+    "19": {
+        "setpoints": {
+            "BatteryUnit.battery1": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 125000.0
+            },
+            "BatteryUnit.battery2": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 200000.0
+            },
+            "BatteryUnit.battery3": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 100000.0
+            },
+            "BatteryUnit.battery5": {
+                "decarbonization-app": -250000.0,
+                "resilience-app": 250000.0
+            },
+            "RatioTapChanger.reg1a": {
+                "decarbonization-app": 7,
+                "resilience-app": 0
+            },
+            "RatioTapChanger.reg2a": {
+                "decarbonization-app": 1,
+                "resilience-app": 3
+            },
+            "RatioTapChanger.reg3a": {
+                "decarbonization-app": -12,
+                "resilience-app": 0
+            },
+            "RatioTapChanger.reg3c": {
+                "decarbonization-app": -1,
+                "resilience-app": 1
+            },
+            "RatioTapChanger.reg4a": {
+                "decarbonization-app": -11,
+                "resilience-app": 9
+            },
+            "RatioTapChanger.reg4b": {
+                "decarbonization-app": 2,
+                "resilience-app": 4
+            },
+            "RatioTapChanger.reg4c": {
+                "decarbonization-app": -12,
+                "resilience-app": -2
+            }
+        },
+        "timestamps": {
+            "decarbonization-app": 19,
+            "resilience-app": 19
+        }
+    },
+    "20": {
+        "setpoints": {
+            "BatteryUnit.battery1": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 125000.0
+            },
+            "BatteryUnit.battery2": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 200000.0
+            },
+            "BatteryUnit.battery3": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 100000.0
+            },
+            "BatteryUnit.battery5": {
+                "decarbonization-app": -250000.0,
+                "resilience-app": 250000.0
+            },
+            "RatioTapChanger.reg1a": {
+                "decarbonization-app": 2,
+                "resilience-app": 5
+            },
+            "RatioTapChanger.reg2a": {
+                "decarbonization-app": 6,
+                "resilience-app": -6
+            },
+            "RatioTapChanger.reg3a": {
+                "decarbonization-app": 7,
+                "resilience-app": 4
+            },
+            "RatioTapChanger.reg3c": {
+                "decarbonization-app": 0,
+                "resilience-app": 1
+            },
+            "RatioTapChanger.reg4a": {
+                "decarbonization-app": -6,
+                "resilience-app": 2
+            },
+            "RatioTapChanger.reg4b": {
+                "decarbonization-app": 3,
+                "resilience-app": 0
+            },
+            "RatioTapChanger.reg4c": {
+                "decarbonization-app": 5,
+                "resilience-app": -1
+            }
+        },
+        "timestamps": {
+            "decarbonization-app": 20,
+            "resilience-app": 20
+        }
+    },
+    "21": {
+        "setpoints": {
+            "BatteryUnit.battery1": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 125000.0
+            },
+            "BatteryUnit.battery2": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 200000.0
+            },
+            "BatteryUnit.battery3": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 100000.0
+            },
+            "BatteryUnit.battery5": {
+                "decarbonization-app": -250000.0,
+                "resilience-app": 250000.0
+            },
+            "RatioTapChanger.reg1a": {
+                "decarbonization-app": 5,
+                "resilience-app": 0
+            },
+            "RatioTapChanger.reg2a": {
+                "decarbonization-app": -1,
+                "resilience-app": 4
+            },
+            "RatioTapChanger.reg3a": {
+                "decarbonization-app": 3,
+                "resilience-app": 4
+            },
+            "RatioTapChanger.reg3c": {
+                "decarbonization-app": 1,
+                "resilience-app": 1
+            },
+            "RatioTapChanger.reg4a": {
+                "decarbonization-app": -4,
+                "resilience-app": 2
+            },
+            "RatioTapChanger.reg4b": {
+                "decarbonization-app": 3,
+                "resilience-app": 6
+            },
+            "RatioTapChanger.reg4c": {
+                "decarbonization-app": -3,
+                "resilience-app": 3
+            }
+        },
+        "timestamps": {
+            "decarbonization-app": 21,
+            "resilience-app": 21
+        }
+    },
+    "22": {
+        "setpoints": {
+            "BatteryUnit.battery1": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 125000.0
+            },
+            "BatteryUnit.battery2": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 200000.0
+            },
+            "BatteryUnit.battery3": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 100000.0
+            },
+            "BatteryUnit.battery5": {
+                "decarbonization-app": -250000.0,
+                "resilience-app": 250000.0
+            },
+            "RatioTapChanger.reg1a": {
+                "decarbonization-app": -4,
+                "resilience-app": 3
+            },
+            "RatioTapChanger.reg2a": {
+                "decarbonization-app": -1,
+                "resilience-app": -6
+            },
+            "RatioTapChanger.reg3a": {
+                "decarbonization-app": 6,
+                "resilience-app": 4
+            },
+            "RatioTapChanger.reg3c": {
+                "decarbonization-app": 0,
+                "resilience-app": -7
+            },
+            "RatioTapChanger.reg4a": {
+                "decarbonization-app": 7,
+                "resilience-app": 4
+            },
+            "RatioTapChanger.reg4b": {
+                "decarbonization-app": 11,
+                "resilience-app": -2
+            },
+            "RatioTapChanger.reg4c": {
+                "decarbonization-app": 10,
+                "resilience-app": 1
+            }
+        },
+        "timestamps": {
+            "decarbonization-app": 22,
+            "resilience-app": 22
+        }
+    },
+    "23": {
+        "setpoints": {
+            "BatteryUnit.battery1": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 125000.0
+            },
+            "BatteryUnit.battery2": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 200000.0
+            },
+            "BatteryUnit.battery3": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 100000.0
+            },
+            "BatteryUnit.battery5": {
+                "decarbonization-app": -250000.0,
+                "resilience-app": 250000.0
+            },
+            "RatioTapChanger.reg1a": {
+                "decarbonization-app": 3,
+                "resilience-app": 1
+            },
+            "RatioTapChanger.reg2a": {
+                "decarbonization-app": -1,
+                "resilience-app": 4
+            },
+            "RatioTapChanger.reg3a": {
+                "decarbonization-app": 6,
+                "resilience-app": 4
+            },
+            "RatioTapChanger.reg3c": {
+                "decarbonization-app": 0,
+                "resilience-app": 1
+            },
+            "RatioTapChanger.reg4a": {
+                "decarbonization-app": -7,
+                "resilience-app": 10
+            },
+            "RatioTapChanger.reg4b": {
+                "decarbonization-app": 3,
+                "resilience-app": 6
+            },
+            "RatioTapChanger.reg4c": {
+                "decarbonization-app": -9,
+                "resilience-app": 3
+            }
+        },
+        "timestamps": {
+            "decarbonization-app": 23,
+            "resilience-app": 23
+        }
+    },
+    "24": {
+        "setpoints": {
+            "BatteryUnit.battery1": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 125000.0
+            },
+            "BatteryUnit.battery2": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 200000.0
+            },
+            "BatteryUnit.battery3": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 100000.0
+            },
+            "BatteryUnit.battery5": {
+                "decarbonization-app": -250000.0,
+                "resilience-app": 250000.0
+            },
+            "RatioTapChanger.reg1a": {
+                "decarbonization-app": -2,
+                "resilience-app": 2
+            },
+            "RatioTapChanger.reg2a": {
+                "decarbonization-app": -1,
+                "resilience-app": 4
+            },
+            "RatioTapChanger.reg3a": {
+                "decarbonization-app": 9,
+                "resilience-app": 4
+            },
+            "RatioTapChanger.reg3c": {
+                "decarbonization-app": 0,
+                "resilience-app": 1
+            },
+            "RatioTapChanger.reg4a": {
+                "decarbonization-app": 2,
+                "resilience-app": 4
+            },
+            "RatioTapChanger.reg4b": {
+                "decarbonization-app": 3,
+                "resilience-app": 4
+            },
+            "RatioTapChanger.reg4c": {
+                "decarbonization-app": -4,
+                "resilience-app": 3
+            }
+        },
+        "timestamps": {
+            "decarbonization-app": 24,
+            "resilience-app": 24
+        }
+    },
+    "25": {
+        "setpoints": {
+            "BatteryUnit.battery1": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 125000.0
+            },
+            "BatteryUnit.battery2": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 200000.0
+            },
+            "BatteryUnit.battery3": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 100000.0
+            },
+            "BatteryUnit.battery5": {
+                "decarbonization-app": -250000.0,
+                "resilience-app": 250000.0
+            },
+            "RatioTapChanger.reg1a": {
+                "decarbonization-app": 3,
+                "resilience-app": 0
+            },
+            "RatioTapChanger.reg2a": {
+                "decarbonization-app": -1,
+                "resilience-app": -4
+            },
+            "RatioTapChanger.reg3a": {
+                "decarbonization-app": -6,
+                "resilience-app": 4
+            },
+            "RatioTapChanger.reg3c": {
+                "decarbonization-app": 0,
+                "resilience-app": 1
+            },
+            "RatioTapChanger.reg4a": {
+                "decarbonization-app": 4,
+                "resilience-app": 10
+            },
+            "RatioTapChanger.reg4b": {
+                "decarbonization-app": 3,
+                "resilience-app": -1
+            },
+            "RatioTapChanger.reg4c": {
+                "decarbonization-app": -9,
+                "resilience-app": 3
+            }
+        },
+        "timestamps": {
+            "decarbonization-app": 25,
+            "resilience-app": 25
+        }
+    },
+    "26": {
+        "setpoints": {
+            "BatteryUnit.battery1": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 125000.0
+            },
+            "BatteryUnit.battery2": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 200000.0
+            },
+            "BatteryUnit.battery3": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 100000.0
+            },
+            "BatteryUnit.battery5": {
+                "decarbonization-app": -250000.0,
+                "resilience-app": 250000.0
+            },
+            "RatioTapChanger.reg1a": {
+                "decarbonization-app": 0,
+                "resilience-app": 0
+            },
+            "RatioTapChanger.reg2a": {
+                "decarbonization-app": -1,
+                "resilience-app": 4
+            },
+            "RatioTapChanger.reg3a": {
+                "decarbonization-app": 5,
+                "resilience-app": 4
+            },
+            "RatioTapChanger.reg3c": {
+                "decarbonization-app": 0,
+                "resilience-app": 1
+            },
+            "RatioTapChanger.reg4a": {
+                "decarbonization-app": 7,
+                "resilience-app": 0
+            },
+            "RatioTapChanger.reg4b": {
+                "decarbonization-app": 11,
+                "resilience-app": 6
+            },
+            "RatioTapChanger.reg4c": {
+                "decarbonization-app": -1,
+                "resilience-app": 0
+            }
+        },
+        "timestamps": {
+            "decarbonization-app": 26,
+            "resilience-app": 26
+        }
+    },
+    "27": {
+        "setpoints": {
+            "BatteryUnit.battery1": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 125000.0
+            },
+            "BatteryUnit.battery2": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 200000.0
+            },
+            "BatteryUnit.battery3": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 100000.0
+            },
+            "BatteryUnit.battery5": {
+                "decarbonization-app": -250000.0,
+                "resilience-app": 250000.0
+            },
+            "RatioTapChanger.reg1a": {
+                "decarbonization-app": -2,
+                "resilience-app": 3
+            },
+            "RatioTapChanger.reg2a": {
+                "decarbonization-app": -1,
+                "resilience-app": 4
+            },
+            "RatioTapChanger.reg3a": {
+                "decarbonization-app": 1,
+                "resilience-app": 4
+            },
+            "RatioTapChanger.reg3c": {
+                "decarbonization-app": 0,
+                "resilience-app": 1
+            },
+            "RatioTapChanger.reg4a": {
+                "decarbonization-app": 7,
+                "resilience-app": 10
+            },
+            "RatioTapChanger.reg4b": {
+                "decarbonization-app": 11,
+                "resilience-app": -1
+            },
+            "RatioTapChanger.reg4c": {
+                "decarbonization-app": -4,
+                "resilience-app": 3
+            }
+        },
+        "timestamps": {
+            "decarbonization-app": 27,
+            "resilience-app": 27
+        }
+    },
+    "28": {
+        "setpoints": {
+            "BatteryUnit.battery1": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 125000.0
+            },
+            "BatteryUnit.battery2": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 200000.0
+            },
+            "BatteryUnit.battery3": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 100000.0
+            },
+            "BatteryUnit.battery5": {
+                "decarbonization-app": -250000.0,
+                "resilience-app": 250000.0
+            },
+            "RatioTapChanger.reg1a": {
+                "decarbonization-app": 3,
+                "resilience-app": 0
+            },
+            "RatioTapChanger.reg2a": {
+                "decarbonization-app": -1,
+                "resilience-app": -4
+            },
+            "RatioTapChanger.reg3a": {
+                "decarbonization-app": -6,
+                "resilience-app": 4
+            },
+            "RatioTapChanger.reg3c": {
+                "decarbonization-app": 0,
+                "resilience-app": 1
+            },
+            "RatioTapChanger.reg4a": {
+                "decarbonization-app": 4,
+                "resilience-app": 10
+            },
+            "RatioTapChanger.reg4b": {
+                "decarbonization-app": 3,
+                "resilience-app": -1
+            },
+            "RatioTapChanger.reg4c": {
+                "decarbonization-app": -9,
+                "resilience-app": 3
+            }
+        },
+        "timestamps": {
+            "decarbonization-app": 28,
+            "resilience-app": 28
+        }
+    },
+    "29": {
+        "setpoints": {
+            "BatteryUnit.battery1": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 125000.0
+            },
+            "BatteryUnit.battery2": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 200000.0
+            },
+            "BatteryUnit.battery3": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 100000.0
+            },
+            "BatteryUnit.battery5": {
+                "decarbonization-app": -250000.0,
+                "resilience-app": 250000.0
+            },
+            "RatioTapChanger.reg1a": {
+                "decarbonization-app": -2,
+                "resilience-app": 3
+            },
+            "RatioTapChanger.reg2a": {
+                "decarbonization-app": -1,
+                "resilience-app": 4
+            },
+            "RatioTapChanger.reg3a": {
+                "decarbonization-app": 1,
+                "resilience-app": 4
+            },
+            "RatioTapChanger.reg3c": {
+                "decarbonization-app": 0,
+                "resilience-app": 1
+            },
+            "RatioTapChanger.reg4a": {
+                "decarbonization-app": 7,
+                "resilience-app": 10
+            },
+            "RatioTapChanger.reg4b": {
+                "decarbonization-app": 11,
+                "resilience-app": -1
+            },
+            "RatioTapChanger.reg4c": {
+                "decarbonization-app": -4,
+                "resilience-app": 3
+            }
+        },
+        "timestamps": {
+            "decarbonization-app": 29,
+            "resilience-app": 29
+        }
+    },
+    "30": {
+        "setpoints": {
+            "BatteryUnit.battery1": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 125000.0
+            },
+            "BatteryUnit.battery2": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 200000.0
+            },
+            "BatteryUnit.battery3": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 100000.0
+            },
+            "BatteryUnit.battery5": {
+                "decarbonization-app": -250000.0,
+                "resilience-app": 250000.0
+            },
+            "RatioTapChanger.reg1a": {
+                "decarbonization-app": 0,
+                "resilience-app": 0
+            },
+            "RatioTapChanger.reg2a": {
+                "decarbonization-app": -1,
+                "resilience-app": 4
+            },
+            "RatioTapChanger.reg3a": {
+                "decarbonization-app": 5,
+                "resilience-app": 4
+            },
+            "RatioTapChanger.reg3c": {
+                "decarbonization-app": 0,
+                "resilience-app": 1
+            },
+            "RatioTapChanger.reg4a": {
+                "decarbonization-app": 7,
+                "resilience-app": 0
+            },
+            "RatioTapChanger.reg4b": {
+                "decarbonization-app": 11,
+                "resilience-app": 6
+            },
+            "RatioTapChanger.reg4c": {
+                "decarbonization-app": -1,
+                "resilience-app": 0
+            }
+        },
+        "timestamps": {
+            "decarbonization-app": 30,
+            "resilience-app": 30
+        }
+    },
+    "31": {
+        "setpoints": {
+            "BatteryUnit.battery1": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 125000.0
+            },
+            "BatteryUnit.battery2": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 200000.0
+            },
+            "BatteryUnit.battery3": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 100000.0
+            },
+            "BatteryUnit.battery5": {
+                "decarbonization-app": -250000.0,
+                "resilience-app": 250000.0
+            },
+            "RatioTapChanger.reg1a": {
+                "decarbonization-app": -1,
+                "resilience-app": -2
+            },
+            "RatioTapChanger.reg2a": {
+                "decarbonization-app": 9,
+                "resilience-app": 2
+            },
+            "RatioTapChanger.reg3a": {
+                "decarbonization-app": 2,
+                "resilience-app": 4
+            },
+            "RatioTapChanger.reg3c": {
+                "decarbonization-app": 0,
+                "resilience-app": 1
+            },
+            "RatioTapChanger.reg4a": {
+                "decarbonization-app": 7,
+                "resilience-app": 15
+            },
+            "RatioTapChanger.reg4b": {
+                "decarbonization-app": -2,
+                "resilience-app": 5
+            },
+            "RatioTapChanger.reg4c": {
+                "decarbonization-app": -5,
+                "resilience-app": 3
+            }
+        },
+        "timestamps": {
+            "decarbonization-app": 31,
+            "resilience-app": 31
+        }
+    },
+    "32": {
+        "setpoints": {
+            "BatteryUnit.battery1": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 125000.0
+            },
+            "BatteryUnit.battery2": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 200000.0
+            },
+            "BatteryUnit.battery3": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 100000.0
+            },
+            "BatteryUnit.battery5": {
+                "decarbonization-app": -250000.0,
+                "resilience-app": 250000.0
+            },
+            "RatioTapChanger.reg1a": {
+                "decarbonization-app": 3,
+                "resilience-app": 6
+            },
+            "RatioTapChanger.reg2a": {
+                "decarbonization-app": -1,
+                "resilience-app": 4
+            },
+            "RatioTapChanger.reg3a": {
+                "decarbonization-app": 6,
+                "resilience-app": 4
+            },
+            "RatioTapChanger.reg3c": {
+                "decarbonization-app": 0,
+                "resilience-app": 1
+            },
+            "RatioTapChanger.reg4a": {
+                "decarbonization-app": -3,
+                "resilience-app": -1
+            },
+            "RatioTapChanger.reg4b": {
+                "decarbonization-app": 3,
+                "resilience-app": -8
+            },
+            "RatioTapChanger.reg4c": {
+                "decarbonization-app": -8,
+                "resilience-app": 3
+            }
+        },
+        "timestamps": {
+            "decarbonization-app": 32,
+            "resilience-app": 32
+        }
+    },
+    "33": {
+        "setpoints": {
+            "BatteryUnit.battery1": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 125000.0
+            },
+            "BatteryUnit.battery2": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 200000.0
+            },
+            "BatteryUnit.battery3": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 100000.0
+            },
+            "BatteryUnit.battery5": {
+                "decarbonization-app": -250000.0,
+                "resilience-app": 250000.0
+            },
+            "RatioTapChanger.reg1a": {
+                "decarbonization-app": 5,
+                "resilience-app": 0
+            },
+            "RatioTapChanger.reg2a": {
+                "decarbonization-app": -1,
+                "resilience-app": 10
+            },
+            "RatioTapChanger.reg3a": {
+                "decarbonization-app": 1,
+                "resilience-app": 4
+            },
+            "RatioTapChanger.reg3c": {
+                "decarbonization-app": 0,
+                "resilience-app": 1
+            },
+            "RatioTapChanger.reg4a": {
+                "decarbonization-app": -3,
+                "resilience-app": 10
+            },
+            "RatioTapChanger.reg4b": {
+                "decarbonization-app": 3,
+                "resilience-app": 2
+            },
+            "RatioTapChanger.reg4c": {
+                "decarbonization-app": -8,
+                "resilience-app": 3
+            }
+        },
+        "timestamps": {
+            "decarbonization-app": 33,
+            "resilience-app": 33
+        }
+    },
+    "34": {
+        "setpoints": {
+            "BatteryUnit.battery1": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 125000.0
+            },
+            "BatteryUnit.battery2": {
+                "decarbonization-app": -10044.032,
+                "resilience-app": 200000.0
+            },
+            "BatteryUnit.battery3": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 100000.0
+            },
+            "BatteryUnit.battery5": {
+                "decarbonization-app": -250000.0,
+                "resilience-app": 250000.0
+            },
+            "RatioTapChanger.reg1a": {
+                "decarbonization-app": -3,
+                "resilience-app": 4
+            },
+            "RatioTapChanger.reg2a": {
+                "decarbonization-app": 5,
+                "resilience-app": 6
+            },
+            "RatioTapChanger.reg3a": {
+                "decarbonization-app": 11,
+                "resilience-app": 1
+            },
+            "RatioTapChanger.reg3c": {
+                "decarbonization-app": -1,
+                "resilience-app": -7
+            },
+            "RatioTapChanger.reg4a": {
+                "decarbonization-app": 2,
+                "resilience-app": -2
+            },
+            "RatioTapChanger.reg4b": {
+                "decarbonization-app": 10,
+                "resilience-app": -5
+            },
+            "RatioTapChanger.reg4c": {
+                "decarbonization-app": -3,
+                "resilience-app": 2
+            }
+        },
+        "timestamps": {
+            "decarbonization-app": 34,
+            "resilience-app": 34
+        }
+    },
+    "35": {
+        "setpoints": {
+            "BatteryUnit.battery1": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 125000.0
+            },
+            "BatteryUnit.battery2": {
+                "decarbonization-app": -34627.587,
+                "resilience-app": 200000.0
+            },
+            "BatteryUnit.battery3": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 100000.0
+            },
+            "BatteryUnit.battery5": {
+                "decarbonization-app": -250000.0,
+                "resilience-app": 250000.0
+            },
+            "RatioTapChanger.reg1a": {
+                "decarbonization-app": 1,
+                "resilience-app": -3
+            },
+            "RatioTapChanger.reg2a": {
+                "decarbonization-app": 2,
+                "resilience-app": 13
+            },
+            "RatioTapChanger.reg3a": {
+                "decarbonization-app": -2,
+                "resilience-app": 15
+            },
+            "RatioTapChanger.reg3c": {
+                "decarbonization-app": -1,
+                "resilience-app": 2
+            },
+            "RatioTapChanger.reg4a": {
+                "decarbonization-app": 0,
+                "resilience-app": 14
+            },
+            "RatioTapChanger.reg4b": {
+                "decarbonization-app": 2,
+                "resilience-app": 2
+            },
+            "RatioTapChanger.reg4c": {
+                "decarbonization-app": -8,
+                "resilience-app": 2
+            }
+        },
+        "timestamps": {
+            "decarbonization-app": 35,
+            "resilience-app": 35
+        }
+    },
+    "36": {
+        "setpoints": {
+            "BatteryUnit.battery1": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 125000.0
+            },
+            "BatteryUnit.battery2": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 200000.0
+            },
+            "BatteryUnit.battery3": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 100000.0
+            },
+            "BatteryUnit.battery5": {
+                "decarbonization-app": -250000.0,
+                "resilience-app": 250000.0
+            },
+            "RatioTapChanger.reg1a": {
+                "decarbonization-app": -2,
+                "resilience-app": 3
+            },
+            "RatioTapChanger.reg2a": {
+                "decarbonization-app": 7,
+                "resilience-app": -4
+            },
+            "RatioTapChanger.reg3a": {
+                "decarbonization-app": 10,
+                "resilience-app": 1
+            },
+            "RatioTapChanger.reg3c": {
+                "decarbonization-app": 5,
+                "resilience-app": -6
+            },
+            "RatioTapChanger.reg4a": {
+                "decarbonization-app": 5,
+                "resilience-app": 9
+            },
+            "RatioTapChanger.reg4b": {
+                "decarbonization-app": 2,
+                "resilience-app": 2
+            },
+            "RatioTapChanger.reg4c": {
+                "decarbonization-app": -6,
+                "resilience-app": 5
+            }
+        },
+        "timestamps": {
+            "decarbonization-app": 36,
+            "resilience-app": 36
+        }
+    },
+    "37": {
+        "setpoints": {
+            "BatteryUnit.battery1": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 125000.0
+            },
+            "BatteryUnit.battery2": {
+                "decarbonization-app": -91552.785,
+                "resilience-app": 200000.0
+            },
+            "BatteryUnit.battery3": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 100000.0
+            },
+            "BatteryUnit.battery5": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 250000.0
+            },
+            "RatioTapChanger.reg1a": {
+                "decarbonization-app": -3,
+                "resilience-app": 3
+            },
+            "RatioTapChanger.reg2a": {
+                "decarbonization-app": 11,
+                "resilience-app": 3
+            },
+            "RatioTapChanger.reg3a": {
+                "decarbonization-app": 9,
+                "resilience-app": 4
+            },
+            "RatioTapChanger.reg3c": {
+                "decarbonization-app": -3,
+                "resilience-app": -4
+            },
+            "RatioTapChanger.reg4a": {
+                "decarbonization-app": 13,
+                "resilience-app": -4
+            },
+            "RatioTapChanger.reg4b": {
+                "decarbonization-app": 9,
+                "resilience-app": 0
+            },
+            "RatioTapChanger.reg4c": {
+                "decarbonization-app": -1,
+                "resilience-app": -3
+            }
+        },
+        "timestamps": {
+            "decarbonization-app": 37,
+            "resilience-app": 37
+        }
+    },
+    "38": {
+        "setpoints": {
+            "BatteryUnit.battery1": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 125000.0
+            },
+            "BatteryUnit.battery2": {
+                "decarbonization-app": 180109.8,
+                "resilience-app": 200000.0
+            },
+            "BatteryUnit.battery3": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 100000.0
+            },
+            "BatteryUnit.battery5": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 244252.46
+            },
+            "RatioTapChanger.reg1a": {
+                "decarbonization-app": 4,
+                "resilience-app": -2
+            },
+            "RatioTapChanger.reg2a": {
+                "decarbonization-app": 2,
+                "resilience-app": -4
+            },
+            "RatioTapChanger.reg3a": {
+                "decarbonization-app": 0,
+                "resilience-app": -3
+            },
+            "RatioTapChanger.reg3c": {
+                "decarbonization-app": -11,
+                "resilience-app": 10
+            },
+            "RatioTapChanger.reg4a": {
+                "decarbonization-app": 4,
+                "resilience-app": 14
+            },
+            "RatioTapChanger.reg4b": {
+                "decarbonization-app": -10,
+                "resilience-app": 6
+            },
+            "RatioTapChanger.reg4c": {
+                "decarbonization-app": -11,
+                "resilience-app": -5
+            }
+        },
+        "timestamps": {
+            "decarbonization-app": 38,
+            "resilience-app": 38
+        }
+    },
+    "39": {
+        "setpoints": {
+            "BatteryUnit.battery1": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 125000.0
+            },
+            "BatteryUnit.battery2": {
+                "decarbonization-app": 200000.0,
+                "resilience-app": 200000.0
+            },
+            "BatteryUnit.battery3": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 100000.0
+            },
+            "BatteryUnit.battery5": {
+                "decarbonization-app": 181951.56,
+                "resilience-app": 250000.0
+            },
+            "RatioTapChanger.reg1a": {
+                "decarbonization-app": -4,
+                "resilience-app": 2
+            },
+            "RatioTapChanger.reg2a": {
+                "decarbonization-app": 11,
+                "resilience-app": 4
+            },
+            "RatioTapChanger.reg3a": {
+                "decarbonization-app": 9,
+                "resilience-app": 4
+            },
+            "RatioTapChanger.reg3c": {
+                "decarbonization-app": -3,
+                "resilience-app": -2
+            },
+            "RatioTapChanger.reg4a": {
+                "decarbonization-app": 13,
+                "resilience-app": 8
+            },
+            "RatioTapChanger.reg4b": {
+                "decarbonization-app": 8,
+                "resilience-app": -1
+            },
+            "RatioTapChanger.reg4c": {
+                "decarbonization-app": 2,
+                "resilience-app": -5
+            }
+        },
+        "timestamps": {
+            "decarbonization-app": 39,
+            "resilience-app": 39
+        }
+    },
+    "40": {
+        "setpoints": {
+            "BatteryUnit.battery1": {
+                "decarbonization-app": 77255.32,
+                "resilience-app": 125000.0
+            },
+            "BatteryUnit.battery2": {
+                "decarbonization-app": 200000.0,
+                "resilience-app": 188209.69
+            },
+            "BatteryUnit.battery3": {
+                "decarbonization-app": 100000.0,
+                "resilience-app": 100000.0
+            },
+            "BatteryUnit.battery5": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 250000.0
+            },
+            "RatioTapChanger.reg1a": {
+                "decarbonization-app": 0,
+                "resilience-app": 2
+            },
+            "RatioTapChanger.reg2a": {
+                "decarbonization-app": -1,
+                "resilience-app": -8
+            },
+            "RatioTapChanger.reg3a": {
+                "decarbonization-app": 9,
+                "resilience-app": 4
+            },
+            "RatioTapChanger.reg3c": {
+                "decarbonization-app": -3,
+                "resilience-app": 7
+            },
+            "RatioTapChanger.reg4a": {
+                "decarbonization-app": -5,
+                "resilience-app": 8
+            },
+            "RatioTapChanger.reg4b": {
+                "decarbonization-app": 8,
+                "resilience-app": -4
+            },
+            "RatioTapChanger.reg4c": {
+                "decarbonization-app": -8,
+                "resilience-app": -9
+            }
+        },
+        "timestamps": {
+            "decarbonization-app": 40,
+            "resilience-app": 40
+        }
+    },
+    "41": {
+        "setpoints": {
+            "BatteryUnit.battery1": {
+                "decarbonization-app": 125000.0,
+                "resilience-app": 125000.0
+            },
+            "BatteryUnit.battery2": {
+                "decarbonization-app": 149622.36,
+                "resilience-app": 200000.0
+            },
+            "BatteryUnit.battery3": {
+                "decarbonization-app": 100000.0,
+                "resilience-app": 100000.0
+            },
+            "BatteryUnit.battery5": {
+                "decarbonization-app": 186278.44,
+                "resilience-app": 250000.0
+            },
+            "RatioTapChanger.reg1a": {
+                "decarbonization-app": 0,
+                "resilience-app": 0
+            },
+            "RatioTapChanger.reg2a": {
+                "decarbonization-app": 3,
+                "resilience-app": 1
+            },
+            "RatioTapChanger.reg3a": {
+                "decarbonization-app": 1,
+                "resilience-app": 2
+            },
+            "RatioTapChanger.reg3c": {
+                "decarbonization-app": 3,
+                "resilience-app": 4
+            },
+            "RatioTapChanger.reg4a": {
+                "decarbonization-app": 5,
+                "resilience-app": 8
+            },
+            "RatioTapChanger.reg4b": {
+                "decarbonization-app": 3,
+                "resilience-app": -4
+            },
+            "RatioTapChanger.reg4c": {
+                "decarbonization-app": -8,
+                "resilience-app": -6
+            }
+        },
+        "timestamps": {
+            "decarbonization-app": 41,
+            "resilience-app": 41
+        }
+    },
+    "42": {
+        "setpoints": {
+            "BatteryUnit.battery1": {
+                "decarbonization-app": 125000.0,
+                "resilience-app": 125000.0
+            },
+            "BatteryUnit.battery2": {
+                "decarbonization-app": 200000.0,
+                "resilience-app": 200000.0
+            },
+            "BatteryUnit.battery3": {
+                "decarbonization-app": 100000.0,
+                "resilience-app": 100000.0
+            },
+            "BatteryUnit.battery5": {
+                "decarbonization-app": 250000.0,
+                "resilience-app": 232586.02
+            },
+            "RatioTapChanger.reg1a": {
+                "decarbonization-app": 1,
+                "resilience-app": -5
+            },
+            "RatioTapChanger.reg2a": {
+                "decarbonization-app": 2,
+                "resilience-app": 2
+            },
+            "RatioTapChanger.reg3a": {
+                "decarbonization-app": 0,
+                "resilience-app": 15
+            },
+            "RatioTapChanger.reg3c": {
+                "decarbonization-app": -3,
+                "resilience-app": 7
+            },
+            "RatioTapChanger.reg4a": {
+                "decarbonization-app": 6,
+                "resilience-app": 8
+            },
+            "RatioTapChanger.reg4b": {
+                "decarbonization-app": -3,
+                "resilience-app": 11
+            },
+            "RatioTapChanger.reg4c": {
+                "decarbonization-app": -9,
+                "resilience-app": -3
+            }
+        },
+        "timestamps": {
+            "decarbonization-app": 42,
+            "resilience-app": 42
+        }
+    },
+    "43": {
+        "setpoints": {
+            "BatteryUnit.battery1": {
+                "decarbonization-app": 125000.0,
+                "resilience-app": 125000.0
+            },
+            "BatteryUnit.battery2": {
+                "decarbonization-app": 200000.0,
+                "resilience-app": 200000.0
+            },
+            "BatteryUnit.battery3": {
+                "decarbonization-app": 100000.0,
+                "resilience-app": 100000.0
+            },
+            "BatteryUnit.battery5": {
+                "decarbonization-app": 250000.0,
+                "resilience-app": 250000.0
+            },
+            "RatioTapChanger.reg1a": {
+                "decarbonization-app": -4,
+                "resilience-app": -5
+            },
+            "RatioTapChanger.reg2a": {
+                "decarbonization-app": 11,
+                "resilience-app": 4
+            },
+            "RatioTapChanger.reg3a": {
+                "decarbonization-app": 9,
+                "resilience-app": 10
+            },
+            "RatioTapChanger.reg3c": {
+                "decarbonization-app": -3,
+                "resilience-app": 11
+            },
+            "RatioTapChanger.reg4a": {
+                "decarbonization-app": 13,
+                "resilience-app": 15
+            },
+            "RatioTapChanger.reg4b": {
+                "decarbonization-app": 8,
+                "resilience-app": 1
+            },
+            "RatioTapChanger.reg4c": {
+                "decarbonization-app": -1,
+                "resilience-app": -3
+            }
+        },
+        "timestamps": {
+            "decarbonization-app": 43,
+            "resilience-app": 43
+        }
+    },
+    "44": {
+        "setpoints": {
+            "BatteryUnit.battery1": {
+                "decarbonization-app": 125000.0,
+                "resilience-app": 125000.0
+            },
+            "BatteryUnit.battery2": {
+                "decarbonization-app": 200000.0,
+                "resilience-app": 200000.0
+            },
+            "BatteryUnit.battery3": {
+                "decarbonization-app": 100000.0,
+                "resilience-app": 100000.0
+            },
+            "BatteryUnit.battery5": {
+                "decarbonization-app": 250000.0,
+                "resilience-app": 250000.0
+            },
+            "RatioTapChanger.reg1a": {
+                "decarbonization-app": 5,
+                "resilience-app": 0
+            },
+            "RatioTapChanger.reg2a": {
+                "decarbonization-app": 2,
+                "resilience-app": 4
+            },
+            "RatioTapChanger.reg3a": {
+                "decarbonization-app": 0,
+                "resilience-app": 4
+            },
+            "RatioTapChanger.reg3c": {
+                "decarbonization-app": -3,
+                "resilience-app": 7
+            },
+            "RatioTapChanger.reg4a": {
+                "decarbonization-app": 2,
+                "resilience-app": 9
+            },
+            "RatioTapChanger.reg4b": {
+                "decarbonization-app": -10,
+                "resilience-app": 2
+            },
+            "RatioTapChanger.reg4c": {
+                "decarbonization-app": -13,
+                "resilience-app": 5
+            }
+        },
+        "timestamps": {
+            "decarbonization-app": 44,
+            "resilience-app": 44
+        }
+    },
+    "45": {
+        "setpoints": {
+            "BatteryUnit.battery1": {
+                "decarbonization-app": 125000.0,
+                "resilience-app": 125000.0
+            },
+            "BatteryUnit.battery2": {
+                "decarbonization-app": 200000.0,
+                "resilience-app": 200000.0
+            },
+            "BatteryUnit.battery3": {
+                "decarbonization-app": 100000.0,
+                "resilience-app": 100000.0
+            },
+            "BatteryUnit.battery5": {
+                "decarbonization-app": 250000.0,
+                "resilience-app": 250000.0
+            },
+            "RatioTapChanger.reg1a": {
+                "decarbonization-app": -4,
+                "resilience-app": -5
+            },
+            "RatioTapChanger.reg2a": {
+                "decarbonization-app": 11,
+                "resilience-app": 4
+            },
+            "RatioTapChanger.reg3a": {
+                "decarbonization-app": 9,
+                "resilience-app": 1
+            },
+            "RatioTapChanger.reg3c": {
+                "decarbonization-app": -3,
+                "resilience-app": 1
+            },
+            "RatioTapChanger.reg4a": {
+                "decarbonization-app": 13,
+                "resilience-app": 12
+            },
+            "RatioTapChanger.reg4b": {
+                "decarbonization-app": 6,
+                "resilience-app": 1
+            },
+            "RatioTapChanger.reg4c": {
+                "decarbonization-app": -4,
+                "resilience-app": -4
+            }
+        },
+        "timestamps": {
+            "decarbonization-app": 45,
+            "resilience-app": 45
+        }
+    },
+    "46": {
+        "setpoints": {
+            "BatteryUnit.battery1": {
+                "decarbonization-app": 125000.0,
+                "resilience-app": 125000.0
+            },
+            "BatteryUnit.battery2": {
+                "decarbonization-app": 93732.346,
+                "resilience-app": 93732.346
+            },
+            "BatteryUnit.battery3": {
+                "decarbonization-app": 100000.0,
+                "resilience-app": 100000.0
+            },
+            "BatteryUnit.battery5": {
+                "decarbonization-app": 250000.0,
+                "resilience-app": 250000.0
+            },
+            "RatioTapChanger.reg1a": {
+                "decarbonization-app": -3,
+                "resilience-app": -5
+            },
+            "RatioTapChanger.reg2a": {
+                "decarbonization-app": 11,
+                "resilience-app": 4
+            },
+            "RatioTapChanger.reg3a": {
+                "decarbonization-app": 9,
+                "resilience-app": 10
+            },
+            "RatioTapChanger.reg3c": {
+                "decarbonization-app": 3,
+                "resilience-app": 12
+            },
+            "RatioTapChanger.reg4a": {
+                "decarbonization-app": 3,
+                "resilience-app": 12
+            },
+            "RatioTapChanger.reg4b": {
+                "decarbonization-app": 2,
+                "resilience-app": -4
+            },
+            "RatioTapChanger.reg4c": {
+                "decarbonization-app": -6,
+                "resilience-app": -4
+            }
+        },
+        "timestamps": {
+            "decarbonization-app": 46,
+            "resilience-app": 46
+        }
+    },
+    "47": {
+        "setpoints": {
+            "BatteryUnit.battery1": {
+                "decarbonization-app": 125000.0,
+                "resilience-app": 125000.0
+            },
+            "BatteryUnit.battery2": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 0.0
+            },
+            "BatteryUnit.battery3": {
+                "decarbonization-app": 100000.0,
+                "resilience-app": 100000.0
+            },
+            "BatteryUnit.battery5": {
+                "decarbonization-app": 250000.0,
+                "resilience-app": 250000.0
+            },
+            "RatioTapChanger.reg1a": {
+                "decarbonization-app": -3,
+                "resilience-app": -2
+            },
+            "RatioTapChanger.reg2a": {
+                "decarbonization-app": 4,
+                "resilience-app": 4
+            },
+            "RatioTapChanger.reg3a": {
+                "decarbonization-app": 10,
+                "resilience-app": 0
+            },
+            "RatioTapChanger.reg3c": {
+                "decarbonization-app": -2,
+                "resilience-app": 6
+            },
+            "RatioTapChanger.reg4a": {
+                "decarbonization-app": -2,
+                "resilience-app": 3
+            },
+            "RatioTapChanger.reg4b": {
+                "decarbonization-app": 6,
+                "resilience-app": -4
+            },
+            "RatioTapChanger.reg4c": {
+                "decarbonization-app": 3,
+                "resilience-app": -7
+            }
+        },
+        "timestamps": {
+            "decarbonization-app": 47,
+            "resilience-app": 47
+        }
+    },
+    "48": {
+        "setpoints": {
+            "BatteryUnit.battery1": {
+                "decarbonization-app": 125000.0,
+                "resilience-app": 125000.0
+            },
+            "BatteryUnit.battery2": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 0.0
+            },
+            "BatteryUnit.battery3": {
+                "decarbonization-app": 100000.0,
+                "resilience-app": 100000.0
+            },
+            "BatteryUnit.battery5": {
+                "decarbonization-app": 250000.0,
+                "resilience-app": 250000.0
+            },
+            "RatioTapChanger.reg1a": {
+                "decarbonization-app": 0,
+                "resilience-app": -2
+            },
+            "RatioTapChanger.reg2a": {
+                "decarbonization-app": -1,
+                "resilience-app": 4
+            },
+            "RatioTapChanger.reg3a": {
+                "decarbonization-app": 4,
+                "resilience-app": 0
+            },
+            "RatioTapChanger.reg3c": {
+                "decarbonization-app": -2,
+                "resilience-app": 0
+            },
+            "RatioTapChanger.reg4a": {
+                "decarbonization-app": 5,
+                "resilience-app": 2
+            },
+            "RatioTapChanger.reg4b": {
+                "decarbonization-app": -2,
+                "resilience-app": 6
+            },
+            "RatioTapChanger.reg4c": {
+                "decarbonization-app": 3,
+                "resilience-app": -7
+            }
+        },
+        "timestamps": {
+            "decarbonization-app": 48,
+            "resilience-app": 48
+        }
+    },
+    "49": {
+        "setpoints": {
+            "BatteryUnit.battery1": {
+                "decarbonization-app": 125000.0,
+                "resilience-app": 125000.0
+            },
+            "BatteryUnit.battery2": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 0.0
+            },
+            "BatteryUnit.battery3": {
+                "decarbonization-app": 100000.0,
+                "resilience-app": 100000.0
+            },
+            "BatteryUnit.battery5": {
+                "decarbonization-app": 250000.0,
+                "resilience-app": 250000.0
+            },
+            "RatioTapChanger.reg1a": {
+                "decarbonization-app": 0,
+                "resilience-app": -4
+            },
+            "RatioTapChanger.reg2a": {
+                "decarbonization-app": 5,
+                "resilience-app": 1
+            },
+            "RatioTapChanger.reg3a": {
+                "decarbonization-app": 5,
+                "resilience-app": 10
+            },
+            "RatioTapChanger.reg3c": {
+                "decarbonization-app": 4,
+                "resilience-app": 12
+            },
+            "RatioTapChanger.reg4a": {
+                "decarbonization-app": 6,
+                "resilience-app": 2
+            },
+            "RatioTapChanger.reg4b": {
+                "decarbonization-app": -1,
+                "resilience-app": 0
+            },
+            "RatioTapChanger.reg4c": {
+                "decarbonization-app": 0,
+                "resilience-app": -5
+            }
+        },
+        "timestamps": {
+            "decarbonization-app": 49,
+            "resilience-app": 49
+        }
+    },
+    "50": {
+        "setpoints": {
+            "BatteryUnit.battery1": {
+                "decarbonization-app": 125000.0,
+                "resilience-app": 125000.0
+            },
+            "BatteryUnit.battery2": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 0.0
+            },
+            "BatteryUnit.battery3": {
+                "decarbonization-app": 100000.0,
+                "resilience-app": 100000.0
+            },
+            "BatteryUnit.battery5": {
+                "decarbonization-app": 250000.0,
+                "resilience-app": 250000.0
+            },
+            "RatioTapChanger.reg1a": {
+                "decarbonization-app": -3,
+                "resilience-app": -4
+            },
+            "RatioTapChanger.reg2a": {
+                "decarbonization-app": 6,
+                "resilience-app": 4
+            },
+            "RatioTapChanger.reg3a": {
+                "decarbonization-app": -2,
+                "resilience-app": -1
+            },
+            "RatioTapChanger.reg3c": {
+                "decarbonization-app": -2,
+                "resilience-app": 12
+            },
+            "RatioTapChanger.reg4a": {
+                "decarbonization-app": -2,
+                "resilience-app": 8
+            },
+            "RatioTapChanger.reg4b": {
+                "decarbonization-app": 0,
+                "resilience-app": 5
+            },
+            "RatioTapChanger.reg4c": {
+                "decarbonization-app": 3,
+                "resilience-app": -5
+            }
+        },
+        "timestamps": {
+            "decarbonization-app": 50,
+            "resilience-app": 50
+        }
+    },
+    "51": {
+        "setpoints": {
+            "BatteryUnit.battery1": {
+                "decarbonization-app": 125000.0,
+                "resilience-app": 125000.0
+            },
+            "BatteryUnit.battery2": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 0.0
+            },
+            "BatteryUnit.battery3": {
+                "decarbonization-app": 100000.0,
+                "resilience-app": 100000.0
+            },
+            "BatteryUnit.battery5": {
+                "decarbonization-app": 250000.0,
+                "resilience-app": 250000.0
+            },
+            "RatioTapChanger.reg1a": {
+                "decarbonization-app": -3,
+                "resilience-app": 1
+            },
+            "RatioTapChanger.reg2a": {
+                "decarbonization-app": 6,
+                "resilience-app": 4
+            },
+            "RatioTapChanger.reg3a": {
+                "decarbonization-app": 4,
+                "resilience-app": 2
+            },
+            "RatioTapChanger.reg3c": {
+                "decarbonization-app": -2,
+                "resilience-app": -1
+            },
+            "RatioTapChanger.reg4a": {
+                "decarbonization-app": 3,
+                "resilience-app": 3
+            },
+            "RatioTapChanger.reg4b": {
+                "decarbonization-app": -4,
+                "resilience-app": 0
+            },
+            "RatioTapChanger.reg4c": {
+                "decarbonization-app": 3,
+                "resilience-app": -5
+            }
+        },
+        "timestamps": {
+            "decarbonization-app": 51,
+            "resilience-app": 51
+        }
+    },
+    "52": {
+        "setpoints": {
+            "BatteryUnit.battery1": {
+                "decarbonization-app": 125000.0,
+                "resilience-app": 125000.0
+            },
+            "BatteryUnit.battery2": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 0.0
+            },
+            "BatteryUnit.battery3": {
+                "decarbonization-app": 100000.0,
+                "resilience-app": 100000.0
+            },
+            "BatteryUnit.battery5": {
+                "decarbonization-app": 250000.0,
+                "resilience-app": 250000.0
+            },
+            "RatioTapChanger.reg1a": {
+                "decarbonization-app": -4,
+                "resilience-app": -2
+            },
+            "RatioTapChanger.reg2a": {
+                "decarbonization-app": 3,
+                "resilience-app": 8
+            },
+            "RatioTapChanger.reg3a": {
+                "decarbonization-app": 10,
+                "resilience-app": 4
+            },
+            "RatioTapChanger.reg3c": {
+                "decarbonization-app": -2,
+                "resilience-app": 1
+            },
+            "RatioTapChanger.reg4a": {
+                "decarbonization-app": 5,
+                "resilience-app": 8
+            },
+            "RatioTapChanger.reg4b": {
+                "decarbonization-app": -1,
+                "resilience-app": -4
+            },
+            "RatioTapChanger.reg4c": {
+                "decarbonization-app": 3,
+                "resilience-app": -3
+            }
+        },
+        "timestamps": {
+            "decarbonization-app": 52,
+            "resilience-app": 52
+        }
+    },
+    "53": {
+        "setpoints": {
+            "BatteryUnit.battery1": {
+                "decarbonization-app": 80362.467,
+                "resilience-app": 80362.467
+            },
+            "BatteryUnit.battery2": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 0.0
+            },
+            "BatteryUnit.battery3": {
+                "decarbonization-app": 100000.0,
+                "resilience-app": 100000.0
+            },
+            "BatteryUnit.battery5": {
+                "decarbonization-app": 250000.0,
+                "resilience-app": 250000.0
+            },
+            "RatioTapChanger.reg1a": {
+                "decarbonization-app": 0,
+                "resilience-app": -4
+            },
+            "RatioTapChanger.reg2a": {
+                "decarbonization-app": -7,
+                "resilience-app": 1
+            },
+            "RatioTapChanger.reg3a": {
+                "decarbonization-app": 4,
+                "resilience-app": 4
+            },
+            "RatioTapChanger.reg3c": {
+                "decarbonization-app": -2,
+                "resilience-app": 13
+            },
+            "RatioTapChanger.reg4a": {
+                "decarbonization-app": 5,
+                "resilience-app": 8
+            },
+            "RatioTapChanger.reg4b": {
+                "decarbonization-app": 1,
+                "resilience-app": 3
+            },
+            "RatioTapChanger.reg4c": {
+                "decarbonization-app": -7,
+                "resilience-app": 1
+            }
+        },
+        "timestamps": {
+            "decarbonization-app": 53,
+            "resilience-app": 53
+        }
+    },
+    "54": {
+        "setpoints": {
+            "BatteryUnit.battery1": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 0.0
+            },
+            "BatteryUnit.battery2": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 0.0
+            },
+            "BatteryUnit.battery3": {
+                "decarbonization-app": 100000.0,
+                "resilience-app": 100000.0
+            },
+            "BatteryUnit.battery5": {
+                "decarbonization-app": 250000.0,
+                "resilience-app": 250000.0
+            },
+            "RatioTapChanger.reg1a": {
+                "decarbonization-app": 3,
+                "resilience-app": -2
+            },
+            "RatioTapChanger.reg2a": {
+                "decarbonization-app": 3,
+                "resilience-app": -3
+            },
+            "RatioTapChanger.reg3a": {
+                "decarbonization-app": -4,
+                "resilience-app": 5
+            },
+            "RatioTapChanger.reg3c": {
+                "decarbonization-app": -1,
+                "resilience-app": 8
+            },
+            "RatioTapChanger.reg4a": {
+                "decarbonization-app": 1,
+                "resilience-app": 0
+            },
+            "RatioTapChanger.reg4b": {
+                "decarbonization-app": -4,
+                "resilience-app": 0
+            },
+            "RatioTapChanger.reg4c": {
+                "decarbonization-app": -11,
+                "resilience-app": -4
+            }
+        },
+        "timestamps": {
+            "decarbonization-app": 54,
+            "resilience-app": 54
+        }
+    },
+    "55": {
+        "setpoints": {
+            "BatteryUnit.battery1": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 0.0
+            },
+            "BatteryUnit.battery2": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 0.0
+            },
+            "BatteryUnit.battery3": {
+                "decarbonization-app": 100000.0,
+                "resilience-app": 100000.0
+            },
+            "BatteryUnit.battery5": {
+                "decarbonization-app": 250000.0,
+                "resilience-app": 250000.0
+            },
+            "RatioTapChanger.reg1a": {
+                "decarbonization-app": 3,
+                "resilience-app": 0
+            },
+            "RatioTapChanger.reg2a": {
+                "decarbonization-app": 0,
+                "resilience-app": -3
+            },
+            "RatioTapChanger.reg3a": {
+                "decarbonization-app": -3,
+                "resilience-app": 2
+            },
+            "RatioTapChanger.reg3c": {
+                "decarbonization-app": -1,
+                "resilience-app": 7
+            },
+            "RatioTapChanger.reg4a": {
+                "decarbonization-app": -10,
+                "resilience-app": -7
+            },
+            "RatioTapChanger.reg4b": {
+                "decarbonization-app": -1,
+                "resilience-app": -6
+            },
+            "RatioTapChanger.reg4c": {
+                "decarbonization-app": 0,
+                "resilience-app": -8
+            }
+        },
+        "timestamps": {
+            "decarbonization-app": 55,
+            "resilience-app": 55
+        }
+    },
+    "56": {
+        "setpoints": {
+            "BatteryUnit.battery1": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 0.0
+            },
+            "BatteryUnit.battery2": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 0.0
+            },
+            "BatteryUnit.battery3": {
+                "decarbonization-app": 100000.0,
+                "resilience-app": 100000.0
+            },
+            "BatteryUnit.battery5": {
+                "decarbonization-app": 250000.0,
+                "resilience-app": 250000.0
+            },
+            "RatioTapChanger.reg1a": {
+                "decarbonization-app": -3,
+                "resilience-app": -3
+            },
+            "RatioTapChanger.reg2a": {
+                "decarbonization-app": -6,
+                "resilience-app": 8
+            },
+            "RatioTapChanger.reg3a": {
+                "decarbonization-app": 5,
+                "resilience-app": 5
+            },
+            "RatioTapChanger.reg3c": {
+                "decarbonization-app": -1,
+                "resilience-app": 5
+            },
+            "RatioTapChanger.reg4a": {
+                "decarbonization-app": 4,
+                "resilience-app": 7
+            },
+            "RatioTapChanger.reg4b": {
+                "decarbonization-app": -6,
+                "resilience-app": -6
+            },
+            "RatioTapChanger.reg4c": {
+                "decarbonization-app": -5,
+                "resilience-app": -2
+            }
+        },
+        "timestamps": {
+            "decarbonization-app": 56,
+            "resilience-app": 56
+        }
+    },
+    "57": {
+        "setpoints": {
+            "BatteryUnit.battery1": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 0.0
+            },
+            "BatteryUnit.battery2": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 0.0
+            },
+            "BatteryUnit.battery3": {
+                "decarbonization-app": 100000.0,
+                "resilience-app": 100000.0
+            },
+            "BatteryUnit.battery5": {
+                "decarbonization-app": 250000.0,
+                "resilience-app": 250000.0
+            },
+            "RatioTapChanger.reg1a": {
+                "decarbonization-app": -4,
+                "resilience-app": -4
+            },
+            "RatioTapChanger.reg2a": {
+                "decarbonization-app": 5,
+                "resilience-app": 8
+            },
+            "RatioTapChanger.reg3a": {
+                "decarbonization-app": 3,
+                "resilience-app": 5
+            },
+            "RatioTapChanger.reg3c": {
+                "decarbonization-app": -1,
+                "resilience-app": 8
+            },
+            "RatioTapChanger.reg4a": {
+                "decarbonization-app": 3,
+                "resilience-app": -2
+            },
+            "RatioTapChanger.reg4b": {
+                "decarbonization-app": 3,
+                "resilience-app": -6
+            },
+            "RatioTapChanger.reg4c": {
+                "decarbonization-app": 3,
+                "resilience-app": 7
+            }
+        },
+        "timestamps": {
+            "decarbonization-app": 57,
+            "resilience-app": 57
+        }
+    },
+    "58": {
+        "setpoints": {
+            "BatteryUnit.battery1": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 0.0
+            },
+            "BatteryUnit.battery2": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 0.0
+            },
+            "BatteryUnit.battery3": {
+                "decarbonization-app": 100000.0,
+                "resilience-app": 100000.0
+            },
+            "BatteryUnit.battery5": {
+                "decarbonization-app": 250000.0,
+                "resilience-app": 250000.0
+            },
+            "RatioTapChanger.reg1a": {
+                "decarbonization-app": 1,
+                "resilience-app": -4
+            },
+            "RatioTapChanger.reg2a": {
+                "decarbonization-app": -8,
+                "resilience-app": 6
+            },
+            "RatioTapChanger.reg3a": {
+                "decarbonization-app": 3,
+                "resilience-app": 8
+            },
+            "RatioTapChanger.reg3c": {
+                "decarbonization-app": -1,
+                "resilience-app": 8
+            },
+            "RatioTapChanger.reg4a": {
+                "decarbonization-app": -6,
+                "resilience-app": 7
+            },
+            "RatioTapChanger.reg4b": {
+                "decarbonization-app": 1,
+                "resilience-app": 0
+            },
+            "RatioTapChanger.reg4c": {
+                "decarbonization-app": -1,
+                "resilience-app": -2
+            }
+        },
+        "timestamps": {
+            "decarbonization-app": 58,
+            "resilience-app": 58
+        }
+    },
+    "59": {
+        "setpoints": {
+            "BatteryUnit.battery1": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 0.0
+            },
+            "BatteryUnit.battery2": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 0.0
+            },
+            "BatteryUnit.battery3": {
+                "decarbonization-app": 100000.0,
+                "resilience-app": 100000.0
+            },
+            "BatteryUnit.battery5": {
+                "decarbonization-app": 250000.0,
+                "resilience-app": 250000.0
+            },
+            "RatioTapChanger.reg1a": {
+                "decarbonization-app": -2,
+                "resilience-app": -3
+            },
+            "RatioTapChanger.reg2a": {
+                "decarbonization-app": -7,
+                "resilience-app": 8
+            },
+            "RatioTapChanger.reg3a": {
+                "decarbonization-app": 5,
+                "resilience-app": 2
+            },
+            "RatioTapChanger.reg3c": {
+                "decarbonization-app": -1,
+                "resilience-app": 7
+            },
+            "RatioTapChanger.reg4a": {
+                "decarbonization-app": 2,
+                "resilience-app": 7
+            },
+            "RatioTapChanger.reg4b": {
+                "decarbonization-app": -5,
+                "resilience-app": -6
+            },
+            "RatioTapChanger.reg4c": {
+                "decarbonization-app": 3,
+                "resilience-app": 2
+            }
+        },
+        "timestamps": {
+            "decarbonization-app": 59,
+            "resilience-app": 59
+        }
+    },
+    "60": {
+        "setpoints": {
+            "BatteryUnit.battery1": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 0.0
+            },
+            "BatteryUnit.battery2": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 0.0
+            },
+            "BatteryUnit.battery3": {
+                "decarbonization-app": 100000.0,
+                "resilience-app": 100000.0
+            },
+            "BatteryUnit.battery5": {
+                "decarbonization-app": 250000.0,
+                "resilience-app": 250000.0
+            },
+            "RatioTapChanger.reg1a": {
+                "decarbonization-app": 2,
+                "resilience-app": -1
+            },
+            "RatioTapChanger.reg2a": {
+                "decarbonization-app": -2,
+                "resilience-app": -7
+            },
+            "RatioTapChanger.reg3a": {
+                "decarbonization-app": 1,
+                "resilience-app": 2
+            },
+            "RatioTapChanger.reg3c": {
+                "decarbonization-app": -1,
+                "resilience-app": 2
+            },
+            "RatioTapChanger.reg4a": {
+                "decarbonization-app": -6,
+                "resilience-app": -4
+            },
+            "RatioTapChanger.reg4b": {
+                "decarbonization-app": -5,
+                "resilience-app": -6
+            },
+            "RatioTapChanger.reg4c": {
+                "decarbonization-app": -1,
+                "resilience-app": -2
+            }
+        },
+        "timestamps": {
+            "decarbonization-app": 60,
+            "resilience-app": 60
+        }
+    },
+    "61": {
+        "setpoints": {
+            "BatteryUnit.battery1": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 0.0
+            },
+            "BatteryUnit.battery2": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 0.0
+            },
+            "BatteryUnit.battery3": {
+                "decarbonization-app": 100000.0,
+                "resilience-app": 100000.0
+            },
+            "BatteryUnit.battery5": {
+                "decarbonization-app": 250000.0,
+                "resilience-app": 250000.0
+            },
+            "RatioTapChanger.reg1a": {
+                "decarbonization-app": 2,
+                "resilience-app": 1
+            },
+            "RatioTapChanger.reg2a": {
+                "decarbonization-app": -2,
+                "resilience-app": 2
+            },
+            "RatioTapChanger.reg3a": {
+                "decarbonization-app": 3,
+                "resilience-app": 2
+            },
+            "RatioTapChanger.reg3c": {
+                "decarbonization-app": -1,
+                "resilience-app": 7
+            },
+            "RatioTapChanger.reg4a": {
+                "decarbonization-app": -4,
+                "resilience-app": -3
+            },
+            "RatioTapChanger.reg4b": {
+                "decarbonization-app": -12,
+                "resilience-app": -5
+            },
+            "RatioTapChanger.reg4c": {
+                "decarbonization-app": -3,
+                "resilience-app": -8
+            }
+        },
+        "timestamps": {
+            "decarbonization-app": 61,
+            "resilience-app": 61
+        }
+    },
+    "62": {
+        "setpoints": {
+            "BatteryUnit.battery1": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 0.0
+            },
+            "BatteryUnit.battery2": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 0.0
+            },
+            "BatteryUnit.battery3": {
+                "decarbonization-app": 100000.0,
+                "resilience-app": 100000.0
+            },
+            "BatteryUnit.battery5": {
+                "decarbonization-app": 250000.0,
+                "resilience-app": 250000.0
+            },
+            "RatioTapChanger.reg1a": {
+                "decarbonization-app": -4,
+                "resilience-app": -3
+            },
+            "RatioTapChanger.reg2a": {
+                "decarbonization-app": 5,
+                "resilience-app": -4
+            },
+            "RatioTapChanger.reg3a": {
+                "decarbonization-app": 5,
+                "resilience-app": 2
+            },
+            "RatioTapChanger.reg3c": {
+                "decarbonization-app": -1,
+                "resilience-app": 7
+            },
+            "RatioTapChanger.reg4a": {
+                "decarbonization-app": -3,
+                "resilience-app": 7
+            },
+            "RatioTapChanger.reg4b": {
+                "decarbonization-app": 2,
+                "resilience-app": -6
+            },
+            "RatioTapChanger.reg4c": {
+                "decarbonization-app": -2,
+                "resilience-app": 3
+            }
+        },
+        "timestamps": {
+            "decarbonization-app": 62,
+            "resilience-app": 62
+        }
+    },
+    "63": {
+        "setpoints": {
+            "BatteryUnit.battery1": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 0.0
+            },
+            "BatteryUnit.battery2": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 0.0
+            },
+            "BatteryUnit.battery3": {
+                "decarbonization-app": 100000.0,
+                "resilience-app": 100000.0
+            },
+            "BatteryUnit.battery5": {
+                "decarbonization-app": 250000.0,
+                "resilience-app": 250000.0
+            },
+            "RatioTapChanger.reg1a": {
+                "decarbonization-app": -3,
+                "resilience-app": -3
+            },
+            "RatioTapChanger.reg2a": {
+                "decarbonization-app": 10,
+                "resilience-app": 7
+            },
+            "RatioTapChanger.reg3a": {
+                "decarbonization-app": 5,
+                "resilience-app": 5
+            },
+            "RatioTapChanger.reg3c": {
+                "decarbonization-app": -1,
+                "resilience-app": 8
+            },
+            "RatioTapChanger.reg4a": {
+                "decarbonization-app": -1,
+                "resilience-app": 1
+            },
+            "RatioTapChanger.reg4b": {
+                "decarbonization-app": 1,
+                "resilience-app": -6
+            },
+            "RatioTapChanger.reg4c": {
+                "decarbonization-app": 4,
+                "resilience-app": -5
+            }
+        },
+        "timestamps": {
+            "decarbonization-app": 63,
+            "resilience-app": 63
+        }
+    },
+    "64": {
+        "setpoints": {
+            "BatteryUnit.battery1": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 0.0
+            },
+            "BatteryUnit.battery2": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 0.0
+            },
+            "BatteryUnit.battery3": {
+                "decarbonization-app": 100000.0,
+                "resilience-app": 100000.0
+            },
+            "BatteryUnit.battery5": {
+                "decarbonization-app": 250000.0,
+                "resilience-app": 250000.0
+            },
+            "RatioTapChanger.reg1a": {
+                "decarbonization-app": -2,
+                "resilience-app": -3
+            },
+            "RatioTapChanger.reg2a": {
+                "decarbonization-app": -6,
+                "resilience-app": -3
+            },
+            "RatioTapChanger.reg3a": {
+                "decarbonization-app": 5,
+                "resilience-app": 5
+            },
+            "RatioTapChanger.reg3c": {
+                "decarbonization-app": -1,
+                "resilience-app": 7
+            },
+            "RatioTapChanger.reg4a": {
+                "decarbonization-app": 3,
+                "resilience-app": 2
+            },
+            "RatioTapChanger.reg4b": {
+                "decarbonization-app": -5,
+                "resilience-app": 3
+            },
+            "RatioTapChanger.reg4c": {
+                "decarbonization-app": 3,
+                "resilience-app": 1
+            }
+        },
+        "timestamps": {
+            "decarbonization-app": 64,
+            "resilience-app": 64
+        }
+    },
+    "65": {
+        "setpoints": {
+            "BatteryUnit.battery1": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 0.0
+            },
+            "BatteryUnit.battery2": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 0.0
+            },
+            "BatteryUnit.battery3": {
+                "decarbonization-app": 100000.0,
+                "resilience-app": 100000.0
+            },
+            "BatteryUnit.battery5": {
+                "decarbonization-app": 250000.0,
+                "resilience-app": 250000.0
+            },
+            "RatioTapChanger.reg1a": {
+                "decarbonization-app": 0,
+                "resilience-app": -4
+            },
+            "RatioTapChanger.reg2a": {
+                "decarbonization-app": -7,
+                "resilience-app": 11
+            },
+            "RatioTapChanger.reg3a": {
+                "decarbonization-app": 5,
+                "resilience-app": 5
+            },
+            "RatioTapChanger.reg3c": {
+                "decarbonization-app": -1,
+                "resilience-app": 8
+            },
+            "RatioTapChanger.reg4a": {
+                "decarbonization-app": -6,
+                "resilience-app": 9
+            },
+            "RatioTapChanger.reg4b": {
+                "decarbonization-app": 2,
+                "resilience-app": 4
+            },
+            "RatioTapChanger.reg4c": {
+                "decarbonization-app": -6,
+                "resilience-app": 2
+            }
+        },
+        "timestamps": {
+            "decarbonization-app": 65,
+            "resilience-app": 65
+        }
+    },
+    "66": {
+        "setpoints": {
+            "BatteryUnit.battery1": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 3.6109864e-11
+            },
+            "BatteryUnit.battery2": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 1.1625454e-10
+            },
+            "BatteryUnit.battery3": {
+                "decarbonization-app": 100000.0,
+                "resilience-app": 100000.0
+            },
+            "BatteryUnit.battery5": {
+                "decarbonization-app": 250000.0,
+                "resilience-app": 248523.28
+            },
+            "RatioTapChanger.reg1a": {
+                "decarbonization-app": -4,
+                "resilience-app": 2
+            },
+            "RatioTapChanger.reg2a": {
+                "decarbonization-app": 4,
+                "resilience-app": -5
+            },
+            "RatioTapChanger.reg3a": {
+                "decarbonization-app": 5,
+                "resilience-app": 2
+            },
+            "RatioTapChanger.reg3c": {
+                "decarbonization-app": -1,
+                "resilience-app": 0
+            },
+            "RatioTapChanger.reg4a": {
+                "decarbonization-app": 6,
+                "resilience-app": 1
+            },
+            "RatioTapChanger.reg4b": {
+                "decarbonization-app": -6,
+                "resilience-app": 1
+            },
+            "RatioTapChanger.reg4c": {
+                "decarbonization-app": 0,
+                "resilience-app": -10
+            }
+        },
+        "timestamps": {
+            "decarbonization-app": 66,
+            "resilience-app": 66
+        }
+    },
+    "67": {
+        "setpoints": {
+            "BatteryUnit.battery1": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 0.0
+            },
+            "BatteryUnit.battery2": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 0.0
+            },
+            "BatteryUnit.battery3": {
+                "decarbonization-app": 100000.0,
+                "resilience-app": 100000.0
+            },
+            "BatteryUnit.battery5": {
+                "decarbonization-app": 250000.0,
+                "resilience-app": 250000.0
+            },
+            "RatioTapChanger.reg1a": {
+                "decarbonization-app": -4,
+                "resilience-app": -2
+            },
+            "RatioTapChanger.reg2a": {
+                "decarbonization-app": -1,
+                "resilience-app": 6
+            },
+            "RatioTapChanger.reg3a": {
+                "decarbonization-app": 1,
+                "resilience-app": -5
+            },
+            "RatioTapChanger.reg3c": {
+                "decarbonization-app": 0,
+                "resilience-app": 0
+            },
+            "RatioTapChanger.reg4a": {
+                "decarbonization-app": 7,
+                "resilience-app": 7
+            },
+            "RatioTapChanger.reg4b": {
+                "decarbonization-app": 3,
+                "resilience-app": 5
+            },
+            "RatioTapChanger.reg4c": {
+                "decarbonization-app": 0,
+                "resilience-app": -1
+            }
+        },
+        "timestamps": {
+            "decarbonization-app": 67,
+            "resilience-app": 67
+        }
+    },
+    "68": {
+        "setpoints": {
+            "BatteryUnit.battery1": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 0.0
+            },
+            "BatteryUnit.battery2": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 0.0
+            },
+            "BatteryUnit.battery3": {
+                "decarbonization-app": 100000.0,
+                "resilience-app": 100000.0
+            },
+            "BatteryUnit.battery5": {
+                "decarbonization-app": 250000.0,
+                "resilience-app": 250000.0
+            },
+            "RatioTapChanger.reg1a": {
+                "decarbonization-app": -4,
+                "resilience-app": -4
+            },
+            "RatioTapChanger.reg2a": {
+                "decarbonization-app": -1,
+                "resilience-app": 10
+            },
+            "RatioTapChanger.reg3a": {
+                "decarbonization-app": 6,
+                "resilience-app": 6
+            },
+            "RatioTapChanger.reg3c": {
+                "decarbonization-app": 0,
+                "resilience-app": 14
+            },
+            "RatioTapChanger.reg4a": {
+                "decarbonization-app": -1,
+                "resilience-app": 10
+            },
+            "RatioTapChanger.reg4b": {
+                "decarbonization-app": 1,
+                "resilience-app": 5
+            },
+            "RatioTapChanger.reg4c": {
+                "decarbonization-app": 8,
+                "resilience-app": -1
+            }
+        },
+        "timestamps": {
+            "decarbonization-app": 68,
+            "resilience-app": 68
+        }
+    },
+    "69": {
+        "setpoints": {
+            "BatteryUnit.battery1": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 0.0
+            },
+            "BatteryUnit.battery2": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 0.0
+            },
+            "BatteryUnit.battery3": {
+                "decarbonization-app": 100000.0,
+                "resilience-app": 100000.0
+            },
+            "BatteryUnit.battery5": {
+                "decarbonization-app": 250000.0,
+                "resilience-app": 250000.0
+            },
+            "RatioTapChanger.reg1a": {
+                "decarbonization-app": -2,
+                "resilience-app": 0
+            },
+            "RatioTapChanger.reg2a": {
+                "decarbonization-app": 7,
+                "resilience-app": 3
+            },
+            "RatioTapChanger.reg3a": {
+                "decarbonization-app": 7,
+                "resilience-app": 6
+            },
+            "RatioTapChanger.reg3c": {
+                "decarbonization-app": 0,
+                "resilience-app": 1
+            },
+            "RatioTapChanger.reg4a": {
+                "decarbonization-app": 7,
+                "resilience-app": 4
+            },
+            "RatioTapChanger.reg4b": {
+                "decarbonization-app": 3,
+                "resilience-app": -2
+            },
+            "RatioTapChanger.reg4c": {
+                "decarbonization-app": 4,
+                "resilience-app": -7
+            }
+        },
+        "timestamps": {
+            "decarbonization-app": 69,
+            "resilience-app": 69
+        }
+    },
+    "70": {
+        "setpoints": {
+            "BatteryUnit.battery1": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 0.0
+            },
+            "BatteryUnit.battery2": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 0.0
+            },
+            "BatteryUnit.battery3": {
+                "decarbonization-app": 100000.0,
+                "resilience-app": 100000.0
+            },
+            "BatteryUnit.battery5": {
+                "decarbonization-app": 250000.0,
+                "resilience-app": 250000.0
+            },
+            "RatioTapChanger.reg1a": {
+                "decarbonization-app": 1,
+                "resilience-app": -3
+            },
+            "RatioTapChanger.reg2a": {
+                "decarbonization-app": -1,
+                "resilience-app": 7
+            },
+            "RatioTapChanger.reg3a": {
+                "decarbonization-app": -1,
+                "resilience-app": 6
+            },
+            "RatioTapChanger.reg3c": {
+                "decarbonization-app": 0,
+                "resilience-app": 9
+            },
+            "RatioTapChanger.reg4a": {
+                "decarbonization-app": 2,
+                "resilience-app": 8
+            },
+            "RatioTapChanger.reg4b": {
+                "decarbonization-app": 3,
+                "resilience-app": 5
+            },
+            "RatioTapChanger.reg4c": {
+                "decarbonization-app": -6,
+                "resilience-app": -1
+            }
+        },
+        "timestamps": {
+            "decarbonization-app": 70,
+            "resilience-app": 70
+        }
+    },
+    "71": {
+        "setpoints": {
+            "BatteryUnit.battery1": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 0.0
+            },
+            "BatteryUnit.battery2": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 0.0
+            },
+            "BatteryUnit.battery3": {
+                "decarbonization-app": 100000.0,
+                "resilience-app": 100000.0
+            },
+            "BatteryUnit.battery5": {
+                "decarbonization-app": 250000.0,
+                "resilience-app": 250000.0
+            },
+            "RatioTapChanger.reg1a": {
+                "decarbonization-app": -3,
+                "resilience-app": 0
+            },
+            "RatioTapChanger.reg2a": {
+                "decarbonization-app": -1,
+                "resilience-app": 4
+            },
+            "RatioTapChanger.reg3a": {
+                "decarbonization-app": 10,
+                "resilience-app": 6
+            },
+            "RatioTapChanger.reg3c": {
+                "decarbonization-app": 0,
+                "resilience-app": 0
+            },
+            "RatioTapChanger.reg4a": {
+                "decarbonization-app": 7,
+                "resilience-app": 8
+            },
+            "RatioTapChanger.reg4b": {
+                "decarbonization-app": -2,
+                "resilience-app": -2
+            },
+            "RatioTapChanger.reg4c": {
+                "decarbonization-app": 8,
+                "resilience-app": -1
+            }
+        },
+        "timestamps": {
+            "decarbonization-app": 71,
+            "resilience-app": 71
+        }
+    },
+    "72": {
+        "setpoints": {
+            "BatteryUnit.battery1": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 0.0
+            },
+            "BatteryUnit.battery2": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 0.0
+            },
+            "BatteryUnit.battery3": {
+                "decarbonization-app": 100000.0,
+                "resilience-app": 100000.0
+            },
+            "BatteryUnit.battery5": {
+                "decarbonization-app": 250000.0,
+                "resilience-app": 250000.0
+            },
+            "RatioTapChanger.reg1a": {
+                "decarbonization-app": -3,
+                "resilience-app": -1
+            },
+            "RatioTapChanger.reg2a": {
+                "decarbonization-app": -1,
+                "resilience-app": 7
+            },
+            "RatioTapChanger.reg3a": {
+                "decarbonization-app": 6,
+                "resilience-app": -5
+            },
+            "RatioTapChanger.reg3c": {
+                "decarbonization-app": 0,
+                "resilience-app": 9
+            },
+            "RatioTapChanger.reg4a": {
+                "decarbonization-app": 5,
+                "resilience-app": 8
+            },
+            "RatioTapChanger.reg4b": {
+                "decarbonization-app": 6,
+                "resilience-app": 5
+            },
+            "RatioTapChanger.reg4c": {
+                "decarbonization-app": -2,
+                "resilience-app": -1
+            }
+        },
+        "timestamps": {
+            "decarbonization-app": 72,
+            "resilience-app": 72
+        }
+    },
+    "73": {
+        "setpoints": {
+            "BatteryUnit.battery1": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 0.0
+            },
+            "BatteryUnit.battery2": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 0.0
+            },
+            "BatteryUnit.battery3": {
+                "decarbonization-app": 100000.0,
+                "resilience-app": 100000.0
+            },
+            "BatteryUnit.battery5": {
+                "decarbonization-app": 250000.0,
+                "resilience-app": 250000.0
+            },
+            "RatioTapChanger.reg1a": {
+                "decarbonization-app": -3,
+                "resilience-app": 0
+            },
+            "RatioTapChanger.reg2a": {
+                "decarbonization-app": -1,
+                "resilience-app": 6
+            },
+            "RatioTapChanger.reg3a": {
+                "decarbonization-app": 6,
+                "resilience-app": 6
+            },
+            "RatioTapChanger.reg3c": {
+                "decarbonization-app": 0,
+                "resilience-app": 10
+            },
+            "RatioTapChanger.reg4a": {
+                "decarbonization-app": 7,
+                "resilience-app": 8
+            },
+            "RatioTapChanger.reg4b": {
+                "decarbonization-app": 3,
+                "resilience-app": -2
+            },
+            "RatioTapChanger.reg4c": {
+                "decarbonization-app": -1,
+                "resilience-app": -1
+            }
+        },
+        "timestamps": {
+            "decarbonization-app": 73,
+            "resilience-app": 73
+        }
+    },
+    "74": {
+        "setpoints": {
+            "BatteryUnit.battery1": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 0.0
+            },
+            "BatteryUnit.battery2": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 0.0
+            },
+            "BatteryUnit.battery3": {
+                "decarbonization-app": 100000.0,
+                "resilience-app": 100000.0
+            },
+            "BatteryUnit.battery5": {
+                "decarbonization-app": 250000.0,
+                "resilience-app": 250000.0
+            },
+            "RatioTapChanger.reg1a": {
+                "decarbonization-app": -3,
+                "resilience-app": -3
+            },
+            "RatioTapChanger.reg2a": {
+                "decarbonization-app": -1,
+                "resilience-app": 7
+            },
+            "RatioTapChanger.reg3a": {
+                "decarbonization-app": 4,
+                "resilience-app": 6
+            },
+            "RatioTapChanger.reg3c": {
+                "decarbonization-app": 0,
+                "resilience-app": 0
+            },
+            "RatioTapChanger.reg4a": {
+                "decarbonization-app": 7,
+                "resilience-app": 10
+            },
+            "RatioTapChanger.reg4b": {
+                "decarbonization-app": 2,
+                "resilience-app": 6
+            },
+            "RatioTapChanger.reg4c": {
+                "decarbonization-app": 1,
+                "resilience-app": -1
+            }
+        },
+        "timestamps": {
+            "decarbonization-app": 74,
+            "resilience-app": 74
+        }
+    },
+    "75": {
+        "setpoints": {
+            "BatteryUnit.battery1": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 0.0
+            },
+            "BatteryUnit.battery2": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 0.0
+            },
+            "BatteryUnit.battery3": {
+                "decarbonization-app": 100000.0,
+                "resilience-app": 100000.0
+            },
+            "BatteryUnit.battery5": {
+                "decarbonization-app": 250000.0,
+                "resilience-app": 250000.0
+            },
+            "RatioTapChanger.reg1a": {
+                "decarbonization-app": -2,
+                "resilience-app": 6
+            },
+            "RatioTapChanger.reg2a": {
+                "decarbonization-app": -1,
+                "resilience-app": 1
+            },
+            "RatioTapChanger.reg3a": {
+                "decarbonization-app": 6,
+                "resilience-app": -6
+            },
+            "RatioTapChanger.reg3c": {
+                "decarbonization-app": 0,
+                "resilience-app": 0
+            },
+            "RatioTapChanger.reg4a": {
+                "decarbonization-app": 2,
+                "resilience-app": -2
+            },
+            "RatioTapChanger.reg4b": {
+                "decarbonization-app": 2,
+                "resilience-app": -2
+            },
+            "RatioTapChanger.reg4c": {
+                "decarbonization-app": 1,
+                "resilience-app": -1
+            }
+        },
+        "timestamps": {
+            "decarbonization-app": 75,
+            "resilience-app": 75
+        }
+    },
+    "76": {
+        "setpoints": {
+            "BatteryUnit.battery1": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 0.0
+            },
+            "BatteryUnit.battery2": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 0.0
+            },
+            "BatteryUnit.battery3": {
+                "decarbonization-app": 100000.0,
+                "resilience-app": 100000.0
+            },
+            "BatteryUnit.battery5": {
+                "decarbonization-app": 250000.0,
+                "resilience-app": 250000.0
+            },
+            "RatioTapChanger.reg1a": {
+                "decarbonization-app": -1,
+                "resilience-app": 0
+            },
+            "RatioTapChanger.reg2a": {
+                "decarbonization-app": -1,
+                "resilience-app": -4
+            },
+            "RatioTapChanger.reg3a": {
+                "decarbonization-app": 6,
+                "resilience-app": 6
+            },
+            "RatioTapChanger.reg3c": {
+                "decarbonization-app": 0,
+                "resilience-app": 9
+            },
+            "RatioTapChanger.reg4a": {
+                "decarbonization-app": 7,
+                "resilience-app": 10
+            },
+            "RatioTapChanger.reg4b": {
+                "decarbonization-app": 3,
+                "resilience-app": -2
+            },
+            "RatioTapChanger.reg4c": {
+                "decarbonization-app": 4,
+                "resilience-app": -1
+            }
+        },
+        "timestamps": {
+            "decarbonization-app": 76,
+            "resilience-app": 76
+        }
+    },
+    "77": {
+        "setpoints": {
+            "BatteryUnit.battery1": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 0.0
+            },
+            "BatteryUnit.battery2": {
+                "decarbonization-app": -117038.98,
+                "resilience-app": 0.0
+            },
+            "BatteryUnit.battery3": {
+                "decarbonization-app": 100000.0,
+                "resilience-app": 100000.0
+            },
+            "BatteryUnit.battery5": {
+                "decarbonization-app": 250000.0,
+                "resilience-app": 250000.0
+            },
+            "RatioTapChanger.reg1a": {
+                "decarbonization-app": 5,
+                "resilience-app": 0
+            },
+            "RatioTapChanger.reg2a": {
+                "decarbonization-app": -1,
+                "resilience-app": -3
+            },
+            "RatioTapChanger.reg3a": {
+                "decarbonization-app": 2,
+                "resilience-app": 3
+            },
+            "RatioTapChanger.reg3c": {
+                "decarbonization-app": 0,
+                "resilience-app": 9
+            },
+            "RatioTapChanger.reg4a": {
+                "decarbonization-app": 3,
+                "resilience-app": 11
+            },
+            "RatioTapChanger.reg4b": {
+                "decarbonization-app": -11,
+                "resilience-app": 6
+            },
+            "RatioTapChanger.reg4c": {
+                "decarbonization-app": -8,
+                "resilience-app": -3
+            }
+        },
+        "timestamps": {
+            "decarbonization-app": 77,
+            "resilience-app": 77
+        }
+    },
+    "78": {
+        "setpoints": {
+            "BatteryUnit.battery1": {
+                "decarbonization-app": -125000.0,
+                "resilience-app": 0.0
+            },
+            "BatteryUnit.battery2": {
+                "decarbonization-app": -180128.19,
+                "resilience-app": 0.0
+            },
+            "BatteryUnit.battery3": {
+                "decarbonization-app": 100000.0,
+                "resilience-app": 100000.0
+            },
+            "BatteryUnit.battery5": {
+                "decarbonization-app": 213632.25,
+                "resilience-app": 250000.0
+            },
+            "RatioTapChanger.reg1a": {
+                "decarbonization-app": -3,
+                "resilience-app": 1
+            },
+            "RatioTapChanger.reg2a": {
+                "decarbonization-app": -1,
+                "resilience-app": -3
+            },
+            "RatioTapChanger.reg3a": {
+                "decarbonization-app": 6,
+                "resilience-app": 3
+            },
+            "RatioTapChanger.reg3c": {
+                "decarbonization-app": 0,
+                "resilience-app": 9
+            },
+            "RatioTapChanger.reg4a": {
+                "decarbonization-app": 7,
+                "resilience-app": 10
+            },
+            "RatioTapChanger.reg4b": {
+                "decarbonization-app": 9,
+                "resilience-app": -2
+            },
+            "RatioTapChanger.reg4c": {
+                "decarbonization-app": 4,
+                "resilience-app": -1
+            }
+        },
+        "timestamps": {
+            "decarbonization-app": 78,
+            "resilience-app": 78
+        }
+    },
+    "79": {
+        "setpoints": {
+            "BatteryUnit.battery1": {
+                "decarbonization-app": -125000.0,
+                "resilience-app": 0.0
+            },
+            "BatteryUnit.battery2": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 0.0
+            },
+            "BatteryUnit.battery3": {
+                "decarbonization-app": 100000.0,
+                "resilience-app": 100000.0
+            },
+            "BatteryUnit.battery5": {
+                "decarbonization-app": -143252.74,
+                "resilience-app": 250000.0
+            },
+            "RatioTapChanger.reg1a": {
+                "decarbonization-app": -4,
+                "resilience-app": 0
+            },
+            "RatioTapChanger.reg2a": {
+                "decarbonization-app": -1,
+                "resilience-app": -3
+            },
+            "RatioTapChanger.reg3a": {
+                "decarbonization-app": 12,
+                "resilience-app": -5
+            },
+            "RatioTapChanger.reg3c": {
+                "decarbonization-app": 0,
+                "resilience-app": 11
+            },
+            "RatioTapChanger.reg4a": {
+                "decarbonization-app": 7,
+                "resilience-app": 2
+            },
+            "RatioTapChanger.reg4b": {
+                "decarbonization-app": 3,
+                "resilience-app": 7
+            },
+            "RatioTapChanger.reg4c": {
+                "decarbonization-app": 4,
+                "resilience-app": -2
+            }
+        },
+        "timestamps": {
+            "decarbonization-app": 79,
+            "resilience-app": 79
+        }
+    },
+    "80": {
+        "setpoints": {
+            "BatteryUnit.battery1": {
+                "decarbonization-app": -125000.0,
+                "resilience-app": 0.0
+            },
+            "BatteryUnit.battery2": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 0.0
+            },
+            "BatteryUnit.battery3": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 100000.0
+            },
+            "BatteryUnit.battery5": {
+                "decarbonization-app": -32024.96,
+                "resilience-app": 250000.0
+            },
+            "RatioTapChanger.reg1a": {
+                "decarbonization-app": -2,
+                "resilience-app": -2
+            },
+            "RatioTapChanger.reg2a": {
+                "decarbonization-app": 1,
+                "resilience-app": 4
+            },
+            "RatioTapChanger.reg3a": {
+                "decarbonization-app": 2,
+                "resilience-app": 1
+            },
+            "RatioTapChanger.reg3c": {
+                "decarbonization-app": 6,
+                "resilience-app": 12
+            },
+            "RatioTapChanger.reg4a": {
+                "decarbonization-app": 1,
+                "resilience-app": 14
+            },
+            "RatioTapChanger.reg4b": {
+                "decarbonization-app": 3,
+                "resilience-app": -2
+            },
+            "RatioTapChanger.reg4c": {
+                "decarbonization-app": 0,
+                "resilience-app": 0
+            }
+        },
+        "timestamps": {
+            "decarbonization-app": 80,
+            "resilience-app": 80
+        }
+    },
+    "81": {
+        "setpoints": {
+            "BatteryUnit.battery1": {
+                "decarbonization-app": 8.6395671e-11,
+                "resilience-app": 0.0
+            },
+            "BatteryUnit.battery2": {
+                "decarbonization-app": -200000.0,
+                "resilience-app": 0.0
+            },
+            "BatteryUnit.battery3": {
+                "decarbonization-app": 70525.596,
+                "resilience-app": 100000.0
+            },
+            "BatteryUnit.battery5": {
+                "decarbonization-app": -206062.84,
+                "resilience-app": 250000.0
+            },
+            "RatioTapChanger.reg1a": {
+                "decarbonization-app": 7,
+                "resilience-app": -2
+            },
+            "RatioTapChanger.reg2a": {
+                "decarbonization-app": -1,
+                "resilience-app": 6
+            },
+            "RatioTapChanger.reg3a": {
+                "decarbonization-app": 1,
+                "resilience-app": 1
+            },
+            "RatioTapChanger.reg3c": {
+                "decarbonization-app": 0,
+                "resilience-app": -2
+            },
+            "RatioTapChanger.reg4a": {
+                "decarbonization-app": -6,
+                "resilience-app": 14
+            },
+            "RatioTapChanger.reg4b": {
+                "decarbonization-app": -5,
+                "resilience-app": 2
+            },
+            "RatioTapChanger.reg4c": {
+                "decarbonization-app": 2,
+                "resilience-app": 9
+            }
+        },
+        "timestamps": {
+            "decarbonization-app": 81,
+            "resilience-app": 81
+        }
+    },
+    "82": {
+        "setpoints": {
+            "BatteryUnit.battery1": {
+                "decarbonization-app": -125000.0,
+                "resilience-app": 8279.8685
+            },
+            "BatteryUnit.battery2": {
+                "decarbonization-app": -175547.1,
+                "resilience-app": 0.0
+            },
+            "BatteryUnit.battery3": {
+                "decarbonization-app": 36246.868,
+                "resilience-app": 100000.0
+            },
+            "BatteryUnit.battery5": {
+                "decarbonization-app": -250000.0,
+                "resilience-app": 250000.0
+            },
+            "RatioTapChanger.reg1a": {
+                "decarbonization-app": -4,
+                "resilience-app": 7
+            },
+            "RatioTapChanger.reg2a": {
+                "decarbonization-app": 4,
+                "resilience-app": 1
+            },
+            "RatioTapChanger.reg3a": {
+                "decarbonization-app": 11,
+                "resilience-app": 0
+            },
+            "RatioTapChanger.reg3c": {
+                "decarbonization-app": -1,
+                "resilience-app": 0
+            },
+            "RatioTapChanger.reg4a": {
+                "decarbonization-app": -2,
+                "resilience-app": 4
+            },
+            "RatioTapChanger.reg4b": {
+                "decarbonization-app": 6,
+                "resilience-app": -12
+            },
+            "RatioTapChanger.reg4c": {
+                "decarbonization-app": 2,
+                "resilience-app": -2
+            }
+        },
+        "timestamps": {
+            "decarbonization-app": 82,
+            "resilience-app": 82
+        }
+    },
+    "83": {
+        "setpoints": {
+            "BatteryUnit.battery1": {
+                "decarbonization-app": -125000.0,
+                "resilience-app": 33678.238
+            },
+            "BatteryUnit.battery2": {
+                "decarbonization-app": -200000.0,
+                "resilience-app": 0.0
+            },
+            "BatteryUnit.battery3": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 100000.0
+            },
+            "BatteryUnit.battery5": {
+                "decarbonization-app": -250000.0,
+                "resilience-app": 228657.93
+            },
+            "RatioTapChanger.reg1a": {
+                "decarbonization-app": 5,
+                "resilience-app": 4
+            },
+            "RatioTapChanger.reg2a": {
+                "decarbonization-app": -5,
+                "resilience-app": 2
+            },
+            "RatioTapChanger.reg3a": {
+                "decarbonization-app": -4,
+                "resilience-app": 2
+            },
+            "RatioTapChanger.reg3c": {
+                "decarbonization-app": -2,
+                "resilience-app": 1
+            },
+            "RatioTapChanger.reg4a": {
+                "decarbonization-app": 1,
+                "resilience-app": 0
+            },
+            "RatioTapChanger.reg4b": {
+                "decarbonization-app": 1,
+                "resilience-app": 0
+            },
+            "RatioTapChanger.reg4c": {
+                "decarbonization-app": -6,
+                "resilience-app": -7
+            }
+        },
+        "timestamps": {
+            "decarbonization-app": 83,
+            "resilience-app": 83
+        }
+    },
+    "84": {
+        "setpoints": {
+            "BatteryUnit.battery1": {
+                "decarbonization-app": -125000.0,
+                "resilience-app": 82501.432
+            },
+            "BatteryUnit.battery2": {
+                "decarbonization-app": -200000.0,
+                "resilience-app": 0.0
+            },
+            "BatteryUnit.battery3": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 100000.0
+            },
+            "BatteryUnit.battery5": {
+                "decarbonization-app": -250000.0,
+                "resilience-app": 250000.0
+            },
+            "RatioTapChanger.reg1a": {
+                "decarbonization-app": 6,
+                "resilience-app": 5
+            },
+            "RatioTapChanger.reg2a": {
+                "decarbonization-app": -2,
+                "resilience-app": 5
+            },
+            "RatioTapChanger.reg3a": {
+                "decarbonization-app": -1,
+                "resilience-app": 2
+            },
+            "RatioTapChanger.reg3c": {
+                "decarbonization-app": -2,
+                "resilience-app": -1
+            },
+            "RatioTapChanger.reg4a": {
+                "decarbonization-app": -4,
+                "resilience-app": 7
+            },
+            "RatioTapChanger.reg4b": {
+                "decarbonization-app": 0,
+                "resilience-app": -5
+            },
+            "RatioTapChanger.reg4c": {
+                "decarbonization-app": -9,
+                "resilience-app": -7
+            }
+        },
+        "timestamps": {
+            "decarbonization-app": 84,
+            "resilience-app": 84
+        }
+    },
+    "85": {
+        "setpoints": {
+            "BatteryUnit.battery1": {
+                "decarbonization-app": -125000.0,
+                "resilience-app": 125000.0
+            },
+            "BatteryUnit.battery2": {
+                "decarbonization-app": -200000.0,
+                "resilience-app": 60956.087
+            },
+            "BatteryUnit.battery3": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 100000.0
+            },
+            "BatteryUnit.battery5": {
+                "decarbonization-app": -250000.0,
+                "resilience-app": 250000.0
+            },
+            "RatioTapChanger.reg1a": {
+                "decarbonization-app": 7,
+                "resilience-app": -1
+            },
+            "RatioTapChanger.reg2a": {
+                "decarbonization-app": 1,
+                "resilience-app": 11
+            },
+            "RatioTapChanger.reg3a": {
+                "decarbonization-app": 0,
+                "resilience-app": 2
+            },
+            "RatioTapChanger.reg3c": {
+                "decarbonization-app": -3,
+                "resilience-app": 4
+            },
+            "RatioTapChanger.reg4a": {
+                "decarbonization-app": -3,
+                "resilience-app": 13
+            },
+            "RatioTapChanger.reg4b": {
+                "decarbonization-app": -1,
+                "resilience-app": 8
+            },
+            "RatioTapChanger.reg4c": {
+                "decarbonization-app": 1,
+                "resilience-app": 0
+            }
+        },
+        "timestamps": {
+            "decarbonization-app": 85,
+            "resilience-app": 85
+        }
+    },
+    "86": {
+        "setpoints": {
+            "BatteryUnit.battery1": {
+                "decarbonization-app": -125000.0,
+                "resilience-app": 125000.0
+            },
+            "BatteryUnit.battery2": {
+                "decarbonization-app": -200000.0,
+                "resilience-app": 133326.33
+            },
+            "BatteryUnit.battery3": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 100000.0
+            },
+            "BatteryUnit.battery5": {
+                "decarbonization-app": -250000.0,
+                "resilience-app": 250000.0
+            },
+            "RatioTapChanger.reg1a": {
+                "decarbonization-app": 7,
+                "resilience-app": 2
+            },
+            "RatioTapChanger.reg2a": {
+                "decarbonization-app": -7,
+                "resilience-app": 2
+            },
+            "RatioTapChanger.reg3a": {
+                "decarbonization-app": 0,
+                "resilience-app": 2
+            },
+            "RatioTapChanger.reg3c": {
+                "decarbonization-app": -3,
+                "resilience-app": 4
+            },
+            "RatioTapChanger.reg4a": {
+                "decarbonization-app": 0,
+                "resilience-app": 7
+            },
+            "RatioTapChanger.reg4b": {
+                "decarbonization-app": -7,
+                "resilience-app": 3
+            },
+            "RatioTapChanger.reg4c": {
+                "decarbonization-app": -9,
+                "resilience-app": -5
+            }
+        },
+        "timestamps": {
+            "decarbonization-app": 86,
+            "resilience-app": 86
+        }
+    },
+    "87": {
+        "setpoints": {
+            "BatteryUnit.battery1": {
+                "decarbonization-app": -125000.0,
+                "resilience-app": 125000.0
+            },
+            "BatteryUnit.battery2": {
+                "decarbonization-app": -200000.0,
+                "resilience-app": 200000.0
+            },
+            "BatteryUnit.battery3": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 100000.0
+            },
+            "BatteryUnit.battery5": {
+                "decarbonization-app": -250000.0,
+                "resilience-app": 250000.0
+            },
+            "RatioTapChanger.reg1a": {
+                "decarbonization-app": 7,
+                "resilience-app": 4
+            },
+            "RatioTapChanger.reg2a": {
+                "decarbonization-app": 0,
+                "resilience-app": 2
+            },
+            "RatioTapChanger.reg3a": {
+                "decarbonization-app": 0,
+                "resilience-app": 1
+            },
+            "RatioTapChanger.reg3c": {
+                "decarbonization-app": -3,
+                "resilience-app": 2
+            },
+            "RatioTapChanger.reg4a": {
+                "decarbonization-app": -5,
+                "resilience-app": 7
+            },
+            "RatioTapChanger.reg4b": {
+                "decarbonization-app": -1,
+                "resilience-app": 0
+            },
+            "RatioTapChanger.reg4c": {
+                "decarbonization-app": -10,
+                "resilience-app": 0
+            }
+        },
+        "timestamps": {
+            "decarbonization-app": 87,
+            "resilience-app": 87
+        }
+    },
+    "88": {
+        "setpoints": {
+            "BatteryUnit.battery1": {
+                "decarbonization-app": -125000.0,
+                "resilience-app": 125000.0
+            },
+            "BatteryUnit.battery2": {
+                "decarbonization-app": -200000.0,
+                "resilience-app": 200000.0
+            },
+            "BatteryUnit.battery3": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 100000.0
+            },
+            "BatteryUnit.battery5": {
+                "decarbonization-app": -250000.0,
+                "resilience-app": 250000.0
+            },
+            "RatioTapChanger.reg1a": {
+                "decarbonization-app": 6,
+                "resilience-app": 5
+            },
+            "RatioTapChanger.reg2a": {
+                "decarbonization-app": -8,
+                "resilience-app": 2
+            },
+            "RatioTapChanger.reg3a": {
+                "decarbonization-app": 0,
+                "resilience-app": 2
+            },
+            "RatioTapChanger.reg3c": {
+                "decarbonization-app": -3,
+                "resilience-app": 2
+            },
+            "RatioTapChanger.reg4a": {
+                "decarbonization-app": -12,
+                "resilience-app": 7
+            },
+            "RatioTapChanger.reg4b": {
+                "decarbonization-app": 4,
+                "resilience-app": 0
+            },
+            "RatioTapChanger.reg4c": {
+                "decarbonization-app": -8,
+                "resilience-app": 0
+            }
+        },
+        "timestamps": {
+            "decarbonization-app": 88,
+            "resilience-app": 88
+        }
+    },
+    "89": {
+        "setpoints": {
+            "BatteryUnit.battery1": {
+                "decarbonization-app": -125000.0,
+                "resilience-app": 125000.0
+            },
+            "BatteryUnit.battery2": {
+                "decarbonization-app": -200000.0,
+                "resilience-app": 200000.0
+            },
+            "BatteryUnit.battery3": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 100000.0
+            },
+            "BatteryUnit.battery5": {
+                "decarbonization-app": -250000.0,
+                "resilience-app": 250000.0
+            },
+            "RatioTapChanger.reg1a": {
+                "decarbonization-app": 3,
+                "resilience-app": 0
+            },
+            "RatioTapChanger.reg2a": {
+                "decarbonization-app": 0,
+                "resilience-app": 11
+            },
+            "RatioTapChanger.reg3a": {
+                "decarbonization-app": 0,
+                "resilience-app": 2
+            },
+            "RatioTapChanger.reg3c": {
+                "decarbonization-app": -3,
+                "resilience-app": 4
+            },
+            "RatioTapChanger.reg4a": {
+                "decarbonization-app": -1,
+                "resilience-app": 13
+            },
+            "RatioTapChanger.reg4b": {
+                "decarbonization-app": -7,
+                "resilience-app": 6
+            },
+            "RatioTapChanger.reg4c": {
+                "decarbonization-app": -6,
+                "resilience-app": 0
+            }
+        },
+        "timestamps": {
+            "decarbonization-app": 89,
+            "resilience-app": 89
+        }
+    },
+    "90": {
+        "setpoints": {
+            "BatteryUnit.battery1": {
+                "decarbonization-app": -125000.0,
+                "resilience-app": 125000.0
+            },
+            "BatteryUnit.battery2": {
+                "decarbonization-app": -200000.0,
+                "resilience-app": 200000.0
+            },
+            "BatteryUnit.battery3": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 100000.0
+            },
+            "BatteryUnit.battery5": {
+                "decarbonization-app": -250000.0,
+                "resilience-app": 250000.0
+            },
+            "RatioTapChanger.reg1a": {
+                "decarbonization-app": 6,
+                "resilience-app": 7
+            },
+            "RatioTapChanger.reg2a": {
+                "decarbonization-app": -3,
+                "resilience-app": -9
+            },
+            "RatioTapChanger.reg3a": {
+                "decarbonization-app": 0,
+                "resilience-app": 2
+            },
+            "RatioTapChanger.reg3c": {
+                "decarbonization-app": -3,
+                "resilience-app": -1
+            },
+            "RatioTapChanger.reg4a": {
+                "decarbonization-app": -2,
+                "resilience-app": 7
+            },
+            "RatioTapChanger.reg4b": {
+                "decarbonization-app": -1,
+                "resilience-app": 0
+            },
+            "RatioTapChanger.reg4c": {
+                "decarbonization-app": 0,
+                "resilience-app": -7
+            }
+        },
+        "timestamps": {
+            "decarbonization-app": 90,
+            "resilience-app": 90
+        }
+    },
+    "91": {
+        "setpoints": {
+            "BatteryUnit.battery1": {
+                "decarbonization-app": -125000.0,
+                "resilience-app": 125000.0
+            },
+            "BatteryUnit.battery2": {
+                "decarbonization-app": -200000.0,
+                "resilience-app": 200000.0
+            },
+            "BatteryUnit.battery3": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 100000.0
+            },
+            "BatteryUnit.battery5": {
+                "decarbonization-app": -250000.0,
+                "resilience-app": 250000.0
+            },
+            "RatioTapChanger.reg1a": {
+                "decarbonization-app": 3,
+                "resilience-app": 0
+            },
+            "RatioTapChanger.reg2a": {
+                "decarbonization-app": 0,
+                "resilience-app": 11
+            },
+            "RatioTapChanger.reg3a": {
+                "decarbonization-app": 0,
+                "resilience-app": 2
+            },
+            "RatioTapChanger.reg3c": {
+                "decarbonization-app": -3,
+                "resilience-app": 4
+            },
+            "RatioTapChanger.reg4a": {
+                "decarbonization-app": -1,
+                "resilience-app": 13
+            },
+            "RatioTapChanger.reg4b": {
+                "decarbonization-app": -7,
+                "resilience-app": 6
+            },
+            "RatioTapChanger.reg4c": {
+                "decarbonization-app": -6,
+                "resilience-app": 0
+            }
+        },
+        "timestamps": {
+            "decarbonization-app": 91,
+            "resilience-app": 91
+        }
+    },
+    "92": {
+        "setpoints": {
+            "BatteryUnit.battery1": {
+                "decarbonization-app": -125000.0,
+                "resilience-app": 125000.0
+            },
+            "BatteryUnit.battery2": {
+                "decarbonization-app": -200000.0,
+                "resilience-app": 200000.0
+            },
+            "BatteryUnit.battery3": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 100000.0
+            },
+            "BatteryUnit.battery5": {
+                "decarbonization-app": -250000.0,
+                "resilience-app": 250000.0
+            },
+            "RatioTapChanger.reg1a": {
+                "decarbonization-app": 7,
+                "resilience-app": 4
+            },
+            "RatioTapChanger.reg2a": {
+                "decarbonization-app": 0,
+                "resilience-app": 2
+            },
+            "RatioTapChanger.reg3a": {
+                "decarbonization-app": 0,
+                "resilience-app": 2
+            },
+            "RatioTapChanger.reg3c": {
+                "decarbonization-app": -3,
+                "resilience-app": -1
+            },
+            "RatioTapChanger.reg4a": {
+                "decarbonization-app": -5,
+                "resilience-app": 7
+            },
+            "RatioTapChanger.reg4b": {
+                "decarbonization-app": -1,
+                "resilience-app": 0
+            },
+            "RatioTapChanger.reg4c": {
+                "decarbonization-app": -10,
+                "resilience-app": -7
+            }
+        },
+        "timestamps": {
+            "decarbonization-app": 92,
+            "resilience-app": 92
+        }
+    },
+    "93": {
+        "setpoints": {
+            "BatteryUnit.battery1": {
+                "decarbonization-app": -125000.0,
+                "resilience-app": 125000.0
+            },
+            "BatteryUnit.battery2": {
+                "decarbonization-app": -200000.0,
+                "resilience-app": 200000.0
+            },
+            "BatteryUnit.battery3": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 100000.0
+            },
+            "BatteryUnit.battery5": {
+                "decarbonization-app": -250000.0,
+                "resilience-app": 250000.0
+            },
+            "RatioTapChanger.reg1a": {
+                "decarbonization-app": 7,
+                "resilience-app": 6
+            },
+            "RatioTapChanger.reg2a": {
+                "decarbonization-app": -7,
+                "resilience-app": 2
+            },
+            "RatioTapChanger.reg3a": {
+                "decarbonization-app": 0,
+                "resilience-app": -1
+            },
+            "RatioTapChanger.reg3c": {
+                "decarbonization-app": -3,
+                "resilience-app": 2
+            },
+            "RatioTapChanger.reg4a": {
+                "decarbonization-app": -5,
+                "resilience-app": 4
+            },
+            "RatioTapChanger.reg4b": {
+                "decarbonization-app": 0,
+                "resilience-app": 0
+            },
+            "RatioTapChanger.reg4c": {
+                "decarbonization-app": 0,
+                "resilience-app": -7
+            }
+        },
+        "timestamps": {
+            "decarbonization-app": 93,
+            "resilience-app": 93
+        }
+    },
+    "94": {
+        "setpoints": {
+            "BatteryUnit.battery1": {
+                "decarbonization-app": -125000.0,
+                "resilience-app": 125000.0
+            },
+            "BatteryUnit.battery2": {
+                "decarbonization-app": -200000.0,
+                "resilience-app": 200000.0
+            },
+            "BatteryUnit.battery3": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 100000.0
+            },
+            "BatteryUnit.battery5": {
+                "decarbonization-app": -250000.0,
+                "resilience-app": 250000.0
+            },
+            "RatioTapChanger.reg1a": {
+                "decarbonization-app": 3,
+                "resilience-app": 0
+            },
+            "RatioTapChanger.reg2a": {
+                "decarbonization-app": -7,
+                "resilience-app": -2
+            },
+            "RatioTapChanger.reg3a": {
+                "decarbonization-app": 0,
+                "resilience-app": 2
+            },
+            "RatioTapChanger.reg3c": {
+                "decarbonization-app": 3,
+                "resilience-app": -1
+            },
+            "RatioTapChanger.reg4a": {
+                "decarbonization-app": 0,
+                "resilience-app": 7
+            },
+            "RatioTapChanger.reg4b": {
+                "decarbonization-app": 5,
+                "resilience-app": 8
+            },
+            "RatioTapChanger.reg4c": {
+                "decarbonization-app": 0,
+                "resilience-app": 0
+            }
+        },
+        "timestamps": {
+            "decarbonization-app": 94,
+            "resilience-app": 94
+        }
+    },
+    "95": {
+        "setpoints": {
+            "BatteryUnit.battery1": {
+                "decarbonization-app": -125000.0,
+                "resilience-app": 125000.0
+            },
+            "BatteryUnit.battery2": {
+                "decarbonization-app": -200000.0,
+                "resilience-app": 200000.0
+            },
+            "BatteryUnit.battery3": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 100000.0
+            },
+            "BatteryUnit.battery5": {
+                "decarbonization-app": -250000.0,
+                "resilience-app": 250000.0
+            },
+            "RatioTapChanger.reg1a": {
+                "decarbonization-app": 7,
+                "resilience-app": 6
+            },
+            "RatioTapChanger.reg2a": {
+                "decarbonization-app": -7,
+                "resilience-app": 2
+            },
+            "RatioTapChanger.reg3a": {
+                "decarbonization-app": 0,
+                "resilience-app": -1
+            },
+            "RatioTapChanger.reg3c": {
+                "decarbonization-app": -3,
+                "resilience-app": 2
+            },
+            "RatioTapChanger.reg4a": {
+                "decarbonization-app": -5,
+                "resilience-app": 4
+            },
+            "RatioTapChanger.reg4b": {
+                "decarbonization-app": 0,
+                "resilience-app": 0
+            },
+            "RatioTapChanger.reg4c": {
+                "decarbonization-app": 0,
+                "resilience-app": -7
+            }
+        },
+        "timestamps": {
+            "decarbonization-app": 95,
+            "resilience-app": 95
+        }
+    },
+    "96": {
+        "setpoints": {
+            "BatteryUnit.battery1": {
+                "decarbonization-app": -125000.0,
+                "resilience-app": 125000.0
+            },
+            "BatteryUnit.battery2": {
+                "decarbonization-app": -200000.0,
+                "resilience-app": 200000.0
+            },
+            "BatteryUnit.battery3": {
+                "decarbonization-app": 0.0,
+                "resilience-app": 100000.0
+            },
+            "BatteryUnit.battery5": {
+                "decarbonization-app": -250000.0,
+                "resilience-app": 250000.0
+            },
+            "RatioTapChanger.reg1a": {
+                "decarbonization-app": 6,
+                "resilience-app": 5
+            },
+            "RatioTapChanger.reg2a": {
+                "decarbonization-app": -8,
+                "resilience-app": 2
+            },
+            "RatioTapChanger.reg3a": {
+                "decarbonization-app": 0,
+                "resilience-app": 2
+            },
+            "RatioTapChanger.reg3c": {
+                "decarbonization-app": -3,
+                "resilience-app": 2
+            },
+            "RatioTapChanger.reg4a": {
+                "decarbonization-app": -12,
+                "resilience-app": 7
+            },
+            "RatioTapChanger.reg4b": {
+                "decarbonization-app": 4,
+                "resilience-app": 0
+            },
+            "RatioTapChanger.reg4c": {
+                "decarbonization-app": -8,
+                "resilience-app": 0
+            }
+        },
+        "timestamps": {
+            "decarbonization-app": 96,
+            "resilience-app": 96
+        }
+    }
+}

@@ -1,0 +1,77 @@
+! Annotated Master file for Area 3 of the IEEE 123-bus test case.
+!
+! This file is meant to be invoked from the Compile command in the "Run_IEEE123Bus.DSS"  file.
+! 
+! Note: DSS commands, property names, etc., are NOT case sensitive. Capitalize as you please.
+! You should always do a "Clear" before making a new circuit:
+
+Clear
+
+! INSTANTIATE A NEW CIRCUIT AND DEFINE A STIFF 4160V SOURCE
+! The new circuit is called "ieee123"
+! This creates a Vsource object connected to "sourcebus". This is now the active circuit element, so
+! you can simply continue to edit its property value. 
+! The basekV is redefined to 4.16 kV. The bus name is changed to "150" to match one of the buses in the test feeder.
+! The source is set for 1.0 per unit and the Short circuit impedance is set to a small value (0.0001 ohms)
+! The ~ is just shorthad for "more" for the New or Edit commands
+
+New object=circuit.ieee123_area_5
+~ basekv=4.16 Bus1=97 pu=1.00 R1=0 X1=0.0001 R0=0 X0=0.0001
+
+! REDIRECT INPUT STREAM TO FILE CONTAINING DEFINITIONS OF LINECODES
+! This file defines the line impedances is a similar manner to the description in the test case.
+
+Redirect        IEEELinecodes.DSS
+
+! LINE DEFINITIONS
+! Lines are defined by referring to a "linecode" that contains the impedances per unit length
+! So the only properties required are the LineCode name and Length.  Units are assumed to match the definition
+! since no units property is defined in either the Linecodes file or this file.
+! Note that it is not necessary to explicitly specify the node connections for the 3-phase lines
+! unless they are not ".1.2.3". However, they are spelled out here for clarity.
+! The DSS assumes .1.2.3.0.0 ... for connections of 3 or more phases.
+! Likewise, .1 is not necessary for 1-phase lines connected to phase 1. However, if it is connected
+! to any other phase, it must be specified. For completeness, everything is spelled out here.
+!
+! Note that it is recommended that the "units=" property be used here and in the Linecode definition as well
+! to avoid confusion in the future
+
+New Line.L118   Phases=3 Bus1=197.1.2.3  Bus2=101.1.2.3  LineCode=3    Length=0.25
+New Line.L100   Phases=1 Bus1=101.3      Bus2=102.3      LineCode=11   Length=0.225
+New Line.L101   Phases=3 Bus1=101.1.2.3  Bus2=105.1.2.3  LineCode=3    Length=0.275
+New Line.L102   Phases=1 Bus1=102.3      Bus2=103.3      LineCode=11   Length=0.325
+New Line.L103   Phases=1 Bus1=103.3      Bus2=104.3      LineCode=11   Length=0.7
+New Line.L104   Phases=1 Bus1=105.2      Bus2=106.2      LineCode=10   Length=0.225
+New Line.L105   Phases=3 Bus1=105.1.2.3  Bus2=108.1.2.3  LineCode=3    Length=0.325
+New Line.L106   Phases=1 Bus1=106.2      Bus2=107.2      LineCode=10   Length=0.575
+New Line.L107   Phases=1 Bus1=108.1      Bus2=109.1      LineCode=9    Length=0.45
+New Line.L108   Phases=3 Bus1=108.1.2.3  Bus2=300.1.2.3  LineCode=3    Length=1
+New Line.L109   Phases=1 Bus1=109.1      Bus2=110.1      LineCode=9    Length=0.3
+New Line.L110   Phases=1 Bus1=110.1      Bus2=111.1      LineCode=9    Length=0.575
+New Line.L111   Phases=1 Bus1=110.1      Bus2=112.1      LineCode=9    Length=0.125
+New Line.L112   Phases=1 Bus1=112.1      Bus2=113.1      LineCode=9    Length=0.525
+New Line.L113   Phases=1 Bus1=113.1      Bus2=114.1      LineCode=9    Length=0.325
+
+New Load.S102c Bus1=102.3  Phases=1 Conn=Wye   Model=1 kV=2.4   kW=20.0  kvar=10.0  
+New Load.S103c Bus1=103.3  Phases=1 Conn=Wye   Model=1 kV=2.4   kW=40.0  kvar=20.0  
+New Load.S104c Bus1=104.3  Phases=1 Conn=Wye   Model=1 kV=2.4   kW=40.0  kvar=20.0  
+New Load.S106b Bus1=106.2  Phases=1 Conn=Wye   Model=1 kV=2.4   kW=40.0  kvar=20.0  
+New Load.S107b Bus1=107.2  Phases=1 Conn=Wye   Model=1 kV=2.4   kW=40.0  kvar=20.0  
+New Load.S109a Bus1=109.1  Phases=1 Conn=Wye   Model=1 kV=2.4   kW=40.0  kvar=20.0  
+New Load.S111a Bus1=111.1  Phases=1 Conn=Wye   Model=1 kV=2.4   kW=20.0  kvar=10.0  
+New Load.S112a Bus1=112.1  Phases=1 Conn=Wye   Model=5 kV=2.4   kW=20.0  kvar=10.0  
+New Load.S113a Bus1=113.1  Phases=1 Conn=Wye   Model=2 kV=2.4   kW=40.0  kvar=20.0  
+New Load.S114a Bus1=114.1  Phases=1 Conn=Wye   Model=1 kV=2.4   kW=20.0  kvar=10.0    
+
+New Storage.Battery5 phases=1 bus1=108.1 kVA=250 kV=2.4
+~ kWrated=250 kWHrated=750 %reserve=30 %stored=55
+~ state=charge kW=-0.0 PF=1
+
+New "PVSystem.dg_84" bus1=104.3 phases=1 kv=2.4 Pmpp=300 kVA=300 pf=1 irradiance=1 %Cutin=0.1 %Cutout=0.1
+New "PVSystem.dg_90" bus1=113.1 phases=1 kv=2.4 Pmpp=350 kVA=350 pf=1 irradiance=1 %Cutin=0.1 %Cutout=0.1
+
+
+Set VoltageBases = [4.16, 0.48]    ! ARRAY OF VOLTAGES IN KV
+CalcVoltageBases  ! PERFORMS ZERO LOAD POWER FLOW TO ESTIMATE VOLTAGE BASES
+
+solve

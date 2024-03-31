@@ -388,8 +388,11 @@ class DeconflictionPipeline(GridAPPSD):
         print('!!!!!!!!!!!!!!!!!!!!!!!!! DIFF TEST ResolutionVector: ' +
               str(testFullResolutionVector), flush=True)
         exit()
-    self.ResolutionVector = newResolutionVector
+    
     self.DeviceDispatcher(self.timestamp, newResolutionVector)
+
+    self.ResolutionVector.clear()
+    self.ResolutionVector = newResolutionVector
     
     # return fullResolutionVector
 
@@ -628,6 +631,7 @@ class DeconflictionPipeline(GridAPPSD):
       print('~TEST simulation updated SoC for device: ' + self.testDevice +
             ', timestamp: ' + str(message['timestamp']) +
             ', SoC: ' + str(BatterySoC[self.testDevice]), flush=True)
+      
 
 
   def on_setpoints_message(self, headers, message):
@@ -704,8 +708,7 @@ class DeconflictionPipeline(GridAPPSD):
 
     # Update the current resolution to the new resolution to be ready for the
     # next set-points message
-    # self.ResolutionVector.clear()
-    # self.ResolutionVector = newResolutionVector
+    # 
 
     # for SHIVA conflict metric testing
     #self.TimeConflictMatrix[realTime] = copy.deepcopy(self.ConflictMatrix)

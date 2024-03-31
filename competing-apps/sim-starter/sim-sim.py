@@ -148,7 +148,9 @@ class SimSim(GridAPPSD):
 
       AppUtil.make_plots('Deconfliction Resolution', 'deconfliction',
                    self.Batteries, self.t_plot, self.p_batt_plot, self.soc_plot)
-
+      
+      with open('soc_plot.json', mode="w") as rf:
+        json.dump(self.soc_plot, rf, indent=4, sort_keys=True)
       # send out one final message with end-of-data flag for timestamp
       row = ['', '', '', '']
 
@@ -165,6 +167,8 @@ class SimSim(GridAPPSD):
     }
     self.gapps.send(self.publish_topic, message)
     print(time.time(), ': ', str(message), flush=True)
+
+
 
     # clear set-points so they accumulate over multiple deconflictor messages
     self.DeviceSetpoints.clear()
