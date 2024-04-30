@@ -239,7 +239,7 @@ To test an optimization-based competing app (all optimization apps use the same 
 
 ```` bash
 $ cd ../optimization-apps
-$ ./run-resilience.sh 123
+$ ./run-resilience.sh pulp 123
 ````
 
 If you get output starting with "Initialized resilience optimization competing app" after some query output, this demonstrates successful initialization and you may do a ctrl-C exit. Modules likely to be missing include numpy, tabulate, pulp, and cvxpy. The following may prove helpful based on failed imports:
