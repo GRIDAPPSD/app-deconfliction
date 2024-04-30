@@ -51,7 +51,7 @@ import sys
 import json
 import os
 from inspect import getsourcefile
-from os.path import abspath, dirname
+from os.path import abspath, dirname, isfile
 
 # gridappsd-python module
 from gridappsd import GridAPPSD
@@ -88,6 +88,10 @@ Optional command line arguments:
 
     cwd = dirname(abspath(getsourcefile(lambda:0))) # magic to get current dir
     sim_config_file = cwd + '/' + sys.argv[1] + '-config.json'
+
+    if not isfile(sim_config_file):
+      print('SIM_STARTER exit due to not finding simulation config file: ' + sim_config_file, file=sys.stderr, flush=True)
+      exit()
 
     with open(sim_config_file) as config_fp:
         sim_config = json.load(config_fp)
