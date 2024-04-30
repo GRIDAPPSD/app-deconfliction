@@ -24,7 +24,7 @@ METHOD=$3
 if [ "$#" -gt 3 ]; then
   OPTLIB=$4
 else
-  OPTLIB="cvxpy"
+  OPTLIB="pulp"
 fi
 
 # magic that kills background jobs started in this script when the pipeline
