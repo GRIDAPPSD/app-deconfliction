@@ -177,51 +177,23 @@ class DeconflictionPipeline(GridAPPSD):
 
   def ConflictIdentification(self, app_name, timestamp, set_points):
     # Determine if there is a new conflict
-    MethodUtil.ConflictSubMatrix['setpoints'].clear()
-    MethodUtil.ConflictSubMatrix['timestamps'].clear()
     for device in set_points:
       for app1 in self.ConflictMatrix['setpoints'][device]:
         if app1!=app_name and \
            (set_points[device]!=self.ConflictMatrix['setpoints'][device][app1] \
             or timestamp!=self.ConflictMatrix['timestamps'][app1]):
+          # once a conflict is found, return immediately
+          return True
 
-          if device not in MethodUtil.ConflictSubMatrix['setpoints']:
-            MethodUtil.ConflictSubMatrix['setpoints'][device] = {}
-
-          MethodUtil.ConflictSubMatrix['setpoints'][device][app_name] = \
-                                                            set_points[device]
-          MethodUtil.ConflictSubMatrix['timestamps'][app_name] = timestamp
-
-          # once a conflict is found, add all apps for this device into
-          # ConflictSubMatrix
-          for app2 in self.ConflictMatrix['setpoints'][device]:
-            if app2 != app_name:
-              MethodUtil.ConflictSubMatrix['setpoints'][device][app2] = \
-                                  self.ConflictMatrix['setpoints'][device][app2]
-              MethodUtil.ConflictSubMatrix['timestamps'][app2] = \
-                                  self.ConflictMatrix['timestamps'][app2]
-
-          # skip to next device since all apps for this one are in matrix
-          break
-
-    print('ConflictSubMatrix: ' + str(MethodUtil.ConflictSubMatrix),
-          flush=True)
-
-    if self.testDevice:
-      if self.testDevice in MethodUtil.ConflictSubMatrix['setpoints']:
-        print('~TEST: ConflictSubMatrix[setpoints] for ' + self.testDevice +
-          ': ' +str(MethodUtil.ConflictSubMatrix['setpoints'][self.testDevice]),
-          flush=True)
-      else:
-        print('~TEST: ConflictSubMatrix[setpoints] does not contain ' +
-              self.testDevice, flush=True)
+    return False
 
 
-  def DeconflictionToResolution(self, app_name, timestamp, set_points):
+  def DeconflictionToResolution(self, app_name, timestamp, set_points,
+                                conflictFlag):
     # If there is a conflict, then the call the deconflict method for the given
     # methodology to produce a resolution
     fullResolutionFlag = True
-    if len(MethodUtil.ConflictSubMatrix['setpoints']) > 0:
+    if conflictFlag:
       returned = self.decon_method.deconflict(app_name, timestamp)
       if type(returned) is tuple:
         fullResolutionFlag = returned[0]
@@ -262,8 +234,7 @@ class DeconflictionPipeline(GridAPPSD):
             print('~TEST: ResolutionVector (from full) does not contain ' +
                   self.testDevice, flush=True)
 
-    if len(MethodUtil.ConflictSubMatrix['setpoints'])==0 or \
-       not fullResolutionFlag:
+    if not conflictFlag or not fullResolutionFlag:
       # to create a full resolution vector from a partial one, start with
       # a copy of the previous resolution
       fullResolutionVector = copy.deepcopy(self.ResolutionVector)
@@ -279,7 +250,7 @@ class DeconflictionPipeline(GridAPPSD):
           fullResolutionVector['timestamps'][device] = timestamp
 
       # finally, if there were conflicts, then overlay the resolution to those
-      if len(MethodUtil.ConflictSubMatrix['setpoints']) > 0:
+      if conflictFlag:
         for device in newResolutionVector['setpoints']:
           fullResolutionVector['setpoints'][device] = \
                                        newResolutionVector['setpoints'][device]
@@ -318,7 +289,7 @@ class DeconflictionPipeline(GridAPPSD):
 
     if self.testDeconMethodFlag:
       testFullResolutionFlag = True
-      if len(MethodUtil.ConflictSubMatrix['setpoints']) > 0:
+      if conflictFlag:
         testReturned = self.decon_method_test.deconflict(timestamp)
         if type(testReturned) is tuple:
           testFullResolutionFlag = returned[0]
@@ -329,8 +300,7 @@ class DeconflictionPipeline(GridAPPSD):
         if testFullResolutionFlag:
           testFullResolutionVector = testNewResolutionVector
 
-      if len(MethodUtil.ConflictSubMatrix['setpoints'])==0 or \
-         not testFullResolutionFlag:
+      if not conflictFlag or not testFullResolutionFlag:
         testFullResolutionVector = copy.deepcopy(self.ResolutionVector)
 
         for device, value in set_points.items():
@@ -340,7 +310,7 @@ class DeconflictionPipeline(GridAPPSD):
             testFullResolutionVector['setpoints'][device] = value
             testFullResolutionVector['timestamps'][device] = timestamp
 
-        if len(MethodUtil.ConflictSubMatrix['setpoints']) > 0:
+        if conflictFlag:
           for device in testNewResolutionVector['setpoints']:
             testFullResolutionVector['setpoints'][device] = \
                                    testNewResolutionVector['setpoints'][device]
@@ -674,11 +644,11 @@ class DeconflictionPipeline(GridAPPSD):
 
     # Step 3: Deconflictor
     # Step 3.1: Conflict Identification
-    self.ConflictIdentification(app_name, timestamp, set_points)
+    conflictFlag = self.ConflictIdentification(app_name, timestamp, set_points)
 
     # Steps 3.2 and 3.3: Deconfliction Solution and Resolution
     newResolutionVector = self.DeconflictionToResolution(app_name, timestamp,
-                                                         set_points)
+                                                       set_points, conflictFlag)
 
     # Step 4: Setpoint Validator -- not implemented for prototype
 
