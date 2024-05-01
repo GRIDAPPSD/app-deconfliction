@@ -9,10 +9,7 @@ class DeconflictionMethod:
 
   def deconflict(self, app_name, timestamp):
     # if needed, battery SoC values are in the MethodUtil.BatterySoC dictionary
-
     ResolutionVector = {}
-    ResolutionVector['setpoints'] = {}
-    ResolutionVector['timestamps'] = {}
 
     for device in self.ConflictMatrix:
       compCount = 0
@@ -41,21 +38,18 @@ class DeconflictionMethod:
         # comment out the first line under the RatioTapChanger if block,
         # uncomment the first line under the else block, then repeat those
         # steps under the elif below
-        ResolutionVector['timestamps'][device] = compTimestamp
         if device.startswith('RatioTapChanger.'):
-          ResolutionVector['setpoints'][device] = round(compTotal/compCount)
+          ResolutionVector[device] = (compTimestamp, round(compTotal/compCount))
           pass
         else:
-          #ResolutionVector['timestamps'][device] = compTimestamp
-          ResolutionVector['setpoints'][device] = compTotal/compCount
+          ResolutionVector[device] = (compTimestamp, compTotal/compCount)
       elif otherCount > 0:
-        ResolutionVector['timestamps'][device] = otherTimestamp
         if device.startswith('RatioTapChanger.'):
-          ResolutionVector['setpoints'][device] = round(otherTotal/otherCount)
+          ResolutionVector[device] = \
+                                  (otherTimestamp, round(otherTotal/otherCount))
           pass
         else:
-          #ResolutionVector['timestamps'][device] = otherTimestamp
-          ResolutionVector['setpoints'][device] = otherTotal/otherCount
+          ResolutionVector[device] = (otherTimestamp, otherTotal/otherCount)
 
     return ResolutionVector
 

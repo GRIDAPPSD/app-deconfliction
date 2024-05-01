@@ -208,11 +208,10 @@ class DeconflictionPipeline(GridAPPSD):
       # Update ConflictMatrix with resolution vector setpoint values so the
       # deconfliction methodologies don't need to resolve the same conflicts
       # each time in addition to new conflicts from the latest set-points
-      for device, value in newResolutionVector['setpoints'].items():
+      for device, value in newResolutionVector.items():
         for app in self.ConflictMatrix[device]:
           self.ConflictMatrix[device][app] = \
-                             (max(newResolutionVector['timestamps'][device],
-                              self.ConflictMatrix[device][app][0]), value)
+                  (max(value[0], self.ConflictMatrix[device][app][0]), value[1])
       '''
 
       if fullResolutionFlag:
@@ -221,12 +220,12 @@ class DeconflictionPipeline(GridAPPSD):
               flush=True)
 
         if self.testDevice:
-          if self.testDevice in fullResolutionVector['setpoints']:
+          if self.testDevice in fullResolutionVector:
             print('~TEST: ResolutionVector (from full) for ' +
                   self.testDevice + ' setpoint: ' +
-                  str(fullResolutionVector['setpoints'][self.testDevice]) +
+                  str(fullResolutionVector[self.testDevice][1]) +
                   ', timestamp: ' +
-                  str(fullResolutionVector['timestamps'][self.testDevice]),
+                  str(fullResolutionVector[self.testDevice][0]),
                   flush=True)
           else:
             print('~TEST: ResolutionVector (from full) does not contain ' +
@@ -244,26 +243,22 @@ class DeconflictionPipeline(GridAPPSD):
         # uncomment the following line to only include batteries in resolution
         # for testing
         #if device.startswith('BatteryUnit.'):
-          fullResolutionVector['setpoints'][device] = value
-          fullResolutionVector['timestamps'][device] = timestamp
+          fullResolutionVector[device] = (timestamp, value)
 
       # finally, if there were conflicts, then overlay the resolution to those
       if conflictFlag:
-        for device in newResolutionVector['setpoints']:
-          fullResolutionVector['setpoints'][device] = \
-                                       newResolutionVector['setpoints'][device]
-          fullResolutionVector['timestamps'][device] = \
-                                       newResolutionVector['timestamps'][device]
+        for device in newResolutionVector:
+          fullResolutionVector[device] = newResolutionVector[device]
         print('ResolutionVector (from partial): ' + str(fullResolutionVector),
               flush=True)
 
         if self.testDevice:
-          if self.testDevice in fullResolutionVector['setpoints']:
+          if self.testDevice in fullResolutionVector:
             print('~TEST: ResolutionVector (from partial) for ' +
                   self.testDevice + ' setpoint: ' +
-                  str(fullResolutionVector['setpoints'][self.testDevice]) +
+                  str(fullResolutionVector[self.testDevice][1]) +
                   ', timestamp: ' +
-                  str(fullResolutionVector['timestamps'][self.testDevice]),
+                  str(fullResolutionVector[self.testDevice][0]),
                   flush=True)
           else:
             print('~TEST: ResolutionVector (from partial) does not contain ' +
@@ -274,12 +269,12 @@ class DeconflictionPipeline(GridAPPSD):
               flush=True)
 
         if self.testDevice:
-          if self.testDevice in fullResolutionVector['setpoints']:
+          if self.testDevice in fullResolutionVector:
             print('~TEST: ResolutionVector (no conflict) for ' +
                   self.testDevice + ' setpoint: ' +
-                  str(fullResolutionVector['setpoints'][self.testDevice]) +
+                  str(fullResolutionVector[self.testDevice][1]) +
                   ', timestamp: ' +
-                  str(fullResolutionVector['timestamps'][self.testDevice]),
+                  str(fullResolutionVector[self.testDevice][0]),
                   flush=True)
           else:
             print('~TEST: ResolutionVector (no conflict) does not contain ' +
@@ -305,36 +300,31 @@ class DeconflictionPipeline(GridAPPSD):
           # uncomment the following line to only include batteries in resolution
           # for testing
           #if device.startswith('BatteryUnit.'):
-            testFullResolutionVector['setpoints'][device] = value
-            testFullResolutionVector['timestamps'][device] = timestamp
+            testFullResolutionVector[device] = (timestamp, value)
 
         if conflictFlag:
-          for device in testNewResolutionVector['setpoints']:
-            testFullResolutionVector['setpoints'][device] = \
-                                   testNewResolutionVector['setpoints'][device]
-            testFullResolutionVector['timestamps'][device] = \
-                                   testNewResolutionVector['timestamps'][device]
+          for device in testNewResolutionVector:
+            testFullResolutionVector[device] = testNewResolutionVector[device]
 
       testDiffFlag = False
-      for device in fullResolutionVector['setpoints']:
-        if device not in testFullResolutionVector['setpoints'] or \
-           device not in testFullResolutionVector['timestamps']:
+      for device in fullResolutionVector:
+        if device not in testFullResolutionVector:
           testDiffFlag = True
           break
 
         if device.startswith('BatteryUnit.'):
-          if abs(fullResolutionVector['setpoints'][device] - \
-                 testFullResolutionVector['setpoints'][device]) > 1e-6:
+          if abs(fullResolutionVector[device][1] - \
+                 testFullResolutionVector[device][1]) > 1e-6:
             testDiffFlag = True
             break
         else:
-          if fullResolutionVector['setpoints'][device] != \
-             testFullResolutionVector['setpoints'][device]:
+          if fullResolutionVector[device][1] != \
+             testFullResolutionVector[device][1]:
             testDiffFlag = True
             break
 
-        if fullResolutionVector['timestamps'][device] != \
-           testFullResolutionVector['timestamps'][device]:
+        if fullResolutionVector[device][0] != \
+           testFullResolutionVector[device][0]:
           testDiffFlag = True
           break
 
@@ -459,65 +449,64 @@ class DeconflictionPipeline(GridAPPSD):
     ''' SOC MOVE
     revised_socs = {}
     '''
-    for device, value in newResolutionVector['setpoints'].items():
+    for device, value in newResolutionVector.items():
       if device.startswith('BatteryUnit.'):
         # batteries dispatch values even if they are the same as the last time
         # as long as the value is associated with the current timestamp
 
         # GDB 6/22/23: First is the original version and then the new version
         # that doesn't dispatch P_batt of 0 beyond the initial change to 0
-        #if device not in self.ResolutionVector['setpoints'] or \
-        #   (newResolutionVector['timestamps'][device]==timestamp and \
-        #    (self.ResolutionVector['timestamps'][device]!=timestamp or \
-        #     self.ResolutionVector['setpoints'][device]!=value)):
-        if device not in self.ResolutionVector['setpoints'] or \
-           (newResolutionVector['timestamps'][device]==timestamp and \
-            (self.ResolutionVector['setpoints'][device]!=value or \
-             (self.ResolutionVector['timestamps'][device]!=timestamp and \
-              self.ResolutionVector['setpoints'][device]!=0.0))):
-          DevicesToDispatch[device] = value
+        #if device not in self.ResolutionVector or \
+        #   (newResolutionVector[device][0]==timestamp and \
+        #    (self.ResolutionVector[device][0]!=timestamp or \
+        #     self.ResolutionVector[device][1]!=value[1])):
+        if device not in self.ResolutionVector or \
+           (newResolutionVector[device][0]==timestamp and \
+            (self.ResolutionVector[device][1]!=value[1] or \
+             (self.ResolutionVector[device][0]!=timestamp and \
+              self.ResolutionVector[device][1]!=0.0))):
+          DevicesToDispatch[device] = value[1]
 
           print('~~> Dispatching to device: ' + device + ', timestamp: ' +
-                str(timestamp) + ', value: ' + str(value), flush=True)
+                str(timestamp) + ', value: ' + str(value[1]), flush=True)
 
           ''' SOC MOVE
-          self.updateSoC(device, value, timestamp, revised_socs)
+          self.updateSoC(device, value[1], timestamp, revised_socs)
           print('~~> Dispatching to device: ' + device + ', timestamp: ' +
-                str(timestamp) + ', value: ' + str(value) +
+                str(timestamp) + ', value: ' + str(value[1]) +
                 ' (projected SoC: ' + str(self.Batteries[device]['SoC']) + ')',
                 flush=True)
           '''
 
           if self.testDevice and device==self.testDevice:
             print('~TEST: Dispatching to device: ' + device + ', timestamp: ' +
-                  str(timestamp) + ', value: ' + str(value), flush=True)
+                  str(timestamp) + ', value: ' + str(value[1]), flush=True)
             ''' SOC MOVE
             print('~TEST: Dispatching to device: ' + device + ', timestamp: ' +
-                  str(timestamp) + ', value: ' + str(value) +
+                  str(timestamp) + ', value: ' + str(value[1]) +
                   ' (projected SoC: ' + str(self.Batteries[device]['SoC']) +')'
                   , flush=True)
             '''
 
       # not a battery so only dispatch value if it's changed or if it's
       # never been dispatched before
-      elif device not in self.ResolutionVector['setpoints'] or \
-           self.ResolutionVector['setpoints'][device]!=value:
-        DevicesToDispatch[device] = value
+      elif device not in self.ResolutionVector or \
+           self.ResolutionVector[device][1]!=value[1]:
+        DevicesToDispatch[device] = value[1]
 
         print('==> Dispatching to device: ' + device + ', timestamp: ' +
-              str(timestamp) + ', value: ' + str(value), flush=True)
+              str(timestamp) + ', value: ' + str(value[1]), flush=True)
 
         if self.testDevice and device==self.testDevice:
             print('~TEST: Dispatching to device: ' + device + ', timestamp: ' +
-                  str(timetstamp) + ', value: ' + str(value), flush=True)
+                  str(timetstamp) + ', value: ' + str(value[1]), flush=True)
 
     # it's also possible a device from the last resolution does not appear
     # in the new resolution.  In this case it's a "don't care" for the new
     # resolution and the device is left at the previous value with nothing sent
-    if len(self.ResolutionVector['setpoints']) > \
-       len(newResolutionVector['setpoints']):
-      for device in self.ResolutionVector['setpoints']:
-        if device not in newResolutionVector['setpoints']:
+    if len(self.ResolutionVector) > len(newResolutionVector):
+      for device in self.ResolutionVector:
+        if device not in newResolutionVector:
           print('==> Device deleted from resolution: ' + device, flush=True)
 
           if self.testDevice and device==self.testDevice:
@@ -726,10 +715,7 @@ class DeconflictionPipeline(GridAPPSD):
     self.deltaT = 0.25 # timestamp interval in fractional hours, 0.25 = 15 min
 
     self.ConflictMatrix = {}
-
     self.ResolutionVector = {}
-    self.ResolutionVector['setpoints'] = {}
-    self.ResolutionVector['timestamps'] = {}
 
     # for SHIVA conflict metric testing
     #self.TimeConflictMatrix = {}

@@ -9,8 +9,6 @@ class DeconflictionMethod:
 
   def deconflict(self, app_name, timestamp):
     ResolutionVector = {}
-    ResolutionVector['setpoints'] = {}
-    ResolutionVector['timestamps'] = {}
 
     for device in self.ConflictMatrix:
       compCount = 0
@@ -37,16 +35,15 @@ class DeconflictionMethod:
 
       if compCount > 0:
         if device.startswith('RatioTapChanger.'):
-          ResolutionVector['setpoints'][device] = round(compTotal/compCount)
+          ResolutionVector[device] = (compTimestamp, round(compTotal/compCount))
         else:
-          ResolutionVector['setpoints'][device] = compTotal/compCount
-        ResolutionVector['timestamps'][device] = compTimestamp
+          ResolutionVector[device] = (compTimestamp, compTotal/compCount)
       elif otherCount > 0:
         if device.startswith('RatioTapChanger.'):
-          ResolutionVector['setpoints'][device] = round(otherTotal/otherCount)
+          ResolutionVector[device] = \
+                                  (otherTimestamp, round(otherTotal/otherCount))
         else:
-          ResolutionVector['setpoints'][device] = otherTotal/otherCount
-        ResolutionVector['timestamps'][device] = otherTimestamp
+          ResolutionVector[device] = (otherTimestamp, otherTotal/otherCount)
 
     return ResolutionVector
 
