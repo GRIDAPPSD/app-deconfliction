@@ -358,12 +358,18 @@ class CompetingApp(GridAPPSD):
         print(tabulate(p_batt_setpoints, headers=['Battery', 'P_batt (kW)',
                        'Target SoC'], tablefmt='psql'), flush=True)
 
+        # GDB 4/30/24 Don't send optimization problem details
+        #out_message = {
+        #  'app_name': self.opt_type+'-app',
+        #  'timestamp': timestamp,
+        #  'set_points': set_points,
+        #  'opt_prob': opt_prob,
+        #  'objective': objective
+        #}
         out_message = {
           'app_name': self.opt_type+'-app',
           'timestamp': timestamp,
-          'set_points': set_points,
-          'opt_prob': opt_prob,
-          'objective': objective
+          'set_points': set_points
         }
         print('Sending message: ' + str(out_message), flush=True)
         self.gapps.send(self.publish_topic, out_message)

@@ -384,10 +384,10 @@ class CompetingApp(GridAPPSD):
         out_message = {
           'app_name': self.opt_type+'-app',
           'timestamp': timestamp,
-          'set_points': set_points,
-          'opt_prob': opt_prob,
-          'objective': objective
+          'set_points': set_points
         }
+          #'opt_prob': opt_prob,
+          #'objective': objective
         #print('Sending message: ' + str(out_message), flush=True)
         self.gapps.send(self.publish_topic, out_message)
 
