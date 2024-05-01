@@ -12,23 +12,23 @@ class DeconflictionMethod:
     ResolutionVector['setpoints'] = {}
     ResolutionVector['timestamps'] = {}
 
-    for device in self.ConflictMatrix['setpoints']:
+    for device in self.ConflictMatrix:
       count = 0
       total = 0.0
       timestamp = 0
 
-      for app in self.ConflictMatrix['setpoints'][device]:
+      for app in self.ConflictMatrix[device]:
         if app == 'resilience-app':
           ResolutionVector['setpoints'][device] = \
-                                   self.ConflictMatrix['setpoints'][device][app]
+                                   self.ConflictMatrix[device][app][1]
           ResolutionVector['timestamps'][device] = \
-                                   self.ConflictMatrix['timestamps'][app]
+                                   self.ConflictMatrix[device][app][0]
           count = 0
           break
         else:
           count += 1
-          total += self.ConflictMatrix['setpoints'][device][app]
-          timestamp = max(timestamp, self.ConflictMatrix['timestamps'][app])
+          total += self.ConflictMatrix[device][app][1]
+          timestamp = max(timestamp, self.ConflictMatrix[device][app][0])
 
       if count > 0:
         if device.startswith('RatioTapChanger.'):

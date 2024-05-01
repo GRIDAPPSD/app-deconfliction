@@ -14,7 +14,7 @@ class DeconflictionMethod:
     ResolutionVector['setpoints'] = {}
     ResolutionVector['timestamps'] = {}
 
-    for device in self.ConflictMatrix['setpoints']:
+    for device in self.ConflictMatrix:
       compCount = 0
       compTotal = 0.0
       compTimestamp = 0
@@ -22,19 +22,19 @@ class DeconflictionMethod:
       otherTotal = 0.0
       otherTimestamp = 0
 
-      for app in self.ConflictMatrix['setpoints'][device]:
+      for app in self.ConflictMatrix[device]:
         if app=='resilience-app' or app=='decarbonization-app':
           compCount += 1
-          compTotal += self.ConflictMatrix['setpoints'][device][app]
+          compTotal += self.ConflictMatrix[device][app][1]
           compTimestamp = max(compTimestamp,
-                              self.ConflictMatrix['timestamps'][app])
+                              self.ConflictMatrix[device][app][0])
           if compCount == 2:
             break
         else:
           otherCount += 1
-          otherTotal += self.ConflictMatrix['setpoints'][device][app]
+          otherTotal += self.ConflictMatrix[device][app][1]
           otherTimestamp = max(otherTimestamp,
-                               self.ConflictMatrix['timestamps'][app])
+                               self.ConflictMatrix[device][app][0])
 
       if compCount > 0:
         # for resolution with only batteries comment out the next line,

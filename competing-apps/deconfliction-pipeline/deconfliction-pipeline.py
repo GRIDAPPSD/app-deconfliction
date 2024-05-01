@@ -89,13 +89,12 @@ class DeconflictionPipeline(GridAPPSD):
 
   def SetpointProcessor(self, app_name, timestamp, set_points):
     # Update ConflictMatrix with newly provided set-points
-    self.ConflictMatrix['timestamps'][app_name] = timestamp
 
     # delete any existing matches for app_name so there are no stragglers
     # from past timestamps
-    for device in self.ConflictMatrix['setpoints']:
-      if app_name in self.ConflictMatrix['setpoints'][device]:
-        self.ConflictMatrix['setpoints'][device].pop(app_name)
+    for device in self.ConflictMatrix:
+      if app_name in self.ConflictMatrix[device]:
+        self.ConflictMatrix[device].pop(app_name)
 
     # now add the new set-points for app_name
     for device, value in set_points.items():
@@ -105,10 +104,10 @@ class DeconflictionPipeline(GridAPPSD):
               ', timestamp: ' + str(timestamp) +
               ', device: ' + device + ', value: ' + str(value), flush=True)
 
-      if device not in self.ConflictMatrix['setpoints']:
-        self.ConflictMatrix['setpoints'][device] = {}
+      if device not in self.ConflictMatrix:
+        self.ConflictMatrix[device] = {}
 
-      self.ConflictMatrix['setpoints'][device][app_name] = value
+      self.ConflictMatrix[device][app_name] = (timestamp, value)
 
     print('ConflictMatrix: ' + str(self.ConflictMatrix), flush=True)
 
@@ -118,8 +117,8 @@ class DeconflictionPipeline(GridAPPSD):
               ' set-point: ' + str(set_points[self.testDevice]) +
               ', app: ' + app_name +
               ', timestamp: ' + str(timestamp), flush=True)
-        print('~TEST: ConflictMatrix[setpoints] for ' + self.testDevice + ': ' +
-             str(self.ConflictMatrix['setpoints'][self.testDevice]), flush=True)
+        print('~TEST: ConflictMatrix for ' + self.testDevice + ': ' +
+             str(self.ConflictMatrix[self.testDevice]), flush=True)
       else:
         print('~TEST: set-points message does not contain ' + self.testDevice,
               flush=True)
@@ -129,13 +128,13 @@ class DeconflictionPipeline(GridAPPSD):
   def ConflictMetric(self, timestamp):
     centroid = {}
     apps = {}
-    n_devices = len(self.ConflictMatrix['setpoints'])
-    for device in self.ConflictMatrix['setpoints']:
-      n_apps_device = len(self.ConflictMatrix['setpoints'][device])
+    n_devices = len(self.ConflictMatrix)
+    for device in self.ConflictMatrix:
+      n_apps_device = len(self.ConflictMatrix[device])
       device_setpoints = []
 
-      for app in self.ConflictMatrix['setpoints'][device]:
-        gamma_d_a = self.ConflictMatrix['setpoints'][device][app]
+      for app in self.ConflictMatrix[device]:
+        gamma_d_a = self.ConflictMatrix[device][app][1]
         if app not in apps:
           apps[app] = {}
         if device.startswith('BatteryUnit.'):
@@ -178,10 +177,10 @@ class DeconflictionPipeline(GridAPPSD):
   def ConflictIdentification(self, app_name, timestamp, set_points):
     # Determine if there is a new conflict
     for device in set_points:
-      for app1 in self.ConflictMatrix['setpoints'][device]:
+      for app1 in self.ConflictMatrix[device]:
         if app1!=app_name and \
-           (set_points[device]!=self.ConflictMatrix['setpoints'][device][app1] \
-            or timestamp!=self.ConflictMatrix['timestamps'][app1]):
+           (set_points[device]!=self.ConflictMatrix[device][app1][1] \
+            or timestamp!=self.ConflictMatrix[device][app1][0]):
           # once a conflict is found, return immediately
           return True
 
@@ -210,11 +209,10 @@ class DeconflictionPipeline(GridAPPSD):
       # deconfliction methodologies don't need to resolve the same conflicts
       # each time in addition to new conflicts from the latest set-points
       for device, value in newResolutionVector['setpoints'].items():
-        for app in self.ConflictMatrix['setpoints'][device]:
-          self.ConflictMatrix['setpoints'][device][app] = value
-          self.ConflictMatrix['timestamps'][app] = \
-                              max(newResolutionVector['timestamps'][device],
-                                  self.ConflictMatrix['timestamps'][app])
+        for app in self.ConflictMatrix[device]:
+          self.ConflictMatrix[device][app] = \
+                             (max(newResolutionVector['timestamps'][device],
+                              self.ConflictMatrix[device][app][0]), value)
       '''
 
       if fullResolutionFlag:
@@ -728,8 +726,6 @@ class DeconflictionPipeline(GridAPPSD):
     self.deltaT = 0.25 # timestamp interval in fractional hours, 0.25 = 15 min
 
     self.ConflictMatrix = {}
-    self.ConflictMatrix['setpoints'] = {}
-    self.ConflictMatrix['timestamps'] = {}
 
     self.ResolutionVector = {}
     self.ResolutionVector['setpoints'] = {}
