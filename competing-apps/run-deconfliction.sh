@@ -42,22 +42,22 @@ delay_app_counter=0
 
 if [[ $APPS == *"r"* || $APPS == *"R"* ]]; then
   ((delay_app_counter--))
-  ./run-resilience.sh $OPTLIB $MODEL >/dev/null &
+  ./run-resilience.sh $MODEL $OPTLIB >/dev/null &
 fi
 
 if [[ $APPS == *"d"* || $APPS == *"D"* ]]; then
   ((delay_app_counter--))
-  ./run-decarbonization.sh $OPTLIB $MODEL >/dev/null &
+  ./run-decarbonization.sh $MODEL $OPTLIB >/dev/null &
 fi
 
 if [[ $APPS == *"p"* || $APPS == *"P"* ]]; then
   ((delay_app_counter--))
-  ./run-profit.sh $OPTLIB $MODEL >/dev/null &
+  ./run-profit.sh $MODEL $OPTLIB >/dev/null &
 fi
 
 if [[ $APPS == *"l"* || $APPS == *"L"* ]]; then
   ((delay_app_counter--))
-  ./run-loadshed.sh $OPTLIB $MODEL >/dev/null &
+  ./run-loadshed.sh $MODEL $OPTLIB >/dev/null &
 fi
 
 DELAY=$delay_app_counter
