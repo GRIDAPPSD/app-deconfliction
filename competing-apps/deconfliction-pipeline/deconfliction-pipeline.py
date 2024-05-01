@@ -191,14 +191,10 @@ class DeconflictionPipeline(GridAPPSD):
                                 conflictFlag):
     # If there is a conflict, then the call the deconflict method for the given
     # methodology to produce a resolution
-    fullResolutionFlag = True
     if conflictFlag:
-      returned = self.decon_method.deconflict(app_name, timestamp)
-      if type(returned) is tuple:
-        fullResolutionFlag = returned[0]
-        newResolutionVector = returned[1]
-      else:
-        newResolutionVector = returned
+      newResolutionVector = self.decon_method.deconflict(app_name, timestamp)
+      print('ResolutionVector (conflict): ' + str(newResolutionVector),
+            flush=True)
 
       # GDB 6/2/23 The logic that updates ConflictMatrix below is flawed
       # in that updates effectively indicate that apps are happy with the
@@ -214,126 +210,86 @@ class DeconflictionPipeline(GridAPPSD):
                   (max(value[0], self.ConflictMatrix[device][app][0]), value[1])
       '''
 
-      if fullResolutionFlag:
-        fullResolutionVector = newResolutionVector
-        print('ResolutionVector (from full): ' + str(fullResolutionVector),
-              flush=True)
+      if self.testDevice:
+        if self.testDevice in newResolutionVector:
+          print('~TEST: ResolutionVector (conflict) for ' +
+                self.testDevice + ' setpoint: ' +
+                str(newResolutionVector[self.testDevice][1]) +
+                ', timestamp: ' +
+                str(newResolutionVector[self.testDevice][0]),
+                flush=True)
+        else:
+          print('~TEST: ResolutionVector (conflict) does not contain ' +
+                self.testDevice, flush=True)
 
-        if self.testDevice:
-          if self.testDevice in fullResolutionVector:
-            print('~TEST: ResolutionVector (from full) for ' +
-                  self.testDevice + ' setpoint: ' +
-                  str(fullResolutionVector[self.testDevice][1]) +
-                  ', timestamp: ' +
-                  str(fullResolutionVector[self.testDevice][0]),
-                  flush=True)
-          else:
-            print('~TEST: ResolutionVector (from full) does not contain ' +
-                  self.testDevice, flush=True)
-
-    if not conflictFlag or not fullResolutionFlag:
-      # to create a full resolution vector from a partial one, start with
-      # a copy of the previous resolution
-      fullResolutionVector = copy.deepcopy(self.ResolutionVector)
+    else: # no conflict
+      # start with a copy of the previous resolution
+      newResolutionVector = copy.deepcopy(self.ResolutionVector)
 
       # next copy the new set-points over top of the previous resolution
-      # which handles any devices where there was no conflict and if there
-      # is conflict, we are counting on newResolutionVector to override those
       for device, value in set_points.items():
         # uncomment the following line to only include batteries in resolution
         # for testing
         #if device.startswith('BatteryUnit.'):
-          fullResolutionVector[device] = (timestamp, value)
+          newResolutionVector[device] = (timestamp, value)
 
-      # finally, if there were conflicts, then overlay the resolution to those
-      if conflictFlag:
-        for device in newResolutionVector:
-          fullResolutionVector[device] = newResolutionVector[device]
-        print('ResolutionVector (from partial): ' + str(fullResolutionVector),
-              flush=True)
+      print('ResolutionVector (no conflict): ' + str(newResolutionVector),
+            flush=True)
 
-        if self.testDevice:
-          if self.testDevice in fullResolutionVector:
-            print('~TEST: ResolutionVector (from partial) for ' +
-                  self.testDevice + ' setpoint: ' +
-                  str(fullResolutionVector[self.testDevice][1]) +
-                  ', timestamp: ' +
-                  str(fullResolutionVector[self.testDevice][0]),
-                  flush=True)
-          else:
-            print('~TEST: ResolutionVector (from partial) does not contain ' +
-                  self.testDevice, flush=True)
+      if self.testDevice:
+        if self.testDevice in newResolutionVector:
+          print('~TEST: ResolutionVector (no conflict) for ' +
+                self.testDevice + ' setpoint: ' +
+                str(newResolutionVector[self.testDevice][1]) +
+                ', timestamp: ' +
+                str(newResolutionVector[self.testDevice][0]),
+                flush=True)
+        else:
+          print('~TEST: ResolutionVector (no conflict) does not contain ' +
+                self.testDevice, flush=True)
 
-      else:
-        print('ResolutionVector (no conflict): ' + str(fullResolutionVector),
-              flush=True)
-
-        if self.testDevice:
-          if self.testDevice in fullResolutionVector:
-            print('~TEST: ResolutionVector (no conflict) for ' +
-                  self.testDevice + ' setpoint: ' +
-                  str(fullResolutionVector[self.testDevice][1]) +
-                  ', timestamp: ' +
-                  str(fullResolutionVector[self.testDevice][0]),
-                  flush=True)
-          else:
-            print('~TEST: ResolutionVector (no conflict) does not contain ' +
-                  self.testDevice, flush=True)
 
     if self.testDeconMethodFlag:
-      testFullResolutionFlag = True
       if conflictFlag:
-        testReturned = self.decon_method_test.deconflict(timestamp)
-        if type(testReturned) is tuple:
-          testFullResolutionFlag = returned[0]
-          testNewResolutionVector = returned[1]
-        else:
-          testNewResolutionVector = returned
+        testNewResolutionVector = self.decon_method_test.deconflict(timestamp)
 
-        if testFullResolutionFlag:
-          testFullResolutionVector = testNewResolutionVector
-
-      if not conflictFlag or not testFullResolutionFlag:
-        testFullResolutionVector = copy.deepcopy(self.ResolutionVector)
+      else:
+        testNewResolutionVector = copy.deepcopy(self.ResolutionVector)
 
         for device, value in set_points.items():
           # uncomment the following line to only include batteries in resolution
           # for testing
           #if device.startswith('BatteryUnit.'):
-            testFullResolutionVector[device] = (timestamp, value)
-
-        if conflictFlag:
-          for device in testNewResolutionVector:
-            testFullResolutionVector[device] = testNewResolutionVector[device]
+            testNewResolutionVector[device] = (timestamp, value)
 
       testDiffFlag = False
-      for device in fullResolutionVector:
-        if device not in testFullResolutionVector:
+      for device in newResolutionVector:
+        if device not in testNewResolutionVector:
           testDiffFlag = True
           break
 
         if device.startswith('BatteryUnit.'):
-          if abs(fullResolutionVector[device][1] - \
-                 testFullResolutionVector[device][1]) > 1e-6:
+          if abs(newResolutionVector[device][1] - \
+                 testNewResolutionVector[device][1]) > 1e-6:
             testDiffFlag = True
             break
         else:
-          if fullResolutionVector[device][1] != \
-             testFullResolutionVector[device][1]:
+          if newResolutionVector[device][1] != \
+             testNewResolutionVector[device][1]:
             testDiffFlag = True
             break
 
-        if fullResolutionVector[device][0] != \
-           testFullResolutionVector[device][0]:
+        if newResolutionVector[device][0] != \
+           testNewResolutionVector[device][0]:
           testDiffFlag = True
           break
 
       if testDiffFlag:
         print('!!!!!!!!!!!!!!!!!!!!!!!!! DIFF TEST ResolutionVector: ' +
-              str(testFullResolutionVector), flush=True)
+              str(testNewResolutionVector), flush=True)
         exit()
 
-    return fullResolutionVector
+    return newResolutionVector
 
 
   ''' SOC MOVE
