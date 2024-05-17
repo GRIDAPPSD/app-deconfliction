@@ -167,7 +167,8 @@ class SPARQLManager:
         ORDER BY ?pname ?tname ?rname ?wnum
         """% self.feeder_mrid
 
-        results = self.gad.query_data(VALUES_QUERY)
+        # GDB 5/17/24: Bumped up timeout to work with 9500 node model
+        results = self.gad.query_data(VALUES_QUERY, timeout=1200)
         bindings = results['data']['results']['bindings']
         return bindings
 
