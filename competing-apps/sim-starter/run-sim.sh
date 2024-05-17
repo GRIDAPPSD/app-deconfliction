@@ -21,7 +21,7 @@ if [[ -z "$SIMREQ" ]]; then
     SIMID=0
     DELAY=$2
 else
-#   invocation when simulation is already started from platform viz
+    # invocation when simulation is already started from platform viz
     SIMID=$1
     DELAY=$2
 fi
@@ -31,8 +31,15 @@ if [ "$#" -gt 1 ]; then
   DELAY=$2
 fi
 
+# this is some fussy logic to avoid synchronization errors when using the
+# run-deconfliction.sh wrapper script
 if [[ $3 == "--wait" ]]; then
+  # 30 seconds is enough initialization time for 123 node model
   sleep 30
+  if [[ $1 == "9500" ]]; then
+    # need some extra time from apps and pipeline for the big 9500 node model
+    sleep 15
+  fi
 fi
 
 mkdir -p output
