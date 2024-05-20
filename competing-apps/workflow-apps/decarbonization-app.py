@@ -193,6 +193,10 @@ class CompetingApp(GridAPPSD):
   def __init__(self, gapps, feeder_mrid, simulation_id, outage):
     self.gapps = gapps
 
+    # subscribe to simulation output messages
+    gapps.subscribe(service_output_topic('gridappsd-sim-sim',
+                                         simulation_id), self)
+
     SPARQLManager = getattr(importlib.import_module('sparql'), 'SPARQLManager')
     sparql_mgr = SPARQLManager(gapps, feeder_mrid, simulation_id)
 
@@ -220,10 +224,6 @@ class CompetingApp(GridAPPSD):
 
     # topic for sending out set_points messages
     self.publish_topic = service_output_topic('gridappsd-competing-app', '0')
-
-    # subscribe to simulation output messages
-    gapps.subscribe(service_output_topic('gridappsd-sim-sim',
-                                         simulation_id), self)
 
     print('Initialized decarbonization app and now waiting for messages...',
           flush=True)

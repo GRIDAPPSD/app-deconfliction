@@ -625,6 +625,16 @@ class DeconflictionPipeline(GridAPPSD):
 
 
   def __init__(self, gapps, feeder_mrid, simulation_id, method, method_test):
+    self.gapps = gapps
+
+    # subscribe to competing app set-points messages
+    gapps.subscribe(service_output_topic('gridappsd-competing-app',
+                                      simulation_id), self.on_setpoints_message)
+
+    # subscribe to simulation output messages to get updated SoC values
+    gapps.subscribe(service_output_topic('gridappsd-sim-sim', simulation_id),
+                                         self.on_sim_message)
+
     # test/debug settings
     self.testDeconMethodFlag = method_test != None
     # set this to the name of the device for detailed testing, e.g.,
@@ -719,18 +729,8 @@ class DeconflictionPipeline(GridAPPSD):
     self.publish_topic = service_output_topic(
                                         'gridappsd-deconfliction-pipeline', '0')
 
-    # subscribe to competing app set-points messages
-    gapps.subscribe(service_output_topic('gridappsd-competing-app',
-                                      simulation_id), self.on_setpoints_message)
-
-    # subscribe to simulation output messages to get updated SoC values
-    gapps.subscribe(service_output_topic('gridappsd-sim-sim', simulation_id),
-                                         self.on_sim_message)
-
     print('Initialized deconfliction pipeline, waiting for messages...\n',
           flush=True)
-
-    self.gapps = gapps
 
     self.exitFlag = False
 
