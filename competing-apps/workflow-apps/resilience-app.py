@@ -282,7 +282,6 @@ class CompetingApp(GridAPPSD):
         print('Draining message queue, size: ' + str(self.messageQueue.qsize()),
               flush=True)
         self.messageQueue.get()
-        messageCounter += 1
 
       message = self.messageQueue.get()
 
