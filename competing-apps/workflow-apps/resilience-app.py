@@ -187,6 +187,48 @@ class CompetingApp(GridAPPSD):
     self.messageQueue.put(message)
 
 
+  def processMessage(self, message):
+    timestamp = int(message['timestamp'])
+    loadshape = float(message['loadshape'])
+    solar = float(message['solar'])
+    price = float(message['price'])
+    BatterySoC = message['BatterySoC']
+    print('Time-series time: ' + str(timestamp) +
+          ', loadshape: ' + str(loadshape) +
+          ', solar: ' + str(solar) +
+          ', price: ' + str(price) +
+          ', BatterySoc: ' + str(BatterySoC), flush=True)
+
+    self.updateSoC(BatterySoC)
+
+    self.t_plot.append(AppUtil.to_datetime(timestamp)) # plotting
+
+    self.resilience(self.EnergyConsumers, self.SynchronousMachines,
+                    self.Batteries, self.SolarPVs, self.deltaT,
+                    self.emergencyState, self.outage,
+                    timestamp, loadshape, solar, price)
+
+    self.solution[timestamp] = {}
+    AppUtil.batt_to_solution(self.Batteries, self.solution[timestamp])
+
+    for name in self.Batteries:
+      self.p_batt_plot[name].append(self.solution[timestamp][name]['P_batt'])
+      self.soc_plot[name].append(self.Batteries[name]['SoC'])
+
+    solution = self.solution[timestamp]
+    set_points = {}
+    for name in solution:
+      set_points[name] = solution[name]['P_batt']
+
+    out_message = {
+      'app_name': 'resilience-app',
+      'timestamp': timestamp,
+      'set_points': set_points
+    }
+    print('Sending message: ' + str(out_message), flush=True)
+    self.gapps.send(self.publish_topic, out_message)
+
+
   def __init__(self, gapps, feeder_mrid, simulation_id, outage, state):
     self.gapps = gapps
 
@@ -249,45 +291,7 @@ class CompetingApp(GridAPPSD):
         print('Time-series end-of-data!', flush=True)
         break
 
-      timestamp = int(message['timestamp'])
-      loadshape = float(message['loadshape'])
-      solar = float(message['solar'])
-      price = float(message['price'])
-      BatterySoC = message['BatterySoC']
-      print('Time-series time: ' + str(timestamp) +
-            ', loadshape: ' + str(loadshape) +
-            ', solar: ' + str(solar) +
-            ', price: ' + str(price) +
-            ', BatterySoc: ' + str(BatterySoC), flush=True)
-
-      self.updateSoC(BatterySoC)
-
-      self.t_plot.append(AppUtil.to_datetime(timestamp)) # plotting
-
-      self.resilience(self.EnergyConsumers, self.SynchronousMachines,
-                      self.Batteries, self.SolarPVs, self.deltaT,
-                      self.emergencyState, self.outage,
-                      timestamp, loadshape, solar, price)
-
-      self.solution[timestamp] = {}
-      AppUtil.batt_to_solution(self.Batteries, self.solution[timestamp])
-
-      for name in self.Batteries:
-        self.p_batt_plot[name].append(self.solution[timestamp][name]['P_batt'])
-        self.soc_plot[name].append(self.Batteries[name]['SoC'])
-
-      solution = self.solution[timestamp]
-      set_points = {}
-      for name in solution:
-        set_points[name] = solution[name]['P_batt']
-
-      out_message = {
-        'app_name': 'resilience-app',
-        'timestamp': timestamp,
-        'set_points': set_points
-      }
-      print('Sending message: ' + str(out_message), flush=True)
-      self.gapps.send(self.publish_topic, out_message)
+      self.processMessage(message)
 
     # make sure output directory exists since that's where results go
     if not os.path.isdir('output'):
