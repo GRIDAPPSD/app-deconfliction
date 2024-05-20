@@ -38,31 +38,39 @@ else
   cd optimization-apps
 fi
 
+
+DELAY=0
+SYNC=""
+if [ "$#" -gt 4 ]; then
+  DELAY=$5
+else
+  SYNC="--sync"
+fi
+
 delay_app_counter=0
 
 if [[ $APPS == *"r"* || $APPS == *"R"* ]]; then
   ((delay_app_counter--))
-  ./run-resilience.sh $MODEL $OPTLIB >/dev/null &
+  ./run-resilience.sh $MODEL $OPTLIB $SYNC >/dev/null &
 fi
 
 if [[ $APPS == *"d"* || $APPS == *"D"* ]]; then
   ((delay_app_counter--))
-  ./run-decarbonization.sh $MODEL $OPTLIB >/dev/null &
+  ./run-decarbonization.sh $MODEL $OPTLIB $SYNC >/dev/null &
 fi
 
 if [[ $APPS == *"p"* || $APPS == *"P"* ]]; then
   ((delay_app_counter--))
-  ./run-profit.sh $MODEL $OPTLIB >/dev/null &
+  ./run-profit.sh $MODEL $OPTLIB $SYNC >/dev/null &
 fi
 
 if [[ $APPS == *"l"* || $APPS == *"L"* ]]; then
   ((delay_app_counter--))
-  ./run-loadshed.sh $MODEL $OPTLIB >/dev/null &
+  ./run-loadshed.sh $MODEL $OPTLIB $SYNC >/dev/null &
 fi
 
-DELAY=$delay_app_counter
-if [ "$#" -gt 4 ]; then
-  DELAY=$5
+if [[ $SYNC == "--sync" ]]; then
+  DELAY=$delay_app_counter
 fi
 
 cd ../sim-starter
@@ -77,9 +85,9 @@ else
   # have completed initialization so they are ready to receive messages.
   # Otherwise there will be either lost messages or synchronization errors
   # that will stop the processing workflow before it even starts.
-  ./run-sim.sh $MODEL $DELAY --wait >/dev/null &
+  ./run-sim.sh $MODEL $DELAY $SYNC >/dev/null &
 fi
 
 cd ../deconfliction-pipeline
-./run-pipeline.sh $MODEL ../$METHOD
+./run-pipeline.sh $MODEL ../$METHOD $SYNC
 
