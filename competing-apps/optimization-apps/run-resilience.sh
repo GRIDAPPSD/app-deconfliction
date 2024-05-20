@@ -26,6 +26,7 @@ if [[ -z "$SIMREQ" ]]; then
       STATE=$4
     else
       STATE=$3
+    fi
 else
 #   invocation when simulation is already started from platform viz
     SIMID=$1
