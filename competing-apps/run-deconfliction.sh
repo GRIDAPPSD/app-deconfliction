@@ -71,11 +71,12 @@ cd ../sim-starter
 # running it separately and feeding data interactively
 if [ "$DELAY" -eq 0 ]; then
   echo "*** Not starting sim-sim due to DELAY=0 ***"
-elif [[ $APPS == *"w"* || $APPS == *"W"* ]]; then
-  ./run-sim.sh $MODEL $DELAY --wait >/dev/null &
-elif [ "$DELAY" -lt 0 ]; then
-  ./run-sim.sh $MODEL $DELAY >/dev/null &
-elif [ "$DELAY" -gt 0 ]; then
+else
+  # --wait is always needed from this wrapper script in order to force
+  # the simulator not to send out any messages before all other processes
+  # have completed initialization so they are ready to receive messages.
+  # Otherwise there will be either lost messages or synchronization errors
+  # that will stop the processing workflow before it even starts.
   ./run-sim.sh $MODEL $DELAY --wait >/dev/null &
 fi
 
