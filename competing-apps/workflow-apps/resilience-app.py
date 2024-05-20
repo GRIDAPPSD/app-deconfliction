@@ -44,7 +44,6 @@ Created on March 6, 2023
 """""
 
 import sys
-import time
 import os
 import argparse
 import json
@@ -53,6 +52,9 @@ import math
 import pprint
 import numpy as np
 import csv
+import queue
+
+from time import sleep
 
 from gridappsd import GridAPPSD
 from gridappsd.topics import service_output_topic
@@ -179,58 +181,16 @@ class CompetingApp(GridAPPSD):
       #      flush=True)
 
 
-  def on_message(self, headers, in_message):
+  def on_message(self, headers, message):
     #print('headers: ' + str(headers), flush=True)
-    #print('message: ' + str(in_message), flush=True)
-
-    # empty timestamp is end-of-data flag
-    if in_message['timestamp'] == '':
-      print('time series end-of-data!', flush=True)
-      self.exit_flag = True
-      return
-
-    # if we get here we must have data to process
-    time = int(in_message['timestamp'])
-    loadshape = float(in_message['loadshape'])
-    solar = float(in_message['solar'])
-    price = float(in_message['price'])
-    BatterySoC = in_message['BatterySoC']
-    #print('time series time: ' + str(time) + ', loadshape: ' + str(loadshape) + ', solar: ' + str(solar) + ', price: ' + str(price) + ', BatterySoC: ' + str(BatterySoC), flush=True)
-
-    self.updateSoC(BatterySoC)
-
-    self.t_plot.append(AppUtil.to_datetime(time)) # plotting
-
-    self.resilience(self.EnergyConsumers, self.SynchronousMachines,
-                    self.Batteries, self.SolarPVs, self.deltaT,
-                    self.emergencyState, self.outage,
-                    time, loadshape, solar, price)
-
-    self.solution[time] = {}
-    AppUtil.batt_to_solution(self.Batteries, self.solution[time])
-
-    for name in self.Batteries:
-      self.p_batt_plot[name].append(self.solution[time][name]['P_batt'])
-      self.soc_plot[name].append(self.Batteries[name]['SoC'])
-
-    solution = self.solution[time]
-    set_points = {}
-    for name in solution:
-      set_points[name] = solution[name]['P_batt']
-
-    out_message = {
-      'app_name': 'resilience-app',
-      'timestamp': time,
-      'set_points': set_points
-    }
-    print('Sending message: ' + str(out_message), flush=True)
-    self.gapps.send(self.publish_topic, out_message)
-
-    return
+    #print('message: ' + str(message), flush=True)
+    self.messageQueue.put(message)
 
 
   def __init__(self, gapps, feeder_mrid, simulation_id, outage, state):
     self.gapps = gapps
+
+    self.messageQueue = queue.Queue()
 
     # subscribe to simulation output messages
     gapps.subscribe(service_output_topic('gridappsd-sim-sim',
@@ -269,10 +229,65 @@ class CompetingApp(GridAPPSD):
     print('Initialized resilience app and now waiting for messages...',
           flush=True)
 
-    self.exit_flag = False
+    while True:
+      if self.messageQueue.qsize() == 0:
+        sleep(0.1)
+        continue
 
-    while not self.exit_flag:
-      time.sleep(0.1)
+      # discard messages other than most recent
+      # comment this while loop out to never drain queue
+      while self.messageQueue.qsize() > 1:
+        print('Draining message queue, size: ' + str(self.messageQueue.qsize()),
+              flush=True)
+        self.messageQueue.get()
+        messageCounter += 1
+
+      message = self.messageQueue.get()
+
+      # empty timestamp is end-of-data flag
+      if message['timestamp'] == '':
+        print('Time-series end-of-data!', flush=True)
+        break
+
+      timestamp = int(message['timestamp'])
+      loadshape = float(message['loadshape'])
+      solar = float(message['solar'])
+      price = float(message['price'])
+      BatterySoC = message['BatterySoC']
+      print('Time-series time: ' + str(timestamp) +
+            ', loadshape: ' + str(loadshape) +
+            ', solar: ' + str(solar) +
+            ', price: ' + str(price) +
+            ', BatterySoc: ' + str(BatterySoC), flush=True)
+
+      self.updateSoC(BatterySoC)
+
+      self.t_plot.append(AppUtil.to_datetime(timestamp)) # plotting
+
+      self.resilience(self.EnergyConsumers, self.SynchronousMachines,
+                      self.Batteries, self.SolarPVs, self.deltaT,
+                      self.emergencyState, self.outage,
+                      timestamp, loadshape, solar, price)
+
+      self.solution[timestamp] = {}
+      AppUtil.batt_to_solution(self.Batteries, self.solution[timestamp])
+
+      for name in self.Batteries:
+        self.p_batt_plot[name].append(self.solution[timestamp][name]['P_batt'])
+        self.soc_plot[name].append(self.Batteries[name]['SoC'])
+
+      solution = self.solution[timestamp]
+      set_points = {}
+      for name in solution:
+        set_points[name] = solution[name]['P_batt']
+
+      out_message = {
+        'app_name': 'resilience-app',
+        'timestamp': timestamp,
+        'set_points': set_points
+      }
+      print('Sending message: ' + str(out_message), flush=True)
+      self.gapps.send(self.publish_topic, out_message)
 
     # make sure output directory exists since that's where results go
     if not os.path.isdir('output'):
