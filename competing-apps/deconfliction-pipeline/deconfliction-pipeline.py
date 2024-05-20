@@ -743,22 +743,21 @@ class DeconflictionPipeline(GridAPPSD):
         sleep(0.1)
         continue
 
-      # GDB 5/20/24: Draining queue for the pipeline can't be done like it
-      # can for competing apps because it contains both simulation and
-      # setpoints messages and tossing setpoints messages leads to workflow
-      # synchronization issues. This may need to be revisited if the pipeline
-      # is falling significantly behind the simulation as the actual service
-      # is being implemented with more sophisticated deconfliction and new
-      # simulation messages arriving every 3 seconds.
+      # GDB 5/20/24: Queue draining for the pipeline can't be done the same
+      # way as the competing apps because the queue isn't all just simulation
+      # messages, but also setpoints messages. Only drain messages if they are
+      # simulation messages.
+      # This will need to be revisited if the pipeline starts falling behind
+      # as more sophisticated deconfliction is implemented and new simulation
+      # messages arriving every 3 seconds. In that case it seems as if older
+      # setpoints messages could be discarded, but it's not straightforward
+      # as it would only make sense to discard when there is a newer setpoints
+      # message from the same competing app.
 
-      # discard messages other than most recent
-      # comment this while loop out to never drain queue
-      #while self.messageQueue.qsize() > 1:
-      #  print('Draining message queue, size: ' +str(self.messageQueue.qsize()),
-      #        flush=True)
-      #  self.messageQueue.get()
-
-      simMsgFlag, message = self.messageQueue.get()
+      while self.messageQueue.qsize() > 0:
+        simMsgFlag, message = self.messageQueue.get()
+        if not simMsgFlag:
+          break
 
       # empty timestamp in simulation message is end-of-data flag
       if simMsgFlag and message['timestamp'] == '':
