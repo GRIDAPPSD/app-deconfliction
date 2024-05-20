@@ -8,6 +8,8 @@
 
 #SIMREQ={\"power_system_config\":{\"Line_name\":\"_AAE94E4A-2465-6F5E-37B1-3E72183A4E44\"},\"service_configs\":[{\"id\":\"state-estimator\",\"user_options\":{\"use-sensors-for-estimates\":false}}]} # test9500new using simulation
 
+SYNC=""
+
 if [[ -z "$SIMREQ" ]]; then
     # requires at least a reference to the type of simulation to use
     if [ "$#" -eq 0 ]; then
@@ -20,14 +22,24 @@ if [[ -z "$SIMREQ" ]]; then
     read -d "\n" SIMREQ <<< $(../sim-starter/sim-starter.py $1 nosim)
     SIMID=0
     METHOD=$2
-    METHOD_TEST=$3
+    if [ "$3" == "--sync" ]; then
+      SYNC="--sync=yes"
+      METHOD_TEST=$4
+    else
+      METHOD_TEST=$3
+    fi
 else
 #   invocation when simulation is already started from platform viz
     SIMID=$2
     METHOD=$3
-    METHOD_TEST=$4
+    if [ "$4" == "--sync" ]; then
+      SYNC="--sync=yes"
+      METHOD_TEST=$5
+    else
+      METHOD_TEST=$4
+    fi
 fi
 
 mkdir -p output
-python3 deconfliction-pipeline.py $SIMID "$SIMREQ" $METHOD $METHOD_TEST 2>&1 | tee output/deconfliction-pipeline.log
+python3 deconfliction-pipeline.py $SIMID "$SIMREQ" $METHOD $SYNC $METHOD_TEST 2>&1 | tee output/deconfliction-pipeline.log
 

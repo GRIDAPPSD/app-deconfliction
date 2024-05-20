@@ -229,7 +229,8 @@ class CompetingApp(GridAPPSD):
     self.gapps.send(self.publish_topic, out_message)
 
 
-  def __init__(self, gapps, feeder_mrid, simulation_id, outage, state):
+  def __init__(self, gapps, feeder_mrid, simulation_id, outage, state,
+               sync_flag):
     self.gapps = gapps
 
     self.messageQueue = queue.Queue()
@@ -278,10 +279,11 @@ class CompetingApp(GridAPPSD):
 
       # discard messages other than most recent
       # comment this while loop out to never drain queue
-      while self.messageQueue.qsize() > 1:
-        print('Draining message queue, size: ' + str(self.messageQueue.qsize()),
-              flush=True)
-        self.messageQueue.get()
+      if not sync_flag:
+        while self.messageQueue.qsize() > 1:
+          print('Draining message queue, size: '+str(self.messageQueue.qsize()),
+                flush=True)
+          self.messageQueue.get()
 
       message = self.messageQueue.get()
 
@@ -325,6 +327,7 @@ def _main():
   parser.add_argument("state", nargs="?", default="Alert",
                       help="Alert or Emergency State")
   parser.add_argument("--outage", "--out", "-o", type=int, nargs=2)
+  parser.add_argument("--sync", nargs="?", help="Synchronize Messages")
   opts = parser.parse_args()
 
   sim_request = json.loads(opts.request.replace("\'",""))
@@ -340,7 +343,7 @@ def _main():
   assert gapps.connected
 
   competing_app = CompetingApp(gapps, feeder_mrid, opts.simulation_id,
-                               opts.outage, opts.state)
+                               opts.outage, opts.state, opts.sync!=None)
 
 
 if __name__ == "__main__":

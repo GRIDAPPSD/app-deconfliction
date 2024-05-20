@@ -628,7 +628,8 @@ class DeconflictionPipeline(GridAPPSD):
     #print('!!! ALEX ResolutionVector FINISH !!!', flush=True)
 
 
-  def __init__(self, gapps, feeder_mrid, simulation_id, method, method_test):
+  def __init__(self, gapps, feeder_mrid, simulation_id, method, method_test,
+               sync_flag):
     self.gapps = gapps
 
     self.messageQueue = queue.Queue()
@@ -743,21 +744,25 @@ class DeconflictionPipeline(GridAPPSD):
         sleep(0.1)
         continue
 
-      # GDB 5/20/24: Queue draining for the pipeline can't be done the same
-      # way as the competing apps because the queue isn't all just simulation
-      # messages, but also setpoints messages. Only drain messages if they are
-      # simulation messages.
-      # This will need to be revisited if the pipeline starts falling behind
-      # as more sophisticated deconfliction is implemented and new simulation
-      # messages arriving every 3 seconds. In that case it seems as if older
-      # setpoints messages could be discarded, but it's not straightforward
-      # as it would only make sense to discard when there is a newer setpoints
-      # message from the same competing app.
-
-      while self.messageQueue.qsize() > 0:
+      if sync_flag:
+        # don't ever discard messages if running synchronized
         simMsgFlag, message = self.messageQueue.get()
-        if not simMsgFlag:
-          break
+
+      else:
+        # GDB 5/20/24: Queue draining for the pipeline can't be done the same
+        # way as the competing apps because the queue isn't all just simulation
+        # messages, but also setpoints messages. Only drain messages if they are
+        # simulation messages.
+        # This will need to be revisited if the pipeline starts falling behind
+        # as more sophisticated deconfliction is implemented and new simulation
+        # messages arriving every 3 seconds. In that case it seems as if older
+        # setpoints messages could be discarded, but it's not straightforward
+        # as it would only make sense to discard when there is a newer setpoints
+        # message from the same competing app.
+        while self.messageQueue.qsize() > 0:
+          simMsgFlag, message = self.messageQueue.get()
+          if not simMsgFlag:
+            break
 
       # empty timestamp in simulation message is end-of-data flag
       if simMsgFlag and message['timestamp'] == '':
@@ -786,6 +791,7 @@ def _main():
   parser.add_argument("simulation_id", help="Simulation ID")
   parser.add_argument("request", help="Simulation Request")
   parser.add_argument("method", help="Deconfliction Methodology")
+  parser.add_argument("--sync", nargs='?', help="Synchronize Messages")
   parser.add_argument("method_test", nargs='?',
                       help="Test Deconfliction Methodology")
   opts = parser.parse_args()
@@ -803,7 +809,7 @@ def _main():
   assert gapps.connected
 
   DeconflictionPipeline(gapps, feeder_mrid, opts.simulation_id,
-                        opts.method, opts.method_test)
+                        opts.method, opts.method_test, opts.sync!=None)
 
 
 if __name__ == "__main__":
