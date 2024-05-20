@@ -55,7 +55,6 @@ Created on March 8, 2023
 """""
 
 import sys
-import time
 import os
 import argparse
 import json
@@ -65,7 +64,10 @@ import pprint
 import numpy as np
 import csv
 import copy
-import time
+import queue
+
+from time import sleep
+
 
 from gridappsd import GridAPPSD
 from gridappsd.topics import service_output_topic
@@ -510,11 +512,10 @@ class DeconflictionPipeline(GridAPPSD):
 
   def on_sim_message(self, headers, message):
     print('Received sim message: ' + str(message), flush=True)
+    self.messageQueue.put((True, message))
 
-    # trigger an exit based on timestamp
-    if message['timestamp'] == '':
-      self.exitFlag = True
 
+  def processSimulationMessage(self, message):
     # update device set-point values in MethodUtil for the benefit of
     # DeconflictionMethod classes
     MethodUtil.DeviceSetpoints.clear()
@@ -540,7 +541,10 @@ class DeconflictionPipeline(GridAPPSD):
 
   def on_setpoints_message(self, headers, message):
     print('Received set-points message: ' + str(message), flush=True)
+    self.messageQueue.put((False, message))
 
+
+  def processSetpointsMessage(self, message):
     # for SHIVA conflict metric testing
     #realTime = round(time.time(), 4)
 
@@ -626,6 +630,8 @@ class DeconflictionPipeline(GridAPPSD):
 
   def __init__(self, gapps, feeder_mrid, simulation_id, method, method_test):
     self.gapps = gapps
+
+    self.messageQueue = queue.Queue()
 
     # subscribe to competing app set-points messages
     gapps.subscribe(service_output_topic('gridappsd-competing-app',
@@ -732,10 +738,38 @@ class DeconflictionPipeline(GridAPPSD):
     print('Initialized deconfliction pipeline, waiting for messages...\n',
           flush=True)
 
-    self.exitFlag = False
+    while True:
+      if self.messageQueue.qsize() == 0:
+        sleep(0.1)
+        continue
 
-    while not self.exitFlag:
-      time.sleep(0.1)
+      # GDB 5/20/24: Draining queue for the pipeline can't be done like it
+      # can for competing apps because it contains both simulation and
+      # setpoints messages and tossing setpoints messages leads to workflow
+      # synchronization issues. This may need to be revisited if the pipeline
+      # is falling significantly behind the simulation as the actual service
+      # is being implemented with more sophisticated deconfliction and new
+      # simulation messages arriving every 3 seconds.
+
+      # discard messages other than most recent
+      # comment this while loop out to never drain queue
+      #while self.messageQueue.qsize() > 1:
+      #  print('Draining message queue, size: ' +str(self.messageQueue.qsize()),
+      #        flush=True)
+      #  self.messageQueue.get()
+
+      simMsgFlag, message = self.messageQueue.get()
+
+      # empty timestamp in simulation message is end-of-data flag
+      if simMsgFlag and message['timestamp'] == '':
+        print('Time-series end-of-data!', flush=True)
+        break
+
+      if simMsgFlag:
+        self.processSimulationMessage(message)
+
+      else:
+        self.processSetpointsMessage(message)
 
     # for SHIVA conflict metric
     #json_file = open('output/ConflictMatrix_' + basename + '.json', 'w')
