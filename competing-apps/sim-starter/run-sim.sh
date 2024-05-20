@@ -31,17 +31,6 @@ if [ "$#" -gt 1 ]; then
   DELAY=$2
 fi
 
-# this is some fussy logic to avoid synchronization errors when using the
-# run-deconfliction.sh wrapper script
-if [[ $3 == "--wait" ]]; then
-  # 30 seconds is enough initialization time for 123 node model
-  sleep 30
-  if [[ $1 == "9500" ]]; then
-    # need some extra time from apps and pipeline for the big 9500 node model
-    sleep 15
-  fi
-fi
-
 mkdir -p output
 python3 sim-sim.py $SIMID "$SIMREQ" $DELAY 2>&1 | tee output/sim-sim.log
 
