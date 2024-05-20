@@ -38,7 +38,6 @@ else
   cd optimization-apps
 fi
 
-
 DELAY=0
 SYNC=""
 if [ "$#" -gt 4 ]; then
@@ -80,12 +79,7 @@ cd ../sim-starter
 if [ "$DELAY" -eq 0 ]; then
   echo "*** Not starting sim-sim due to DELAY=0 ***"
 else
-  # --wait is always needed from this wrapper script in order to force
-  # the simulator not to send out any messages before all other processes
-  # have completed initialization so they are ready to receive messages.
-  # Otherwise there will be either lost messages or synchronization errors
-  # that will stop the processing workflow before it even starts.
-  ./run-sim.sh $MODEL $DELAY $SYNC >/dev/null &
+  ./run-sim.sh $MODEL $DELAY >/dev/null &
 fi
 
 cd ../deconfliction-pipeline
