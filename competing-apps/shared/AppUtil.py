@@ -46,6 +46,8 @@ class AppUtil:
   def getRegulators(sparql_mgr):
     Regulators = {}
     bindings = sparql_mgr.regulator_query()
+    #print('regulator_query results bindings: ' + str(bindings), flush=True)
+    print('Count of Regulators: ' + str(len(bindings)), flush=True)
     for obj in bindings:
       name = 'RatioTapChanger.' + obj['pname']['value']
       if 'tname' in obj:
@@ -58,10 +60,12 @@ class AppUtil:
       else:
         phases = 'ABC'
       Regulators[name]['phase'] = phases
+      Regulators[name]['id'] = obj['id']['value']
       Regulators[name]['step'] = float(obj['step']['value'])
       Regulators[name]['highStep'] = float(obj['highStep']['value'])
       Regulators[name]['lowStep'] = float(obj['lowStep']['value'])
       Regulators[name]['increment'] = float(obj['incr']['value'])
+      print('Regulator name: ' + name + ', id: ' + Regulators[name]['id'] + ', phase: ' + Regulators[name]['phase'] + ', step: ' + str(round(Regulators[name]['step'],4)), flush=True)
 
     return Regulators
 
@@ -69,7 +73,7 @@ class AppUtil:
   def getBatteries(sparql_mgr):
     Batteries = {}
     bindings = sparql_mgr.battery_query()
-    #print('batery_query results bindings: ' + str(bindings), flush=True)
+    #print('battery_query results bindings: ' + str(bindings), flush=True)
     print('Count of Batteries: ' + str(len(bindings)), flush=True)
     idx = 0
     for obj in bindings:
