@@ -69,6 +69,7 @@ class AppUtil:
   def getBatteries(sparql_mgr):
     Batteries = {}
     bindings = sparql_mgr.battery_query()
+    #print('batery_query results bindings: ' + str(bindings), flush=True)
     print('Count of Batteries: ' + str(len(bindings)), flush=True)
     idx = 0
     for obj in bindings:
@@ -76,6 +77,7 @@ class AppUtil:
       #bus = obj['bus']['value'].upper()
       Batteries[name] = {}
       Batteries[name]['idx'] = idx
+      Batteries[name]['id'] = obj['id']['value']
       Batteries[name]['bus'] = obj['bus']['value']
       Batteries[name]['phase'] = obj['phases']['value']
       Batteries[name]['ratedkW'] = float(obj['ratedS']['value'])/1000.0
@@ -89,7 +91,7 @@ class AppUtil:
       Batteries[name]['eff'] = 0.975 * 0.86
       Batteries[name]['eff_c'] = 0.975 * 0.86
       Batteries[name]['eff_d'] = 0.975 * 0.86
-      print('Battery name: ' + name + ', ratedE: ' + str(round(Batteries[name]['ratedE'],4)) + ', SoC: ' + str(round(Batteries[name]['SoC'],4)), flush=True)
+      print('Battery name: ' + name + ', id: ' + Batteries[name]['id'] + ', ratedE: ' + str(round(Batteries[name]['ratedE'],4)) + ', SoC: ' + str(round(Batteries[name]['SoC'],4)), flush=True)
       idx += 1
     return Batteries
 
