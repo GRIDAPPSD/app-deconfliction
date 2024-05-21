@@ -131,6 +131,13 @@ class DeconflictionPipeline(GridAPPSD):
     centroid = {}
     apps = {}
     n_devices = len(self.ConflictMatrix)
+
+    # GDB 5/21/24: Don't crash with an empty ConflictMatrix
+    if n_devices == 0:
+      print('Conflict Metric: Undefined (no conflicts), timestamp: ' +
+            str(timestamp), flush=True)
+      return
+
     for device in self.ConflictMatrix:
       n_apps_device = len(self.ConflictMatrix[device])
       device_setpoints = []
