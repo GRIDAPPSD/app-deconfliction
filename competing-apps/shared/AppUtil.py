@@ -7,6 +7,8 @@ from matplotlib import pyplot as plt
 from matplotlib import dates as md
 from datetime import datetime
 
+import MethodUtil
+
 
 class AppUtil:
   """ Class for competing app utility functions
@@ -19,6 +21,7 @@ class AppUtil:
     print('Count of Regulators: ' + str(len(bindings)), flush=True)
     for obj in bindings:
       name = 'RatioTapChanger.' + obj['pname']['value']
+      mrid = obj['id']['value']
       if 'tname' in obj:
         name = 'RatioTapChanger.' + obj['tname']['value']
         Regulators[name] = {}
@@ -29,12 +32,14 @@ class AppUtil:
       else:
         phases = 'ABC'
       Regulators[name]['phase'] = phases
-      Regulators[name]['id'] = obj['id']['value']
+      Regulators[name]['id'] = mrid
       Regulators[name]['step'] = float(obj['step']['value'])
       Regulators[name]['highStep'] = float(obj['highStep']['value'])
       Regulators[name]['lowStep'] = float(obj['lowStep']['value'])
       Regulators[name]['increment'] = float(obj['incr']['value'])
       print('Regulator name: ' + name + ', id: ' + Regulators[name]['id'] + ', phase: ' + Regulators[name]['phase'] + ', step: ' + str(round(Regulators[name]['step'],4)), flush=True)
+      MethodUtil.DeviceToName[mrid] = name
+      MethodUtil.NameToDevice[name] = mrid
 
     return Regulators
 
@@ -47,10 +52,11 @@ class AppUtil:
     idx = 0
     for obj in bindings:
       name = 'BatteryUnit.' + obj['name']['value']
+      mrid = obj['id']['value']
       #bus = obj['bus']['value'].upper()
       Batteries[name] = {}
       Batteries[name]['idx'] = idx
-      Batteries[name]['id'] = obj['id']['value']
+      Batteries[name]['id'] = mrid
       Batteries[name]['bus'] = obj['bus']['value']
       Batteries[name]['phase'] = obj['phases']['value']
       Batteries[name]['ratedkW'] = float(obj['ratedS']['value'])/1000.0
@@ -66,6 +72,9 @@ class AppUtil:
       Batteries[name]['eff_d'] = 0.975 * 0.86
       print('Battery name: ' + name + ', id: ' + Batteries[name]['id'] + ', ratedE: ' + str(round(Batteries[name]['ratedE'],4)) + ', SoC: ' + str(round(Batteries[name]['SoC'],4)), flush=True)
       idx += 1
+      MethodUtil.DeviceToName[mrid] = name
+      MethodUtil.NameToDevice[name] = mrid
+
     return Batteries
 
 

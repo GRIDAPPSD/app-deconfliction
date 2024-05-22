@@ -1,4 +1,8 @@
 
+DeviceToName = {}
+
+NameToDevice = {}
+
 DeviceSetpoints = {}
 
 BatterySoC = {}
