@@ -74,6 +74,7 @@ else:
   sys.path.append('/gridappsd/services/app-deconfliction/competing-apps/shared')
 
 from AppUtil import AppUtil
+from WorkflowAppUtil import WorkflowAppUtil
 
 
 class CompetingApp(GridAPPSD):
@@ -121,19 +122,19 @@ class CompetingApp(GridAPPSD):
           if P_ren - P_load >= P_batt_total:
             # print('Charging from renewables', flush=True)
             # YES, Charge ESS
-            AppUtil.charge_batteries(Batteries, deltaT)
+            WorkflowAppUtil.charge_batteries(Batteries, deltaT)
 
           else:
             # NO, Check P_sub
             if P_ren + P_sub > P_load:
               # print('P_ren<P_load Charging from renewable + substation', flush=True)
-              AppUtil.charge_batteries(Batteries, deltaT)
+              WorkflowAppUtil.charge_batteries(Batteries, deltaT)
 
         else:
           # Check P_sub
           if P_ren + P_sub > P_load:
             # print('P_ren+P_sub>P_load Charging from renewable + substation', flush=True)
-            AppUtil.charge_batteries(Batteries, deltaT)
+            WorkflowAppUtil.charge_batteries(Batteries, deltaT)
 
     else: # emergency state
       # Shiva HACK
@@ -159,9 +160,9 @@ class CompetingApp(GridAPPSD):
               Batteries[name]['P_batt_c'] *= P_surplus / P_batt_total
 
         if P_batt_total > 0.0:
-          AppUtil.charge_batteries(Batteries, deltaT)
+          WorkflowAppUtil.charge_batteries(Batteries, deltaT)
       else:
-        AppUtil.dispatch_DGSs(Batteries, SynchronousMachines, deltaT, P_load, P_ren, P_sub)
+        WorkflowAppUtil.dispatch_DGSs(Batteries, SynchronousMachines, deltaT, P_load, P_ren, P_sub)
 
     for name in Batteries:
       if Batteries[name]['state'] == 'charging':
@@ -209,7 +210,7 @@ class CompetingApp(GridAPPSD):
                     timestamp, loadshape, solar, price)
 
     self.solution[timestamp] = {}
-    AppUtil.batt_to_solution(self.Batteries, self.solution[timestamp])
+    WorkflowAppUtil.batt_to_solution(self.Batteries, self.solution[timestamp])
 
     for name in self.Batteries:
       self.p_batt_plot[name].append(self.solution[timestamp][name]['P_batt'])
@@ -246,9 +247,9 @@ class CompetingApp(GridAPPSD):
 
     self.emergencyState = state.startswith('e') or state.startswith('E')
 
-    self.EnergyConsumers = AppUtil.getEnergyConsumers(sparql_mgr)
+    self.EnergyConsumers = WorkflowAppUtil.getEnergyConsumers(sparql_mgr)
 
-    self.SynchronousMachines = AppUtil.getSynchronousMachines(sparql_mgr)
+    self.SynchronousMachines = WorkflowAppUtil.getSynchronousMachines(sparql_mgr)
 
     self.Batteries = AppUtil.getBatteries(sparql_mgr)
 
