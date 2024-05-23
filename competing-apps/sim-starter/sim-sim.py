@@ -95,8 +95,8 @@ class SimSim(GridAPPSD):
 
     for device, value in DispatchedDevices.items():
       self.DeviceSetpoints[device] = value
-      name = MethodUtil.DeviceToName[device]
-      if name.startswith('BatteryUnit.'):
+      if device in MethodUtil.DeviceToName and \
+         MethodUtil.DeviceToName[device].startswith('BatteryUnit.'):
         self.Batteries[device]['P_batt'] = value
 
 
