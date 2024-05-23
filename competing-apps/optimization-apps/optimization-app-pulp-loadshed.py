@@ -79,6 +79,7 @@ else:
   sys.path.append('/gridappsd/services/app-deconfliction/competing-apps/shared')
 
 from AppUtil import AppUtil
+import MethodUtil
 
 # 80 column ruler for continuation lines
 #0000000011111111112222222222333333333344444444445555555555666666666677777777778
@@ -112,7 +113,6 @@ class CompetingApp(GridAPPSD):
       if bus_idx not in self.lines_out:
         self.lines_out[bus_idx] = {'A': [], 'B': [], 'C': []}
 
-      # batname = 'BatteryUnit.' + bus
       if bus_idx in self.lines_in: # check for source bus
         if bus not in self.EnergyConsumers:
           self.dynamicProb += self.injection_p_load_A[bus_idx] == 0
@@ -142,10 +142,10 @@ class CompetingApp(GridAPPSD):
           if bus in self.Batteries_obj and \
              'A' in self.Batteries_obj[bus]['phase']:
             #print('Batteries A bus: ' + bus, flush=True)
-            batname = self.Batteries_obj[bus]['name']
+            mrid = self.Batteries_obj[bus]['mrid']
             self.dynamicProb += lpSum(self.p_flow_A[idx] \
                  for idx in self.lines_in[bus_idx]['A']) - \
-               self.p_batt[self.Batteries[batname]['idx']] - self.injection_p_load_A[bus_idx] - injection_p_pv == \
+               self.p_batt[self.Batteries[mrid]['idx']] - self.injection_p_load_A[bus_idx] - injection_p_pv == \
                lpSum(self.p_flow_A[idx] for idx in self.lines_out[bus_idx]['A'])
 
             self.dynamicProb += lpSum(self.q_flow_A[idx] \
@@ -182,10 +182,10 @@ class CompetingApp(GridAPPSD):
           if bus in self.Batteries_obj and \
              'B' in self.Batteries_obj[bus]['phase']:
             #print('Batteries B bus: ' + bus, flush=True)
-            batname = self.Batteries_obj[bus]['name']
+            mrid = self.Batteries_obj[bus]['mrid']
             self.dynamicProb += lpSum(self.p_flow_B[idx] \
                  for idx in self.lines_in[bus_idx]['B']) - \
-               self.p_batt[self.Batteries[batname]['idx']] - self.injection_p_load_B[bus_idx] - injection_p_pv == \
+               self.p_batt[self.Batteries[mrid]['idx']] - self.injection_p_load_B[bus_idx] - injection_p_pv == \
                lpSum(self.p_flow_B[idx] for idx in self.lines_out[bus_idx]['B'])
 
             self.dynamicProb += lpSum(self.q_flow_B[idx] \
@@ -222,10 +222,10 @@ class CompetingApp(GridAPPSD):
           if bus in self.Batteries_obj and \
              'C' in self.Batteries_obj[bus]['phase']:
             #print('Batteries C bus: ' + bus, flush=True)
-            batname = self.Batteries_obj[bus]['name']
+            mrid = self.Batteries_obj[bus]['mrid']
             self.dynamicProb += lpSum(self.p_flow_C[idx] \
                  for idx in self.lines_in[bus_idx]['C']) - \
-               self.p_batt[self.Batteries[batname]['idx']] - self.injection_p_load_C[bus_idx] - injection_p_pv == \
+               self.p_batt[self.Batteries[mrid]['idx']] - self.injection_p_load_C[bus_idx] - injection_p_pv == \
                lpSum(self.p_flow_C[idx] for idx in self.lines_out[bus_idx]['C'])
 
             self.dynamicProb += lpSum(self.q_flow_C[idx] \
@@ -243,20 +243,20 @@ class CompetingApp(GridAPPSD):
                self.injection_q_load_C[bus_idx] == lpSum(self.q_flow_C[idx] \
                  for idx in self.lines_out[bus_idx]['C'])
 
-    for name in self.Batteries:
-      self.Batteries[name]['state'] = 'idling'
-      idx = self.Batteries[name]['idx']
-      self.dynamicProb += self.soc[idx] == self.Batteries[name]['SoC'] + \
-              self.Batteries[name]['eff'] * self.p_batt_c[idx] * \
-              self.deltaT / self.Batteries[name]['ratedE'] + \
-              1 / self.Batteries[name]['eff'] * self.p_batt_d[idx] * \
-              self.deltaT / self.Batteries[name]['ratedE']
+    for mrid in self.Batteries:
+      self.Batteries[mrid]['state'] = 'idling'
+      idx = self.Batteries[mrid]['idx']
+      self.dynamicProb += self.soc[idx] == self.Batteries[mrid]['SoC'] + \
+              self.Batteries[mrid]['eff'] * self.p_batt_c[idx] * \
+              self.deltaT / self.Batteries[mrid]['ratedE'] + \
+              1 / self.Batteries[mrid]['eff'] * self.p_batt_d[idx] * \
+              self.deltaT / self.Batteries[mrid]['ratedE']
       self.dynamicProb += self.p_batt_c[idx] >= 0
       self.dynamicProb += self.p_batt_d[idx] <= 0
       self.dynamicProb += self.p_batt_c[idx] <= \
-              self.lambda_c[idx] * self.Batteries[name]['prated']
+              self.lambda_c[idx] * self.Batteries[mrid]['prated']
       self.dynamicProb += self.p_batt_d[idx] >= \
-              -self.lambda_d[idx] * self.Batteries[name]['prated']
+              -self.lambda_d[idx] * self.Batteries[mrid]['prated']
       self.dynamicProb += self.p_batt[idx] == \
               self.p_batt_c[idx] + self.p_batt_d[idx]
       self.dynamicProb += self.lambda_c[idx] + self.lambda_d[idx] <= 1
@@ -292,13 +292,13 @@ class CompetingApp(GridAPPSD):
         # Second stage for the decarbonization app
         if self.opt_type == 'decarbonization':
           bus_idx_batt = {'A': [], 'B': [], 'C': []}
-          for name in self.Batteries:
-            idx = self.Batteries[name]['idx']
+          for mrid in self.Batteries:
+            idx = self.Batteries[mrid]['idx']
             self.dynamicProb += self.p_batt[idx] == self.p_batt[idx].varValue
-            bus = self.Batteries[name]['bus']
-            if 'A' in self.Batteries[name]['phase']:
+            bus = self.Batteries[mrid]['bus']
+            if 'A' in self.Batteries[mrid]['phase']:
               bus_idx_batt['A'].append(self.bus_info[bus]['idx'])
-            elif 'B' in self.Batteries[name]['phase']:
+            elif 'B' in self.Batteries[mrid]['phase']:
               bus_idx_batt['B'].append(self.bus_info[bus]['idx'])
             else:
               bus_idx_batt['C'].append(self.bus_info[bus]['idx'])
@@ -369,11 +369,11 @@ class CompetingApp(GridAPPSD):
                        tablefmt='psql'), '\n', flush=True)
 
         p_batt_setpoints = []
-        for name in self.Batteries:
-          idx = self.Batteries[name]['idx']
-          self.Batteries[name]['SoC'] = self.soc[idx].varValue
-          set_points[name] = self.p_batt[idx].varValue
-          p_batt_setpoints.append([name, set_points[name]/1000,
+        for mrid in self.Batteries:
+          idx = self.Batteries[mrid]['idx']
+          self.Batteries[mrid]['SoC'] = self.soc[idx].varValue
+          set_points[mrid] = self.p_batt[idx].varValue
+          p_batt_setpoints.append([mrid, set_points[mrid]/1000,
                                    self.soc[idx].varValue])
 
         print(tabulate(p_batt_setpoints, headers=['Battery', 'P_batt (kW)',
@@ -723,24 +723,12 @@ class CompetingApp(GridAPPSD):
 
     self.Batteries = AppUtil.getBatteries(sparql_mgr)
     self.Batteries_obj = {}
-    for batt in self.Batteries:
-      self.Batteries_obj[self.Batteries[batt]['bus']] = {}
-      self.Batteries_obj[self.Batteries[batt]['bus']]['name'] = batt
-      self.Batteries_obj[self.Batteries[batt]['bus']]['phase'] = self.Batteries[batt]['phase']
-    # SHIVA HACK for 123 model testing
-    # self.Batteries['BatteryUnit.65'] = {'idx': 0, 'prated': 250000,
-    #           'phase': 'A', 'eff': 0.975 * 0.86, 'ratedE': 500000, 'SoC': 0.35}
-    # self.Batteries['BatteryUnit.52'] = {'idx': 1, 'prated': 250000,
-    #           'phase': 'B', 'eff': 0.975 * 0.86, 'ratedE': 500000, 'SoC': 0.275}
-    # self.Batteries['BatteryUnit.76'] = {'idx': 2, 'prated': 250000,
-    #           'phase': 'C', 'eff': 0.975 * 0.86, 'ratedE': 500000, 'SoC': 0.465}
+    for mrid in self.Batteries:
+      self.Batteries_obj[self.Batteries[mrid]['bus']] = {}
+      self.Batteries_obj[self.Batteries[mrid]['bus']]['mrid'] = mrid
+      self.Batteries_obj[self.Batteries[mrid]['bus']]['phase'] = self.Batteries[mrid]['phase']
 
     self.SolarPVs = AppUtil.getSolarPVs(sparql_mgr)
-
-    # SHIVA HACK for 123 model testing
-    # self.SolarPVs['65'] = {'p': 120000, 'phase': 'A'}
-    # self.SolarPVs['52'] = {'p': 100000, 'phase': 'B'}
-    # self.SolarPVs['76'] = {'p': 165000, 'phase': 'C'}
 
     self.EnergySource = AppUtil.getEnergySource(sparql_mgr)
 
@@ -820,30 +808,7 @@ class CompetingApp(GridAPPSD):
       #print(obj)
       idx += 1
 
-    bindings = sparql_mgr.regulator_combine_query()
-    print('\nCount of Combine Regulators: ' + str(len(bindings)), flush=True)
-    self.Regulators = {}
-    RegIdx = {}
-    reg_idx = 0
-    for obj in bindings:
-      pname = obj['pname']['value']
-      if 'phs' in obj:
-        phases = obj['phs']['value']
-      else:
-        phases = 'ABC'
-
-      if 'tname' in obj:
-        tname = obj['tname']['value']
-        self.Regulators['RatioTapChanger.'+tname] = \
-                        {'pname': pname, 'idx': reg_idx, 'phases': phases}
-      else:
-        self.Regulators['RatioTapChanger.'+pname] = \
-                        {'pname': pname, 'idx': reg_idx, 'phases': phases}
-
-      for char in phases:
-        RegIdx[pname+'.'+char] = reg_idx
-
-      reg_idx += 1
+    self.Regulators, RegIdx = AppUtil.getCombineRegulators(sparql_mgr)
 
     print('Regulators: ' + str(self.Regulators), flush=True)
     print('RegIdx: ' + str(RegIdx), flush=True)
@@ -860,7 +825,9 @@ class CompetingApp(GridAPPSD):
         branch_info[name] = {}
         branch_info[name]['idx'] = idx
         branch_info[name]['phases'] = 'ABC'
-        if 'RatioTapChanger.'+name in self.Regulators:
+
+        if 'RatioTapChanger.'+name in MethodUtil.NameToDevice and \
+           MethodUtil.NameToDevice['RatioTapChanger.'+name] in self.Regulators:
           branch_info[name]['type'] = 'regulator'
         else:
           branch_info[name]['type'] = 'transformer'
@@ -882,7 +849,8 @@ class CompetingApp(GridAPPSD):
               phase, flush=True)
         #print(obj)
 
-        pname = self.Regulators['RatioTapChanger.'+name]['pname']
+        mrid = MethodUtil.NameToDevice['RatioTapChanger.'+name]
+        pname = self.Regulators[mrid]['pname']
         if pname not in branch_info:
           branch_info[pname] = {}
           branch_info[pname]['idx'] = idx
