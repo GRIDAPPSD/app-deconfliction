@@ -20,9 +20,10 @@ class AppUtil:
     #print('regulator_query results bindings: ' + str(bindings), flush=True)
     print('Count of Regulators: ' + str(len(bindings)), flush=True)
     for obj in bindings:
-      mrid = obj['id']['value']
+      mrid = obj['pid']['value']
       name = 'RatioTapChanger.' + obj['pname']['value']
       if 'tname' in obj:
+        mrid = obj['tid']['value']
         name = 'RatioTapChanger.' + obj['tname']['value']
       if 'phs' in obj:
         phases = obj['phs']['value']
@@ -40,6 +41,39 @@ class AppUtil:
       MethodUtil.NameToDevice[name] = mrid
 
     return Regulators
+
+
+  def getCombineRegulators(sparql_mgr):
+    Regulators = {}
+    RegIdx = {}
+    bindings = sparql_mgr.regulator_combine_query()
+    print('Count of Combine Regulators: ' + str(len(bindings)), flush=True)
+    reg_idx = 0
+    for obj in bindings:
+      pname = obj['pname']['value']
+      if 'phs' in obj:
+        phases = obj['phs']['value']
+      else:
+        phases = 'ABC'
+
+      if 'tname' in obj:
+        mrid = obj['tid']['value']
+        name = 'RatioTapChanger.' + obj['tname']['value']
+      else:
+        mrid = obj['pid']['value']
+        name = 'RatioTapChanger.' + pname
+
+      Regulators[mrid] = \
+              {'pname': pname, 'name': name, 'idx': reg_idx, 'phases': phases}
+      MethodUtil.DeviceToName[mrid] = name
+      MethodUtil.NameToDevice[name] = mrid
+
+      for char in phases:
+        RegIdx[pname+'.'+char] = reg_idx
+
+      reg_idx += 1
+
+    return (Regulators, RegIdx)
 
 
   def getBatteries(sparql_mgr):
