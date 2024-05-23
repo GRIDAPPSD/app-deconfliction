@@ -7,7 +7,6 @@ import time
 
 import matplotlib # done from AppUtil so just making sure it's available here
 
-
 class RepeatedTimer(object):
   def __init__(self, interval, function, get_dispatches_count, *args, **kwargs):
     if interval > 0:
@@ -77,7 +76,7 @@ else:
   sys.path.append('/gridappsd/services/app-deconfliction/competing-apps/shared')
 
 from AppUtil import AppUtil
-
+import MethodUtil
 
 class SimSim(GridAPPSD):
 
@@ -96,7 +95,8 @@ class SimSim(GridAPPSD):
 
     for device, value in DispatchedDevices.items():
       self.DeviceSetpoints[device] = value
-      if device.startswith('BatteryUnit.'):
+      name = MethodUtil.DeviceToName[device]
+      if name.startswith('BatteryUnit.'):
         self.Batteries[device]['P_batt'] = value
 
 
@@ -199,9 +199,9 @@ class SimSim(GridAPPSD):
     self.t_plot = []
     self.soc_plot = {}
     self.p_batt_plot = {}
-    for name in self.Batteries:
-      self.soc_plot[name] = []
-      self.p_batt_plot[name] = []
+    for mrid in self.Batteries:
+      self.soc_plot[mrid] = []
+      self.p_batt_plot[mrid] = []
 
     gapps.subscribe(service_output_topic('gridappsd-deconfliction-pipeline',
                                          simulation_id), self)

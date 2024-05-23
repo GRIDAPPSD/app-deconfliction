@@ -1,6 +1,8 @@
 
 # Resilience-Decarbonization compromise deconfliction methodology
 
+import MethodUtil
+
 class DeconflictionMethod:
 
   def __init__(self, ConflictMatrix):
@@ -38,13 +40,15 @@ class DeconflictionMethod:
         # comment out the first line under the RatioTapChanger if block,
         # uncomment the first line under the else block, then repeat those
         # steps under the elif below
-        if device.startswith('RatioTapChanger.'):
+        name = MethodUtil.DeviceToName[device]
+        if name.startswith('RatioTapChanger.'):
           ResolutionVector[device] = (compTimestamp, round(compTotal/compCount))
           pass
         else:
           ResolutionVector[device] = (compTimestamp, compTotal/compCount)
       elif otherCount > 0:
-        if device.startswith('RatioTapChanger.'):
+        name = MethodUtil.DeviceToName[device]
+        if name.startswith('RatioTapChanger.'):
           ResolutionVector[device] = \
                                   (otherTimestamp, round(otherTotal/otherCount))
           pass

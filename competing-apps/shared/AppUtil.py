@@ -20,24 +20,22 @@ class AppUtil:
     #print('regulator_query results bindings: ' + str(bindings), flush=True)
     print('Count of Regulators: ' + str(len(bindings)), flush=True)
     for obj in bindings:
-      name = 'RatioTapChanger.' + obj['pname']['value']
       mrid = obj['id']['value']
+      name = 'RatioTapChanger.' + obj['pname']['value']
       if 'tname' in obj:
         name = 'RatioTapChanger.' + obj['tname']['value']
-        Regulators[name] = {}
-      else:
-        Regulators[name] = {}
       if 'phs' in obj:
         phases = obj['phs']['value']
       else:
         phases = 'ABC'
-      Regulators[name]['phase'] = phases
-      Regulators[name]['id'] = mrid
-      Regulators[name]['step'] = float(obj['step']['value'])
-      Regulators[name]['highStep'] = float(obj['highStep']['value'])
-      Regulators[name]['lowStep'] = float(obj['lowStep']['value'])
-      Regulators[name]['increment'] = float(obj['incr']['value'])
-      print('Regulator name: ' + name + ', id: ' + Regulators[name]['id'] + ', phase: ' + Regulators[name]['phase'] + ', step: ' + str(round(Regulators[name]['step'],4)), flush=True)
+      Regulators[mrid] = {}
+      Regulators[mrid]['phase'] = phases
+      Regulators[mrid]['name'] = name
+      Regulators[mrid]['step'] = float(obj['step']['value'])
+      Regulators[mrid]['highStep'] = float(obj['highStep']['value'])
+      Regulators[mrid]['lowStep'] = float(obj['lowStep']['value'])
+      Regulators[mrid]['increment'] = float(obj['incr']['value'])
+      print('Regulator mrid: ' + mrid + ', name: ' + name + ', phase: ' + Regulators[mrid]['phase'] + ', step: ' + str(round(Regulators[mrid]['step'],4)), flush=True)
       MethodUtil.DeviceToName[mrid] = name
       MethodUtil.NameToDevice[name] = mrid
 
@@ -51,26 +49,26 @@ class AppUtil:
     print('Count of Batteries: ' + str(len(bindings)), flush=True)
     idx = 0
     for obj in bindings:
-      name = 'BatteryUnit.' + obj['name']['value']
       mrid = obj['id']['value']
+      name = 'BatteryUnit.' + obj['name']['value']
       #bus = obj['bus']['value'].upper()
-      Batteries[name] = {}
-      Batteries[name]['idx'] = idx
-      Batteries[name]['id'] = mrid
-      Batteries[name]['bus'] = obj['bus']['value']
-      Batteries[name]['phase'] = obj['phases']['value']
-      Batteries[name]['ratedkW'] = float(obj['ratedS']['value'])/1000.0
-      Batteries[name]['prated'] = float(obj['ratedS']['value'])
-      Batteries[name]['ratedE'] = float(obj['ratedE']['value'])
+      Batteries[mrid] = {}
+      Batteries[mrid]['idx'] = idx
+      Batteries[mrid]['name'] = name
+      Batteries[mrid]['bus'] = obj['bus']['value']
+      Batteries[mrid]['phase'] = obj['phases']['value']
+      Batteries[mrid]['ratedkW'] = float(obj['ratedS']['value'])/1000.0
+      Batteries[mrid]['prated'] = float(obj['ratedS']['value'])
+      Batteries[mrid]['ratedE'] = float(obj['ratedE']['value'])
       # Shiva HACK
-      # Batteries[name]['SoC'] = 0.5
-      Batteries[name]['SoC'] = float(obj['storedE']['value'])/float(obj['ratedE']['value'])
+      # Batteries[mrid]['SoC'] = 0.5
+      Batteries[mrid]['SoC'] = float(obj['storedE']['value'])/float(obj['ratedE']['value'])
       # eff_c and eff_d don't come from the query, but they are used throughout
       # and this is a convenient point to assign them with query results
-      Batteries[name]['eff'] = 0.975 * 0.86
-      Batteries[name]['eff_c'] = 0.975 * 0.86
-      Batteries[name]['eff_d'] = 0.975 * 0.86
-      print('Battery name: ' + name + ', id: ' + Batteries[name]['id'] + ', ratedE: ' + str(round(Batteries[name]['ratedE'],4)) + ', SoC: ' + str(round(Batteries[name]['SoC'],4)), flush=True)
+      Batteries[mrid]['eff'] = 0.975 * 0.86
+      Batteries[mrid]['eff_c'] = 0.975 * 0.86
+      Batteries[mrid]['eff_d'] = 0.975 * 0.86
+      print('Battery mrid: ' + mrid + ', name: ' + name + ', ratedE: ' + str(round(Batteries[mrid]['ratedE'],4)) + ', SoC: ' + str(round(Batteries[mrid]['SoC'],4)), flush=True)
       idx += 1
       MethodUtil.DeviceToName[mrid] = name
       MethodUtil.NameToDevice[name] = mrid
@@ -124,12 +122,13 @@ class AppUtil:
   def make_plots(title, prefix, Batteries, t_plot, p_batt_plot, soc_plot):
     matplotlib.use('agg')
 
-    for name in Batteries:
+    for mrid in Batteries:
+      name = MethodUtil.DeviceToName[mrid]
       batname = name[12:] # extract just the name for tidier plots
       plt.figure()
       fig, ax = plt.subplots()
       plt.title(title + ' P_batt:  ' + batname, pad=15.0)
-      plt.plot(t_plot, p_batt_plot[name])
+      plt.plot(t_plot, p_batt_plot[mrid])
       ax.xaxis.set_major_formatter(md.DateFormatter('%H:%M'))
       plt.xlim([AppUtil.to_datetime(1), AppUtil.to_datetime(96)])
       plt.xticks([AppUtil.to_datetime(1), AppUtil.to_datetime(25), AppUtil.to_datetime(49), AppUtil.to_datetime(73), AppUtil.to_datetime(96)])
@@ -141,7 +140,7 @@ class AppUtil:
       plt.figure()
       fig, ax = plt.subplots()
       plt.title(title + ' SoC:  ' + batname, pad=15.0)
-      plt.plot(t_plot, soc_plot[name])
+      plt.plot(t_plot, soc_plot[mrid])
       ax.xaxis.set_major_formatter(md.DateFormatter('%H:%M'))
       plt.xlim([AppUtil.to_datetime(1), AppUtil.to_datetime(96)])
       plt.xticks([AppUtil.to_datetime(1), AppUtil.to_datetime(25), AppUtil.to_datetime(49), AppUtil.to_datetime(73), AppUtil.to_datetime(96)])

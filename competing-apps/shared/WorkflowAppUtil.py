@@ -73,28 +73,28 @@ class WorkflowAppUtil:
     #  print('SynchronousMachine: ' + str(item), flush=True)
 
 
-  def discharge_SoC(value, name, Batteries, deltaT):
-    return 1/Batteries[name]['eff_d']*value*deltaT/Batteries[name]['ratedE']
+  def discharge_SoC(value, mrid, Batteries, deltaT):
+    return 1/Batteries[mrid]['eff_d']*value*deltaT/Batteries[mrid]['ratedE']
 
 
   def discharge_batteries(Batteries, deltaT):
-    for name in Batteries:
-      Batteries[name]['state'] = 'discharging'
-      if 'P_batt_d' in Batteries[name]:
-        Batteries[name]['SoC'] -= WorkflowAppUtil.discharge_SoC(Batteries[name]['P_batt_d'], name,
-                                                        Batteries, deltaT)
+    for mrid in Batteries:
+      Batteries[mrid]['state'] = 'discharging'
+      if 'P_batt_d' in Batteries[mrid]:
+        Batteries[mrid]['SoC'] -= WorkflowAppUtil.discharge_SoC(
+                           Batteries[mrid]['P_batt_d'], mrid, Batteries, deltaT)
 
 
-  def charge_SoC(value, name, Batteries, deltaT):
-    return Batteries[name]['eff_c']*value*deltaT/Batteries[name]['ratedE']
+  def charge_SoC(value, mrid, Batteries, deltaT):
+    return Batteries[mrid]['eff_c']*value*deltaT/Batteries[mrid]['ratedE']
 
 
   def charge_batteries(Batteries, deltaT):
-    for name in Batteries:
-      Batteries[name]['state'] = 'charging'
-      if 'P_batt_c' in Batteries[name]:
-        Batteries[name]['SoC'] += WorkflowAppUtil.charge_SoC(Batteries[name]['P_batt_c'], name,
-                                                     Batteries, deltaT)
+    for mrid in Batteries:
+      Batteries[mrid]['state'] = 'charging'
+      if 'P_batt_c' in Batteries[mrid]:
+        Batteries[mrid]['SoC'] += WorkflowAppUtil.charge_SoC(
+                           Batteries[mrid]['P_batt_c'], mrid, Batteries, deltaT)
 
 
   def economic_dispatch(P_sub, SynchronousMachines, P_def, price):
@@ -129,19 +129,19 @@ class WorkflowAppUtil:
 
   def dispatch_DGSs(Batteries, SynchronousMachines, deltaT, P_load, P_ren, P_sub, price=None):
     P_batt_total = 0.0
-    for name in Batteries:
-      if Batteries[name]['SoC'] > 0.2:
-        P_batt_d = (Batteries[name]['SoC'] - 0.2)*Batteries[name]['ratedE'] / (1/Batteries[name]['eff_d'] * deltaT)
-        Batteries[name]['P_batt_d'] = P_batt_d = min(P_batt_d, Batteries[name]['ratedkW'])
+    for mrid in Batteries:
+      if Batteries[mrid]['SoC'] > 0.2:
+        P_batt_d = (Batteries[mrid]['SoC'] - 0.2)*Batteries[mrid]['ratedE'] / (1/Batteries[mrid]['eff_d'] * deltaT)
+        Batteries[mrid]['P_batt_d'] = P_batt_d = min(P_batt_d, Batteries[mrid]['ratedkW'])
         P_batt_total += P_batt_d
       else:
-        Batteries[name]['P_batt_d'] = P_batt_d = 0.0
+        Batteries[mrid]['P_batt_d'] = P_batt_d = 0.0
 
     if P_batt_total > 0.0:
       if P_ren + P_batt_total > P_load:
         P_def = P_load - P_ren
-        for name in Batteries:
-          Batteries[name]['P_batt_d'] = P_def * Batteries[name]['P_batt_d'] / P_batt_total
+        for mrid in Batteries:
+          Batteries[mrid]['P_batt_d'] = P_def * Batteries[mrid]['P_batt_d'] / P_batt_total
 
       WorkflowAppUtil.discharge_batteries(Batteries, deltaT)
 
@@ -175,18 +175,18 @@ class WorkflowAppUtil:
 
 
   def batt_to_solution(Batteries, solution):
-    for name in Batteries:
-      solution[name] = {}
-      if Batteries[name]['state'] == 'charging':
+    for mrid in Batteries:
+      solution[mrid] = {}
+      if Batteries[mrid]['state'] == 'charging':
         # Gary 6/23/23 Multiply P_batt by 1000 to scale units
-        solution[name]['P_batt'] = 1000*Batteries[name]['P_batt_c']
-        #solution[name]['P_batt'] = Batteries[name]['P_batt_c']
-      elif Batteries[name]['state'] == 'discharging':
+        solution[mrid]['P_batt'] = 1000*Batteries[mrid]['P_batt_c']
+        #solution[mrid]['P_batt'] = Batteries[mrid]['P_batt_c']
+      elif Batteries[mrid]['state'] == 'discharging':
         # Gary 6/23/23 Multiply P_batt by 1000 to scale units
-        solution[name]['P_batt'] = -1000*Batteries[name]['P_batt_d']
-        #solution[name]['P_batt'] = -Batteries[name]['P_batt_d']
+        solution[mrid]['P_batt'] = -1000*Batteries[mrid]['P_batt_d']
+        #solution[mrid]['P_batt'] = -Batteries[mrid]['P_batt_d']
       else:
-        solution[name]['P_batt'] = 0.0
+        solution[mrid]['P_batt'] = 0.0
 
-      solution[name]['SoC'] = Batteries[name]['SoC']
+      solution[mrid]['SoC'] = Batteries[mrid]['SoC']
 

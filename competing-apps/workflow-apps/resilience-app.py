@@ -75,6 +75,7 @@ else:
 
 from AppUtil import AppUtil
 from WorkflowAppUtil import WorkflowAppUtil
+import MethodUtil
 
 
 class CompetingApp(GridAPPSD):
@@ -108,14 +109,14 @@ class CompetingApp(GridAPPSD):
 
     if not emergencyState: # alert state
       P_batt_total = 0.0
-      for name in Batteries:
-        Batteries[name]['state'] = 'idling'
-        if Batteries[name]['SoC'] < 0.9:
-          P_batt_c = (0.9 - Batteries[name]['SoC'])*Batteries[name]['ratedE'] / (Batteries[name]['eff_c'] * deltaT)
-          Batteries[name]['P_batt_c'] = P_batt_c = min(P_batt_c, Batteries[name]['ratedkW'])
+      for mrid in Batteries:
+        Batteries[mrid]['state'] = 'idling'
+        if Batteries[mrid]['SoC'] < 0.9:
+          P_batt_c = (0.9 - Batteries[mrid]['SoC'])*Batteries[mrid]['ratedE'] / (Batteries[mrid]['eff_c'] * deltaT)
+          Batteries[mrid]['P_batt_c'] = P_batt_c = min(P_batt_c, Batteries[mrid]['ratedkW'])
           P_batt_total += P_batt_c
         else:
-          Batteries[name]['P_batt_c'] = P_batt_c = 0.0
+          Batteries[mrid]['P_batt_c'] = P_batt_c = 0.0
 
       if P_batt_total > 0.0:
         if P_ren > P_load:
@@ -141,36 +142,36 @@ class CompetingApp(GridAPPSD):
       P_sub = 0.0
       if P_ren > P_load:
         P_batt_total = 0.0
-        for name in Batteries:
-          Batteries[name]['state'] = 'idling'
-          if Batteries[name]['SoC'] < 0.9:
-            P_batt_c = (0.9 - Batteries[name]['SoC']) * Batteries[name]['ratedE'] / (Batteries[name]['eff_c'] * deltaT)
-            Batteries[name]['P_batt_c'] = P_batt_c = min(P_batt_c, Batteries[name]['ratedkW'])
+        for mrid in Batteries:
+          Batteries[mrid]['state'] = 'idling'
+          if Batteries[mrid]['SoC'] < 0.9:
+            P_batt_c = (0.9 - Batteries[mrid]['SoC']) * Batteries[mrid]['ratedE'] / (Batteries[mrid]['eff_c'] * deltaT)
+            Batteries[mrid]['P_batt_c'] = P_batt_c = min(P_batt_c, Batteries[mrid]['ratedkW'])
             P_batt_total += P_batt_c
           else:
-            Batteries[name]['P_batt_c'] = P_batt_c = 0.0
+            Batteries[mrid]['P_batt_c'] = P_batt_c = 0.0
 
         P_surplus = P_ren - P_load
         print('P_surplus: ' + str(P_surplus) + ', P_batt_total: ' + str(P_batt_total), flush=True)
 
         # print('Charging from renewables', flush=True)
         if P_surplus < P_batt_total:
-          for name in Batteries:
-            if 'P_batt_c' in Batteries[name]:
-              Batteries[name]['P_batt_c'] *= P_surplus / P_batt_total
+          for mrid in Batteries:
+            if 'P_batt_c' in Batteries[mrid]:
+              Batteries[mrid]['P_batt_c'] *= P_surplus / P_batt_total
 
         if P_batt_total > 0.0:
           WorkflowAppUtil.charge_batteries(Batteries, deltaT)
       else:
         WorkflowAppUtil.dispatch_DGSs(Batteries, SynchronousMachines, deltaT, P_load, P_ren, P_sub)
 
-    for name in Batteries:
-      if Batteries[name]['state'] == 'charging':
-        print('Battery name: ' + name + ', ratedkW: ' + str(round(Batteries[name]['ratedkW'],4)) + ', P_batt_c: ' + str(round(Batteries[name]['P_batt_c'],4)) + ', projected SoC: ' + str(round(Batteries[name]['SoC'],4)), flush=True)
-      elif Batteries[name]['state'] == 'discharging':
-        print('Battery name: ' + name + ', ratedkW: ' + str(round(Batteries[name]['ratedkW'],4)) + ', P_batt_d: ' + str(round(Batteries[name]['P_batt_d'],4)) + ', projected SoC: ' + str(round(Batteries[name]['SoC'],4)), flush=True)
+    for mrid in Batteries:
+      if Batteries[mrid]['state'] == 'charging':
+        print('Battery mrid: ' + mrid + ', name: ' + MethodUtil.DeviceToName[mrid] + ', ratedkW: ' + str(round(Batteries[mrid]['ratedkW'],4)) + ', P_batt_c: ' + str(round(Batteries[mrid]['P_batt_c'],4)) + ', projected SoC: ' + str(round(Batteries[mrid]['SoC'],4)), flush=True)
+      elif Batteries[mrid]['state'] == 'discharging':
+        print('Battery mrid: ' + mrid + ', name: ' + MethodUtil.DeviceToName[mrid] + ', ratedkW: ' + str(round(Batteries[mrid]['ratedkW'],4)) + ', P_batt_d: ' + str(round(Batteries[mrid]['P_batt_d'],4)) + ', projected SoC: ' + str(round(Batteries[mrid]['SoC'],4)), flush=True)
       else:
-        print('Battery name: ' + name + ', P_batt_c = P_batt_d = 0.0, projected SoC: ' + str(round(Batteries[name]['SoC'],4)), flush=True)
+        print('Battery mrid: ' + mrid + ', name: ' + MethodUtil.DeviceToName[mrid] + ', P_batt_c = P_batt_d = 0.0, projected SoC: ' + str(round(Batteries[mrid]['SoC'],4)), flush=True)
 
     return
 
@@ -261,9 +262,9 @@ class CompetingApp(GridAPPSD):
     self.t_plot = []
     self.soc_plot = {}
     self.p_batt_plot = {}
-    for name in self.Batteries:
-      self.soc_plot[name] = []
-      self.p_batt_plot[name] = []
+    for mrid in self.Batteries:
+      self.soc_plot[mrid] = []
+      self.p_batt_plot[mrid] = []
 
     self.solution = {}
 

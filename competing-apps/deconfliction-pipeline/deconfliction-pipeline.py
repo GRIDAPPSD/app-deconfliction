@@ -100,11 +100,13 @@ class DeconflictionPipeline(GridAPPSD):
 
     # now add the new set-points for app_name
     for device, value in set_points.items():
-      #print('device: ' + device + ', value: ' + str(value), flush=True)
-      if device.startswith('BatteryUnit.'):
+      name = MethodUtil.DeviceToName[device]
+      #print('device: ' + device + ', name: ' + name + ', value: ' + str(value), flush=True)
+      if name.startswith('BatteryUnit.'):
         print('~~> setpoints from app: ' + app_name +
               ', timestamp: ' + str(timestamp) +
-              ', device: ' + device + ', value: ' + str(value), flush=True)
+              ', device: ' + device + ', name: ' + name +
+              ', value: ' + str(value), flush=True)
 
       if device not in self.ConflictMatrix:
         self.ConflictMatrix[device] = {}
@@ -113,18 +115,18 @@ class DeconflictionPipeline(GridAPPSD):
 
     print('ConflictMatrix: ' + str(self.ConflictMatrix), flush=True)
 
-    if self.testDevice:
-      if  self.testDevice in set_points:
-        print('~TEST: set-points message with ' + self.testDevice +
-              ' set-point: ' + str(set_points[self.testDevice]) +
+    if self.testDeviceName:
+      mrid = MethodUtil.NameToDevice[self.testDeviceName]
+      if mrid in set_points:
+        print('~TEST: set-points message with ' + self.testDeviceName +
+              ' set-point: ' + str(set_points[mrid]) +
               ', app: ' + app_name +
               ', timestamp: ' + str(timestamp), flush=True)
-        print('~TEST: ConflictMatrix for ' + self.testDevice + ': ' +
-             str(self.ConflictMatrix[self.testDevice]), flush=True)
+        print('~TEST: ConflictMatrix for ' + self.testDeviceName + ': ' +
+              str(self.ConflictMatrix[mrid]), flush=True)
       else:
-        print('~TEST: set-points message does not contain ' + self.testDevice,
-              flush=True)
-
+        print('~TEST: set-points message does not contain ' +
+              self.testDeviceName, flush=True)
 
 
   def ConflictMetric(self, timestamp):
@@ -146,13 +148,15 @@ class DeconflictionPipeline(GridAPPSD):
         gamma_d_a = self.ConflictMatrix[device][app][1]
         if app not in apps:
           apps[app] = {}
-        if device.startswith('BatteryUnit.'):
+        name = MethodUtil.DeviceToName[device]
+        if name.startswith('BatteryUnit.'):
           # Normalize setpoints using max charge and discharge possible
           sigma_d_a = (gamma_d_a + self.Batteries[device]['prated']) / \
                       (2 * self.Batteries[device]['prated'])
           apps[app][device] = sigma_d_a
           device_setpoints.append(sigma_d_a)
-        elif device.startswith('RatioTapChanger.'):
+
+        elif name.startswith('RatioTapChanger.'):
           # Normalize setpoints using highStep and lowStep
           sigma_d_a = (gamma_d_a + abs(self.Regulators[device]['highStep'])) / \
                       (self.Regulators[device]['highStep'] + \
@@ -219,17 +223,16 @@ class DeconflictionPipeline(GridAPPSD):
                   (max(value[0], self.ConflictMatrix[device][app][0]), value[1])
       '''
 
-      if self.testDevice:
-        if self.testDevice in newResolutionVector:
+      if self.testDeviceName:
+        mrid = MethodUtil.NameToDevice[self.testDeviceName]
+        if mrid in newResolutionVector:
           print('~TEST: ResolutionVector (conflict) for ' +
-                self.testDevice + ' setpoint: ' +
-                str(newResolutionVector[self.testDevice][1]) +
-                ', timestamp: ' +
-                str(newResolutionVector[self.testDevice][0]),
-                flush=True)
+                self.testDeviceName + ' setpoint: ' +
+                str(newResolutionVector[mrid][1]) + ', timestamp: ' +
+                str(newResolutionVector[mrid][0]), flush=True)
         else:
           print('~TEST: ResolutionVector (conflict) does not contain ' +
-                self.testDevice, flush=True)
+                self.testDeviceName, flush=True)
 
     else: # no conflict
       # start with a copy of the previous resolution
@@ -245,17 +248,18 @@ class DeconflictionPipeline(GridAPPSD):
       print('ResolutionVector (no conflict): ' + str(newResolutionVector),
             flush=True)
 
-      if self.testDevice:
-        if self.testDevice in newResolutionVector:
+      if self.testDeviceName:
+        mrid = MethodUtil.NameToDevice[self.testDeviceName]
+        if mrid in newResolutionVector:
           print('~TEST: ResolutionVector (no conflict) for ' +
-                self.testDevice + ' setpoint: ' +
-                str(newResolutionVector[self.testDevice][1]) +
+                self.testDeviceName + ' setpoint: ' +
+                str(newResolutionVector[mrid][1]) +
                 ', timestamp: ' +
-                str(newResolutionVector[self.testDevice][0]),
+                str(newResolutionVector[mrid][0]),
                 flush=True)
         else:
           print('~TEST: ResolutionVector (no conflict) does not contain ' +
-                self.testDevice, flush=True)
+                self.testDeviceName, flush=True)
 
 
     if self.testDeconMethodFlag:
@@ -277,7 +281,8 @@ class DeconflictionPipeline(GridAPPSD):
           testDiffFlag = True
           break
 
-        if device.startswith('BatteryUnit.'):
+        name = MethodUtil.DeviceToName[device]
+        if name.startswith('BatteryUnit.'):
           if abs(newResolutionVector[device][1] - \
                  testNewResolutionVector[device][1]) > 1e-6:
             testDiffFlag = True
@@ -301,121 +306,13 @@ class DeconflictionPipeline(GridAPPSD):
     return newResolutionVector
 
 
-  ''' SOC MOVE
-  def updateSoC(self, name, P_batt, timestamp, revised_socs):
-    if 'refTimestamp' not in self.Batteries[name]:
-      self.Batteries[name]['refTimestamp'] = timestamp
-      self.Batteries[name]['runTimestamp'] = timestamp
-      self.Batteries[name]['refP_batt'] = P_batt
-      self.Batteries[name]['runP_batt'] = P_batt
-      self.Batteries[name]['refSoC'] = self.Batteries[name]['SoC']
-      self.Batteries[name]['runSoC'] = self.Batteries[name]['SoC']
-
-    if self.testDevice and name==self.testDevice:
-      print('~TEST updateSoC for device: ' + name + ', timestamp: ' +
-            str(timestamp) + ', P_batt: ' + str(P_batt) +
-            ', SoC: ' + str(self.Batteries[name]['SoC']), flush=True)
-      print('~TEST updateSoC for device: ' + name + ', refTimestamp: ' +
-            str(self.Batteries[name]['refTimestamp']) + ', runTimestamp: ' +
-            str(self.Batteries[name]['runTimestamp']), flush=True)
-      print('~TEST updateSoC for device: ' + name + ', refP_batt: ' +
-            str(self.Batteries[name]['refP_batt']) + ', runP_batt: ' +
-            str(self.Batteries[name]['runP_batt']), flush=True)
-      print('~TEST updateSoC for device: ' + name + ', refSoC: ' +
-            str(self.Batteries[name]['refSoC']) + ', runSoC: ' +
-            str(self.Batteries[name]['runSoC']), flush=True)
-
-    if timestamp > self.Batteries[name]['runTimestamp']:
-      if self.testDevice and name==self.testDevice:
-        print('~TEST updateSoC for device: ' + name +
-              ', updating refSoC and refTimestamp to run values', flush=True)
-
-      self.Batteries[name]['refTimestamp'] = \
-                                       self.Batteries[name]['runTimestamp']
-      self.Batteries[name]['refP_batt'] = self.Batteries[name]['runP_batt']
-      self.Batteries[name]['refSoC'] = self.Batteries[name]['runSoC']
-
-    actContrib = 0.0
-    if timestamp > self.Batteries[name]['refTimestamp']:
-      if self.testDevice and name==self.testDevice:
-        print('~TEST updateSoC actual contrib based on P_batt: ' +
-              str(self.Batteries[name]['refP_batt']) +
-              ', current timestamp: ' + str(timestamp) +
-              ', reference timestamp: ' +
-              str(self.Batteries[name]['refTimestamp']), flush=True)
-
-      actContrib = AppUtil.contrib_SoC(self.Batteries[name]['refP_batt'],
-                                 timestamp-self.Batteries[name]['refTimestamp'],
-                                 self.Batteries[name], self.deltaT)
-
-    elif timestamp < self.Batteries[name]['refTimestamp']:
-      # consider going back in time the same as equal timestamps other than
-      # reporting it
-      print('*** WARNING: time has gone backwards with set-points message for device: ' +
-            name + ', timestamp: ' + str(timestamp) + ', last timestamp: ' +
-            str(self.Batteries[name]['refTimestamp']), flush=True)
-
-      if self.testDevice and name==self.testDevice:
-        print('~TEST WARNING: time has gone backwards with set-points message for device: ' +
-              name + ', timestamp: ' + str(timestamp) + ', last timestamp: ' +
-              str(self.Batteries[name]['refTimestamp']), flush=True)
-
-    self.Batteries[name]['runSoC'] = self.Batteries[name]['refSoC'] + actContrib
-
-    projContrib = AppUtil.contrib_SoC(P_batt, 1, self.Batteries[name],
-                                      self.deltaT)
-    projSoC = self.Batteries[name]['runSoC'] + projContrib
-
-    print('~SOC updateSoC magic for device: ' + name + ', reference SoC: ' +
-          str(self.Batteries[name]['refSoC']) + ', actual SoC contrib: ' +
-          str(actContrib) + ', projected SoC contrib: ' + str(projContrib),
-          end='')
-
-    constrainedSoC = projSoC
-    if projSoC > 0.9:
-      constrainedSoC = 0.9
-    elif projSoC < 0.2:
-      constrainedSoC = 0.2
-
-    if constrainedSoC != projSoC:
-      print(', projected constrained SoC: ' + str(constrainedSoC), end='')
-    else:
-      print(', projected SoC: ' + str(projSoC), end='')
-
-    if constrainedSoC != self.Batteries[name]['SoC']:
-      revised_socs[name] = self.Batteries[name]['SoC'] = \
-                           MethodUtil.BatterySoC[name] = constrainedSoC
-      print(' (revised)', flush=True)
-    else:
-      print(' (not revised)', flush=True)
-
-    if self.testDevice and name==self.testDevice:
-      if constrainedSoC != projSoC:
-        print('~TEST updateSoC magic for device: ' + name + ', reference SoC: '+
-              str(self.Batteries[name]['refSoC']) + ', actual SoC contrib: ' +
-              str(actContrib) + ', projected SoC contrib: ' + str(projContrib) +
-              ', projected constrained SoC: ' + str(constrainedSoC), flush=True)
-      else:
-        print('~TEST updateSoC magic for device: ' + name + ', reference SoC: '+
-              str(self.Batteries[name]['refSoC']) + ', actual SoC contrib: ' +
-              str(actContrib) + ', projected SoC contrib: ' + str(projContrib) +
-              ', projected SoC: ' + str(projSoC), flush=True)
-
-    self.Batteries[name]['runTimestamp'] = max(timestamp,
-                                           self.Batteries[name]['runTimestamp'])
-    self.Batteries[name]['runP_batt'] = P_batt
-  '''
-
-
   def DeviceDispatcher(self, timestamp, newResolutionVector):
     # Iterate over resolution and send set-points to devices that have
     # different or new values
     DevicesToDispatch ={}
-    ''' SOC MOVE
-    revised_socs = {}
-    '''
     for device, value in newResolutionVector.items():
-      if device.startswith('BatteryUnit.'):
+      name = MethodUtil.DeviceToName[device]
+      if name.startswith('BatteryUnit.'):
         # batteries dispatch values even if they are the same as the last time
         # as long as the value is associated with the current timestamp
 
@@ -432,26 +329,14 @@ class DeconflictionPipeline(GridAPPSD):
               self.ResolutionVector[device][1]!=0.0))):
           DevicesToDispatch[device] = value[1]
 
-          print('~~> Dispatching to device: ' + device + ', timestamp: ' +
-                str(timestamp) + ', value: ' + str(value[1]), flush=True)
-
-          ''' SOC MOVE
-          self.updateSoC(device, value[1], timestamp, revised_socs)
-          print('~~> Dispatching to device: ' + device + ', timestamp: ' +
-                str(timestamp) + ', value: ' + str(value[1]) +
-                ' (projected SoC: ' + str(self.Batteries[device]['SoC']) + ')',
+          print('~~> Dispatching to device: ' + device + ', name: ' + name +
+                ', timestamp: ' + str(timestamp) + ', value: ' + str(value[1]),
                 flush=True)
-          '''
 
-          if self.testDevice and device==self.testDevice:
-            print('~TEST: Dispatching to device: ' + device + ', timestamp: ' +
-                  str(timestamp) + ', value: ' + str(value[1]), flush=True)
-            ''' SOC MOVE
-            print('~TEST: Dispatching to device: ' + device + ', timestamp: ' +
-                  str(timestamp) + ', value: ' + str(value[1]) +
-                  ' (projected SoC: ' + str(self.Batteries[device]['SoC']) +')'
-                  , flush=True)
-            '''
+          if self.testDeviceName and name==self.testDeviceName:
+            print('~TEST: Dispatching to device: ' + device + ', name: ' +
+                  name + ', timestamp: ' + str(timestamp) + ', value: ' +
+                  str(value[1]), flush=True)
 
       # not a battery so only dispatch value if it's changed or if it's
       # never been dispatched before
@@ -459,12 +344,14 @@ class DeconflictionPipeline(GridAPPSD):
            self.ResolutionVector[device][1]!=value[1]:
         DevicesToDispatch[device] = value[1]
 
-        print('==> Dispatching to device: ' + device + ', timestamp: ' +
-              str(timestamp) + ', value: ' + str(value[1]), flush=True)
+        print('==> Dispatching to device: ' + device + ', name: ' + name +
+              ', timestamp: ' + str(timestamp) + ', value: ' + str(value[1]),
+              flush=True)
 
-        if self.testDevice and device==self.testDevice:
-            print('~TEST: Dispatching to device: ' + device + ', timestamp: ' +
-                  str(timetstamp) + ', value: ' + str(value[1]), flush=True)
+        if self.testDeviceName and name==self.testDeviceName:
+            print('~TEST: Dispatching to device: ' + device + ', name: ' +
+                  name + ', timestamp: ' + str(timetstamp) + ', value: ' +
+                  str(value[1]), flush=True)
 
     # it's also possible a device from the last resolution does not appear
     # in the new resolution.  In this case it's a "don't care" for the new
@@ -472,10 +359,13 @@ class DeconflictionPipeline(GridAPPSD):
     if len(self.ResolutionVector) > len(newResolutionVector):
       for device in self.ResolutionVector:
         if device not in newResolutionVector:
-          print('==> Device deleted from resolution: ' + device, flush=True)
+          print('==> Device deleted from resolution: ' + device +
+                ', name: ' + MethodUtil.DeviceToName[device], flush=True)
 
-          if self.testDevice and device==self.testDevice:
-            print('~TEST: Device deleted from resolution: ' + device,flush=True)
+          if self.testDeviceName and \
+             MethodUtil.DeviceToName[device]==self.testDeviceName:
+            print('~TEST: Device deleted from resolution: ' + device +
+                  ', name: ' + MethodUtil.DeviceToName[device], flush=True)
 
     # GDB 6/23/23 I was only dispatching when len(DevicesToDispatch)>0, but
     # we added a mode where sim-sim would count the number of disptach messages
@@ -489,32 +379,6 @@ class DeconflictionPipeline(GridAPPSD):
     print('~~> Sending device dispatch message: ' + str(dispatch_message),
           flush=True)
     self.gapps.send(self.publish_topic, dispatch_message)
-
-    ''' SOC MOVE
-    return revised_socs
-    '''
-
-
-  ''' SOC MOVE
-  def AppFeedback(self, app_name, timestamp, revised_socs):
-    # If running from a GridLAB-D simulation where Deconflictor Pipeline
-    # updates devices in simulation, this feedback would come to apps through
-    # simulation measurement messages and there would be no need to explicitly
-    # publish updates
-    if len(revised_socs) > 0:
-      socs_message = {
-        'timestamp': timestamp,
-        'SoC': revised_socs
-      }
-      print('~~> Sending revised-socs message: ' + str(socs_message) +
-            ' (driven by set-points from ' + app_name + ')', flush=True)
-      self.gapps.send(self.publish_socs_topic, socs_message)
-
-      if self.testDevice and self.testDevice in revised_socs:
-        print('~TEST: revised-socs message with device ' + self.testDevice +
-              ' SoC: ' + str(revised_socs[self.testDevice]) + ', timestamp: ' +
-              str(timestamp) + ', from app: ' + app_name, flush=True)
-  '''
 
 
   def on_sim_message(self, headers, message):
@@ -530,20 +394,24 @@ class DeconflictionPipeline(GridAPPSD):
     for device, value in DeviceSetpoints.items():
       MethodUtil.DeviceSetpoints[device] = value
 
-    if self.testDevice and self.testDevice in DeviceSetpoints:
-      print('~TEST simulation updated set-point for device: ' + self.testDevice+
-            ', timestamp: ' + str(message['timestamp']) +
-            ', set-point: ' + str(DeviceSetpoints[self.testDevice]), flush=True)
+    if self.testDeviceName:
+      mrid = MethodUtil.NametoDevice[self.testDeviceName]
+      if mrid in DeviceSetpoints:
+        print('~TEST simulation updated set-point for device name: ' +
+              self.testDeviceName + ', timestamp: ' + str(message['timestamp'])+
+              ', set-point: ' + str(DeviceSetpoints[mrid]), flush=True)
 
     # update SoC values in MethodUtil for same reason
     BatterySoC = message['BatterySoC']
     for device, value in BatterySoC.items():
       MethodUtil.BatterySoC[device] = value
 
-    if self.testDevice and self.testDevice in BatterySoC:
-      print('~TEST simulation updated SoC for device: ' + self.testDevice +
-            ', timestamp: ' + str(message['timestamp']) +
-            ', SoC: ' + str(BatterySoC[self.testDevice]), flush=True)
+    if self.testDeviceName:
+      mrid = MethodUtil.NametoDevice[self.testDeviceName]
+      if mrid in BatterySoC:
+        print('~TEST simulation updated SoC for device name: ' +
+              self.testDeviceName + ', timestamp: ' + str(message['timestamp'])+
+              ', SoC: ' + str(BatterySoC[mrid]), flush=True)
 
 
   def on_setpoints_message(self, headers, message):
@@ -607,16 +475,7 @@ class DeconflictionPipeline(GridAPPSD):
     # Step 4: Setpoint Validator -- not implemented for prototype
 
     # Step 5: Device Dispatcher
-    ''' SOC MOVE
-    revised_socs = self.DeviceDispatcher(timestamp, newResolutionVector)
-    '''
     self.DeviceDispatcher(timestamp, newResolutionVector)
-
-    ''' SOC MOVE
-    # Feedback loop with competing apps through revised SoC values so they
-    # can make new set-point requests based on actual changes
-    self.AppFeedback(app_name, timestamp, revised_socs)
-    '''
 
     print('~', flush=True) # tidy output with "blank" line
 
@@ -653,8 +512,8 @@ class DeconflictionPipeline(GridAPPSD):
     self.testDeconMethodFlag = method_test != None
     # set this to the name of the device for detailed testing, e.g.,
     # 'BatteryUnit.battery1', or None to omit test output
-    self.testDevice = None
-    #self.testDevice = 'BatteryUnit.battery1'
+    self.testDeviceName = None
+    #self.testDeviceName = 'BatteryUnit.battery1'
 
     # GDB 11/2/24 SHIVA NOVEMBER special request
     #self.message_count = {}
@@ -668,29 +527,9 @@ class DeconflictionPipeline(GridAPPSD):
 
     self.Regulators = AppUtil.getRegulators(MethodUtil.sparql_mgr)
 
-    '''
-    # SHIVA HACK for 123 model testing
-    if feeder_mrid == '_C1C3E687-6FFD-C753-582B-632A27E28507':
-      self.Batteries['BatteryUnit.65'] = {'idx': 0, 'prated': 250000,
-            'phase': 'A', 'eff': 0.975 * 0.86, 'ratedE': 500000, 'SoC': 0.35}
-      self.Batteries['BatteryUnit.65']['eff_c'] = \
-                                   self.Batteries['BatteryUnit.65']['eff_d'] = \
-                                   self.Batteries['BatteryUnit.65']['eff']
-      self.Batteries['BatteryUnit.52'] = {'idx': 1, 'prated': 250000,
-            'phase': 'B', 'eff': 0.975 * 0.86, 'ratedE': 500000, 'SoC': 0.275}
-      self.Batteries['BatteryUnit.52']['eff_c'] = \
-                                   self.Batteries['BatteryUnit.52']['eff_d'] = \
-                                   self.Batteries['BatteryUnit.52']['eff']
-      self.Batteries['BatteryUnit.76'] = {'idx': 2, 'prated': 250000,
-            'phase': 'C', 'eff': 0.975 * 0.86, 'ratedE': 500000, 'SoC': 0.465}
-      self.Batteries['BatteryUnit.76']['eff_c'] = \
-                                   self.Batteries['BatteryUnit.76']['eff_d'] = \
-                                   self.Batteries['BatteryUnit.76']['eff']
-    '''
-
     # initialize BatterySoC dictionary for deconfliction method usage
-    for name in self.Batteries:
-      MethodUtil.BatterySoC[name] = self.Batteries[name]['SoC']
+    for mrid in self.Batteries:
+      MethodUtil.BatterySoC[mrid] = self.Batteries[mrid]['SoC']
 
     self.deltaT = 0.25 # timestamp interval in fractional hours, 0.25 = 15 min
 
@@ -734,11 +573,6 @@ class DeconflictionPipeline(GridAPPSD):
       DeconflictionMethodTest = getattr(importlib.import_module(basename_test),
                                         'DeconflictionMethod')
       self.decon_method_test = DeconflictionMethod(self.ConflictMatrix)
-
-    ''' SOC MOVE
-    self.publish_socs_topic = service_output_topic(
-                                   'gridappsd-deconfliction-pipeline-socs', '0')
-    '''
 
     self.publish_topic = service_output_topic(
                                         'gridappsd-deconfliction-pipeline', '0')
