@@ -1,8 +1,4 @@
 
-DeviceToName = {}
-
-NameToDevice = {}
-
 DeviceSetpoints = {}
 
 BatterySoC = {}

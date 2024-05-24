@@ -1,8 +1,6 @@
 
 # Resilience-Decarbonization-Profit compromise deconfliction methodology
 
-import MethodUtil
-
 class DeconflictionMethod:
 
   def __init__(self, ConflictMatrix):
@@ -36,14 +34,12 @@ class DeconflictionMethod:
                                self.ConflictMatrix[device][app][0])
 
       if compCount > 0:
-        name = MethodUtil.DeviceToName[device]
-        if name.startswith('RatioTapChanger.'):
+        if device.startswith('RatioTapChanger.'):
           ResolutionVector[device] = (compTimestamp, round(compTotal/compCount))
         else:
           ResolutionVector[device] = (compTimestamp, compTotal/compCount)
       elif otherCount > 0:
-        name = MethodUtil.DeviceToName[device]
-        if name.startswith('RatioTapChanger.'):
+        if device.startswith('RatioTapChanger.'):
           ResolutionVector[device] = \
                                   (otherTimestamp, round(otherTotal/otherCount))
         else:

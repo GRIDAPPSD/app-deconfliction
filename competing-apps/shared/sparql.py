@@ -134,7 +134,7 @@ class SPARQLManager:
         VALUES_QUERY = """
         PREFIX r:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
         PREFIX c:  <http://iec.ch/TC57/CIM100#>
-        SELECT ?rname ?pname ?pid ?tname ?tid ?wnum ?phs ?incr ?mode ?enabled ?highStep ?lowStep ?step
+        SELECT ?rname ?pname ?tname ?wnum ?phs ?incr ?mode ?enabled ?highStep ?lowStep ?step
         WHERE {
         VALUES ?fdrid {"%s"}
          ?pxf c:Equipment.EquipmentContainer ?fdr.
@@ -147,12 +147,10 @@ class SPARQLManager:
           UNION
         {?end c:TransformerTankEnd.TransformerTank ?tank.
          ?tank c:IdentifiedObject.name ?tname.
-         ?tank c:IdentifiedObject.mRID ?tid.
          OPTIONAL {?end c:TransformerTankEnd.phases ?phsraw.
           bind(strafter(str(?phsraw),"PhaseCode.") as ?phs)}
          ?tank c:TransformerTank.PowerTransformer ?pxf.}
          ?pxf c:IdentifiedObject.name ?pname.
-         ?pxf c:IdentifiedObject.mRID ?pid.
          ?rtc c:RatioTapChanger.stepVoltageIncrement ?incr.
          ?rtc c:RatioTapChanger.tculControlMode ?moderaw.
           bind(strafter(str(?moderaw),"TransformerControlMode.") as ?mode)
@@ -179,7 +177,7 @@ class SPARQLManager:
         VALUES_QUERY = """
         PREFIX r:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
         PREFIX c:  <http://iec.ch/TC57/CIM100#>
-        SELECT ?rname ?pname ?pid ?tname ?tid ?wnum ?phs ?incr ?mode ?enabled ?highStep ?lowStep
+        SELECT ?rname ?pname ?tname ?wnum ?phs ?incr ?mode ?enabled ?highStep ?lowStep
         WHERE {
         VALUES ?fdrid {"%s"}
          ?pxf c:Equipment.EquipmentContainer ?fdr.
@@ -192,12 +190,10 @@ class SPARQLManager:
           UNION
         {?end c:TransformerTankEnd.TransformerTank ?tank.
          ?tank c:IdentifiedObject.name ?tname.
-         ?tank c:IdentifiedObject.mRID ?tid.
          OPTIONAL {?end c:TransformerTankEnd.phases ?phsraw.
           bind(strafter(str(?phsraw),"PhaseCode.") as ?phs)}
          ?tank c:TransformerTank.PowerTransformer ?pxf.}
          ?pxf c:IdentifiedObject.name ?pname.
-         ?pxf c:IdentifiedObject.mRID ?pid.
          ?rtc c:RatioTapChanger.stepVoltageIncrement ?incr.
          ?rtc c:RatioTapChanger.tculControlMode ?moderaw.
           bind(strafter(str(?moderaw),"TransformerControlMode.") as ?mode)

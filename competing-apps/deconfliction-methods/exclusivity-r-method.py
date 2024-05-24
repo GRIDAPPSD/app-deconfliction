@@ -1,8 +1,6 @@
 
 # Resilience exclusivity deconfliction methodology
 
-import MethodUtil
-
 class DeconflictionMethod:
 
   def __init__(self, ConflictMatrix):
@@ -28,8 +26,7 @@ class DeconflictionMethod:
           timestamp = max(timestamp, self.ConflictMatrix[device][app][0])
 
       if count > 0:
-        name = MethodUtil.DeviceToName[name]
-        if name.startswith('RatioTapChanger.'):
+        if device.startswith('RatioTapChanger.'):
           ResolutionVector[device] = (timestamp, round(total/count))
         else:
           ResolutionVector[device] = (timestamp, total/count)
