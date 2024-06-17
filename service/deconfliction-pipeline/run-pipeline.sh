@@ -21,25 +21,17 @@ if [[ -z "$SIMREQ" ]]; then
     #read -d "\n" SIMID SIMREQ <<< $(../sim-starter/sim-starter.py $1)
     read -d "\n" SIMREQ <<< $(../sim-starter/sim-starter.py $1 nosim)
     SIMID=0
-    METHOD=$2
-    if [ "$3" == "--sync" ]; then
+    if [ "$2" == "--sync" ]; then
       SYNC="--sync=yes"
-      METHOD_TEST=$4
-    else
-      METHOD_TEST=$3
     fi
 else
 #   invocation when simulation is already started from platform viz
     SIMID=$2
-    METHOD=$3
-    if [ "$4" == "--sync" ]; then
+    if [ "$3" == "--sync" ]; then
       SYNC="--sync=yes"
-      METHOD_TEST=$5
-    else
-      METHOD_TEST=$4
     fi
 fi
 
 mkdir -p output
-python3 deconfliction-pipeline.py $SIMID "$SIMREQ" $METHOD $SYNC $METHOD_TEST 2>&1 | tee output/deconfliction-pipeline.log
+python3 deconfliction-pipeline.py $SIMID "$SIMREQ" $SYNC 2>&1 | tee output/deconfliction-pipeline.log
 
