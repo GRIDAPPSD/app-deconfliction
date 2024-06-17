@@ -31,12 +31,8 @@ fi
 # foreground process receives ctrl-C
 trap "trap - SIGTERM && kill -- -$$" SIGINT SIGTERM EXIT
 
-# choose workflow or optimization apps
-if [[ $APPS == *"w"* || $APPS == *"W"* ]]; then
-  cd workflow-apps
-else
-  cd optimization-apps
-fi
+# only optimization apps (not workflow) are supported for the service
+cd optimization-apps
 
 DELAY=0
 SYNC=""
