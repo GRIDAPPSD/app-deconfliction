@@ -204,23 +204,22 @@ class DeconflictionPipeline(GridAPPSD):
     ResolutionVector = {}
 
     for device in self.ConflictMatrix:
-      optCount = 0
-      optTotal = 0.0
+      optDenominator = 0.0
+      optNumerator = 0.0
       optTimestamp = 0
 
       for app in self.ConflictMatrix[device]:
-        if app=='resilience-app' or app=='decarbonization-app':
-          optCount += 1
-          optTotal += self.ConflictMatrix[device][app][1]
-          optTimestamp = max(optTimestamp,
-                             self.ConflictMatrix[device][app][0])
+        optDenominator += 1.0
+        optNumerator += self.ConflictMatrix[device][app][1]
+        optTimestamp = max(optTimestamp, self.ConflictMatrix[device][app][0])
 
-      if optCount > 0:
+      if optDenominator > 0.0:
         name = MethodUtil.DeviceToName[device]
         if name.startswith('RatioTapChanger.'):
-          ResolutionVector[device] = (optTimestamp, round(optTotal/optCount))
+          ResolutionVector[device] = (optTimestamp,
+                                      round(optNumerator/optDenominator))
         else:
-          ResolutionVector[device] = (optTimestamp, optTotal/optCount)
+          ResolutionVector[device] = (optTimestamp, optNumerator/optDenominator)
 
     return ResolutionVector
 
@@ -525,6 +524,11 @@ class DeconflictionPipeline(GridAPPSD):
     # for SHIVA conflict metric testing
     #self.TimeConflictMatrix = {}
     #self.TimeResolutionVector = {}
+
+    # Optimization Weighting Factors dictionary:
+    self.OptAppWeights = {}
+    self.OptDevWeights = {}
+    # TODO: load weighting factors from json file
 
     self.publish_topic = service_output_topic(
                                         'gridappsd-deconfliction-pipeline', '0')
