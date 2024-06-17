@@ -200,12 +200,60 @@ class DeconflictionPipeline(GridAPPSD):
     return False
 
 
+  def CompromiseDeconflict(self, app_name, timestamp):
+    ResolutionVector = {}
+
+    for device in self.ConflictMatrix:
+      compCount = 0
+      compTotal = 0.0
+      compTimestamp = 0
+      otherCount = 0
+      otherTotal = 0.0
+      otherTimestamp = 0
+
+      for app in self.ConflictMatrix[device]:
+        if app=='resilience-app' or app=='decarbonization-app':
+          compCount += 1
+          compTotal += self.ConflictMatrix[device][app][1]
+          compTimestamp = max(compTimestamp,
+                              self.ConflictMatrix[device][app][0])
+          if compCount == 2:
+            break
+        else:
+          otherCount += 1
+          otherTotal += self.ConflictMatrix[device][app][1]
+          otherTimestamp = max(otherTimestamp,
+                               self.ConflictMatrix[device][app][0])
+
+      if compCount > 0:
+        # for resolution with only batteries comment out the next line,
+        # comment out the first line under the RatioTapChanger if block,
+        # uncomment the first line under the else block, then repeat those
+        # steps under the elif below
+        name = MethodUtil.DeviceToName[device]
+        if name.startswith('RatioTapChanger.'):
+          ResolutionVector[device] = (compTimestamp, round(compTotal/compCount))
+          pass
+        else:
+          ResolutionVector[device] = (compTimestamp, compTotal/compCount)
+      elif otherCount > 0:
+        name = MethodUtil.DeviceToName[device]
+        if name.startswith('RatioTapChanger.'):
+          ResolutionVector[device] = \
+                                  (otherTimestamp, round(otherTotal/otherCount))
+          pass
+        else:
+          ResolutionVector[device] = (otherTimestamp, otherTotal/otherCount)
+
+    return ResolutionVector
+
+
   def DeconflictionToResolution(self, app_name, timestamp, set_points,
                                 conflictFlag):
-    # If there is a conflict, then the call the deconflict method for the given
-    # methodology to produce a resolution
+    # If there is a conflict, then perform combined/staged deconfliction to
+    # produce a resolution
     if conflictFlag:
-      newResolutionVector = self.decon_method.deconflict(app_name, timestamp)
+      newResolutionVector = self.CompromiseDeconflict(app_name, timestamp)
       print('ResolutionVector (conflict): ' + str(newResolutionVector),
             flush=True)
 
@@ -214,8 +262,8 @@ class DeconflictionPipeline(GridAPPSD):
       # resolution set-points when really they may not be, which will impact
       # subsequent resolutions in ways that are likely not valid
       '''
-      # Update ConflictMatrix with resolution vector setpoint values so the
-      # deconfliction methodologies don't need to resolve the same conflicts
+      # Update ConflictMatrix with resolution vector setpoint values so that
+      # subsequent deconfliction doesn't need to resolve the same conflicts
       # each time in addition to new conflicts from the latest set-points
       for device, value in newResolutionVector.items():
         for app in self.ConflictMatrix[device]:
@@ -260,48 +308,6 @@ class DeconflictionPipeline(GridAPPSD):
         else:
           print('~TEST: ResolutionVector (no conflict) does not contain ' +
                 self.testDeviceName, flush=True)
-
-
-    if self.testDeconMethodFlag:
-      if conflictFlag:
-        testNewResolutionVector = self.decon_method_test.deconflict(timestamp)
-
-      else:
-        testNewResolutionVector = copy.deepcopy(self.ResolutionVector)
-
-        for device, value in set_points.items():
-          # uncomment the following line to only include batteries in resolution
-          # for testing
-          #if device.startswith('BatteryUnit.'):
-            testNewResolutionVector[device] = (timestamp, value)
-
-      testDiffFlag = False
-      for device in newResolutionVector:
-        if device not in testNewResolutionVector:
-          testDiffFlag = True
-          break
-
-        name = MethodUtil.DeviceToName[device]
-        if name.startswith('BatteryUnit.'):
-          if abs(newResolutionVector[device][1] - \
-                 testNewResolutionVector[device][1]) > 1e-6:
-            testDiffFlag = True
-            break
-        else:
-          if newResolutionVector[device][1] != \
-             testNewResolutionVector[device][1]:
-            testDiffFlag = True
-            break
-
-        if newResolutionVector[device][0] != \
-           testNewResolutionVector[device][0]:
-          testDiffFlag = True
-          break
-
-      if testDiffFlag:
-        print('!!!!!!!!!!!!!!!!!!!!!!!!! DIFF TEST ResolutionVector: ' +
-              str(testNewResolutionVector), flush=True)
-        exit()
 
     return newResolutionVector
 
@@ -494,8 +500,7 @@ class DeconflictionPipeline(GridAPPSD):
     #print('!!! ALEX ResolutionVector FINISH !!!', flush=True)
 
 
-  def __init__(self, gapps, feeder_mrid, simulation_id, method, method_test,
-               sync_flag):
+  def __init__(self, gapps, feeder_mrid, simulation_id, sync_flag):
     self.gapps = gapps
 
     self.messageQueue = queue.Queue()
@@ -509,7 +514,6 @@ class DeconflictionPipeline(GridAPPSD):
                                          self.on_sim_message)
 
     # test/debug settings
-    self.testDeconMethodFlag = method_test != None
     # set this to the name of the device for detailed testing, e.g.,
     # 'BatteryUnit.battery1', or None to omit test output
     self.testDeviceName = None
@@ -527,7 +531,7 @@ class DeconflictionPipeline(GridAPPSD):
 
     self.Regulators = AppUtil.getRegulators(MethodUtil.sparql_mgr)
 
-    # initialize BatterySoC dictionary for deconfliction method usage
+    # initialize BatterySoC dictionary
     for mrid in self.Batteries:
       MethodUtil.BatterySoC[mrid] = self.Batteries[mrid]['SoC']
 
@@ -539,40 +543,6 @@ class DeconflictionPipeline(GridAPPSD):
     # for SHIVA conflict metric testing
     #self.TimeConflictMatrix = {}
     #self.TimeResolutionVector = {}
-
-    # Step 0: Import deconfliction methodology class for this invocation of
-    #         the Deconflictor based on method command line argument and
-    #         create an instance of the class
-    if method.endswith('.py'):
-      method = method[:-3] # allow full python file name
-
-    dirname = os.path.dirname(method)
-    if dirname != '':
-      sys.path.append(dirname)
-
-    basename = os.path.basename(method)
-    print('Importing DeconflictionMethod class from module: ' + basename,
-           flush=True)
-
-    DeconflictionMethod = getattr(importlib.import_module(basename),
-                                  'DeconflictionMethod')
-    self.decon_method = DeconflictionMethod(self.ConflictMatrix)
-
-    if self.testDeconMethodFlag:
-      if method_test.endswith('.py'):
-        method_test = method_test[:-3] # allow full python file name
-
-      dirname_test = os.path.dirname(method_test)
-      if dirname_test!='' and dirname_test!=dirname:
-        sys.path.append(dirname_test)
-
-      basename_test = os.path.basename(method_test)
-      print('Importing DeconflictionMethod test class from module: ' +
-            basename_test, flush=True)
-
-      DeconflictionMethodTest = getattr(importlib.import_module(basename_test),
-                                        'DeconflictionMethod')
-      self.decon_method_test = DeconflictionMethod(self.ConflictMatrix)
 
     self.publish_topic = service_output_topic(
                                         'gridappsd-deconfliction-pipeline', '0')
@@ -631,10 +601,7 @@ def _main():
   parser = argparse.ArgumentParser()
   parser.add_argument("simulation_id", help="Simulation ID")
   parser.add_argument("request", help="Simulation Request")
-  parser.add_argument("method", help="Deconfliction Methodology")
   parser.add_argument("--sync", nargs='?', help="Synchronize Messages")
-  parser.add_argument("method_test", nargs='?',
-                      help="Test Deconfliction Methodology")
   opts = parser.parse_args()
 
   sim_request = json.loads(opts.request.replace("\'",""))
@@ -649,8 +616,7 @@ def _main():
   gapps = GridAPPSD(opts.simulation_id)
   assert gapps.connected
 
-  DeconflictionPipeline(gapps, feeder_mrid, opts.simulation_id,
-                        opts.method, opts.method_test, opts.sync!=None)
+  DeconflictionPipeline(gapps, feeder_mrid, opts.simulation_id, opts.sync!=None)
 
 
 if __name__ == "__main__":

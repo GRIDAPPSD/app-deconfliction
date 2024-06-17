@@ -5,8 +5,6 @@
 # where <MODEL> = 123apps (only one supported currently)
 #       <APPS> = code with first letter of each competing app to run, apps are
 #                (r)esilience, (d)ecarbonization, (p)rofit_cvr
-#       <METHOD> = name of DeconflictionMethod class file to use with path
-#                  referenced from deconfliction-pipeline directory
 #       <DELAY> = optional positive value is seconds between simulation data
 #                 messages, negative value is a count of apps being run,
 #                 e.g., -3 for 3 apps, where counting device dispatch messages
@@ -15,14 +13,13 @@
 #                 default=counting messages
 #
 # e.g.,
-# ./run-deconfliction.sh 123apps rd deconfliction-methods/compromise-rd-method.py
+# ./run-deconfliction.sh 123apps rd
 
 MODEL=$1
 APPS=$2
-METHOD=$3
 
-if [ "$#" -gt 3 ]; then
-  OPTLIB=$4
+if [ "$#" -gt 2 ]; then
+  OPTLIB=$3
 else
   OPTLIB="pulp"
 fi
@@ -36,8 +33,8 @@ cd optimization-apps
 
 DELAY=0
 SYNC=""
-if [ "$#" -gt 4 ]; then
-  DELAY=$5
+if [ "$#" -gt 3 ]; then
+  DELAY=$4
 else
   SYNC="--sync"
 fi
@@ -79,5 +76,5 @@ else
 fi
 
 cd ../deconfliction-pipeline
-./run-pipeline.sh $MODEL ../$METHOD $SYNC
+./run-pipeline.sh $MODEL $SYNC
 
