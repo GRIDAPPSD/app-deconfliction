@@ -2,7 +2,7 @@
 
 # ./run-deconfliction.sh <MODEL> <APPS> <METHOD> <DELAY>
 #
-# where <MODEL> = 123 (only one supported currently)
+# where <MODEL> = 123apps (only one supported currently)
 #       <APPS> = code with first letter of each competing app to run, apps are
 #                (r)esilience, (d)ecarbonization, (p)rofit_cvr
 #       <METHOD> = name of DeconflictionMethod class file to use with path
@@ -15,7 +15,7 @@
 #                 default=counting messages
 #
 # e.g.,
-# ./run-deconfliction.sh 123 rd deconfliction-methods/compromise-rd-partial-method.py
+# ./run-deconfliction.sh 123apps rd deconfliction-methods/compromise-rd-method.py
 
 MODEL=$1
 APPS=$2

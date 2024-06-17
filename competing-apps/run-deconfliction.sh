@@ -15,7 +15,7 @@
 #                 default=counting messages
 #
 # e.g.,
-# ./run-deconfliction.sh 123 rd deconfliction-methods/compromise-rd-partial-method.py
+# ./run-deconfliction.sh 123 rd deconfliction-methods/compromise-rd-method.py
 
 MODEL=$1
 APPS=$2
