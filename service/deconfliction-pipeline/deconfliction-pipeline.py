@@ -204,14 +204,26 @@ class DeconflictionPipeline(GridAPPSD):
     ResolutionVector = {}
 
     for device in self.ConflictMatrix:
-      optDenominator = 0.0
-      optNumerator = 0.0
       optTimestamp = 0
+      optNumerator = 0.0
+      optDenominator = 0.0
 
       for app in self.ConflictMatrix[device]:
-        optDenominator += 1.0
-        optNumerator += self.ConflictMatrix[device][app][1]
         optTimestamp = max(optTimestamp, self.ConflictMatrix[device][app][0])
+
+        if app in self.OptDevWeights and device in self.OptDevWeights[app]:
+          optNumerator += self.ConflictMatrix[device][app][1] * \
+                          self.OptDevWeights[app][device]
+          optDenominator += self.OptDevWeights[app][device]
+
+        elif app in self.OptAppWeights:
+          optNumerator += self.ConflictMatrix[device][app][1] * \
+                          self.OptAppWeights[app]
+          optDenominator += self.OptAppWeights[app]
+
+        else:
+          optNumerator += self.ConflictMatrix[device][app][1]
+          optDenominator += 1.0
 
       if optDenominator > 0.0:
         name = MethodUtil.DeviceToName[device]
