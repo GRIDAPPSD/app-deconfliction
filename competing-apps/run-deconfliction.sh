@@ -2,7 +2,7 @@
 
 # ./run-deconfliction.sh <MODEL> <APPS> <METHOD> <DELAY>
 #
-# where <MODEL> = 123 (only one supported currently)
+# where <MODEL> = 123
 #       <APPS> = code with first letter of each competing app to run, apps are
 #                (r)esilience, (d)ecarbonization, (p)rofit_cvr
 #       <METHOD> = name of DeconflictionMethod class file to use with path
