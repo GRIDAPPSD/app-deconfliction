@@ -200,50 +200,27 @@ class DeconflictionPipeline(GridAPPSD):
     return False
 
 
-  def CompromiseDeconflict(self, app_name, timestamp):
+  def OptimizationDeconflict(self, app_name, timestamp):
     ResolutionVector = {}
 
     for device in self.ConflictMatrix:
-      compCount = 0
-      compTotal = 0.0
-      compTimestamp = 0
-      otherCount = 0
-      otherTotal = 0.0
-      otherTimestamp = 0
+      optCount = 0
+      optTotal = 0.0
+      optTimestamp = 0
 
       for app in self.ConflictMatrix[device]:
         if app=='resilience-app' or app=='decarbonization-app':
-          compCount += 1
-          compTotal += self.ConflictMatrix[device][app][1]
-          compTimestamp = max(compTimestamp,
-                              self.ConflictMatrix[device][app][0])
-          if compCount == 2:
-            break
-        else:
-          otherCount += 1
-          otherTotal += self.ConflictMatrix[device][app][1]
-          otherTimestamp = max(otherTimestamp,
-                               self.ConflictMatrix[device][app][0])
+          optCount += 1
+          optTotal += self.ConflictMatrix[device][app][1]
+          optTimestamp = max(optTimestamp,
+                             self.ConflictMatrix[device][app][0])
 
-      if compCount > 0:
-        # for resolution with only batteries comment out the next line,
-        # comment out the first line under the RatioTapChanger if block,
-        # uncomment the first line under the else block, then repeat those
-        # steps under the elif below
+      if optCount > 0:
         name = MethodUtil.DeviceToName[device]
         if name.startswith('RatioTapChanger.'):
-          ResolutionVector[device] = (compTimestamp, round(compTotal/compCount))
-          pass
+          ResolutionVector[device] = (optTimestamp, round(optTotal/optCount))
         else:
-          ResolutionVector[device] = (compTimestamp, compTotal/compCount)
-      elif otherCount > 0:
-        name = MethodUtil.DeviceToName[device]
-        if name.startswith('RatioTapChanger.'):
-          ResolutionVector[device] = \
-                                  (otherTimestamp, round(otherTotal/otherCount))
-          pass
-        else:
-          ResolutionVector[device] = (otherTimestamp, otherTotal/otherCount)
+          ResolutionVector[device] = (optTimestamp, optTotal/optCount)
 
     return ResolutionVector
 
@@ -253,7 +230,12 @@ class DeconflictionPipeline(GridAPPSD):
     # If there is a conflict, then perform combined/staged deconfliction to
     # produce a resolution
     if conflictFlag:
-      newResolutionVector = self.CompromiseDeconflict(app_name, timestamp)
+      # TODO: This is where the Rules & Heuristics stage deconfliction will go
+
+      # TODO: This is where the Cooperation stage deconfliction will go
+
+      # Optimization stage deconfliction
+      newResolutionVector = self.OptimizationDeconflict(app_name, timestamp)
       print('ResolutionVector (conflict): ' + str(newResolutionVector),
             flush=True)
 
@@ -421,7 +403,7 @@ class DeconflictionPipeline(GridAPPSD):
 
 
   def on_setpoints_message(self, headers, message):
-    print('Received set-points message: ' + str(message), flush=True)
+    print('*** Received set-points message: ' + str(message), flush=True)
     self.messageQueue.put((False, message))
 
 
