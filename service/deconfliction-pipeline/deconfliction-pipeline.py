@@ -493,7 +493,7 @@ class DeconflictionPipeline(GridAPPSD):
     #print('!!! ALEX ResolutionVector FINISH !!!', flush=True)
 
 
-  def __init__(self, gapps, feeder_mrid, simulation_id, sync_flag):
+  def __init__(self, gapps, feeder_mrid, simulation_id, sync_flag,weights_base):
     self.gapps = gapps
 
     self.messageQueue = queue.Queue()
@@ -541,29 +541,28 @@ class DeconflictionPipeline(GridAPPSD):
     self.OptAppWeights = {}
     self.OptDevWeights = {}
 
-    # Load weighting factors from json files
-    basename = "testweights"
+    if weights_base != None:
+      # Load weighting factors from json files
+      appname =  weights_base + "-app.json"
+      appflag = False
+      try:
+        with open(appname) as f:
+          data = f.read()
+          self.OptAppWeights = json.loads(data)
+      except:
+        appflag = True
 
-    appname =  basename + "-app.json"
-    appflag = False
-    try:
-      with open(appname) as f:
-        data = f.read()
-        self.OptAppWeights = json.loads(data)
-    except:
-      appflag = True
+      devname =  weights_base + "-dev.json"
+      devflag = False
+      try:
+        with open(devname) as f:
+          data = f.read()
+          self.OptDevWeights = json.loads(data)
+      except:
+        devflag = True
 
-    devname =  basename + "-dev.json"
-    devflag = False
-    try:
-      with open(devname) as f:
-        data = f.read()
-        self.OptDevWeights = json.loads(data)
-    except:
-      devflag = True
-
-    if appflag and devflag:
-      print('\n*** WARNING: Could not find or load either optimization weighting factors files ' + appname + ' or ' + devname + '\n')
+      if appflag and devflag:
+        print('\n*** WARNING: Could not find or load either optimization weighting factors files ' + appname + ' or ' + devname + '\n')
 
     self.publish_topic = service_output_topic(
                                         'gridappsd-deconfliction-pipeline', '0')
@@ -623,6 +622,7 @@ def _main():
   parser.add_argument("simulation_id", help="Simulation ID")
   parser.add_argument("request", help="Simulation Request")
   parser.add_argument("--sync", nargs='?', help="Synchronize Messages")
+  parser.add_argument("--weights", nargs='?', help="Optimization Weights Base Filename")
   opts = parser.parse_args()
 
   sim_request = json.loads(opts.request.replace("\'",""))
@@ -637,7 +637,8 @@ def _main():
   gapps = GridAPPSD(opts.simulation_id)
   assert gapps.connected
 
-  DeconflictionPipeline(gapps, feeder_mrid, opts.simulation_id, opts.sync!=None)
+  DeconflictionPipeline(gapps, feeder_mrid, opts.simulation_id,
+                        opts.sync!=None, opts.weights)
 
 
 if __name__ == "__main__":
