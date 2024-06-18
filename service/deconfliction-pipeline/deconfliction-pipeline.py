@@ -549,6 +549,7 @@ class DeconflictionPipeline(GridAPPSD):
         with open(appname) as f:
           data = f.read()
           self.OptAppWeights = json.loads(data)
+          print('Applying optimization deconfliction stage application weighting factors in ' + appname + ': ' + str(self.OptAppWeights) + '\n')
       except:
         appflag = True
 
@@ -558,6 +559,7 @@ class DeconflictionPipeline(GridAPPSD):
         with open(devname) as f:
           data = f.read()
           self.OptDevWeights = json.loads(data)
+          print('Applying optimization deconfliction stage device weighting factors in ' + devname + ': ' + str(self.OptDevWeights) + '\n')
       except:
         devflag = True
 
