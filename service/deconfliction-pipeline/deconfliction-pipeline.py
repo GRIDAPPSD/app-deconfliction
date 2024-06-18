@@ -549,7 +549,7 @@ class DeconflictionPipeline(GridAPPSD):
         with open(appname) as f:
           data = f.read()
           self.OptAppWeights = json.loads(data)
-          print('Applying optimization deconfliction stage application weighting factors in ' + appname + ': ' + str(self.OptAppWeights) + '\n')
+          print('\nApplying optimization deconfliction stage application weighting factors in ' + appname + ': ' + str(self.OptAppWeights))
       except:
         appflag = True
 
@@ -559,17 +559,20 @@ class DeconflictionPipeline(GridAPPSD):
         with open(devname) as f:
           data = f.read()
           self.OptDevWeights = json.loads(data)
-          print('Applying optimization deconfliction stage device weighting factors in ' + devname + ': ' + str(self.OptDevWeights) + '\n')
+          print('\nApplying optimization deconfliction stage device weighting factors in ' + devname + ': ' + str(self.OptDevWeights))
       except:
         devflag = True
 
       if appflag and devflag:
-        print('\n*** WARNING: Could not find or load either optimization weighting factors files ' + appname + ' or ' + devname + '\n')
+        print('\n*** WARNING: Could not find or load either optimization weighting factors files ' + appname + ' or ' + devname)
+
+    else:
+      print('\nNo optimization deconfliction stage weighting factors applied')
 
     self.publish_topic = service_output_topic(
                                         'gridappsd-deconfliction-pipeline', '0')
 
-    print('Initialized deconfliction pipeline, waiting for messages...\n',
+    print('\nInitialized deconfliction pipeline, waiting for messages...\n',
           flush=True)
 
     while True:

@@ -18,7 +18,7 @@ class AppUtil:
     Regulators = {}
     bindings = sparql_mgr.regulator_query()
     #print('regulator_query results bindings: ' + str(bindings), flush=True)
-    print('Count of Regulators: ' + str(len(bindings)), flush=True)
+    print('\nCount of Regulators: ' + str(len(bindings)), flush=True)
     for obj in bindings:
       mrid = obj['pid']['value']
       name = 'RatioTapChanger.' + obj['pname']['value']
@@ -47,7 +47,7 @@ class AppUtil:
     Regulators = {}
     RegIdx = {}
     bindings = sparql_mgr.regulator_combine_query()
-    print('Count of Combine Regulators: ' + str(len(bindings)), flush=True)
+    print('\nCount of Combine Regulators: ' + str(len(bindings)), flush=True)
     reg_idx = 0
     for obj in bindings:
       pname = obj['pname']['value']
@@ -80,7 +80,7 @@ class AppUtil:
     Batteries = {}
     bindings = sparql_mgr.battery_query()
     #print('battery_query results bindings: ' + str(bindings), flush=True)
-    print('Count of Batteries: ' + str(len(bindings)), flush=True)
+    print('\nCount of Batteries: ' + str(len(bindings)), flush=True)
     idx = 0
     for obj in bindings:
       mrid = obj['id']['value']
@@ -113,7 +113,7 @@ class AppUtil:
   def getSolarPVs(sparql_mgr):
     SolarPVs = {}
     bindings = sparql_mgr.pv_query()
-    print('Count of SolarPV: ' + str(len(bindings)), flush=True)
+    print('\nCount of SolarPV: ' + str(len(bindings)), flush=True)
     for obj in bindings:
       name = obj['name']['value']
       bus = obj['bus']['value'].upper()
