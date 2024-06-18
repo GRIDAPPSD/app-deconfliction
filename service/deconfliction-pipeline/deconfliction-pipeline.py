@@ -414,7 +414,7 @@ class DeconflictionPipeline(GridAPPSD):
 
 
   def on_setpoints_message(self, headers, message):
-    print('*** Received set-points message: ' + str(message), flush=True)
+    print('### Received set-points message: ' + str(message), flush=True)
     self.messageQueue.put((False, message))
 
 
@@ -537,10 +537,33 @@ class DeconflictionPipeline(GridAPPSD):
     #self.TimeConflictMatrix = {}
     #self.TimeResolutionVector = {}
 
-    # Optimization Weighting Factors dictionary:
+    # Optimization weighting factors dictionaries
     self.OptAppWeights = {}
     self.OptDevWeights = {}
-    # TODO: load weighting factors from json file
+
+    # Load weighting factors from json files
+    basename = "testweights"
+
+    appname =  basename + "-app.json"
+    appflag = False
+    try:
+      with open(appname) as f:
+        data = f.read()
+        self.OptAppWeights = json.loads(data)
+    except:
+      appflag = True
+
+    devname =  basename + "-dev.json"
+    devflag = False
+    try:
+      with open(devname) as f:
+        data = f.read()
+        self.OptDevWeights = json.loads(data)
+    except:
+      devflag = True
+
+    if appflag and devflag:
+      print('\n*** WARNING: Could not find or load either optimization weighting factors files ' + appname + ' or ' + devname + '\n')
 
     self.publish_topic = service_output_topic(
                                         'gridappsd-deconfliction-pipeline', '0')
