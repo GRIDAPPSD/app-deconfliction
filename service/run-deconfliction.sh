@@ -1,16 +1,19 @@
 #!/bin/bash
 
-# ./run-deconfliction.sh <MODEL> <APPS> <METHOD> <DELAY>
+# ./run-deconfliction.sh <MODEL> <APPS> [--optlib <OPTLIB>]
+#                                       [--weights <WEIGHTS>]
 #
 # where <MODEL> = 123apps (only one supported currently)
 #       <APPS> = code with first letter of each competing app to run, apps are
 #                (r)esilience, (d)ecarbonization, (p)rofit_cvr
-#       <DELAY> = optional positive value is seconds between simulation data
-#                 messages, negative value is a count of apps being run,
-#                 e.g., -3 for 3 apps, where counting device dispatch messages
-#                 until all apps respond triggers simulation data messages,
-#                 0 value to not run sim-sim meaning it must be run separately,
-#                 default=counting messages
+#       <OPTLIB> = optional optimization library used for competing apps
+#       <WEIGHTS> = optional base filename for optimization stage deconfliction
+#                   application/device weighting factors. Application filename
+#                   has "-app.json" appended and device filename has
+#                   "-dev.json" appended. At least one of these files must
+#                   exist in the deconfliction-pipeline directory if this
+#                   option is specified. If both exist, device weighting factors
+#                   override application weighting factors when specified.
 #
 # e.g.,
 # ./run-deconfliction.sh 123apps rd
@@ -18,10 +21,24 @@
 MODEL=$1
 APPS=$2
 
+OPTLIB="pulp"
+WEIGHTS=""
+# tricky logic to process optional optlib and weights arguments. This could
+# be done in a more elegant way, but this gets the job done.
 if [ "$#" -gt 2 ]; then
-  OPTLIB=$3
-else
-  OPTLIB="pulp"
+  if [ "$3" == "--optlib" ]; then
+    OPTLIB=$4
+  elif [ "$3" == "--weights" ]; then
+    WEIGHTS=$4
+  fi
+
+  if [ "$#" -gt 4 ]; then
+    if [ "$5" == "--optlib" ]; then
+      OPTLIB=$6
+    elif [ "$5" == "--weights" ]; then
+      WEIGHTS=$6
+    fi
+  fi
 fi
 
 # magic that kills background jobs started in this script when the pipeline
@@ -30,14 +47,6 @@ trap "trap - SIGTERM && kill -- -$$" SIGINT SIGTERM EXIT
 
 # only optimization apps (not workflow) are supported for the service
 cd optimization-apps
-
-DELAY=0
-SYNC=""
-if [ "$#" -gt 3 ]; then
-  DELAY=$4
-else
-  SYNC="--sync"
-fi
 
 delay_app_counter=0
 
@@ -61,20 +70,13 @@ if [[ $APPS == *"l"* || $APPS == *"L"* ]]; then
   ./run-loadshed.sh $MODEL $OPTLIB $SYNC >/dev/null &
 fi
 
-if [[ $SYNC == "--sync" ]]; then
-  DELAY=$delay_app_counter
-fi
+# always sync messages for the remaining time sim-sim is used
+SYNC="--sync"
+DELAY=$delay_app_counter
 
 cd ../sim-starter
-
-# don't start sim-sim with 0 delay since that means the user will be
-# running it separately and feeding data interactively
-if [ "$DELAY" -eq 0 ]; then
-  echo "*** Not starting sim-sim due to DELAY=0 ***"
-else
-  ./run-sim.sh $MODEL $DELAY >/dev/null &
-fi
+./run-sim.sh $MODEL $DELAY >/dev/null &
 
 cd ../deconfliction-pipeline
-./run-pipeline.sh $MODEL $SYNC
+./run-pipeline.sh $MODEL $SYNC $WEIGHTS
 
