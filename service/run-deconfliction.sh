@@ -45,8 +45,12 @@ fi
 # foreground process receives ctrl-C
 trap "trap - SIGTERM && kill -- -$$" SIGINT SIGTERM EXIT
 
-# only optimization apps (not workflow) are supported for the service
-cd optimization-apps
+# fire off GridLAB-D simulation
+cd sim-starter
+read -d "\n" SIMID SIMREQ <<< $(./sim-starter.py $MODEL)
+
+# only optimization apps (not workflow) are supported for decon service
+cd ../optimization-apps
 
 delay_app_counter=0
 
