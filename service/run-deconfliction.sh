@@ -45,12 +45,11 @@ fi
 # foreground process receives ctrl-C
 trap "trap - SIGTERM && kill -- -$$" SIGINT SIGTERM EXIT
 
-# fire off GridLAB-D simulation
-cd sim-starter
-read -d "\n" SIMID SIMREQ <<< $(./sim-starter.py $MODEL)
-
 # only optimization apps (not workflow) are supported for decon service
-cd ../optimization-apps
+cd optimization-apps
+
+# always sync messages for the remaining time sim-sim is used
+SYNC="--sync"
 
 delay_app_counter=0
 
@@ -74,13 +73,7 @@ if [[ $APPS == *"l"* || $APPS == *"L"* ]]; then
   ./run-loadshed.sh $MODEL $OPTLIB $SYNC >/dev/null &
 fi
 
-# always sync messages for the remaining time sim-sim is used
-SYNC="--sync"
 DELAY=$delay_app_counter
-
-# No message synching with 3 seconds between messages as prep for GridLAB-D
-SYNC=""
-DELAY=3
 
 cd ../sim-starter
 ./run-sim.sh $MODEL $DELAY >/dev/null &
