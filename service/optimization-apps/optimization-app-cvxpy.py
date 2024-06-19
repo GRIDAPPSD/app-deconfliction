@@ -412,6 +412,11 @@ class CompetingApp(GridAPPSD):
     }
       #'opt_prob': opt_prob,
       #'objective': objval
+
+    # for testing queue draining, etc.
+    #print('SLEEP before sending message...', flush=True)
+    #sleep(5.0)
+
     print('Sending message: ' + str(out_message), flush=True)
     self.gapps.send(self.publish_topic, out_message)
 

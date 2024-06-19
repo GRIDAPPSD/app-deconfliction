@@ -371,6 +371,11 @@ class CompetingApp(GridAPPSD):
           'timestamp': timestamp,
           'set_points': set_points
         }
+
+        # for testing queue draining, etc.
+        #print('SLEEP before sending message...', flush=True)
+        #sleep(5.0)
+
         print('Sending message: ' + str(out_message), flush=True)
         self.gapps.send(self.publish_topic, out_message)
 
