@@ -75,8 +75,8 @@ SYNC="--sync"
 DELAY=$delay_app_counter
 
 # No message synching with 3 seconds between messages as prep for GridLAB-D
-#SYNC=""
-#DELAY=3
+SYNC=""
+DELAY=3
 
 cd ../sim-starter
 ./run-sim.sh $MODEL $DELAY >/dev/null &
