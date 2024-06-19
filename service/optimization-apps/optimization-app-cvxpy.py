@@ -625,8 +625,7 @@ class CompetingApp(GridAPPSD):
       self.staticConstraints.append(sum(self.reg_taps[(k, tap)] for tap in range(32)) == 1)
 
 
-  def __init__(self, gapps, opt_type, feeder_mrid, simulation_id, outage, state,
-               sync_flag):
+  def __init__(self, gapps, opt_type, feeder_mrid, simulation_id, sync_flag):
 
     self.gapps = gapps
 
@@ -640,10 +639,6 @@ class CompetingApp(GridAPPSD):
 
     SPARQLManager = getattr(importlib.import_module('sparql'), 'SPARQLManager')
     sparql_mgr = SPARQLManager(gapps, feeder_mrid, simulation_id)
-
-    self.outage = outage
-
-    self.emergencyState = state.startswith('e') or state.startswith('E')
 
     #feeder_power = {'p': {'A': 0, 'B': 0, 'C': 0},
     #                'q': {'A': 0, 'B': 0, 'C': 0}}
@@ -1044,9 +1039,6 @@ def _main():
   parser.add_argument("type", help="Competing App Type")
   parser.add_argument("simulation_id", help="Simulation ID")
   parser.add_argument("request", help="Simulation Request")
-  parser.add_argument("state", nargs="?", default="Alert",
-                      help="Alert or Emergency State")
-  parser.add_argument("--outage", "--out", "-o", type=int, nargs=2)
   parser.add_argument("--sync", nargs="?", help="Synchronize Messages")
 
   opts = parser.parse_args()
@@ -1064,8 +1056,7 @@ def _main():
   assert gapps.connected
 
   competing_app = CompetingApp(gapps, opts.type, feeder_mrid,
-                               opts.simulation_id, opts.outage, opts.state,
-                               opts.sync!=None)
+                               opts.simulation_id, opts.sync!=None)
 
 
 if __name__ == "__main__":

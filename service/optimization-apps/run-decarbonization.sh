@@ -23,26 +23,19 @@ if [[ -z "$SIMREQ" ]]; then
     SIMID=0
     if [ "$3" == "--sync" ]; then
       SYNC="--sync=yes"
-      STATE=$4
-    else
-      STATE=$3
     fi
 else
 #   invocation when simulation is already started from platform viz
     SIMID=$1
     if [ "$3" == "--sync" ]; then
       SYNC="--sync=yes"
-      STATE=$4
-    else
-      STATE=$3
     fi
 fi
 
 mkdir -p output
 if [ "$2" = "cvxpy" ] || [ "$2" = "CVXPY" ]; then
-  python3 optimization-app-cvxpy.py decarbonization $SIMID "$SIMREQ" $SYNC $STATE 2>&1 | tee output/decarbonization-app.log
+  python3 optimization-app-cvxpy.py decarbonization $SIMID "$SIMREQ" $SYNC 2>&1 | tee output/decarbonization-app.log
 else
-  python3 optimization-app-pulp.py decarbonization $SIMID "$SIMREQ" $SYNC $STATE 2>&1 | tee output/decarbonization-app.log
-  #python3 optimization-app-pulp.py decarbonization $SIMID "$SIMREQ" $SYNC $STATE --outage 56 68 2>&1 | tee output/decarbonization-app.log
+  python3 optimization-app-pulp.py decarbonization $SIMID "$SIMREQ" $SYNC 2>&1 | tee output/decarbonization-app.log
 fi
 
