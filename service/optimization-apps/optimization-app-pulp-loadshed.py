@@ -793,6 +793,8 @@ class CompetingApp(GridAPPSD):
       bus1 = obj['bus1']['value'].upper()
       bus2 = obj['bus2']['value'].upper()
       phases = obj['phases']['value']
+      if phases == '':
+        phases = 'ABC'
       #print('ACLineSegment name: ' + name + ', bus1: ' + bus1 +
       #      ', bus2: ' + bus2 + ', phases: ' + phases, flush=True)
 
