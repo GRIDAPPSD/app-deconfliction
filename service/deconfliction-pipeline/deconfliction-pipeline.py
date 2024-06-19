@@ -385,6 +385,8 @@ class DeconflictionPipeline(GridAPPSD):
     self.messageQueue.put((True, message))
 
 
+  # GDB GridLAB-D Prep: eliminate MethodUtil.BatterySoC and DeviceSetpoints
+  '''
   def processSimulationMessage(self, message):
     # update device set-point values in MethodUtil for the benefit of
     # DeconflictionMethod classes
@@ -411,6 +413,7 @@ class DeconflictionPipeline(GridAPPSD):
         print('~TEST simulation updated SoC for device name: ' +
               self.testDeviceName + ', timestamp: ' + str(message['timestamp'])+
               ', SoC: ' + str(BatterySoC[mrid]), flush=True)
+  '''
 
 
   def on_setpoints_message(self, headers, message):
@@ -524,9 +527,12 @@ class DeconflictionPipeline(GridAPPSD):
 
     self.Regulators = AppUtil.getRegulators(MethodUtil.sparql_mgr)
 
+    # GDB GridLAB-D Prep: eliminate MethodUtil.BatterySoC
+    '''
     # initialize BatterySoC dictionary
     for mrid in self.Batteries:
       MethodUtil.BatterySoC[mrid] = self.Batteries[mrid]['SoC']
+    '''
 
     self.deltaT = 0.25 # timestamp interval in fractional hours, 0.25 = 15 min
 
@@ -605,10 +611,15 @@ class DeconflictionPipeline(GridAPPSD):
         print('Time-series end-of-data!', flush=True)
         break
 
+      # GDB GridLAB-D Prep: no need to process simulation messages
+      '''
       if simMsgFlag:
         self.processSimulationMessage(message)
 
       else:
+        self.processSetpointsMessage(message)
+      '''
+      if not simMsgFlag:
         self.processSetpointsMessage(message)
 
     # for SHIVA conflict metric
