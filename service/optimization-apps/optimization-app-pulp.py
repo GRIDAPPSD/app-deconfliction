@@ -971,14 +971,26 @@ class CompetingApp(GridAPPSD):
 
       if messageCounter % self.interval == 0:
         timestamp = int(message['timestamp'])
-        loadshape = float(message['loadshape'])
-        solar = float(message['solar'])
-        price = float(message['price'])
-        BatterySoC = message['BatterySoC']
+        # GDB GridLAB-D Prep: hardwire loadshape and solar so we aren't
+        # dependent on sim-sim data
+        #loadshape = float(message['loadshape'])
+        loadshape = 0.3726
+        #solar = float(message['solar'])
+        solar = 0.0
+        # GDB GridLAB-D Prep: price isn't used so toss that completely
+        #price = float(message['price'])
+        # GDB GridLAB-D Prep: hardwire BatterySoC as well
+        #BatterySoC = message['BatterySoC']
+        BatterySoC = {'D2894605-E559-4A37-92DF-75F8586B3C8E': 0.6, 'BEF5B281-316C-4EEC-8ACF-5595AC446051': 0.4, '8A784240-EF25-485F-A3B2-856C25321A07': 0.35, 'EA0C2453-9BDF-420F-80D3-F4D3579754E7': 0.75, '9CEAC24C-A5F3-4D90-98E0-F5F057F963EF': 0.55}
+        # GDB GridLAB-D Prep: only timestamp should be updating now
+        #print('Time-series time: ' + str(timestamp) +
+        #      ', loadshape: ' + str(loadshape) +
+        #      ', solar: ' + str(solar) +
+        #      ', price: ' + str(price) +
+        #      ', BatterySoc: ' + str(BatterySoC), flush=True)
         print('Time-series time: ' + str(timestamp) +
               ', loadshape: ' + str(loadshape) +
               ', solar: ' + str(solar) +
-              ', price: ' + str(price) +
               ', BatterySoc: ' + str(BatterySoC), flush=True)
 
         self.updateSoC(BatterySoC)
