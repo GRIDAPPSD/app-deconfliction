@@ -59,7 +59,7 @@ from time import sleep
 from pulp import *
 
 from gridappsd import GridAPPSD
-from gridappsd.topics import service_output_topic
+from gridappsd.topics import simulation_output_topic, simulation_log_topic, service_output_topic
 
 from datetime import datetime
 from tabulate import tabulate
@@ -383,7 +383,17 @@ class CompetingApp(GridAPPSD):
   def on_message(self, headers, message):
     #print('headers: ' + str(headers), flush=True)
     #print('message: ' + str(message), flush=True)
-    self.messageQueue.put(message)
+    if not self.keepLoopingFlag:
+      return
+
+    if 'processStatus' in message:
+      status = message['processStatus']
+      if status=='COMPLETE' or status=='CLOSED':
+        self.keepLoopingFlag = False
+        print('Simulation ' + status + ' message received', flush=True)
+
+    else:
+      self.messageQueue.put(message['message'])
 
 
   def defineOptimizationVariables(self, len_branch_info, len_bus_info,
@@ -598,11 +608,12 @@ class CompetingApp(GridAPPSD):
 
     self.messageQueue = queue.Queue()
 
-    # subscribe to simulation output messages
+    # subscribe to simulation log and output messages
     # since messages are just going on a queue, subscribe right away to
     # keep from missing any sent during app initialization
-    gapps.subscribe(service_output_topic('gridappsd-sim-sim',
-                                         simulation_id), self)
+    self.keepLoopingFlag = True
+    out_id = gapps.subscribe(simulation_output_topic(simulation_id), self)
+    log_id = gapps.subscribe(simulation_log_topic(simulation_id), self)
 
     SPARQLManager = getattr(importlib.import_module('sparql'), 'SPARQLManager')
     sparql_mgr = SPARQLManager(gapps, feeder_mrid, simulation_id)
@@ -942,7 +953,7 @@ class CompetingApp(GridAPPSD):
     # counter for interval values > 1
     messageCounter = 0
 
-    while True:
+    while self.keepLoopingFlag:
       if self.messageQueue.qsize() == 0:
         sleep(0.1)
         continue
@@ -957,11 +968,6 @@ class CompetingApp(GridAPPSD):
 
       message = self.messageQueue.get()
       messageCounter += 1
-
-      # empty timestamp is end-of-data flag
-      if message['timestamp'] == '':
-        print('Time-series end-of-data!', flush=True)
-        break
 
       if messageCounter % self.interval == 0:
         timestamp = int(message['timestamp'])
@@ -986,12 +992,17 @@ class CompetingApp(GridAPPSD):
               ', loadshape: ' + str(loadshape) +
               ', solar: ' + str(solar) +
               ', BatterySoc: ' + str(BatterySoC), flush=True)
+        print('Ignoring the latest simulation measurements: ' + str(message),
+              flush=True)
 
         self.updateSoC(BatterySoC)
 
         self.defineOptimizationDynamicProblem(timestamp, loadshape, solar)
 
         self.doOptimization(timestamp)
+
+    gapps.unsubscribe(out_id)
+    gapps.unsubscribe(log_id)
 
 
 def _main():
@@ -1027,6 +1038,8 @@ def _main():
   assert gapps.connected
 
   competing_app = CompetingApp(gapps, opts.type, feeder_mrid,opts.simulation_id)
+
+  print('Goodbye!', flush=True)
 
 
 if __name__ == "__main__":
