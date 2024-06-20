@@ -81,3 +81,4 @@ cd ../sim-starter
 cd ../deconfliction-pipeline
 ./run-pipeline.sh $MODEL $SYNC $WEIGHTS
 
+trap - SIGINT SIGTERM EXIT
