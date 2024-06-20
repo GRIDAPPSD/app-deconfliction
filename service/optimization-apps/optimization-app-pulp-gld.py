@@ -653,6 +653,8 @@ class CompetingApp(GridAPPSD):
         #feeder_power['p'][phases] += pval
         #feeder_power['q'][phases] += qval
 
+    #print('SHIVA_SPECIAL EnergyConsumers: ' + json.dumps(self.EnergyConsumers, indent=2), flush=True)
+
     #print('EnergyConsumers[65]: ' + str(self.EnergyConsumers['65']),
     #      flush=True)
     #print('EnergyConsumers[47]: ' + str(self.EnergyConsumers['47']),
@@ -686,6 +688,7 @@ class CompetingApp(GridAPPSD):
     #SynchronousMachines = AppUtil.getSynchronousMachines(sparql_mgr)
 
     self.Batteries = AppUtil.getBatteries(sparql_mgr)
+    #print('SHIVA_SPECIAL Batteries: ' + json.dumps(self.Batteries, indent=2), flush=True)
     self.Batteries_obj = {}
     for mrid in self.Batteries:
       self.Batteries_obj[self.Batteries[mrid]['bus']] = {}
@@ -693,6 +696,7 @@ class CompetingApp(GridAPPSD):
       self.Batteries_obj[self.Batteries[mrid]['bus']]['phase'] = self.Batteries[mrid]['phase']
 
     self.SolarPVs = AppUtil.getSolarPVs(sparql_mgr)
+    #print('SHIVA_SPECIAL SolarPVs: ' + json.dumps(self.SolarPVs, indent=2), flush=True)
 
     self.EnergySource = AppUtil.getEnergySource(sparql_mgr)
 
