@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Copyright (c) 2023, Battelle Memorial Institute All rights reserved.
+# Copyright (c) 2024, Battelle Memorial Institute All rights reserved.
 # Battelle Memorial Institute (hereinafter Battelle) hereby grants permission to any person or entity
 # lawfully obtaining a copy of this software and associated documentation files (hereinafter the
 # Software) to redistribute and use the Software in source and binary forms, with or without modification.
