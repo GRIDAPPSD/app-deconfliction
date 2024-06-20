@@ -944,7 +944,8 @@ class CompetingApp(GridAPPSD):
                                      len(self.Batteries), len(self.Regulators))
 
     # topic for sending out set_points messages
-    self.publish_topic = service_output_topic('gridappsd-competing-app', '0')
+    self.publish_topic = service_output_topic('gridappsd-competing-app',
+                                              simulation_id)
 
     print('\nInitialized ' + opt_type +
           ' optimization competing app, waiting for messages...\n',
