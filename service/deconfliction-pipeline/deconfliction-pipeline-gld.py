@@ -70,7 +70,7 @@ from time import sleep
 
 
 from gridappsd import GridAPPSD
-from gridappsd.topics import service_output_topic
+from gridappsd.topics import simulation_output_topic, simulation_log_topic, service_output_topic
 
 from datetime import datetime
 
@@ -381,8 +381,18 @@ class DeconflictionPipeline(GridAPPSD):
 
 
   def on_sim_message(self, headers, message):
-    print('Received sim message: ' + str(message), flush=True)
-    self.messageQueue.put((True, message))
+    #print('Received simulation message: ' + str(message), flush=True)
+    if not self.keepLoopingFlag:
+      return
+
+    if 'processStatus' in message:
+      status = message['processStatus']
+      if status=='COMPLETE' or status=='CLOSED':
+        self.keepLoopingFlag = False
+        print('Simulation ' + status + ' message received', flush=True)
+
+    else:
+      self.messageQueue.put((True, message['message']))
 
 
   # GDB GridLAB-D Prep: eliminate MethodUtil.BatterySoC and DeviceSetpoints
@@ -496,18 +506,21 @@ class DeconflictionPipeline(GridAPPSD):
     #print('!!! ALEX ResolutionVector FINISH !!!', flush=True)
 
 
-  def __init__(self, gapps, feeder_mrid, simulation_id, sync_flag,weights_base):
+  def __init__(self, gapps, feeder_mrid, simulation_id, weights_base):
     self.gapps = gapps
 
     self.messageQueue = queue.Queue()
 
     # subscribe to competing app set-points messages
-    gapps.subscribe(service_output_topic('gridappsd-competing-app',
+    set_id = gapps.subscribe(service_output_topic('gridappsd-competing-app',
                                       simulation_id), self.on_setpoints_message)
 
-    # subscribe to simulation output messages to get updated SoC values
-    gapps.subscribe(service_output_topic('gridappsd-sim-sim', simulation_id),
-                                         self.on_sim_message)
+    # subscribe to simulation log and output messages
+    self.keepLoopingFlag = True
+    out_id = gapps.subscribe(simulation_output_topic(simulation_id),
+                             self.on_sim_message)
+    log_id = gapps.subscribe(simulation_log_topic(simulation_id),
+                             self.on_sim_message)
 
     # test/debug settings
     # set this to the name of the device for detailed testing, e.g.,
@@ -581,35 +594,25 @@ class DeconflictionPipeline(GridAPPSD):
     print('\nInitialized deconfliction pipeline, waiting for messages...\n',
           flush=True)
 
-    while True:
+    while self.keepLoopingFlag:
       if self.messageQueue.qsize() == 0:
         sleep(0.1)
         continue
 
-      if sync_flag:
-        # don't ever discard messages if running synchronized
+      # GDB 5/20/24: Queue draining for the pipeline can't be done the same
+      # way as the competing apps because the queue isn't all just simulation
+      # messages, but also setpoints messages. Only drain messages if they are
+      # simulation messages.
+      # This will need to be revisited if the pipeline starts falling behind
+      # as more sophisticated deconfliction is implemented and new simulation
+      # messages arriving every 3 seconds. In that case it seems as if older
+      # setpoints messages could be discarded, but it's not straightforward
+      # as it would only make sense to discard when there is a newer setpoints
+      # message from the same competing app.
+      while self.messageQueue.qsize() > 0:
         simMsgFlag, message = self.messageQueue.get()
-
-      else:
-        # GDB 5/20/24: Queue draining for the pipeline can't be done the same
-        # way as the competing apps because the queue isn't all just simulation
-        # messages, but also setpoints messages. Only drain messages if they are
-        # simulation messages.
-        # This will need to be revisited if the pipeline starts falling behind
-        # as more sophisticated deconfliction is implemented and new simulation
-        # messages arriving every 3 seconds. In that case it seems as if older
-        # setpoints messages could be discarded, but it's not straightforward
-        # as it would only make sense to discard when there is a newer setpoints
-        # message from the same competing app.
-        while self.messageQueue.qsize() > 0:
-          simMsgFlag, message = self.messageQueue.get()
-          if not simMsgFlag:
-            break
-
-      # empty timestamp in simulation message is end-of-data flag
-      if simMsgFlag and message['timestamp'] == '':
-        print('Time-series end-of-data!', flush=True)
-        break
+        if not simMsgFlag:
+          break
 
       # GDB GridLAB-D Prep: no need to process simulation messages
       '''
@@ -621,6 +624,10 @@ class DeconflictionPipeline(GridAPPSD):
       '''
       if not simMsgFlag:
         self.processSetpointsMessage(message)
+
+    gapps.unsubscribe(set_id)
+    gapps.unsubscribe(out_id)
+    gapps.unsubscribe(log_id)
 
     # for SHIVA conflict metric
     #json_file = open('output/ConflictMatrix_' + basename + '.json', 'w')
@@ -637,7 +644,6 @@ def _main():
   parser = argparse.ArgumentParser()
   parser.add_argument("simulation_id", help="Simulation ID")
   parser.add_argument("request", help="Simulation Request")
-  parser.add_argument("--sync", nargs='?', help="Synchronize Messages")
   parser.add_argument("--weights", nargs='?', help="Optimization Weights Base Filename")
   opts = parser.parse_args()
 
@@ -653,8 +659,9 @@ def _main():
   gapps = GridAPPSD(opts.simulation_id)
   assert gapps.connected
 
-  DeconflictionPipeline(gapps, feeder_mrid, opts.simulation_id,
-                        opts.sync!=None, opts.weights)
+  DeconflictionPipeline(gapps, feeder_mrid, opts.simulation_id, opts.weights)
+
+  print('Goodbye!', flush=True)
 
 
 if __name__ == "__main__":
