@@ -18,6 +18,12 @@
 # e.g.,
 # ./run-deconfliction.sh 123apps rd
 
+if [ "$#" -lt 2 ]; then
+  echo "Usage: ./run-deconfliction.sh <model> <apps_code> [--optlib <opt_library>] [--weights <weights_basename>]"
+  echo
+  exit
+fi
+
 MODEL=$1
 APPS=$2
 
@@ -60,8 +66,7 @@ if [[ $APPS == *"d"* || $APPS == *"D"* ]]; then
   ./run-decarbonization-gld.sh $SIMID "$SIMREQ" $OPTLIB >/dev/null &
 fi
 
-#cd ../deconfliction-pipeline
-#./run-pipeline-gld.sh $MODEL $WEIGHTS
-sleep 60
+cd ../deconfliction-pipeline
+#./run-pipeline-gld.sh $SIMID "$SIMREQ" $WEIGHTS
 
 trap - SIGINT SIGTERM EXIT
