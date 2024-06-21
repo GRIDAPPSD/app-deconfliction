@@ -701,8 +701,6 @@ class CompetingApp(GridAPPSD):
       self.Batteries_obj[self.Batteries[mrid]['bus']] = {}
       self.Batteries_obj[self.Batteries[mrid]['bus']]['mrid'] = mrid
       self.Batteries_obj[self.Batteries[mrid]['bus']]['phase'] = self.Batteries[mrid]['phase']
-      # TODO: battery mrid matching is broke so hardwire for now
-      self.Batteries[mrid]['measid'] = 'ZZZ'
 
     # Add measid key to SolarPVs and Batteries for matching sim measurements
     objs = sparql_mgr.obj_meas_export('PowerElectronicsConnection')
