@@ -87,13 +87,6 @@ import MethodUtil
 
 class CompetingApp(GridAPPSD):
 
-  def updateBatterySoC(self, BatterySoC):
-    for device, value in BatterySoC.items():
-      self.Batteries[device]['SoC'] = value
-      #print('Updated SoC for: ' + device + ' = ' + str(round(value, 4)),
-      #      flush=True)
-
-
   def defineOptimizationDynamicProblem(self, timestamp):
     # copy the base/static LpProblem that doesn't depend on time-series data
     # as a starting point to then add the time-series dependent part on
@@ -631,6 +624,13 @@ class CompetingApp(GridAPPSD):
         self.SolarPVs[bus]['p'] = abs(p)
 
 
+  def updateBatterySoC(self, measurements):
+    for mrid in self.Batteries:
+      measid = self.Batteries[mrid]['measid']
+      if measid in measurements:
+        self.Batteries[mrid]['SoC'] = measurements[measid]['value']/100.0
+
+
   def __init__(self, gapps, opt_type, feeder_mrid, simulation_id):
     self.gapps = gapps
 
@@ -682,6 +682,7 @@ class CompetingApp(GridAPPSD):
         #feeder_power['p'][phases] += pval
         #feeder_power['q'][phases] += qval
 
+    # Add measid key to EnergyConsumers for matching sim measurements
     objs = sparql_mgr.obj_meas_export('EnergyConsumer')
     print('Count of EnergyConsumers Meas: ' + str(len(objs)), flush=True)
     for item in objs:
@@ -693,14 +694,32 @@ class CompetingApp(GridAPPSD):
 
     self.SolarPVs = AppUtil.getSolarPVs(sparql_mgr)
 
+    self.Batteries = AppUtil.getBatteries(sparql_mgr)
+
+    self.Batteries_obj = {}
+    for mrid in self.Batteries:
+      self.Batteries_obj[self.Batteries[mrid]['bus']] = {}
+      self.Batteries_obj[self.Batteries[mrid]['bus']]['mrid'] = mrid
+      self.Batteries_obj[self.Batteries[mrid]['bus']]['phase'] = self.Batteries[mrid]['phase']
+      # TODO: battery mrid matching is broke so hardwire for now
+      self.Batteries[mrid]['measid'] = 'ZZZ'
+
+    # Add measid key to SolarPVs and Batteries for matching sim measurements
     objs = sparql_mgr.obj_meas_export('PowerElectronicsConnection')
     print('Count of PowerElectronicsConnections Meas: ' + str(len(objs)),
           flush=True)
     for item in objs:
+      print('GARY POWER: ' + str(item), flush=True)
       if item['type']=='VA' and item['bus'] in self.SolarPVs:
         self.SolarPVs[item['bus']]['measid'] = item['measid']
 
+      # TODO: Battery query is broken regarding the mrid returned and it's
+      # missing the leading underscore so can't direct compare with eqid
+      if item['type']=='SoC' and item['eqid'][1:] in self.Batteries:
+        self.Batteries[item['eqid'][1:]]['measid'] = item['measid']
+
     #print('Starting SolarPVs: ' + json.dumps(self.SolarPVs, indent=2), flush=True)
+    print('Starting Batteries: ' + json.dumps(self.Batteries, indent=2), flush=True)
 
     # objs = sparql_mgr.obj_dict_export('LinearShuntCompensator')
     # print('Count of LinearShuntCompensators Dict: ' + str(len(objs)),
@@ -715,14 +734,6 @@ class CompetingApp(GridAPPSD):
     #   print('LinearShuntCompensator: ' + str(item), flush=True)
 
     #SynchronousMachines = AppUtil.getSynchronousMachines(sparql_mgr)
-
-    self.Batteries = AppUtil.getBatteries(sparql_mgr)
-    #print('SHIVA_SPECIAL Batteries: ' + json.dumps(self.Batteries, indent=2), flush=True)
-    self.Batteries_obj = {}
-    for mrid in self.Batteries:
-      self.Batteries_obj[self.Batteries[mrid]['bus']] = {}
-      self.Batteries_obj[self.Batteries[mrid]['bus']]['mrid'] = mrid
-      self.Batteries_obj[self.Batteries[mrid]['bus']]['phase'] = self.Batteries[mrid]['phase']
 
     self.EnergySource = AppUtil.getEnergySource(sparql_mgr)
 
@@ -998,14 +1009,7 @@ class CompetingApp(GridAPPSD):
 
       if messageCounter % self.interval == 0:
         timestamp = int(message['timestamp'])
-        # GDB GridLAB-D Prep: hardwire BatterySoC as well
-        #BatterySoC = message['BatterySoC']
-        BatterySoC = {'D2894605-E559-4A37-92DF-75F8586B3C8E': 0.6, 'BEF5B281-316C-4EEC-8ACF-5595AC446051': 0.4, '8A784240-EF25-485F-A3B2-856C25321A07': 0.35, 'EA0C2453-9BDF-420F-80D3-F4D3579754E7': 0.75, '9CEAC24C-A5F3-4D90-98E0-F5F057F963EF': 0.55}
-        # GDB GridLAB-D Prep: only timestamp should be updating now
-        #print('Time-series time: ' + str(timestamp) +
-        #      ', BatterySoc: ' + str(BatterySoC), flush=True)
-        print('Time-series time: ' + str(timestamp) +
-              ', BatterySoc: ' + str(BatterySoC), flush=True)
+        print('Simulation timestamp: ' + str(timestamp), flush=True)
 
         self.updateEnergyConsumers(message['measurements'])
         #print('Updated EnergyConsumers: ' + json.dumps(self.EnergyConsumers, indent=2), flush=True)
@@ -1013,7 +1017,8 @@ class CompetingApp(GridAPPSD):
         self.updateSolarPVs(message['measurements'])
         #print('Updated SolarPVs: ' + json.dumps(self.SolarPVs, indent=2), flush=True)
 
-        self.updateBatterySoC(BatterySoC)
+        self.updateBatterySoC(message['measurements'])
+        #print('Updated BatterySoC: ' + json.dumps(self.BAtteries, indent=2), flush=True)
 
         self.defineOptimizationDynamicProblem(timestamp)
 
