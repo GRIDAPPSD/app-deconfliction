@@ -1,7 +1,2 @@
-*.log
-*.json
-*.pyc
-.idea
-*.png
-*.lp
+__pycache__
 output
