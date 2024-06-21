@@ -87,14 +87,14 @@ import MethodUtil
 
 class CompetingApp(GridAPPSD):
 
-  def updateSoC(self, BatterySoC):
+  def updateBatterySoC(self, BatterySoC):
     for device, value in BatterySoC.items():
       self.Batteries[device]['SoC'] = value
       #print('Updated SoC for: ' + device + ' = ' + str(round(value, 4)),
       #      flush=True)
 
 
-  def defineOptimizationDynamicProblem(self, timestamp, pv_mult):
+  def defineOptimizationDynamicProblem(self, timestamp):
     # copy the base/static LpProblem that doesn't depend on time-series data
     # as a starting point to then add the time-series dependent part on
     self.dynamicProb = LpProblem.deepcopy(self.staticProb)
@@ -122,11 +122,9 @@ class CompetingApp(GridAPPSD):
             injection_q = self.EnergyConsumers[bus]['kVar']['A']
 
           if bus in self.SolarPVs and 'A' in self.SolarPVs[bus]['phase']:
-            injection_p -= pv_mult*self.SolarPVs[bus]['p']
-            # TODO
-            #injection_p -= self.SolarPVs[bus]['p']
+            injection_p -= self.SolarPVs[bus]['p']
             #print('SolarPVs A bus: ' + bus + ', value: ' +
-            #      str(pv_mult*self.SolarPVs[bus]['p']), flush=True)
+            #      str(self.SolarPVs[bus]['p']), flush=True)
 
           if bus in self.Batteries_obj and \
              'A' in self.Batteries_obj[bus]['phase']:
@@ -160,9 +158,9 @@ class CompetingApp(GridAPPSD):
             injection_q = self.EnergyConsumers[bus]['kVar']['B']
 
           if bus in self.SolarPVs and 'B' in self.SolarPVs[bus]['phase']:
-            injection_p -= pv_mult*self.SolarPVs[bus]['p']
+            injection_p -= self.SolarPVs[bus]['p']
             #print('SolarPVs B bus: ' + bus + ', value: ' +
-            #      str(pv_mult*self.SolarPVs[bus]['p']), flush=True)
+            #      str(self.SolarPVs[bus]['p']), flush=True)
 
           if bus in self.Batteries_obj and \
              'B' in self.Batteries_obj[bus]['phase']:
@@ -196,9 +194,9 @@ class CompetingApp(GridAPPSD):
             injection_q = self.EnergyConsumers[bus]['kVar']['C']
 
           if bus in self.SolarPVs and 'C' in self.SolarPVs[bus]['phase']:
-            injection_p -= pv_mult*self.SolarPVs[bus]['p']
+            injection_p -= self.SolarPVs[bus]['p']
             #print('SolarPVs C bus: ' + bus + ', value: ' +
-            #      str(pv_mult*self.SolarPVs[bus]['p']), flush=True)
+            #      str(self.SolarPVs[bus]['p']), flush=True)
 
           if bus in self.Batteries_obj and \
              'C' in self.Batteries_obj[bus]['phase']:
@@ -624,6 +622,15 @@ class CompetingApp(GridAPPSD):
           self.EnergyConsumers[bus]['kVar'][phase] = q
 
 
+  def updateSolarPVs(self, measurements):
+    for bus in self.SolarPVs:
+      measid = self.SolarPVs[bus]['measid']
+      if measid in measurements:
+        p, q = self.pol2cart(measurements[measid]['magnitude'],
+                             measurements[measid]['angle'])
+        self.SolarPVs[bus]['p'] = abs(p)
+
+
   def __init__(self, gapps, opt_type, feeder_mrid, simulation_id):
     self.gapps = gapps
 
@@ -684,13 +691,16 @@ class CompetingApp(GridAPPSD):
 
     #print('Starting EnergyConsumers: ' + json.dumps(self.EnergyConsumers, indent=2), flush=True)
 
+    self.SolarPVs = AppUtil.getSolarPVs(sparql_mgr)
+
     objs = sparql_mgr.obj_meas_export('PowerElectronicsConnection')
-    print('SHIVA Count of PowerElectronicsConnections Meas: ' + str(len(objs)),
+    print('Count of PowerElectronicsConnections Meas: ' + str(len(objs)),
           flush=True)
     for item in objs:
-      print('SHIVA PowerElectronicsConnection: ' + str(item), flush=True)
-      # TODO this is where I do the matching to self.SolarPVs, but I need
-      # to move this code lower after I retrieve those
+      if item['type']=='VA' and item['bus'] in self.SolarPVs:
+        self.SolarPVs[item['bus']]['measid'] = item['measid']
+
+    #print('Starting SolarPVs: ' + json.dumps(self.SolarPVs, indent=2), flush=True)
 
     # objs = sparql_mgr.obj_dict_export('LinearShuntCompensator')
     # print('Count of LinearShuntCompensators Dict: ' + str(len(objs)),
@@ -713,9 +723,6 @@ class CompetingApp(GridAPPSD):
       self.Batteries_obj[self.Batteries[mrid]['bus']] = {}
       self.Batteries_obj[self.Batteries[mrid]['bus']]['mrid'] = mrid
       self.Batteries_obj[self.Batteries[mrid]['bus']]['phase'] = self.Batteries[mrid]['phase']
-
-    self.SolarPVs = AppUtil.getSolarPVs(sparql_mgr)
-    #print('SHIVA_SPECIAL SolarPVs: ' + json.dumps(self.SolarPVs, indent=2), flush=True)
 
     self.EnergySource = AppUtil.getEnergySource(sparql_mgr)
 
@@ -991,31 +998,24 @@ class CompetingApp(GridAPPSD):
 
       if messageCounter % self.interval == 0:
         timestamp = int(message['timestamp'])
-        # GDB GridLAB-D Prep: hardwire loadshape and solar so we aren't
-        # dependent on sim-sim data
-        solar = 0.0
-        # GDB GridLAB-D Prep: price isn't used so toss that completely
-        #price = float(message['price'])
         # GDB GridLAB-D Prep: hardwire BatterySoC as well
         #BatterySoC = message['BatterySoC']
         BatterySoC = {'D2894605-E559-4A37-92DF-75F8586B3C8E': 0.6, 'BEF5B281-316C-4EEC-8ACF-5595AC446051': 0.4, '8A784240-EF25-485F-A3B2-856C25321A07': 0.35, 'EA0C2453-9BDF-420F-80D3-F4D3579754E7': 0.75, '9CEAC24C-A5F3-4D90-98E0-F5F057F963EF': 0.55}
         # GDB GridLAB-D Prep: only timestamp should be updating now
         #print('Time-series time: ' + str(timestamp) +
-        #      ', solar: ' + str(solar) +
-        #      ', price: ' + str(price) +
         #      ', BatterySoc: ' + str(BatterySoC), flush=True)
         print('Time-series time: ' + str(timestamp) +
-              ', solar: ' + str(solar) +
               ', BatterySoc: ' + str(BatterySoC), flush=True)
-        print('Ignoring the latest simulation measurements: ' + str(message),
-              flush=True)
 
         self.updateEnergyConsumers(message['measurements'])
         #print('Updated EnergyConsumers: ' + json.dumps(self.EnergyConsumers, indent=2), flush=True)
 
-        self.updateSoC(BatterySoC)
+        self.updateSolarPVs(message['measurements'])
+        #print('Updated SolarPVs: ' + json.dumps(self.SolarPVs, indent=2), flush=True)
 
-        self.defineOptimizationDynamicProblem(timestamp, solar)
+        self.updateBatterySoC(BatterySoC)
+
+        self.defineOptimizationDynamicProblem(timestamp)
 
         self.doOptimization(timestamp)
 
