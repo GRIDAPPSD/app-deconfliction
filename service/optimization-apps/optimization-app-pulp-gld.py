@@ -719,6 +719,14 @@ class CompetingApp(GridAPPSD):
         self.Batteries[item['eqid'][1:]]['measid'] = item['measid']
 
     #print('Starting SolarPVs: ' + json.dumps(self.SolarPVs, indent=2), flush=True)
+
+    # TODO: Hardwire for broken battery measid matches for now:
+    self.Batteries['D2894605-E559-4A37-92DF-75F8586B3C8E']['measid'] = '_7c3149ce-0e93-4ab1-88ec-4fadd7195cf6'
+    self.Batteries['BEF5B281-316C-4EEC-8ACF-5595AC446051']['measid'] = '_38e0c296-0298-4366-a263-5e9f02a37f4f'
+    self.Batteries['8A784240-EF25-485F-A3B2-856C25321A07']['measid'] = '_4418d237-fab9-42b2-8a86-6ea187885e9d'
+    self.Batteries['EA0C2453-9BDF-420F-80D3-F4D3579754E7']['measid'] = '_e068172b-77a3-4bd7-bf8c-56fb8b110d67'
+    self.Batteries['9CEAC24C-A5F3-4D90-98E0-F5F057F963EF']['measid'] = '_8e17e670-a1ed-43ef-ad56-65f19b7569c2'
+
     print('Starting Batteries: ' + json.dumps(self.Batteries, indent=2), flush=True)
 
     # objs = sparql_mgr.obj_dict_export('LinearShuntCompensator')
