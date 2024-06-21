@@ -94,7 +94,7 @@ class CompetingApp(GridAPPSD):
       #      flush=True)
 
 
-  def defineOptimizationDynamicProblem(self, timestamp, load_mult, pv_mult):
+  def defineOptimizationDynamicProblem(self, timestamp, pv_mult):
     # copy the base/static LpProblem that doesn't depend on time-series data
     # as a starting point to then add the time-series dependent part on
     self.dynamicProb = LpProblem.deepcopy(self.staticProb)
@@ -118,11 +118,13 @@ class CompetingApp(GridAPPSD):
           injection_p, injection_q = 0, 0
           if bus in self.EnergyConsumers and \
              'A' in self.EnergyConsumers[bus]['kW']:
-            injection_p = load_mult*self.EnergyConsumers[bus]['kW']['A']
-            injection_q = load_mult*self.EnergyConsumers[bus]['kVar']['A']
+            injection_p = self.EnergyConsumers[bus]['kW']['A']
+            injection_q = self.EnergyConsumers[bus]['kVar']['A']
 
           if bus in self.SolarPVs and 'A' in self.SolarPVs[bus]['phase']:
             injection_p -= pv_mult*self.SolarPVs[bus]['p']
+            # TODO
+            #injection_p -= self.SolarPVs[bus]['p']
             #print('SolarPVs A bus: ' + bus + ', value: ' +
             #      str(pv_mult*self.SolarPVs[bus]['p']), flush=True)
 
@@ -154,8 +156,8 @@ class CompetingApp(GridAPPSD):
           injection_p, injection_q = 0, 0
           if bus in self.EnergyConsumers and \
              'B' in self.EnergyConsumers[bus]['kW']:
-            injection_p = load_mult*self.EnergyConsumers[bus]['kW']['B']
-            injection_q = load_mult*self.EnergyConsumers[bus]['kVar']['B']
+            injection_p = self.EnergyConsumers[bus]['kW']['B']
+            injection_q = self.EnergyConsumers[bus]['kVar']['B']
 
           if bus in self.SolarPVs and 'B' in self.SolarPVs[bus]['phase']:
             injection_p -= pv_mult*self.SolarPVs[bus]['p']
@@ -190,8 +192,8 @@ class CompetingApp(GridAPPSD):
           injection_p, injection_q = 0, 0
           if bus in self.EnergyConsumers and \
              'C' in self.EnergyConsumers[bus]['kW']:
-            injection_p = load_mult*self.EnergyConsumers[bus]['kW']['C']
-            injection_q = load_mult*self.EnergyConsumers[bus]['kVar']['C']
+            injection_p = self.EnergyConsumers[bus]['kW']['C']
+            injection_q = self.EnergyConsumers[bus]['kVar']['C']
 
           if bus in self.SolarPVs and 'C' in self.SolarPVs[bus]['phase']:
             injection_p -= pv_mult*self.SolarPVs[bus]['p']
@@ -603,6 +605,25 @@ class CompetingApp(GridAPPSD):
       self.staticProb += lpSum(self.reg_taps[(k, tap)] for tap in range(32))==1
 
 
+  def pol2cart(self, mag, angle_deg):
+        # Convert degrees to radians. GridAPPS-D spits angle in degrees
+        angle_rad =  math.radians(angle_deg)
+        p = mag * np.cos(angle_rad)
+        q = mag * np.sin(angle_rad)
+        return p, q
+
+
+  def updateEnergyConsumers(self, measurements):
+    for bus in self.EnergyConsumers:
+      for phase in self.EnergyConsumers[bus]['measid']:
+        measid = self.EnergyConsumers[bus]['measid'][phase]
+        if measid in measurements:
+          p, q = self.pol2cart(measurements[measid]['magnitude'],
+                               measurements[measid]['angle'])
+          self.EnergyConsumers[bus]['kW'][phase] = p
+          self.EnergyConsumers[bus]['kVar'][phase] = q
+
+
   def __init__(self, gapps, opt_type, feeder_mrid, simulation_id):
     self.gapps = gapps
 
@@ -628,6 +649,7 @@ class CompetingApp(GridAPPSD):
         self.EnergyConsumers[bus] = {}
         self.EnergyConsumers[bus]['kW'] = {}
         self.EnergyConsumers[bus]['kVar'] = {}
+        self.EnergyConsumers[bus]['measid'] = {}
 
       phases = obj['phases']['value']
       if phases == '':
@@ -653,25 +675,22 @@ class CompetingApp(GridAPPSD):
         #feeder_power['p'][phases] += pval
         #feeder_power['q'][phases] += qval
 
-    #print('SHIVA_SPECIAL EnergyConsumers: ' + json.dumps(self.EnergyConsumers, indent=2), flush=True)
+    objs = sparql_mgr.obj_meas_export('EnergyConsumer')
+    print('Count of EnergyConsumers Meas: ' + str(len(objs)), flush=True)
+    for item in objs:
+      if item['type'] == 'VA':
+        self.EnergyConsumers[item['bus']]['measid'][item['phases']] = \
+                                                                  item['measid']
 
-    #print('EnergyConsumers[65]: ' + str(self.EnergyConsumers['65']),
-    #      flush=True)
-    #print('EnergyConsumers[47]: ' + str(self.EnergyConsumers['47']),
-    #      flush=True)
-    #print('EnergyConsumers[99]: ' + str(self.EnergyConsumers['99']),
-    #      flush=True)
+    #print('Starting EnergyConsumers: ' + json.dumps(self.EnergyConsumers, indent=2), flush=True)
 
-    # objs = sparql_mgr.obj_meas_export('EnergyConsumer')
-    # print('Count of EnergyConsumers Meas: ' + str(len(objs)), flush=True)
-    # for item in objs:
-    #   print('EnergyConsumer: ' + str(item), flush=True)
-
-    # objs = sparql_mgr.obj_meas_export('PowerElectronicsConnection')
-    # print('Count of PowerElectronicsConnections Meas: ' + str(len(objs)),
-    #       flush=True)
-    # for item in objs:
-    #   print('PowerElectronicsConnection: ' + str(item), flush=True)
+    objs = sparql_mgr.obj_meas_export('PowerElectronicsConnection')
+    print('SHIVA Count of PowerElectronicsConnections Meas: ' + str(len(objs)),
+          flush=True)
+    for item in objs:
+      print('SHIVA PowerElectronicsConnection: ' + str(item), flush=True)
+      # TODO this is where I do the matching to self.SolarPVs, but I need
+      # to move this code lower after I retrieve those
 
     # objs = sparql_mgr.obj_dict_export('LinearShuntCompensator')
     # print('Count of LinearShuntCompensators Dict: ' + str(len(objs)),
@@ -729,10 +748,6 @@ class CompetingApp(GridAPPSD):
       self.bus_info[bus]['phases'] = phases
 
       idx += 1
-
-    #print('bus_info[65]: ' + str(self.bus_info['65']), flush=True)
-    #print('bus_info[47]: ' + str(self.bus_info['47']), flush=True)
-    #print('bus_info[150]: ' + str(self.bus_info['150']), flush=True)
 
     ysparse, nodelist = sparql_mgr.ybus_export()
 
@@ -978,9 +993,6 @@ class CompetingApp(GridAPPSD):
         timestamp = int(message['timestamp'])
         # GDB GridLAB-D Prep: hardwire loadshape and solar so we aren't
         # dependent on sim-sim data
-        #loadshape = float(message['loadshape'])
-        loadshape = 0.3726
-        #solar = float(message['solar'])
         solar = 0.0
         # GDB GridLAB-D Prep: price isn't used so toss that completely
         #price = float(message['price'])
@@ -989,20 +1001,21 @@ class CompetingApp(GridAPPSD):
         BatterySoC = {'D2894605-E559-4A37-92DF-75F8586B3C8E': 0.6, 'BEF5B281-316C-4EEC-8ACF-5595AC446051': 0.4, '8A784240-EF25-485F-A3B2-856C25321A07': 0.35, 'EA0C2453-9BDF-420F-80D3-F4D3579754E7': 0.75, '9CEAC24C-A5F3-4D90-98E0-F5F057F963EF': 0.55}
         # GDB GridLAB-D Prep: only timestamp should be updating now
         #print('Time-series time: ' + str(timestamp) +
-        #      ', loadshape: ' + str(loadshape) +
         #      ', solar: ' + str(solar) +
         #      ', price: ' + str(price) +
         #      ', BatterySoc: ' + str(BatterySoC), flush=True)
         print('Time-series time: ' + str(timestamp) +
-              ', loadshape: ' + str(loadshape) +
               ', solar: ' + str(solar) +
               ', BatterySoc: ' + str(BatterySoC), flush=True)
         print('Ignoring the latest simulation measurements: ' + str(message),
               flush=True)
 
+        self.updateEnergyConsumers(message['measurements'])
+        #print('Updated EnergyConsumers: ' + json.dumps(self.EnergyConsumers, indent=2), flush=True)
+
         self.updateSoC(BatterySoC)
 
-        self.defineOptimizationDynamicProblem(timestamp, loadshape, solar)
+        self.defineOptimizationDynamicProblem(timestamp, solar)
 
         self.doOptimization(timestamp)
 
