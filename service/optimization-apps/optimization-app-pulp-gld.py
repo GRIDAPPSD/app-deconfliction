@@ -646,86 +646,23 @@ class CompetingApp(GridAPPSD):
     SPARQLManager = getattr(importlib.import_module('sparql'), 'SPARQLManager')
     sparql_mgr = SPARQLManager(gapps, feeder_mrid, simulation_id)
 
-    #feeder_power = {'p': {'A': 0, 'B': 0, 'C': 0},
-    #                'q': {'A': 0, 'B': 0, 'C': 0}}
-    self.EnergyConsumers = {}
-    bindings = sparql_mgr.energyconsumer_query()
-    for obj in bindings:
-      bus = obj['bus']['value'].upper()
-      if bus not in self.EnergyConsumers:
-        self.EnergyConsumers[bus] = {}
-        self.EnergyConsumers[bus]['kW'] = {}
-        self.EnergyConsumers[bus]['kVar'] = {}
-        self.EnergyConsumers[bus]['measid'] = {}
+    self.EnergyConsumers = AppUtil.getEnergyConsumers(sparql_mgr)
 
-      phases = obj['phases']['value']
-      if phases == '':
-        pval = float(obj['p']['value']) / 3.0
-        qval = float(obj['q']['value']) / 3.0
-        self.EnergyConsumers[bus]['kW']['A'] = pval
-        self.EnergyConsumers[bus]['kW']['B'] = pval
-        self.EnergyConsumers[bus]['kW']['C'] = pval
-        self.EnergyConsumers[bus]['kVar']['A'] = qval
-        self.EnergyConsumers[bus]['kVar']['B'] = qval
-        self.EnergyConsumers[bus]['kVar']['C'] = qval
-        #feeder_power['p']['A'] += pval
-        #feeder_power['p']['B'] += pval
-        #feeder_power['p']['C'] += pval
-        #feeder_power['q']['A'] += qval
-        #feeder_power['q']['B'] += qval
-        #feeder_power['q']['C'] += qval
-      else:
-        pval = float(obj['p']['value'])
-        qval = float(obj['q']['value'])
-        self.EnergyConsumers[bus]['kW'][phases] = pval
-        self.EnergyConsumers[bus]['kVar'][phases] = qval
-        #feeder_power['p'][phases] += pval
-        #feeder_power['q'][phases] += qval
-
-    # Add measid key to EnergyConsumers for matching sim measurements
-    objs = sparql_mgr.obj_meas_export('EnergyConsumer')
-    print('Count of EnergyConsumers Meas: ' + str(len(objs)), flush=True)
-    for item in objs:
-      if item['type'] == 'VA':
-        self.EnergyConsumers[item['bus']]['measid'][item['phases']] = \
-                                                                  item['measid']
-
-    #print('Starting EnergyConsumers: ' + json.dumps(self.EnergyConsumers, indent=2), flush=True)
+    print('Starting EnergyConsumers: ' + json.dumps(self.EnergyConsumers, indent=2), flush=True)
 
     self.SolarPVs = AppUtil.getSolarPVs(sparql_mgr)
 
+    print('Starting SolarPVs: ' + json.dumps(self.SolarPVs, indent=2), flush=True)
+
     self.Batteries = AppUtil.getBatteries(sparql_mgr)
+
+    print('Starting Batteries: ' + json.dumps(self.Batteries, indent=2), flush=True)
 
     self.Batteries_obj = {}
     for mrid in self.Batteries:
       self.Batteries_obj[self.Batteries[mrid]['bus']] = {}
       self.Batteries_obj[self.Batteries[mrid]['bus']]['mrid'] = mrid
       self.Batteries_obj[self.Batteries[mrid]['bus']]['phase'] = self.Batteries[mrid]['phase']
-
-    # Add measid key to SolarPVs and Batteries for matching sim measurements
-    objs = sparql_mgr.obj_meas_export('PowerElectronicsConnection')
-    print('Count of PowerElectronicsConnections Meas: ' + str(len(objs)),
-          flush=True)
-    for item in objs:
-      print('GARY POWER: ' + str(item), flush=True)
-      if item['type']=='VA' and item['bus'] in self.SolarPVs:
-        self.SolarPVs[item['bus']]['measid'] = item['measid']
-
-      # TODO: Battery query is broken regarding the mrid returned and it's
-      # missing the leading underscore so can't direct compare with eqid
-      if item['type']=='SoC' and item['eqid'][1:] in self.Batteries:
-        self.Batteries[item['eqid'][1:]]['measid'] = item['measid']
-
-    #print('Starting SolarPVs: ' + json.dumps(self.SolarPVs, indent=2), flush=True)
-
-    # TODO: Hardwire for broken battery measid matches for now:
-    self.Batteries['D2894605-E559-4A37-92DF-75F8586B3C8E']['measid'] = '_7c3149ce-0e93-4ab1-88ec-4fadd7195cf6'
-    self.Batteries['BEF5B281-316C-4EEC-8ACF-5595AC446051']['measid'] = '_38e0c296-0298-4366-a263-5e9f02a37f4f'
-    self.Batteries['8A784240-EF25-485F-A3B2-856C25321A07']['measid'] = '_4418d237-fab9-42b2-8a86-6ea187885e9d'
-    self.Batteries['EA0C2453-9BDF-420F-80D3-F4D3579754E7']['measid'] = '_e068172b-77a3-4bd7-bf8c-56fb8b110d67'
-    self.Batteries['9CEAC24C-A5F3-4D90-98E0-F5F057F963EF']['measid'] = '_8e17e670-a1ed-43ef-ad56-65f19b7569c2'
-
-    print('Starting Batteries: ' + json.dumps(self.Batteries, indent=2), flush=True)
 
     # objs = sparql_mgr.obj_dict_export('LinearShuntCompensator')
     # print('Count of LinearShuntCompensators Dict: ' + str(len(objs)),

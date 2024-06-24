@@ -84,6 +84,19 @@ class AppUtil:
     idx = 0
     for obj in bindings:
       mrid = obj['id']['value']
+
+      # override mrid until Shiva saves the day with a fixed query
+      if mrid == 'D2894605-E559-4A37-92DF-75F8586B3C8E':
+        mrid = '_D2109A2E-649D-42E4-A4A0-9581FF43FA48'
+      elif mrid == 'BEF5B281-316C-4EEC-8ACF-5595AC446051':
+        mrid = '_6B6B4D0C-7CFF-4D56-A5FE-ABA58A4F55FA'
+      elif mrid == '8A784240-EF25-485F-A3B2-856C25321A07':
+        mrid = '_8FE3AEC4-1F3C-48C3-AA24-198DA551EE1B'
+      elif mrid == 'EA0C2453-9BDF-420F-80D3-F4D3579754E7':
+        mrid = '_84A4D424-89ED-4212-B013-78F3BCF6EB38'
+      elif mrid == '9CEAC24C-A5F3-4D90-98E0-F5F057F963EF':
+        mrid = '_D324139A-4C57-48B9-87B8-1CEC5906660A'
+
       name = 'BatteryUnit.' + obj['name']['value']
       #bus = obj['bus']['value'].upper()
       Batteries[mrid] = {}
@@ -107,7 +120,60 @@ class AppUtil:
       MethodUtil.DeviceToName[mrid] = name
       MethodUtil.NameToDevice[name] = mrid
 
+    # Add measid key to Batteries for matching sim measurements
+    objs = sparql_mgr.obj_meas_export('PowerElectronicsConnection')
+    for item in objs:
+      if item['type']=='SoC' and item['eqid'] in Batteries:
+        Batteries[item['eqid']]['measid'] = item['measid']
+
     return Batteries
+
+
+  def getEnergyConsumers(sparql_mgr):
+    #feeder_power = {'p': {'A': 0, 'B': 0, 'C': 0},
+    #                'q': {'A': 0, 'B': 0, 'C': 0}}
+    EnergyConsumers = {}
+    bindings = sparql_mgr.energyconsumer_query()
+    for obj in bindings:
+      bus = obj['bus']['value'].upper()
+      if bus not in EnergyConsumers:
+        EnergyConsumers[bus] = {}
+        EnergyConsumers[bus]['kW'] = {}
+        EnergyConsumers[bus]['kVar'] = {}
+        EnergyConsumers[bus]['measid'] = {}
+
+      phases = obj['phases']['value']
+      if phases == '':
+        pval = float(obj['p']['value']) / 3.0
+        qval = float(obj['q']['value']) / 3.0
+        EnergyConsumers[bus]['kW']['A'] = pval
+        EnergyConsumers[bus]['kW']['B'] = pval
+        EnergyConsumers[bus]['kW']['C'] = pval
+        EnergyConsumers[bus]['kVar']['A'] = qval
+        EnergyConsumers[bus]['kVar']['B'] = qval
+        EnergyConsumers[bus]['kVar']['C'] = qval
+        #feeder_power['p']['A'] += pval
+        #feeder_power['p']['B'] += pval
+        #feeder_power['p']['C'] += pval
+        #feeder_power['q']['A'] += qval
+        #feeder_power['q']['B'] += qval
+        #feeder_power['q']['C'] += qval
+      else:
+        pval = float(obj['p']['value'])
+        qval = float(obj['q']['value'])
+        EnergyConsumers[bus]['kW'][phases] = pval
+        EnergyConsumers[bus]['kVar'][phases] = qval
+        #feeder_power['p'][phases] += pval
+        #feeder_power['q'][phases] += qval
+
+    # Add measid key to EnergyConsumers for matching sim measurements
+    objs = sparql_mgr.obj_meas_export('EnergyConsumer')
+    print('Count of EnergyConsumers Meas: ' + str(len(objs)), flush=True)
+    for item in objs:
+      if item['type'] == 'VA':
+        EnergyConsumers[item['bus']]['measid'][item['phases']] = item['measid']
+
+    return EnergyConsumers
 
 
   def getSolarPVs(sparql_mgr):
@@ -126,6 +192,14 @@ class AppUtil:
       SolarPVs[bus]['phase'] = obj['phases']['value']
       SolarPVs[bus]['ratedS'] = float(obj['ratedS']['value'])
       #print('SolarPV name: ' + name + ', kW: ' + str(SolarPVs[name]['kW']) + ', kVar: ' + str(SolarPVs[name]['kVar']), flush=True)
+
+    # Add measid key to SolarPVs for matching sim measurements
+    objs = sparql_mgr.obj_meas_export('PowerElectronicsConnection')
+    print('Count of PowerElectronicsConnections Meas: ' + str(len(objs)),
+          flush=True)
+    for item in objs:
+      if item['type']=='VA' and item['bus'] in SolarPVs:
+        SolarPVs[item['bus']]['measid'] = item['measid']
 
     return SolarPVs
 
