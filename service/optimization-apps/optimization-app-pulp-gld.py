@@ -629,6 +629,7 @@ class CompetingApp(GridAPPSD):
       measid = self.Batteries[mrid]['measid']
       if measid in measurements:
         self.Batteries[mrid]['SoC'] = measurements[measid]['value']/100.0
+        print('Updated SoC for ' + self.Batteries[mrid]['name'] + ': ' + str(self.Batteries[mrid]['SoC']), flush=True)
 
 
   def __init__(self, gapps, opt_type, feeder_mrid, simulation_id):
