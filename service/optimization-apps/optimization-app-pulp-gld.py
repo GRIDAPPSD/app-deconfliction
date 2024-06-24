@@ -962,7 +962,7 @@ class CompetingApp(GridAPPSD):
         #print('Updated SolarPVs: ' + json.dumps(self.SolarPVs, indent=2), flush=True)
 
         self.updateBatterySoC(message['measurements'])
-        #print('Updated BatterySoC: ' + json.dumps(self.BAtteries, indent=2), flush=True)
+        #print('Updated BatterySoC: ' + json.dumps(self.Batteries, indent=2), flush=True)
 
         self.defineOptimizationDynamicProblem(timestamp)
 
