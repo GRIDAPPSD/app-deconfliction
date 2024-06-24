@@ -956,13 +956,13 @@ class CompetingApp(GridAPPSD):
         print('Simulation timestamp: ' + str(timestamp), flush=True)
 
         self.updateEnergyConsumers(message['measurements'])
-        #print('Updated EnergyConsumers: ' + json.dumps(self.EnergyConsumers, indent=2), flush=True)
+        #print('Updated EnergyConsumers #' + str(messageCounter) + ': ' + json.dumps(self.EnergyConsumers, indent=2), flush=True)
 
         self.updateSolarPVs(message['measurements'])
-        #print('Updated SolarPVs: ' + json.dumps(self.SolarPVs, indent=2), flush=True)
+        #print('Updated SolarPVs #' + str(messageCounter) + ': ' + json.dumps(self.SolarPVs, indent=2), flush=True)
 
         self.updateBatterySoC(message['measurements'])
-        #print('Updated BatterySoC: ' + json.dumps(self.Batteries, indent=2), flush=True)
+        #print('Updated BatterySoC #' + str(messageCounter) + ': ' + json.dumps(self.Batteries, indent=2), flush=True)
 
         self.defineOptimizationDynamicProblem(timestamp)
 
