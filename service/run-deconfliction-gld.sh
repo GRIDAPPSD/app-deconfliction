@@ -66,6 +66,10 @@ if [[ $APPS == *"d"* || $APPS == *"D"* ]]; then
   ./run-decarbonization-gld.sh $SIMID "$SIMREQ" $OPTLIB >/dev/null &
 fi
 
+if [[ $APPS == *"p"* || $APPS == *"P"* ]]; then
+  ./run-profit-gld.sh $SIMID "$SIMREQ" $OPTLIB >/dev/null &
+fi
+
 cd ../deconfliction-pipeline
 ./run-pipeline-gld.sh $SIMID "$SIMREQ" $WEIGHTS
 
