@@ -83,35 +83,20 @@ class AppUtil:
     print('\nCount of Batteries: ' + str(len(bindings)), flush=True)
     idx = 0
     for obj in bindings:
-      mrid = obj['id']['value']
-
-      # override mrid until Shiva saves the day with a fixed query
-      if mrid == 'D2894605-E559-4A37-92DF-75F8586B3C8E':
-        mrid = '_D2109A2E-649D-42E4-A4A0-9581FF43FA48'
-      elif mrid == 'BEF5B281-316C-4EEC-8ACF-5595AC446051':
-        mrid = '_6B6B4D0C-7CFF-4D56-A5FE-ABA58A4F55FA'
-      elif mrid == '8A784240-EF25-485F-A3B2-856C25321A07':
-        mrid = '_8FE3AEC4-1F3C-48C3-AA24-198DA551EE1B'
-      elif mrid == 'EA0C2453-9BDF-420F-80D3-F4D3579754E7':
-        mrid = '_84A4D424-89ED-4212-B013-78F3BCF6EB38'
-      elif mrid == '9CEAC24C-A5F3-4D90-98E0-F5F057F963EF':
-        mrid = '_D324139A-4C57-48B9-87B8-1CEC5906660A'
-
+      mrid = obj['pecid']['value']
       name = 'BatteryUnit.' + obj['name']['value']
-      #bus = obj['bus']['value'].upper()
       Batteries[mrid] = {}
       Batteries[mrid]['idx'] = idx
       Batteries[mrid]['name'] = name
+      Batteries[mrid]['id'] = obj['id']['value']
       Batteries[mrid]['bus'] = obj['bus']['value']
       Batteries[mrid]['phase'] = obj['phases']['value']
       Batteries[mrid]['ratedkW'] = float(obj['ratedS']['value'])/1000.0
       Batteries[mrid]['prated'] = float(obj['ratedS']['value'])
       Batteries[mrid]['ratedE'] = float(obj['ratedE']['value'])
-      # Shiva HACK
-      # Batteries[mrid]['SoC'] = 0.5
       Batteries[mrid]['SoC'] = float(obj['storedE']['value'])/float(obj['ratedE']['value'])
       # eff_c and eff_d don't come from the query, but they are used throughout
-      # and this is a convenient point to assign them with query results
+      # and this is a convenient point to assign them along with query results
       Batteries[mrid]['eff'] = 0.975 * 0.86
       Batteries[mrid]['eff_c'] = 0.975 * 0.86
       Batteries[mrid]['eff_d'] = 0.975 * 0.86

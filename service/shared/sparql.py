@@ -64,31 +64,30 @@ class SPARQLManager:
         VALUES_QUERY = """
         PREFIX r:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
         PREFIX c:  <http://iec.ch/TC57/CIM100#>
-        SELECT ?name ?bus ?ratedS ?ratedU ?ipu ?ratedE ?storedE ?state ?p ?q ?id ?fdrid (group_concat(distinct ?phs;separator="\\n") as ?phases) WHERE {
+        SELECT ?name ?bus ?ratedE ?storedE ?ratedS ?ratedU ?ipu ?p ?q ?fdrid ?id ?pecid (group_concat(distinct ?phs;separator="\\n") as ?phases) WHERE {
          ?s r:type c:BatteryUnit.
          ?s c:IdentifiedObject.name ?name.
+         ?s c:IdentifiedObject.mRID ?id.
+         ?s c:BatteryUnit.ratedE ?ratedE.
+         ?s c:BatteryUnit.storedE ?storedE.
          ?pec c:PowerElectronicsConnection.PowerElectronicsUnit ?s.
         VALUES ?fdrid {"%s"}
+         ?pec c:IdentifiedObject.mRID ?pecid.
          ?pec c:Equipment.EquipmentContainer ?fdr.
          ?fdr c:IdentifiedObject.mRID ?fdrid.
          ?pec c:PowerElectronicsConnection.ratedS ?ratedS.
          ?pec c:PowerElectronicsConnection.ratedU ?ratedU.
          ?pec c:PowerElectronicsConnection.maxIFault ?ipu.
-         ?s c:BatteryUnit.ratedE ?ratedE.
-         ?s c:BatteryUnit.storedE ?storedE.
-         ?s c:BatteryUnit.batteryState ?stateraw.
-           bind(strafter(str(?stateraw),"BatteryState.") as ?state)
          ?pec c:PowerElectronicsConnection.p ?p.
          ?pec c:PowerElectronicsConnection.q ?q.
          OPTIONAL {?pecp c:PowerElectronicsConnectionPhase.PowerElectronicsConnection ?pec.
          ?pecp c:PowerElectronicsConnectionPhase.phase ?phsraw.
            bind(strafter(str(?phsraw),"SinglePhaseKind.") as ?phs) }
-         bind(strafter(str(?s),"#_") as ?id).
          ?t c:Terminal.ConductingEquipment ?pec.
          ?t c:Terminal.ConnectivityNode ?cn. 
          ?cn c:IdentifiedObject.name ?bus
         }
-        GROUP by ?name ?bus ?ratedS ?ratedU ?ipu ?ratedE ?storedE ?state ?p ?q ?id ?fdrid
+        GROUP by ?name ?bus ?ratedE ?storedE ?ratedS ?ratedU ?ipu ?p ?q ?fdrid ?id ?pecid
         ORDER by ?name
         """% self.feeder_mrid
 
