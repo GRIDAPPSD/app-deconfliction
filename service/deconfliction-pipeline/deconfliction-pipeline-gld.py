@@ -395,9 +395,9 @@ class DeconflictionPipeline(GridAPPSD):
       self.messageQueue.put((True, message['message']))
 
 
-  # GDB GridLAB-D Prep: eliminate MethodUtil.BatterySoC and DeviceSetpoints
-  '''
   def processSimulationMessage(self, message):
+    # GDB GridLAB-D Prep: eliminate DeviceSetpoints
+    '''
     # update device set-point values in MethodUtil for the benefit of
     # DeconflictionMethod classes
     MethodUtil.DeviceSetpoints.clear()
@@ -411,19 +411,23 @@ class DeconflictionPipeline(GridAPPSD):
         print('~TEST simulation updated set-point for device name: ' +
               self.testDeviceName + ', timestamp: ' + str(message['timestamp'])+
               ', set-point: ' + str(DeviceSetpoints[mrid]), flush=True)
+    '''
 
     # update SoC values in MethodUtil for same reason
-    BatterySoC = message['BatterySoC']
-    for device, value in BatterySoC.items():
-      MethodUtil.BatterySoC[device] = value
+    measurements = message['measurements']
+    for mrid in self.Batteries:
+      measid = self.Batteries[mrid]['measid']
+      if measid in measurements:
+        self.Batteries[mrid]['SoC'] = measurements[measid]['value']/100.0
+        MethodUtil.BatterySoC[mrid] = self.Batteries[mrid]['SoC']
+        print('Timestamp ' + str(message['timestamp']) + ' updated SoC for ' + self.Batteries[mrid]['name'] + ': ' + str(self.Batteries[mrid]['SoC']), flush=True)
 
     if self.testDeviceName:
       mrid = MethodUtil.NametoDevice[self.testDeviceName]
-      if mrid in BatterySoC:
+      if mrid in self.Batteries:
         print('~TEST simulation updated SoC for device name: ' +
               self.testDeviceName + ', timestamp: ' + str(message['timestamp'])+
-              ', SoC: ' + str(BatterySoC[mrid]), flush=True)
-  '''
+              ', SoC: ' + str(self.Batteries[mrid]['SoC']), flush=True)
 
 
   def on_setpoints_message(self, headers, message):
@@ -541,11 +545,9 @@ class DeconflictionPipeline(GridAPPSD):
     self.Regulators = AppUtil.getRegulators(MethodUtil.sparql_mgr)
 
     # GDB GridLAB-D Prep: eliminate MethodUtil.BatterySoC
-    '''
     # initialize BatterySoC dictionary
     for mrid in self.Batteries:
       MethodUtil.BatterySoC[mrid] = self.Batteries[mrid]['SoC']
-    '''
 
     self.deltaT = 0.25 # timestamp interval in fractional hours, 0.25 = 15 min
 
@@ -614,15 +616,10 @@ class DeconflictionPipeline(GridAPPSD):
         if not simMsgFlag:
           break
 
-      # GDB GridLAB-D Prep: no need to process simulation messages
-      '''
       if simMsgFlag:
         self.processSimulationMessage(message)
 
       else:
-        self.processSetpointsMessage(message)
-      '''
-      if not simMsgFlag:
         self.processSetpointsMessage(message)
 
     gapps.unsubscribe(set_id)
