@@ -32,11 +32,12 @@ class AppUtil:
       Regulators[mrid] = {}
       Regulators[mrid]['phase'] = phases
       Regulators[mrid]['name'] = name
+      Regulators[mrid]['rid'] = obj['rid']['value']
       Regulators[mrid]['step'] = int(obj['step']['value'])
       Regulators[mrid]['highStep'] = int(obj['highStep']['value'])
       Regulators[mrid]['lowStep'] = int(obj['lowStep']['value'])
       Regulators[mrid]['increment'] = float(obj['incr']['value'])
-      print('Regulator mrid: ' + mrid + ', name: ' + name + ', phase: ' + Regulators[mrid]['phase'] + ', step: ' + str(Regulators[mrid]['step']), flush=True)
+      print('Regulator mrid: ' + mrid + ', name: ' + name + ', rid: ' + Regulators[mrid]['rid'] + ', phase: ' + Regulators[mrid]['phase'] + ', step: ' + str(Regulators[mrid]['step']), flush=True)
       MethodUtil.DeviceToName[mrid] = name
       MethodUtil.NameToDevice[name] = mrid
 
