@@ -310,12 +310,18 @@ class DeconflictionPipeline(GridAPPSD):
     # Iterate over resolution and send set-points to devices that have
     # different or new values
     DevicesToDispatch = {}
-    diffBldr = DifferenceBuilder(self.simulation_id)
     diffCount = 0
 
     for device, value in newResolutionVector.items():
       name = MethodUtil.DeviceToName[device]
       if name.startswith('BatteryUnit.'):
+        # GDB TODO: test code for batteries that I need to get right in terms
+        # of when to issue a message for batteries
+        # new value before old value for DifferenceBuilder
+        #self.difference_builder.add_difference(self.Batteries[device]['id'],
+        #                        'PowerElectronicsConnection.p', -value[1], 0.0)
+        #diffCount += 1
+
         # batteries dispatch values even if they are the same as the last time
         # as long as the value is associated with the current timestamp
 
@@ -346,7 +352,7 @@ class DeconflictionPipeline(GridAPPSD):
         # current tap position
         if value[1] != self.Regulators[device]['step']:
           # new value before old value for DifferenceBuilder
-          diffBldr.add_difference(self.Regulators[device]['rid'],
+          self.difference_builder.add_difference(self.Regulators[device]['rid'],
                    'TapChanger.step', value[1], self.Regulators[device]['step'])
           diffCount += 1
           DevicesToDispatch[device] = value[1]
@@ -405,11 +411,11 @@ class DeconflictionPipeline(GridAPPSD):
     #self.gapps.send(self.publish_topic, dispatch_msg)
 
     if diffCount > 0:
-      dispatch_message = diffBldr.get_message()
+      dispatch_message = self.difference_builder.get_message()
       print('~~> Sending device dispatch DifferenceBuilder message: ' +
             json.dumps(dispatch_message), flush=True)
       self.gapps.send(self.publish_topic, json.dumps(dispatch_message))
-      diffBldr.clear()
+      self.difference_builder.clear()
 
 
   def on_sim_message(self, headers, message):
@@ -556,8 +562,6 @@ class DeconflictionPipeline(GridAPPSD):
   def __init__(self, gapps, feeder_mrid, simulation_id, weights_base):
     self.gapps = gapps
 
-    self.simulation_id = simulation_id
-
     self.messageQueue = queue.Queue()
 
     # subscribe to competing app set-points messages
@@ -571,7 +575,11 @@ class DeconflictionPipeline(GridAPPSD):
     log_id = gapps.subscribe(simulation_log_topic(simulation_id),
                              self.on_sim_message)
 
+    # simulation topic for sending DifferenceBuilder messages
     self.publish_topic = simulation_input_topic(simulation_id)
+
+    # create DifferenceBuilder once and reuse it throughout the simulation
+    self.difference_builder = DifferenceBuilder(simulation_id)
 
     # test/debug settings
     # set this to the name of the device for detailed testing, e.g.,
