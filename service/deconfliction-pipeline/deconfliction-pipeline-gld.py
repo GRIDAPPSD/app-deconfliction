@@ -70,7 +70,8 @@ from time import sleep
 
 
 from gridappsd import GridAPPSD
-from gridappsd.topics import simulation_output_topic, simulation_log_topic, service_output_topic
+from gridappsd import DifferenceBuilder
+from gridappsd.topics import simulation_output_topic, simulation_log_topic, simulation_input_topic, service_output_topic
 
 from datetime import datetime
 
@@ -308,7 +309,10 @@ class DeconflictionPipeline(GridAPPSD):
   def DeviceDispatcher(self, timestamp, newResolutionVector):
     # Iterate over resolution and send set-points to devices that have
     # different or new values
-    DevicesToDispatch ={}
+    DevicesToDispatch = {}
+    diffBldr = DifferenceBuilder(self.simulation_id)
+    diffCount = 0
+
     for device, value in newResolutionVector.items():
       name = MethodUtil.DeviceToName[device]
       if name.startswith('BatteryUnit.'):
@@ -341,6 +345,10 @@ class DeconflictionPipeline(GridAPPSD):
         # Dispatch regulator tap positions whenever they are different from the
         # current tap position
         if value[1] != self.Regulators[device]['step']:
+          # new value before old value for DifferenceBuilder
+          diffBldr.add_difference(self.Regulators[device]['rid'],
+                   'TapChanger.step', value[1], self.Regulators[device]['step'])
+          diffCount += 1
           DevicesToDispatch[device] = value[1]
 
           print('==> Dispatching to regulator device: ' + device + ', name: ' +
@@ -386,15 +394,22 @@ class DeconflictionPipeline(GridAPPSD):
     # to determine when to send out the next timestamp data rather than on a
     # fixed interval so now I always send a message and it is a noop for
     # sim-sim other than counting messages when there are no devices
-    dispatch_message = {
+    dispatch_msg = {
       'timestamp': timestamp,
       'dispatch': DevicesToDispatch
     }
-    print('~~> Sending device dispatch message: ' + str(dispatch_message),
+    print('~~> Sending device dispatch message: ' + str(dispatch_msg),
           flush=True)
     # GDB 6/25/24: No longer publishing in preparation for sending the
     # proper difference builder messages to GridLAB-D
-    #self.gapps.send(self.publish_topic, dispatch_message)
+    #self.gapps.send(self.publish_topic, dispatch_msg)
+
+    if diffCount > 0:
+      dispatch_message = diffBldr.get_message()
+      print('~~> Sending device dispatch DifferenceBuilder message: ' +
+            json.dumps(dispatch_message), flush=True)
+      self.gapps.send(self.publish_topic, json.dumps(dispatch_message))
+      diffBldr.clear()
 
 
   def on_sim_message(self, headers, message):
@@ -541,6 +556,8 @@ class DeconflictionPipeline(GridAPPSD):
   def __init__(self, gapps, feeder_mrid, simulation_id, weights_base):
     self.gapps = gapps
 
+    self.simulation_id = simulation_id
+
     self.messageQueue = queue.Queue()
 
     # subscribe to competing app set-points messages
@@ -553,6 +570,8 @@ class DeconflictionPipeline(GridAPPSD):
                              self.on_sim_message)
     log_id = gapps.subscribe(simulation_log_topic(simulation_id),
                              self.on_sim_message)
+
+    self.publish_topic = simulation_input_topic(simulation_id)
 
     # test/debug settings
     # set this to the name of the device for detailed testing, e.g.,
