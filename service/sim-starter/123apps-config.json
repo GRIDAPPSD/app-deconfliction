@@ -19,7 +19,7 @@
     "simulation_name": "ieee123apps",
     "power_flow_solver_method": "NR",
     "model_creation_config": {
-      "load_scaling_factor": 1,
+      "load_scaling_factor": 0.8,
       "schedule_name": "ieeezipload",
       "z_fraction": 0,
       "i_fraction": 1,
