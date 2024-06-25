@@ -328,14 +328,29 @@ class DeconflictionPipeline(GridAPPSD):
               self.ResolutionVector[device][1]!=0.0))):
           DevicesToDispatch[device] = value[1]
 
-          print('~~> Dispatching to device: ' + device + ', name: ' + name +
-                ', timestamp: ' + str(timestamp) + ', value: ' + str(value[1]),
-                flush=True)
+          print('~~> Dispatching to battery device: ' + device + ', name: ' +
+                name + ', timestamp: ' + str(timestamp) + ', value: ' +
+                str(value[1]), flush=True)
 
           if self.testDeviceName and name==self.testDeviceName:
-            print('~TEST: Dispatching to device: ' + device + ', name: ' +
-                  name + ', timestamp: ' + str(timestamp) + ', value: ' +
-                  str(value[1]), flush=True)
+            print('~TEST: Dispatching to battery device: ' + device +
+                  ', name: ' + name + ', timestamp: ' + str(timestamp) +
+                  ', value: ' + str(value[1]), flush=True)
+
+      elif name.startswith('RatioTapChanger.'):
+        # Dispatch regulator tap positions whenever they are different from the
+        # current tap position
+        if value[1] != self.Regulators[device]['step']:
+          DevicesToDispatch[device] = value[1]
+
+          print('==> Dispatching to regulator device: ' + device + ', name: ' +
+                name + ', timestamp: ' + str(timestamp) + ', value: ' +
+                str(value[1]), flush=True)
+
+          if self.testDeviceName and name==self.testDeviceName:
+              print('~TEST: Dispatching to regulator device: ' + device +
+                    ', name: ' + name + ', timestamp: ' + str(timetstamp) +
+                    ', value: ' + str(value[1]), flush=True)
 
       # not a battery so only dispatch value if it's changed or if it's
       # never been dispatched before
@@ -377,7 +392,9 @@ class DeconflictionPipeline(GridAPPSD):
     }
     print('~~> Sending device dispatch message: ' + str(dispatch_message),
           flush=True)
-    self.gapps.send(self.publish_topic, dispatch_message)
+    # GDB 6/25/24: No longer publishing in preparation for sending the
+    # proper difference builder messages to GridLAB-D
+    #self.gapps.send(self.publish_topic, dispatch_message)
 
 
   def on_sim_message(self, headers, message):
@@ -425,9 +442,9 @@ class DeconflictionPipeline(GridAPPSD):
     for mrid in self.Regulators:
       measid = self.Regulators[mrid]['measid']
       if measid in measurements:
-        self.Regulators[mrid]['pos'] = measurements[measid]['value']
-        MethodUtil.RegulatorPos[mrid] = self.Regulators[mrid]['pos']
-        print('Timestamp ' + str(message['timestamp']) + ' updated tap position for ' + self.Regulators[mrid]['name'] + ': ' + str(self.Regulators[mrid]['pos']), flush=True)
+        self.Regulators[mrid]['step'] = measurements[measid]['value']
+        MethodUtil.RegulatorPos[mrid] = self.Regulators[mrid]['step']
+        print('Timestamp ' + str(message['timestamp']) + ' updated tap position for ' + self.Regulators[mrid]['name'] + ': ' + str(self.Regulators[mrid]['step']), flush=True)
 
     if self.testDeviceName:
       mrid = MethodUtil.NametoDevice[self.testDeviceName]
@@ -554,13 +571,16 @@ class DeconflictionPipeline(GridAPPSD):
     self.Batteries = AppUtil.getBatteries(MethodUtil.sparql_mgr)
     print('Starting Batteries: ' + str(self.Batteries), flush=True)
 
-    self.Regulators = AppUtil.getRegulators(MethodUtil.sparql_mgr)
-    print('Starting Regulators: ' + str(self.Regulators), flush=True)
-
-    # GDB GridLAB-D Prep: eliminate MethodUtil.BatterySoC
     # initialize BatterySoC dictionary
     for mrid in self.Batteries:
       MethodUtil.BatterySoC[mrid] = self.Batteries[mrid]['SoC']
+
+    self.Regulators = AppUtil.getRegulators(MethodUtil.sparql_mgr)
+    print('Starting Regulators: ' + str(self.Regulators), flush=True)
+
+    # initialize RegulatorPos dictionary
+    for mrid in self.Regulators:
+      MethodUtil.RegulatorPos[mrid] = self.Regulators[mrid]['step']
 
     self.deltaT = 0.25 # timestamp interval in fractional hours, 0.25 = 15 min
 
@@ -602,9 +622,6 @@ class DeconflictionPipeline(GridAPPSD):
 
     else:
       print('\nNo optimization deconfliction stage weighting factors applied')
-
-    self.publish_topic = service_output_topic(
-                                        'gridappsd-deconfliction-pipeline', '0')
 
     print('\nInitialized deconfliction pipeline, waiting for messages...\n',
           flush=True)
