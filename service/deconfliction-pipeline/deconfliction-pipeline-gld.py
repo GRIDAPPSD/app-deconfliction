@@ -541,8 +541,10 @@ class DeconflictionPipeline(GridAPPSD):
     MethodUtil.sparql_mgr = SPARQLManager(gapps, feeder_mrid, simulation_id)
 
     self.Batteries = AppUtil.getBatteries(MethodUtil.sparql_mgr)
+    print('Starting Batteries: ' + str(self.Batteries), flush=True)
 
     self.Regulators = AppUtil.getRegulators(MethodUtil.sparql_mgr)
+    print('Starting Regulators: ' + str(self.Regulators), flush=True)
 
     # GDB GridLAB-D Prep: eliminate MethodUtil.BatterySoC
     # initialize BatterySoC dictionary
