@@ -422,12 +422,23 @@ class DeconflictionPipeline(GridAPPSD):
         MethodUtil.BatterySoC[mrid] = self.Batteries[mrid]['SoC']
         print('Timestamp ' + str(message['timestamp']) + ' updated SoC for ' + self.Batteries[mrid]['name'] + ': ' + str(self.Batteries[mrid]['SoC']), flush=True)
 
+    for mrid in self.Regulators:
+      measid = self.Regulators[mrid]['measid']
+      if measid in measurements:
+        self.Regulators[mrid]['pos'] = measurements[measid]['value']
+        MethodUtil.RegulatorPos[mrid] = self.Regulators[mrid]['pos']
+        print('Timestamp ' + str(message['timestamp']) + ' updated tap position for ' + self.Regulators[mrid]['name'] + ': ' + str(self.Regulators[mrid]['pos']), flush=True)
+
     if self.testDeviceName:
       mrid = MethodUtil.NametoDevice[self.testDeviceName]
       if mrid in self.Batteries:
         print('~TEST simulation updated SoC for device name: ' +
               self.testDeviceName + ', timestamp: ' + str(message['timestamp'])+
               ', SoC: ' + str(self.Batteries[mrid]['SoC']), flush=True)
+      elif mrid in self.Regulators:
+        print('~TEST simulation updated tap position for device name: ' +
+              self.testDeviceName + ', timestamp: ' + str(message['timestamp'])+
+              ', pos: ' + str(self.Regulators[mrid]['pos']), flush=True)
 
 
   def on_setpoints_message(self, headers, message):
