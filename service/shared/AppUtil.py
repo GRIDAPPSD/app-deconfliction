@@ -40,6 +40,37 @@ class AppUtil:
       MethodUtil.DeviceToName[mrid] = name
       MethodUtil.NameToDevice[name] = mrid
 
+    # Add measid key to Regulators for matching sim measurements
+    objs = sparql_mgr.obj_meas_export('PowerTransformer')
+    print('Count of PowerTransformer Meas: ' + str(len(objs)), flush=True)
+    matches = 0
+    attempts = 0
+    for item in objs:
+      if item['type']=='Pos':
+        #print('Attempting to match PowerTransformer measurement: ' + str(item), flush=True)
+        attempts += 1
+        # GDB 6/25/24: This is ideally how matches should be done, but this
+        # doesn't work with our current regulator query so improvising...
+        #if item['eqid'] in Regulators:
+        #  Regulators[item['eqid']]['measid'] = item['measid']
+        #  matches += 1
+        nameToMatch = 'RatioTapChanger.' + item['eqname']
+        for mrid in Regulators:
+          shortName = Regulators[mrid]['name'][:-1]
+          if Regulators[mrid]['name'] == nameToMatch:
+            Regulators[mrid]['measid'] = item['measid']
+            matches += 1
+            #print('Matched full name Regulator dictionary item: ' + str(Regulators[mrid]), flush=True)
+            break
+          elif shortName==nameToMatch and \
+               Regulators[mrid]['phase']==item['phases']:
+            Regulators[mrid]['measid'] = item['measid']
+            matches += 1
+            #print('Matched short name Regulator dictionary item: ' + str(Regulators[mrid]), flush=True)
+            break
+
+    print('Matching Regulator measurement attempts: ' + str(attempts) + ', matches: ' + str(matches), flush=True)
+
     return Regulators
 
 
