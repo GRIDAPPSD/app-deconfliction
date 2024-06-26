@@ -648,10 +648,10 @@ class CompetingApp(GridAPPSD):
     sparql_mgr = SPARQLManager(gapps, feeder_mrid, simulation_id)
 
     self.EnergyConsumers = AppUtil.getEnergyConsumers(sparql_mgr)
-    print('Starting EnergyConsumers: ' + json.dumps(self.EnergyConsumers, indent=2), flush=True)
+    #print('Starting EnergyConsumers: ' + json.dumps(self.EnergyConsumers, indent=2), flush=True)
 
     self.SolarPVs = AppUtil.getSolarPVs(sparql_mgr)
-    print('Starting SolarPVs: ' + json.dumps(self.SolarPVs, indent=2), flush=True)
+    #print('Starting SolarPVs: ' + json.dumps(self.SolarPVs, indent=2), flush=True)
 
     self.Batteries = AppUtil.getBatteries(sparql_mgr)
     print('Starting Batteries: ' + json.dumps(self.Batteries, indent=2), flush=True)
