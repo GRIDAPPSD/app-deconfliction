@@ -5,12 +5,12 @@ NameToDevice = {}
 
 BatterySoC = {}
 
+BatteryVA = {}
+
 RegulatorPos = {}
 
-# GDB GridLAB-D Prep: eliminate what is no longer needed for service
+# Not currently used for deconfliction service
 '''
-DeviceSetpoints = {}
-
 OptimizationProblem = {}
 
 Objective = None
