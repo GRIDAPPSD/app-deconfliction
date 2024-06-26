@@ -905,7 +905,11 @@ class CompetingApp(GridAPPSD):
             flush=True)
       exit()
 
-    self.deltaT = 0.25
+    # time between timesteps as fractional hours
+    # 15-minute data from sim-sim
+    #self.deltaT = 0.25
+    # 3 second data from GridLAB-D
+    self.deltaT = 3.0/3600.0
 
     self.b_i = np.arange(0.9, 1.1, 0.00625)
 
