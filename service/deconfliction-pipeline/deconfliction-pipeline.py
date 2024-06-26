@@ -143,6 +143,7 @@ class DeconflictionPipeline(GridAPPSD):
 
     for device in self.ConflictMatrix:
       n_apps_device = len(self.ConflictMatrix[device])
+
       device_setpoints = []
 
       for app in self.ConflictMatrix[device]:
@@ -166,7 +167,9 @@ class DeconflictionPipeline(GridAPPSD):
           device_setpoints.append(sigma_d_a)
 
       # Find centroid
-      centroid[device] = sum(device_setpoints) / n_apps_device
+      # GDB 6/26/24: Also don't crash with empty ConflictMatrix for a device
+      if n_apps_device > 0:
+        centroid[device] = sum(device_setpoints) / n_apps_device
 
     # Distance vector:
     # Distance between setpoints requested by each app to the centroid vector
