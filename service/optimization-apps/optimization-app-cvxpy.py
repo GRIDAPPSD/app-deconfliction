@@ -937,11 +937,13 @@ class CompetingApp(GridAPPSD):
             flush=True)
       exit()
 
-    # time between timesteps as fractional hours
-    # 15-minute data from sim-sim
-    #self.deltaT = 0.25
-    # 3 second data from GridLAB-D
-    self.deltaT = 3.0/3600.0
+    # deltaT is time between timesteps as fractional hours
+    # optimization interval seconds is the number of simulation seconds
+    # between triggering an optimization and must be a multiple of 3
+    #optIntervalSec = 3 # optimize every GridLAB-D timestamp
+    #optIntervalSec = 15
+    optIntervalSec = 30
+    self.deltaT = optIntervalSec/3600.0
 
     self.b_i = np.arange(0.9, 1.1, 0.00625)
 
@@ -981,24 +983,32 @@ class CompetingApp(GridAPPSD):
       messageCounter += 1
 
       timestamp = int(message['timestamp'])
-      print('Simulation timestamp: ' + str(timestamp), flush=True)
 
-      self.updateEnergyConsumers(message['measurements'])
-      #print('Updated EnergyConsumers #' + str(messageCounter) + ': ' + json.dumps(self.EnergyConsumers, indent=2), flush=True)
+      # must subtract 5 off timestamp to make it evenly divisble by multiples
+      # of the 3 second GridLAB-D time between timestamps
+      if (timestamp-5) % optIntervalSec != 0:
+        print('Simulation timestamp (skipping optimization): ' + str(timestamp),
+              flush=True)
+      else:
+        print('Simulation timestamp for optimization: ' + str(timestamp),
+              flush=True)
 
-      self.updateSolarPVs(message['measurements'])
-      #print('Updated SolarPVs #' + str(messageCounter) + ': ' + json.dumps(self.SolarPVs, indent=2), flush=True)
+        self.updateEnergyConsumers(message['measurements'])
+        #print('Updated EnergyConsumers #' + str(messageCounter) + ': ' + json.dumps(self.EnergyConsumers, indent=2), flush=True)
 
-      self.updateBatterySoC(message['measurements'])
-      #print('Updated BatterySoC #' + str(messageCounter) + ': ' + json.dumps(self.Batteries, indent=2), flush=True)
+        self.updateSolarPVs(message['measurements'])
+        #print('Updated SolarPVs #' + str(messageCounter) + ': ' + json.dumps(self.SolarPVs, indent=2), flush=True)
 
-      # Need to define the full optimization problem each time anything
-      # changes for CVXPY to be happy
-      self.defineOptimizationStaticProblem(branch_info, RegIdx)
+        self.updateBatterySoC(message['measurements'])
+        #print('Updated BatterySoC #' + str(messageCounter) + ': ' + json.dumps(self.Batteries, indent=2), flush=True)
 
-      self.defineOptimizationDynamicProblem(timestamp)
+        # Need to define the full optimization problem each time anything
+        # changes for CVXPY to be happy
+        self.defineOptimizationStaticProblem(branch_info, RegIdx)
 
-      self.doOptimization(timestamp)
+        self.defineOptimizationDynamicProblem(timestamp)
+
+        self.doOptimization(timestamp)
 
     gapps.unsubscribe(out_id)
     gapps.unsubscribe(log_id)
