@@ -15,6 +15,6 @@ if [ "$#" -gt 2 ]; then
   WEIGHTS="--weights=""$3"
 fi
 
-mkdir -p output
-python3 deconfliction-pipeline.py $SIMID "$SIMREQ" $WEIGHTS 2>&1 | tee output/deconfliction-pipeline.log
+mkdir -p log
+python3 deconfliction-pipeline.py $SIMID "$SIMREQ" $WEIGHTS 2>&1 | tee log/deconfliction-pipeline.log
 

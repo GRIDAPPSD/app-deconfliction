@@ -14,10 +14,10 @@ if [ "$#" -gt 2 ]; then
   OPTLIB=$3
 fi
 
-mkdir -p output
+mkdir -p log
 if [ "$OPTLIB" = "cvxpy" ] || [ "$OPTLIB" = "CVXPY" ]; then
-  python3 optimization-app-cvxpy.py decarbonization $SIMID "$SIMREQ" 2>&1 | tee output/decarbonization-app.log
+  python3 optimization-app-cvxpy.py decarbonization $SIMID "$SIMREQ" 2>&1 | tee log/decarbonization-app.log
 else
-  python3 optimization-app-pulp.py decarbonization $SIMID "$SIMREQ" 2>&1 | tee output/decarbonization-app.log
+  python3 optimization-app-pulp.py decarbonization $SIMID "$SIMREQ" 2>&1 | tee log/decarbonization-app.log
 fi
 

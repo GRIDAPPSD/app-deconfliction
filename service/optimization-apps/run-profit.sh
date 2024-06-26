@@ -14,10 +14,10 @@ if [ "$#" -gt 2 ]; then
   OPTLIB=$3
 fi
 
-mkdir -p output
+mkdir -p log
 if [ "$OPTLIB" = "cvxpy" ] || [ "$OPTLIB" = "CVXPY" ]; then
-  python3 optimization-app-cvxpy.py profit_cvr $SIMID "$SIMREQ" 2>&1 | tee output/profit_cvr-app.log
+  python3 optimization-app-cvxpy.py profit_cvr $SIMID "$SIMREQ" 2>&1 | tee log/profit_cvr-app.log
 else
-  python3 optimization-app-pulp.py profit_cvr $SIMID "$SIMREQ" 2>&1 | tee output/profit_cvr-app.log
+  python3 optimization-app-pulp.py profit_cvr $SIMID "$SIMREQ" 2>&1 | tee log/profit_cvr-app.log
 fi
 
