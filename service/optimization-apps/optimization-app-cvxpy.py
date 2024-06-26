@@ -941,8 +941,10 @@ class CompetingApp(GridAPPSD):
     # optimization interval seconds is the number of simulation seconds
     # between triggering an optimization and must be a multiple of 3
     #optIntervalSec = 3 # optimize every GridLAB-D timestamp
-    #optIntervalSec = 15
+    # 30 seconds is a good number for a real-time simulation
     optIntervalSec = 30
+    # if attempting non-real-time, something like 600 is reasonable
+    #optIntervalSec = 600
     self.deltaT = optIntervalSec/3600.0
 
     self.b_i = np.arange(0.9, 1.1, 0.00625)
@@ -984,9 +986,12 @@ class CompetingApp(GridAPPSD):
 
       timestamp = int(message['timestamp'])
 
-      # must subtract 5 off timestamp to make it evenly divisble by multiples
-      # of the 3 second GridLAB-D time between timestamps
+      # If doing real-time simulation must subtract 5 off timestamp to make it
+      # evenly divisble by multiples of the 3 second GridLAB-D time interval
       if (timestamp-5) % optIntervalSec != 0:
+      # If doing non-real-time simulation remove the 5 second offset because
+      # GridLAB-D outputs at 60 second intervals
+      #if timestamp % optIntervalSec != 0:
         print('Simulation timestamp (skipping optimization): ' + str(timestamp),
               flush=True)
       else:
