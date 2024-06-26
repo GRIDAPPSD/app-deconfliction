@@ -893,25 +893,19 @@ class CompetingApp(GridAPPSD):
     print('\nbranch_info phase count: ' + str(n_line_phase), flush=True)
 
     self.gapRel = 0.01
-    self.interval = 1
-    # uncomment the self.interval lines below to adjust the deltaT period
-    # the optimization is based on per app and the frequency of messages
     if opt_type.startswith('r') or opt_type.startswith('R'):
       self.opt_type = 'resilience'
-      #self.interval = 3
     elif opt_type.startswith('d') or opt_type.startswith('D'):
       self.opt_type = 'decarbonization'
-      #self.interval = 4
     elif opt_type.startswith('p') or opt_type.startswith('P'):
       self.opt_type = 'profit_cvr'
       self.gapRel = 0.05
-      #self.interval = 5
     else:
       print('*** Exiting due to unrecognized optimization type: ' + opt_type,
             flush=True)
       exit()
 
-    self.deltaT = 0.25 * self.interval
+    self.deltaT = 0.25
 
     self.b_i = np.arange(0.9, 1.1, 0.00625)
 
@@ -929,7 +923,6 @@ class CompetingApp(GridAPPSD):
           ' optimization competing app, waiting for messages...\n',
           flush=True)
 
-    # counter for interval values > 1
     messageCounter = 0
 
     while self.keepLoopingFlag:
@@ -948,22 +941,21 @@ class CompetingApp(GridAPPSD):
       message = self.messageQueue.get()
       messageCounter += 1
 
-      if messageCounter % self.interval == 0:
-        timestamp = int(message['timestamp'])
-        print('Simulation timestamp: ' + str(timestamp), flush=True)
+      timestamp = int(message['timestamp'])
+      print('Simulation timestamp: ' + str(timestamp), flush=True)
 
-        self.updateEnergyConsumers(message['measurements'])
-        #print('Updated EnergyConsumers #' + str(messageCounter) + ': ' + json.dumps(self.EnergyConsumers, indent=2), flush=True)
+      self.updateEnergyConsumers(message['measurements'])
+      #print('Updated EnergyConsumers #' + str(messageCounter) + ': ' + json.dumps(self.EnergyConsumers, indent=2), flush=True)
 
-        self.updateSolarPVs(message['measurements'])
-        #print('Updated SolarPVs #' + str(messageCounter) + ': ' + json.dumps(self.SolarPVs, indent=2), flush=True)
+      self.updateSolarPVs(message['measurements'])
+      #print('Updated SolarPVs #' + str(messageCounter) + ': ' + json.dumps(self.SolarPVs, indent=2), flush=True)
 
-        self.updateBatterySoC(message['measurements'])
-        #print('Updated BatterySoC #' + str(messageCounter) + ': ' + json.dumps(self.Batteries, indent=2), flush=True)
+      self.updateBatterySoC(message['measurements'])
+      #print('Updated BatterySoC #' + str(messageCounter) + ': ' + json.dumps(self.Batteries, indent=2), flush=True)
 
-        self.defineOptimizationDynamicProblem(timestamp)
+      self.defineOptimizationDynamicProblem(timestamp)
 
-        self.doOptimization(timestamp)
+      self.doOptimization(timestamp)
 
     gapps.unsubscribe(out_id)
     gapps.unsubscribe(log_id)
