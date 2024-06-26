@@ -18,6 +18,12 @@
 # e.g.,
 # ./run-deconfliction.sh 123apps rd
 
+if [ "$#" -lt 2 ]; then
+  echo "Usage: ./run-deconfliction.sh <model> <apps_code> [--optlib <opt_library>] [--weights <weights_basename>]"
+  echo
+  exit
+fi
+
 MODEL=$1
 APPS=$2
 
@@ -45,40 +51,26 @@ fi
 # foreground process receives ctrl-C
 trap "trap - SIGTERM && kill -- -$$" SIGINT SIGTERM EXIT
 
+# fire off GridLAB-D simulation
+cd sim-starter
+read -d "\n" SIMID SIMREQ <<< $(./sim-starter.py $MODEL)
+
 # only optimization apps (not workflow) are supported for decon service
-cd optimization-apps
-
-# always sync messages for the remaining time sim-sim is used
-SYNC="--sync"
-
-delay_app_counter=0
+cd ../optimization-apps
 
 if [[ $APPS == *"r"* || $APPS == *"R"* ]]; then
-  ((delay_app_counter--))
-  ./run-resilience.sh $MODEL $OPTLIB $SYNC >/dev/null &
+  ./run-resilience.sh $SIMID "$SIMREQ" $OPTLIB >/dev/null &
 fi
 
 if [[ $APPS == *"d"* || $APPS == *"D"* ]]; then
-  ((delay_app_counter--))
-  ./run-decarbonization.sh $MODEL $OPTLIB $SYNC >/dev/null &
+  ./run-decarbonization.sh $SIMID "$SIMREQ" $OPTLIB >/dev/null &
 fi
 
 if [[ $APPS == *"p"* || $APPS == *"P"* ]]; then
-  ((delay_app_counter--))
-  ./run-profit.sh $MODEL $OPTLIB $SYNC >/dev/null &
+  ./run-profit.sh $SIMID "$SIMREQ" $OPTLIB >/dev/null &
 fi
-
-if [[ $APPS == *"l"* || $APPS == *"L"* ]]; then
-  ((delay_app_counter--))
-  ./run-loadshed.sh $MODEL $OPTLIB $SYNC >/dev/null &
-fi
-
-DELAY=$delay_app_counter
-
-cd ../sim-starter
-./run-sim.sh $MODEL $DELAY >/dev/null &
 
 cd ../deconfliction-pipeline
-./run-pipeline.sh $MODEL $SYNC $WEIGHTS
+./run-pipeline.sh $SIMID "$SIMREQ" $WEIGHTS
 
 trap - SIGINT SIGTERM EXIT

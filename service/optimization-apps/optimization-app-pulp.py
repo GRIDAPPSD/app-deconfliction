@@ -59,7 +59,7 @@ from time import sleep
 from pulp import *
 
 from gridappsd import GridAPPSD
-from gridappsd.topics import service_output_topic
+from gridappsd.topics import simulation_output_topic, simulation_log_topic, service_output_topic
 
 from datetime import datetime
 from tabulate import tabulate
@@ -87,14 +87,7 @@ import MethodUtil
 
 class CompetingApp(GridAPPSD):
 
-  def updateSoC(self, BatterySoC):
-    for device, value in BatterySoC.items():
-      self.Batteries[device]['SoC'] = value
-      #print('Updated SoC for: ' + device + ' = ' + str(round(value, 4)),
-      #      flush=True)
-
-
-  def defineOptimizationDynamicProblem(self, timestamp, load_mult, pv_mult):
+  def defineOptimizationDynamicProblem(self, timestamp):
     # copy the base/static LpProblem that doesn't depend on time-series data
     # as a starting point to then add the time-series dependent part on
     self.dynamicProb = LpProblem.deepcopy(self.staticProb)
@@ -118,13 +111,13 @@ class CompetingApp(GridAPPSD):
           injection_p, injection_q = 0, 0
           if bus in self.EnergyConsumers and \
              'A' in self.EnergyConsumers[bus]['kW']:
-            injection_p = load_mult*self.EnergyConsumers[bus]['kW']['A']
-            injection_q = load_mult*self.EnergyConsumers[bus]['kVar']['A']
+            injection_p = self.EnergyConsumers[bus]['kW']['A']
+            injection_q = self.EnergyConsumers[bus]['kVar']['A']
 
           if bus in self.SolarPVs and 'A' in self.SolarPVs[bus]['phase']:
-            injection_p -= pv_mult*self.SolarPVs[bus]['p']
+            injection_p -= self.SolarPVs[bus]['p']
             #print('SolarPVs A bus: ' + bus + ', value: ' +
-            #      str(pv_mult*self.SolarPVs[bus]['p']), flush=True)
+            #      str(self.SolarPVs[bus]['p']), flush=True)
 
           if bus in self.Batteries_obj and \
              'A' in self.Batteries_obj[bus]['phase']:
@@ -154,13 +147,13 @@ class CompetingApp(GridAPPSD):
           injection_p, injection_q = 0, 0
           if bus in self.EnergyConsumers and \
              'B' in self.EnergyConsumers[bus]['kW']:
-            injection_p = load_mult*self.EnergyConsumers[bus]['kW']['B']
-            injection_q = load_mult*self.EnergyConsumers[bus]['kVar']['B']
+            injection_p = self.EnergyConsumers[bus]['kW']['B']
+            injection_q = self.EnergyConsumers[bus]['kVar']['B']
 
           if bus in self.SolarPVs and 'B' in self.SolarPVs[bus]['phase']:
-            injection_p -= pv_mult*self.SolarPVs[bus]['p']
+            injection_p -= self.SolarPVs[bus]['p']
             #print('SolarPVs B bus: ' + bus + ', value: ' +
-            #      str(pv_mult*self.SolarPVs[bus]['p']), flush=True)
+            #      str(self.SolarPVs[bus]['p']), flush=True)
 
           if bus in self.Batteries_obj and \
              'B' in self.Batteries_obj[bus]['phase']:
@@ -190,13 +183,13 @@ class CompetingApp(GridAPPSD):
           injection_p, injection_q = 0, 0
           if bus in self.EnergyConsumers and \
              'C' in self.EnergyConsumers[bus]['kW']:
-            injection_p = load_mult*self.EnergyConsumers[bus]['kW']['C']
-            injection_q = load_mult*self.EnergyConsumers[bus]['kVar']['C']
+            injection_p = self.EnergyConsumers[bus]['kW']['C']
+            injection_q = self.EnergyConsumers[bus]['kVar']['C']
 
           if bus in self.SolarPVs and 'C' in self.SolarPVs[bus]['phase']:
-            injection_p -= pv_mult*self.SolarPVs[bus]['p']
+            injection_p -= self.SolarPVs[bus]['p']
             #print('SolarPVs C bus: ' + bus + ', value: ' +
-            #      str(pv_mult*self.SolarPVs[bus]['p']), flush=True)
+            #      str(self.SolarPVs[bus]['p']), flush=True)
 
           if bus in self.Batteries_obj and \
              'C' in self.Batteries_obj[bus]['phase']:
@@ -383,7 +376,17 @@ class CompetingApp(GridAPPSD):
   def on_message(self, headers, message):
     #print('headers: ' + str(headers), flush=True)
     #print('message: ' + str(message), flush=True)
-    self.messageQueue.put(message)
+    if not self.keepLoopingFlag:
+      return
+
+    if 'processStatus' in message:
+      status = message['processStatus']
+      if status=='COMPLETE' or status=='CLOSED':
+        self.keepLoopingFlag = False
+        print('Simulation ' + status + ' message received', flush=True)
+
+    else:
+      self.messageQueue.put(message['message'])
 
 
   def defineOptimizationVariables(self, len_branch_info, len_bus_info,
@@ -593,72 +596,71 @@ class CompetingApp(GridAPPSD):
       self.staticProb += lpSum(self.reg_taps[(k, tap)] for tap in range(32))==1
 
 
-  def __init__(self, gapps, opt_type, feeder_mrid, simulation_id, sync_flag):
+  def pol2cart(self, mag, angle_deg):
+        # Convert degrees to radians. GridAPPS-D spits angle in degrees
+        angle_rad =  math.radians(angle_deg)
+        p = mag * np.cos(angle_rad)
+        q = mag * np.sin(angle_rad)
+        return p, q
+
+
+  def updateEnergyConsumers(self, measurements):
+    for bus in self.EnergyConsumers:
+      for phase in self.EnergyConsumers[bus]['measid']:
+        measid = self.EnergyConsumers[bus]['measid'][phase]
+        if measid in measurements:
+          p, q = self.pol2cart(measurements[measid]['magnitude'],
+                               measurements[measid]['angle'])
+          self.EnergyConsumers[bus]['kW'][phase] = p
+          self.EnergyConsumers[bus]['kVar'][phase] = q
+
+
+  def updateSolarPVs(self, measurements):
+    for bus in self.SolarPVs:
+      measid = self.SolarPVs[bus]['measid']
+      if measid in measurements:
+        p, q = self.pol2cart(measurements[measid]['magnitude'],
+                             measurements[measid]['angle'])
+        self.SolarPVs[bus]['p'] = abs(p)
+
+
+  def updateBatterySoC(self, measurements):
+    for mrid in self.Batteries:
+      measid = self.Batteries[mrid]['SoC_measid']
+      if measid in measurements:
+        self.Batteries[mrid]['SoC'] = measurements[measid]['value']/100.0
+        print('Updated SoC for ' + self.Batteries[mrid]['name'] + ': ' + str(self.Batteries[mrid]['SoC']), flush=True)
+
+
+  def __init__(self, gapps, opt_type, feeder_mrid, simulation_id):
     self.gapps = gapps
 
     self.messageQueue = queue.Queue()
 
-    # subscribe to simulation output messages
+    # subscribe to simulation log and output messages
     # since messages are just going on a queue, subscribe right away to
     # keep from missing any sent during app initialization
-    gapps.subscribe(service_output_topic('gridappsd-sim-sim',
-                                         simulation_id), self)
+    self.keepLoopingFlag = True
+    out_id = gapps.subscribe(simulation_output_topic(simulation_id), self)
+    log_id = gapps.subscribe(simulation_log_topic(simulation_id), self)
 
     SPARQLManager = getattr(importlib.import_module('sparql'), 'SPARQLManager')
     sparql_mgr = SPARQLManager(gapps, feeder_mrid, simulation_id)
 
-    #feeder_power = {'p': {'A': 0, 'B': 0, 'C': 0},
-    #                'q': {'A': 0, 'B': 0, 'C': 0}}
-    self.EnergyConsumers = {}
-    bindings = sparql_mgr.energyconsumer_query()
-    for obj in bindings:
-      bus = obj['bus']['value'].upper()
-      if bus not in self.EnergyConsumers:
-        self.EnergyConsumers[bus] = {}
-        self.EnergyConsumers[bus]['kW'] = {}
-        self.EnergyConsumers[bus]['kVar'] = {}
+    self.EnergyConsumers = AppUtil.getEnergyConsumers(sparql_mgr)
+    #print('Starting EnergyConsumers: ' + json.dumps(self.EnergyConsumers, indent=2), flush=True)
 
-      phases = obj['phases']['value']
-      if phases == '':
-        pval = float(obj['p']['value']) / 3.0
-        qval = float(obj['q']['value']) / 3.0
-        self.EnergyConsumers[bus]['kW']['A'] = pval
-        self.EnergyConsumers[bus]['kW']['B'] = pval
-        self.EnergyConsumers[bus]['kW']['C'] = pval
-        self.EnergyConsumers[bus]['kVar']['A'] = qval
-        self.EnergyConsumers[bus]['kVar']['B'] = qval
-        self.EnergyConsumers[bus]['kVar']['C'] = qval
-        #feeder_power['p']['A'] += pval
-        #feeder_power['p']['B'] += pval
-        #feeder_power['p']['C'] += pval
-        #feeder_power['q']['A'] += qval
-        #feeder_power['q']['B'] += qval
-        #feeder_power['q']['C'] += qval
-      else:
-        pval = float(obj['p']['value'])
-        qval = float(obj['q']['value'])
-        self.EnergyConsumers[bus]['kW'][phases] = pval
-        self.EnergyConsumers[bus]['kVar'][phases] = qval
-        #feeder_power['p'][phases] += pval
-        #feeder_power['q'][phases] += qval
+    self.SolarPVs = AppUtil.getSolarPVs(sparql_mgr)
+    #print('Starting SolarPVs: ' + json.dumps(self.SolarPVs, indent=2), flush=True)
 
-    #print('EnergyConsumers[65]: ' + str(self.EnergyConsumers['65']),
-    #      flush=True)
-    #print('EnergyConsumers[47]: ' + str(self.EnergyConsumers['47']),
-    #      flush=True)
-    #print('EnergyConsumers[99]: ' + str(self.EnergyConsumers['99']),
-    #      flush=True)
+    self.Batteries = AppUtil.getBatteries(sparql_mgr)
+    print('Starting Batteries: ' + json.dumps(self.Batteries, indent=2), flush=True)
 
-    # objs = sparql_mgr.obj_meas_export('EnergyConsumer')
-    # print('Count of EnergyConsumers Meas: ' + str(len(objs)), flush=True)
-    # for item in objs:
-    #   print('EnergyConsumer: ' + str(item), flush=True)
-
-    # objs = sparql_mgr.obj_meas_export('PowerElectronicsConnection')
-    # print('Count of PowerElectronicsConnections Meas: ' + str(len(objs)),
-    #       flush=True)
-    # for item in objs:
-    #   print('PowerElectronicsConnection: ' + str(item), flush=True)
+    self.Batteries_obj = {}
+    for mrid in self.Batteries:
+      self.Batteries_obj[self.Batteries[mrid]['bus']] = {}
+      self.Batteries_obj[self.Batteries[mrid]['bus']]['mrid'] = mrid
+      self.Batteries_obj[self.Batteries[mrid]['bus']]['phase'] = self.Batteries[mrid]['phase']
 
     # objs = sparql_mgr.obj_dict_export('LinearShuntCompensator')
     # print('Count of LinearShuntCompensators Dict: ' + str(len(objs)),
@@ -673,15 +675,6 @@ class CompetingApp(GridAPPSD):
     #   print('LinearShuntCompensator: ' + str(item), flush=True)
 
     #SynchronousMachines = AppUtil.getSynchronousMachines(sparql_mgr)
-
-    self.Batteries = AppUtil.getBatteries(sparql_mgr)
-    self.Batteries_obj = {}
-    for mrid in self.Batteries:
-      self.Batteries_obj[self.Batteries[mrid]['bus']] = {}
-      self.Batteries_obj[self.Batteries[mrid]['bus']]['mrid'] = mrid
-      self.Batteries_obj[self.Batteries[mrid]['bus']]['phase'] = self.Batteries[mrid]['phase']
-
-    self.SolarPVs = AppUtil.getSolarPVs(sparql_mgr)
 
     self.EnergySource = AppUtil.getEnergySource(sparql_mgr)
 
@@ -714,10 +707,6 @@ class CompetingApp(GridAPPSD):
       self.bus_info[bus]['phases'] = phases
 
       idx += 1
-
-    #print('bus_info[65]: ' + str(self.bus_info['65']), flush=True)
-    #print('bus_info[47]: ' + str(self.bus_info['47']), flush=True)
-    #print('bus_info[150]: ' + str(self.bus_info['150']), flush=True)
 
     ysparse, nodelist = sparql_mgr.ybus_export()
 
@@ -904,25 +893,23 @@ class CompetingApp(GridAPPSD):
     print('\nbranch_info phase count: ' + str(n_line_phase), flush=True)
 
     self.gapRel = 0.01
-    self.interval = 1
-    # uncomment the self.interval lines below to adjust the deltaT period
-    # the optimization is based on per app and the frequency of messages
     if opt_type.startswith('r') or opt_type.startswith('R'):
       self.opt_type = 'resilience'
-      #self.interval = 3
     elif opt_type.startswith('d') or opt_type.startswith('D'):
       self.opt_type = 'decarbonization'
-      #self.interval = 4
     elif opt_type.startswith('p') or opt_type.startswith('P'):
       self.opt_type = 'profit_cvr'
       self.gapRel = 0.05
-      #self.interval = 5
     else:
       print('*** Exiting due to unrecognized optimization type: ' + opt_type,
             flush=True)
       exit()
 
-    self.deltaT = 0.25 * self.interval
+    # time between timesteps as fractional hours
+    # 15-minute data from sim-sim
+    #self.deltaT = 0.25
+    # 3 second data from GridLAB-D
+    self.deltaT = 3.0/3600.0
 
     self.b_i = np.arange(0.9, 1.1, 0.00625)
 
@@ -933,66 +920,49 @@ class CompetingApp(GridAPPSD):
                                      len(self.Batteries), len(self.Regulators))
 
     # topic for sending out set_points messages
-    self.publish_topic = service_output_topic('gridappsd-competing-app', '0')
+    self.publish_topic = service_output_topic('gridappsd-competing-app',
+                                              simulation_id)
 
     print('\nInitialized ' + opt_type +
           ' optimization competing app, waiting for messages...\n',
           flush=True)
 
-    # counter for interval values > 1
     messageCounter = 0
 
-    while True:
+    while self.keepLoopingFlag:
       if self.messageQueue.qsize() == 0:
         sleep(0.1)
         continue
 
       # discard messages other than most recent
       # comment this while loop out to never drain queue
-      if not sync_flag:
-        while self.messageQueue.qsize() > 1:
-          print('Draining message queue, size: '+str(self.messageQueue.qsize()),
-                flush=True)
-          self.messageQueue.get()
-          messageCounter += 1
+      while self.messageQueue.qsize() > 1:
+        print('Draining message queue, size: '+str(self.messageQueue.qsize()),
+              flush=True)
+        self.messageQueue.get()
+        messageCounter += 1
 
       message = self.messageQueue.get()
       messageCounter += 1
 
-      # empty timestamp is end-of-data flag
-      if message['timestamp'] == '':
-        print('Time-series end-of-data!', flush=True)
-        break
+      timestamp = int(message['timestamp'])
+      print('Simulation timestamp: ' + str(timestamp), flush=True)
 
-      if messageCounter % self.interval == 0:
-        timestamp = int(message['timestamp'])
-        # GDB GridLAB-D Prep: hardwire loadshape and solar so we aren't
-        # dependent on sim-sim data
-        #loadshape = float(message['loadshape'])
-        loadshape = 0.3726
-        #solar = float(message['solar'])
-        solar = 0.0
-        # GDB GridLAB-D Prep: price isn't used so toss that completely
-        #price = float(message['price'])
-        # GDB GridLAB-D Prep: hardwire BatterySoC as well
-        #BatterySoC = message['BatterySoC']
-        BatterySoC = {'D2894605-E559-4A37-92DF-75F8586B3C8E': 0.6, 'BEF5B281-316C-4EEC-8ACF-5595AC446051': 0.4, '8A784240-EF25-485F-A3B2-856C25321A07': 0.35, 'EA0C2453-9BDF-420F-80D3-F4D3579754E7': 0.75, '9CEAC24C-A5F3-4D90-98E0-F5F057F963EF': 0.55}
-        # GDB GridLAB-D Prep: only timestamp should be updating now
-        #print('Time-series time: ' + str(timestamp) +
-        #      ', loadshape: ' + str(loadshape) +
-        #      ', solar: ' + str(solar) +
-        #      ', price: ' + str(price) +
-        #      ', BatterySoc: ' + str(BatterySoC), flush=True)
-        print('Time-series time: ' + str(timestamp) +
-              ', loadshape: ' + str(loadshape) +
-              ', solar: ' + str(solar) +
-              ', BatterySoc: ' + str(BatterySoC), flush=True)
+      self.updateEnergyConsumers(message['measurements'])
+      #print('Updated EnergyConsumers #' + str(messageCounter) + ': ' + json.dumps(self.EnergyConsumers, indent=2), flush=True)
 
-        self.updateSoC(BatterySoC)
+      self.updateSolarPVs(message['measurements'])
+      #print('Updated SolarPVs #' + str(messageCounter) + ': ' + json.dumps(self.SolarPVs, indent=2), flush=True)
 
-        self.defineOptimizationDynamicProblem(timestamp, loadshape, solar)
+      self.updateBatterySoC(message['measurements'])
+      #print('Updated BatterySoC #' + str(messageCounter) + ': ' + json.dumps(self.Batteries, indent=2), flush=True)
 
-        self.doOptimization(timestamp)
+      self.defineOptimizationDynamicProblem(timestamp)
+
+      self.doOptimization(timestamp)
+
+    gapps.unsubscribe(out_id)
+    gapps.unsubscribe(log_id)
 
 
 def _main():
@@ -1012,7 +982,6 @@ def _main():
   parser.add_argument("type", help="Competing App Type")
   parser.add_argument("simulation_id", help="Simulation ID")
   parser.add_argument("request", help="Simulation Request")
-  parser.add_argument("--sync", nargs="?", help="Synchronize Messages")
 
   opts = parser.parse_args()
 
@@ -1028,8 +997,9 @@ def _main():
   gapps = GridAPPSD(opts.simulation_id)
   assert gapps.connected
 
-  competing_app = CompetingApp(gapps, opts.type, feeder_mrid,
-                               opts.simulation_id, opts.sync!=None)
+  competing_app = CompetingApp(gapps, opts.type, feeder_mrid,opts.simulation_id)
+
+  print('Goodbye!', flush=True)
 
 
 if __name__ == "__main__":

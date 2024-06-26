@@ -70,7 +70,8 @@ from time import sleep
 
 
 from gridappsd import GridAPPSD
-from gridappsd.topics import service_output_topic
+from gridappsd import DifferenceBuilder
+from gridappsd.topics import simulation_output_topic, simulation_log_topic, simulation_input_topic, service_output_topic
 
 from datetime import datetime
 
@@ -102,11 +103,11 @@ class DeconflictionPipeline(GridAPPSD):
     for device, value in set_points.items():
       name = MethodUtil.DeviceToName[device]
       #print('device: ' + device + ', name: ' + name + ', value: ' + str(value), flush=True)
-      if name.startswith('BatteryUnit.'):
-        print('~~> setpoints from app: ' + app_name +
-              ', timestamp: ' + str(timestamp) +
-              ', device: ' + device + ', name: ' + name +
-              ', value: ' + str(value), flush=True)
+      #if name.startswith('BatteryUnit.'):
+      #  print('~~> setpoints from app: ' + app_name +
+      #        ', timestamp: ' + str(timestamp) +
+      #        ', device: ' + device + ', name: ' + name +
+      #        ', value: ' + str(value), flush=True)
 
       if device not in self.ConflictMatrix:
         self.ConflictMatrix[device] = {}
@@ -307,50 +308,59 @@ class DeconflictionPipeline(GridAPPSD):
 
   def DeviceDispatcher(self, timestamp, newResolutionVector):
     # Iterate over resolution and send set-points to devices that have
-    # different or new values
-    DevicesToDispatch ={}
+    # different values
+    diffCount = 0
+
     for device, value in newResolutionVector.items():
       name = MethodUtil.DeviceToName[device]
       if name.startswith('BatteryUnit.'):
-        # batteries dispatch values even if they are the same as the last time
-        # as long as the value is associated with the current timestamp
+        if value[1] != self.Batteries[device]['P_batt']:
+          #new value before old value for DifferenceBuilder
+          self.difference_builder.add_difference(self.Batteries[device]['id'],
+                                      'PowerElectronicsConnection.p', -value[1],
+                                      -self.Batteries[device]['P_batt'])
+          diffCount += 1
 
-        # GDB 6/22/23: First is the original version and then the new version
-        # that doesn't dispatch P_batt of 0 beyond the initial change to 0
-        #if device not in self.ResolutionVector or \
-        #   (newResolutionVector[device][0]==timestamp and \
-        #    (self.ResolutionVector[device][0]!=timestamp or \
-        #     self.ResolutionVector[device][1]!=value[1])):
-        if device not in self.ResolutionVector or \
-           (newResolutionVector[device][0]==timestamp and \
-            (self.ResolutionVector[device][1]!=value[1] or \
-             (self.ResolutionVector[device][0]!=timestamp and \
-              self.ResolutionVector[device][1]!=0.0))):
-          DevicesToDispatch[device] = value[1]
-
-          print('~~> Dispatching to device: ' + device + ', name: ' + name +
-                ', timestamp: ' + str(timestamp) + ', value: ' + str(value[1]),
-                flush=True)
+          print('~~> Dispatching to battery device: ' + device + ', name: ' +
+                name + ', timestamp: ' + str(timestamp) + ', new value: ' +
+                str(value[1]) + ', old value: ' +
+                str(self.Batteries[device]['P_batt']), flush=True)
 
           if self.testDeviceName and name==self.testDeviceName:
-            print('~TEST: Dispatching to device: ' + device + ', name: ' +
-                  name + ', timestamp: ' + str(timestamp) + ', value: ' +
-                  str(value[1]), flush=True)
+            print('~TEST: Dispatching to battery device: ' + device +
+                  ', name: ' + name + ', timestamp: ' + str(timestamp) +
+                  ', new value: ' + str(value[1]) + ', old value: ' +
+                  str(self.Batteries[device]['P_batt']), flush=True)
 
-      # not a battery so only dispatch value if it's changed or if it's
-      # never been dispatched before
-      elif device not in self.ResolutionVector or \
-           self.ResolutionVector[device][1]!=value[1]:
-        DevicesToDispatch[device] = value[1]
+        else:
+          print('~~> NO DISPATCH needed to battery device: ' + device +
+                ', name: ' + name + ', timestamp: ' + str(timestamp) +
+                ', same value: ' + str(value[1]), flush=True)
 
-        print('==> Dispatching to device: ' + device + ', name: ' + name +
-              ', timestamp: ' + str(timestamp) + ', value: ' + str(value[1]),
-              flush=True)
+      elif name.startswith('RatioTapChanger.'):
+        # Dispatch regulator tap positions whenever they are different from the
+        # current tap position
+        if value[1] != self.Regulators[device]['step']:
+          # new value before old value for DifferenceBuilder
+          self.difference_builder.add_difference(self.Regulators[device]['rid'],
+                   'TapChanger.step', value[1], self.Regulators[device]['step'])
+          diffCount += 1
 
-        if self.testDeviceName and name==self.testDeviceName:
-            print('~TEST: Dispatching to device: ' + device + ', name: ' +
-                  name + ', timestamp: ' + str(timetstamp) + ', value: ' +
-                  str(value[1]), flush=True)
+          print('==> Dispatching to regulator device: ' + device + ', name: ' +
+                name + ', timestamp: ' + str(timestamp) + ', new value: ' +
+                str(value[1]) + ', old value: ' +
+                str(self.Regulators[device]['step']), flush=True)
+
+          if self.testDeviceName and name==self.testDeviceName:
+              print('~TEST: Dispatching to regulator device: ' + device +
+                    ', name: ' + name + ', timestamp: ' + str(timetstamp) +
+                    ', new value: ' + str(value[1]) + ', old value: ' +
+                    str(self.Regulators[device]['step']), flush=True)
+
+        else:
+          print('~~> NO DISPATCH needed to regulator device: ' + device +
+                ', name: ' + name + ', timestamp: ' + str(timestamp) +
+                ', same value: ' + str(value[1]), flush=True)
 
     # it's also possible a device from the last resolution does not appear
     # in the new resolution.  In this case it's a "don't care" for the new
@@ -366,54 +376,75 @@ class DeconflictionPipeline(GridAPPSD):
             print('~TEST: Device deleted from resolution: ' + device +
                   ', name: ' + MethodUtil.DeviceToName[device], flush=True)
 
-    # GDB 6/23/23 I was only dispatching when len(DevicesToDispatch)>0, but
-    # we added a mode where sim-sim would count the number of disptach messages
-    # to determine when to send out the next timestamp data rather than on a
-    # fixed interval so now I always send a message and it is a noop for
-    # sim-sim other than counting messages when there are no devices
-    dispatch_message = {
-      'timestamp': timestamp,
-      'dispatch': DevicesToDispatch
-    }
-    print('~~> Sending device dispatch message: ' + str(dispatch_message),
-          flush=True)
-    self.gapps.send(self.publish_topic, dispatch_message)
+    if diffCount > 0:
+      dispatch_message = self.difference_builder.get_message()
+      print('~~> Sending device dispatch DifferenceBuilder message: ' +
+            json.dumps(dispatch_message), flush=True)
+      self.gapps.send(self.publish_topic, json.dumps(dispatch_message))
+      self.difference_builder.clear()
 
 
   def on_sim_message(self, headers, message):
-    print('Received sim message: ' + str(message), flush=True)
-    self.messageQueue.put((True, message))
+    #print('Received simulation message: ' + str(message), flush=True)
+    if not self.keepLoopingFlag:
+      return
+
+    if 'processStatus' in message:
+      status = message['processStatus']
+      if status=='COMPLETE' or status=='CLOSED':
+        self.keepLoopingFlag = False
+        print('Simulation ' + status + ' message received', flush=True)
+
+    else:
+      self.messageQueue.put((True, message['message']))
 
 
-  # GDB GridLAB-D Prep: eliminate MethodUtil.BatterySoC and DeviceSetpoints
-  '''
+  def pol2cart(self, mag, angle_deg):
+        # Convert degrees to radians. GridAPPS-D spits angle in degrees
+        angle_rad =  math.radians(angle_deg)
+        p = mag * np.cos(angle_rad)
+        q = mag * np.sin(angle_rad)
+        return p, q
+
+
   def processSimulationMessage(self, message):
-    # update device set-point values in MethodUtil for the benefit of
-    # DeconflictionMethod classes
-    MethodUtil.DeviceSetpoints.clear()
-    DeviceSetpoints = message['DeviceSetpoints']
-    for device, value in DeviceSetpoints.items():
-      MethodUtil.DeviceSetpoints[device] = value
-
-    if self.testDeviceName:
-      mrid = MethodUtil.NametoDevice[self.testDeviceName]
-      if mrid in DeviceSetpoints:
-        print('~TEST simulation updated set-point for device name: ' +
-              self.testDeviceName + ', timestamp: ' + str(message['timestamp'])+
-              ', set-point: ' + str(DeviceSetpoints[mrid]), flush=True)
-
     # update SoC values in MethodUtil for same reason
-    BatterySoC = message['BatterySoC']
-    for device, value in BatterySoC.items():
-      MethodUtil.BatterySoC[device] = value
+    measurements = message['measurements']
+    for mrid in self.Batteries:
+      measid = self.Batteries[mrid]['SoC_measid']
+      if measid in measurements:
+        self.Batteries[mrid]['SoC'] = measurements[measid]['value']/100.0
+        MethodUtil.BatterySoC[mrid] = self.Batteries[mrid]['SoC']
+        print('Timestamp ' + str(message['timestamp']) + ' updated SoC for ' + self.Batteries[mrid]['name'] + ': ' + str(self.Batteries[mrid]['SoC']), flush=True)
+
+      measid = self.Batteries[mrid]['P_batt_measid']
+      if measid in measurements:
+        p, q = self.pol2cart(measurements[measid]['magnitude'],
+                             measurements[measid]['angle'])
+        self.Batteries[mrid]['P_batt'] = p
+        MethodUtil.BatteryP_batt[mrid] = self.Batteries[mrid]['P_batt']
+        print('Timestamp ' + str(message['timestamp']) + ' updated P_batt for ' + self.Batteries[mrid]['name'] + ': ' + str(self.Batteries[mrid]['P_batt']), flush=True)
+
+    for mrid in self.Regulators:
+      measid = self.Regulators[mrid]['measid']
+      if measid in measurements:
+        self.Regulators[mrid]['step'] = measurements[measid]['value']
+        MethodUtil.RegulatorPos[mrid] = self.Regulators[mrid]['step']
+        print('Timestamp ' + str(message['timestamp']) + ' updated tap position for ' + self.Regulators[mrid]['name'] + ': ' + str(self.Regulators[mrid]['step']), flush=True)
 
     if self.testDeviceName:
       mrid = MethodUtil.NametoDevice[self.testDeviceName]
-      if mrid in BatterySoC:
+      if mrid in self.Batteries:
         print('~TEST simulation updated SoC for device name: ' +
               self.testDeviceName + ', timestamp: ' + str(message['timestamp'])+
-              ', SoC: ' + str(BatterySoC[mrid]), flush=True)
-  '''
+              ', SoC: ' + str(self.Batteries[mrid]['SoC']), flush=True)
+        print('~TEST simulation updated P_batt for device name: ' +
+              self.testDeviceName + ', timestamp: ' + str(message['timestamp'])+
+              ', P_batt: ' + str(self.Batteries[mrid]['P_batt']), flush=True)
+      elif mrid in self.Regulators:
+        print('~TEST simulation updated tap position for device name: ' +
+              self.testDeviceName + ', timestamp: ' + str(message['timestamp'])+
+              ', pos: ' + str(self.Regulators[mrid]['step']), flush=True)
 
 
   def on_setpoints_message(self, headers, message):
@@ -496,18 +527,27 @@ class DeconflictionPipeline(GridAPPSD):
     #print('!!! ALEX ResolutionVector FINISH !!!', flush=True)
 
 
-  def __init__(self, gapps, feeder_mrid, simulation_id, sync_flag,weights_base):
+  def __init__(self, gapps, feeder_mrid, simulation_id, weights_base):
     self.gapps = gapps
 
     self.messageQueue = queue.Queue()
 
     # subscribe to competing app set-points messages
-    gapps.subscribe(service_output_topic('gridappsd-competing-app',
+    set_id = gapps.subscribe(service_output_topic('gridappsd-competing-app',
                                       simulation_id), self.on_setpoints_message)
 
-    # subscribe to simulation output messages to get updated SoC values
-    gapps.subscribe(service_output_topic('gridappsd-sim-sim', simulation_id),
-                                         self.on_sim_message)
+    # subscribe to simulation log and output messages
+    self.keepLoopingFlag = True
+    out_id = gapps.subscribe(simulation_output_topic(simulation_id),
+                             self.on_sim_message)
+    log_id = gapps.subscribe(simulation_log_topic(simulation_id),
+                             self.on_sim_message)
+
+    # simulation topic for sending DifferenceBuilder messages
+    self.publish_topic = simulation_input_topic(simulation_id)
+
+    # create DifferenceBuilder once and reuse it throughout the simulation
+    self.difference_builder = DifferenceBuilder(simulation_id)
 
     # test/debug settings
     # set this to the name of the device for detailed testing, e.g.,
@@ -524,15 +564,10 @@ class DeconflictionPipeline(GridAPPSD):
     MethodUtil.sparql_mgr = SPARQLManager(gapps, feeder_mrid, simulation_id)
 
     self.Batteries = AppUtil.getBatteries(MethodUtil.sparql_mgr)
+    print('Starting Batteries: ' + str(self.Batteries), flush=True)
 
     self.Regulators = AppUtil.getRegulators(MethodUtil.sparql_mgr)
-
-    # GDB GridLAB-D Prep: eliminate MethodUtil.BatterySoC
-    '''
-    # initialize BatterySoC dictionary
-    for mrid in self.Batteries:
-      MethodUtil.BatterySoC[mrid] = self.Batteries[mrid]['SoC']
-    '''
+    print('Starting Regulators: ' + str(self.Regulators), flush=True)
 
     self.deltaT = 0.25 # timestamp interval in fractional hours, 0.25 = 15 min
 
@@ -575,52 +610,38 @@ class DeconflictionPipeline(GridAPPSD):
     else:
       print('\nNo optimization deconfliction stage weighting factors applied')
 
-    self.publish_topic = service_output_topic(
-                                        'gridappsd-deconfliction-pipeline', '0')
-
     print('\nInitialized deconfliction pipeline, waiting for messages...\n',
           flush=True)
 
-    while True:
+    while self.keepLoopingFlag:
       if self.messageQueue.qsize() == 0:
         sleep(0.1)
         continue
 
-      if sync_flag:
-        # don't ever discard messages if running synchronized
+      # GDB 5/20/24: Queue draining for the pipeline can't be done the same
+      # way as the competing apps because the queue isn't all just simulation
+      # messages, but also setpoints messages. Only drain messages if they are
+      # simulation messages.
+      # This will need to be revisited if the pipeline starts falling behind
+      # as more sophisticated deconfliction is implemented and new simulation
+      # messages arriving every 3 seconds. In that case it seems as if older
+      # setpoints messages could be discarded, but it's not straightforward
+      # as it would only make sense to discard when there is a newer setpoints
+      # message from the same competing app.
+      while self.messageQueue.qsize() > 0:
         simMsgFlag, message = self.messageQueue.get()
+        if not simMsgFlag:
+          break
 
-      else:
-        # GDB 5/20/24: Queue draining for the pipeline can't be done the same
-        # way as the competing apps because the queue isn't all just simulation
-        # messages, but also setpoints messages. Only drain messages if they are
-        # simulation messages.
-        # This will need to be revisited if the pipeline starts falling behind
-        # as more sophisticated deconfliction is implemented and new simulation
-        # messages arriving every 3 seconds. In that case it seems as if older
-        # setpoints messages could be discarded, but it's not straightforward
-        # as it would only make sense to discard when there is a newer setpoints
-        # message from the same competing app.
-        while self.messageQueue.qsize() > 0:
-          simMsgFlag, message = self.messageQueue.get()
-          if not simMsgFlag:
-            break
-
-      # empty timestamp in simulation message is end-of-data flag
-      if simMsgFlag and message['timestamp'] == '':
-        print('Time-series end-of-data!', flush=True)
-        break
-
-      # GDB GridLAB-D Prep: no need to process simulation messages
-      '''
       if simMsgFlag:
         self.processSimulationMessage(message)
 
       else:
         self.processSetpointsMessage(message)
-      '''
-      if not simMsgFlag:
-        self.processSetpointsMessage(message)
+
+    gapps.unsubscribe(set_id)
+    gapps.unsubscribe(out_id)
+    gapps.unsubscribe(log_id)
 
     # for SHIVA conflict metric
     #json_file = open('output/ConflictMatrix_' + basename + '.json', 'w')
@@ -637,7 +658,6 @@ def _main():
   parser = argparse.ArgumentParser()
   parser.add_argument("simulation_id", help="Simulation ID")
   parser.add_argument("request", help="Simulation Request")
-  parser.add_argument("--sync", nargs='?', help="Synchronize Messages")
   parser.add_argument("--weights", nargs='?', help="Optimization Weights Base Filename")
   opts = parser.parse_args()
 
@@ -653,8 +673,9 @@ def _main():
   gapps = GridAPPSD(opts.simulation_id)
   assert gapps.connected
 
-  DeconflictionPipeline(gapps, feeder_mrid, opts.simulation_id,
-                        opts.sync!=None, opts.weights)
+  DeconflictionPipeline(gapps, feeder_mrid, opts.simulation_id, opts.weights)
+
+  print('Goodbye!', flush=True)
 
 
 if __name__ == "__main__":
