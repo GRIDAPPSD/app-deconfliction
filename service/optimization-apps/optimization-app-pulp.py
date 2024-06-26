@@ -235,6 +235,8 @@ class CompetingApp(GridAPPSD):
 
 
   def doOptimization(self, timestamp):
+        # this code only needed for FY23 deconfliction prototype
+        '''
         data = self.dynamicProb.to_dict()
         opt_prob = {}
         opt_prob['utility_function'] = data['objective']
@@ -248,10 +250,11 @@ class CompetingApp(GridAPPSD):
         # methodology that combines them from multiple competing apps.
         # Eventually he'll get this from the message bus message, but
         # for now he reads from files
-        json_opt = open('output/' + self.opt_type + '_' +
-                                 str(timestamp) + '.json', 'w')
+        json_opt = open('log/' + self.opt_type + '_' +
+                        str(timestamp) + '.json', 'w')
         json.dump(data, json_opt, indent=4)
         json_opt.close()
+        '''
 
         # solve
         self.dynamicProb.solve(PULP_CBC_CMD(msg=0, gapRel=self.gapRel,
@@ -283,7 +286,7 @@ class CompetingApp(GridAPPSD):
           print('Optimization Stage II:', LpStatus[self.dynamicProb.status],
                 flush=True)
 
-        # self.dynamicProb.writeLP('output/' + self.opt_type + '_' +
+        # self.dynamicProb.writeLP('log/' + self.opt_type + '_' +
         #                          str(timestamp) + '.lp')
 
         '''

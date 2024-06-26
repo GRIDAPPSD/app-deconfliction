@@ -276,8 +276,8 @@ class CompetingApp(GridAPPSD):
     # methodology that combines them from multiple competing apps.
     # Eventually he'll get this from the message bus message, but
     # for now he reads from files
-    #json_opt = open('output/' + self.opt_type + '_' +
-    #                         str(timestamp) + '.json', 'w')
+    #json_opt = open('log/' + self.opt_type + '_' +
+    #                str(timestamp) + '.json', 'w')
     #json.dump(data, json_opt, indent=4)
     #json_opt.close()
 

@@ -644,10 +644,10 @@ class DeconflictionPipeline(GridAPPSD):
     gapps.unsubscribe(log_id)
 
     # for SHIVA conflict metric
-    #json_file = open('output/ConflictMatrix_' + basename + '.json', 'w')
+    #json_file = open('log/ConflictMatrix_' + basename + '.json', 'w')
     #json.dump(self.TimeConflictMatrix, json_file, indent=4)
     #json_file.close()
-    #json_file = open('output/ResolutionVector_' + basename + '.json', 'w')
+    #json_file = open('log/ResolutionVector_' + basename + '.json', 'w')
     #json.dump(self.TimeResolutionVector, json_file, indent=4)
     #json_file.close()
 
