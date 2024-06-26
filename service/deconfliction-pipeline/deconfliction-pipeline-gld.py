@@ -314,23 +314,23 @@ class DeconflictionPipeline(GridAPPSD):
     for device, value in newResolutionVector.items():
       name = MethodUtil.DeviceToName[device]
       if name.startswith('BatteryUnit.'):
-        if value[1] != self.Batteries[device]['VA']:
+        if value[1] != self.Batteries[device]['P_batt']:
           #new value before old value for DifferenceBuilder
           self.difference_builder.add_difference(self.Batteries[device]['id'],
                                       'PowerElectronicsConnection.p', -value[1],
-                                      -self.Batteries[device]['VA'])
+                                      -self.Batteries[device]['P_batt'])
           diffCount += 1
 
           print('~~> Dispatching to battery device: ' + device + ', name: ' +
                 name + ', timestamp: ' + str(timestamp) + ', new value: ' +
                 str(value[1]) + ', old value: ' +
-                str(self.Batteries[device]['VA']), flush=True)
+                str(self.Batteries[device]['P_batt']), flush=True)
 
           if self.testDeviceName and name==self.testDeviceName:
             print('~TEST: Dispatching to battery device: ' + device +
                   ', name: ' + name + ', timestamp: ' + str(timestamp) +
                   ', new value: ' + str(value[1]) + ', old value: ' +
-                  str(self.Batteries[device]['VA']), flush=True)
+                  str(self.Batteries[device]['P_batt']), flush=True)
 
         else:
           print('~~> NO DISPATCH needed to battery device: ' + device +
@@ -417,13 +417,13 @@ class DeconflictionPipeline(GridAPPSD):
         MethodUtil.BatterySoC[mrid] = self.Batteries[mrid]['SoC']
         print('Timestamp ' + str(message['timestamp']) + ' updated SoC for ' + self.Batteries[mrid]['name'] + ': ' + str(self.Batteries[mrid]['SoC']), flush=True)
 
-      measid = self.Batteries[mrid]['VA_measid']
+      measid = self.Batteries[mrid]['P_batt_measid']
       if measid in measurements:
         p, q = self.pol2cart(measurements[measid]['magnitude'],
                              measurements[measid]['angle'])
-        self.Batteries[mrid]['VA'] = p
-        MethodUtil.BatteryVA[mrid] = self.Batteries[mrid]['VA']
-        print('Timestamp ' + str(message['timestamp']) + ' updated VA for ' + self.Batteries[mrid]['name'] + ': ' + str(self.Batteries[mrid]['VA']), flush=True)
+        self.Batteries[mrid]['P_batt'] = p
+        MethodUtil.BatteryP_batt[mrid] = self.Batteries[mrid]['P_batt']
+        print('Timestamp ' + str(message['timestamp']) + ' updated P_batt for ' + self.Batteries[mrid]['name'] + ': ' + str(self.Batteries[mrid]['P_batt']), flush=True)
 
     for mrid in self.Regulators:
       measid = self.Regulators[mrid]['measid']
@@ -438,9 +438,9 @@ class DeconflictionPipeline(GridAPPSD):
         print('~TEST simulation updated SoC for device name: ' +
               self.testDeviceName + ', timestamp: ' + str(message['timestamp'])+
               ', SoC: ' + str(self.Batteries[mrid]['SoC']), flush=True)
-        print('~TEST simulation updated VA for device name: ' +
+        print('~TEST simulation updated P_batt for device name: ' +
               self.testDeviceName + ', timestamp: ' + str(message['timestamp'])+
-              ', VA: ' + str(self.Batteries[mrid]['VA']), flush=True)
+              ', P_batt: ' + str(self.Batteries[mrid]['P_batt']), flush=True)
       elif mrid in self.Regulators:
         print('~TEST simulation updated tap position for device name: ' +
               self.testDeviceName + ', timestamp: ' + str(message['timestamp'])+

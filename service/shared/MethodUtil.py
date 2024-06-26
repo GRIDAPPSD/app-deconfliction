@@ -5,7 +5,7 @@ NameToDevice = {}
 
 BatterySoC = {}
 
-BatteryVA = {}
+BatteryP_batt = {}
 
 RegulatorPos = {}
 

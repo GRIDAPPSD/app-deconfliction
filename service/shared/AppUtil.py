@@ -142,7 +142,7 @@ class AppUtil:
     for item in objs:
       if item['eqid'] in Batteries:
         if item['type'] == 'VA':
-          Batteries[item['eqid']]['VA_measid'] = item['measid']
+          Batteries[item['eqid']]['P_batt_measid'] = item['measid']
         elif item['type'] == 'SoC':
           Batteries[item['eqid']]['SoC_measid'] = item['measid']
 
