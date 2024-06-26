@@ -9,7 +9,7 @@ class SPARQLManager:
     """Class for querying SPARQL in GridAPPS-D Toolbox tools/services
     """
     
-    def __init__(self, gapps, feeder_mrid, simulation_id=None, timeout=30):
+    def __init__(self, gapps, feeder_mrid, simulation_id=None, timeout=60):
         """Connect to the platform.
 
         :param feeder_mrid: unique identifier for the feeder in
@@ -279,7 +279,7 @@ class SPARQLManager:
         ORDER BY ?xfmr_name ?end_number
         """% self.feeder_mrid
 
-        results = self.gad.query_data(XFMRS_QUERY)
+        results = self.gad.query_data(XFMRS_QUERY, timeout=1200)
         bindings = results['data']['results']['bindings']
         return bindings
 
