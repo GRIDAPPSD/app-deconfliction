@@ -140,8 +140,11 @@ class AppUtil:
     # Add measid key to Batteries for matching sim measurements
     objs = sparql_mgr.obj_meas_export('PowerElectronicsConnection')
     for item in objs:
-      if item['type']=='SoC' and item['eqid'] in Batteries:
-        Batteries[item['eqid']]['measid'] = item['measid']
+      if item['eqid'] in Batteries:
+        if item['type'] == 'VA':
+          Batteries[item['eqid']]['VA_measid'] = item['measid']
+        elif item['type'] == 'SoC':
+          Batteries[item['eqid']]['SoC_measid'] = item['measid']
 
     return Batteries
 
