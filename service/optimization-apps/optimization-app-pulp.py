@@ -635,7 +635,7 @@ class CompetingApp(GridAPPSD):
         print('Updated SoC for ' + self.Batteries[mrid]['name'] + ': ' + str(self.Batteries[mrid]['SoC']), flush=True)
 
 
-  def __init__(self, gapps, opt_type, feeder_mrid, simulation_id):
+  def __init__(self, gapps, opt_type, feeder_mrid, simulation_id, interval):
     self.gapps = gapps
 
     self.messageQueue = queue.Queue()
@@ -914,6 +914,9 @@ class CompetingApp(GridAPPSD):
     #optIntervalSec = 3 # optimize every GridLAB-D timestamp
     # 30 seconds is a good number for a real-time simulation
     optIntervalSec = 30
+    if interval != None:
+      optIntervalSec = int(interval)
+
     # if attempting non-real-time, something like 600 is reasonable
     #optIntervalSec = 600
     self.deltaT = optIntervalSec/3600.0
@@ -1000,6 +1003,7 @@ def _main():
   parser.add_argument("type", help="Competing App Type")
   parser.add_argument("simulation_id", help="Simulation ID")
   parser.add_argument("request", help="Simulation Request")
+  parser.add_argument("interval", nargs='?', help="Interval Between Optimizations")
 
   opts = parser.parse_args()
 
@@ -1015,7 +1019,8 @@ def _main():
   gapps = GridAPPSD(opts.simulation_id)
   assert gapps.connected
 
-  competing_app = CompetingApp(gapps, opts.type, feeder_mrid,opts.simulation_id)
+  competing_app = CompetingApp(gapps, opts.type, feeder_mrid,
+                               opts.simulation_id, opts.interval)
 
   print('Goodbye!', flush=True)
 
