@@ -399,7 +399,6 @@ class CompetingApp(GridAPPSD):
                    'Target SoC'], tablefmt='psql'), flush=True)
 
     out_message = {
-      'app_name': self.app_name,
       'timestamp': timestamp,
       'set_points': set_points
     }
@@ -414,8 +413,8 @@ class CompetingApp(GridAPPSD):
     self.gapps.send(self.publish_topic, out_message)
 
 
-  def on_message(self, headers, message):
-    #print('headers: ' + str(headers), flush=True)
+  def on_message(self, header, message):
+    #print('header: ' + str(header), flush=True)
     #print('message: ' + str(message), flush=True)
     if not self.keepLoopingFlag:
       return

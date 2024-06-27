@@ -387,7 +387,7 @@ class DeconflictionPipeline(GridAPPSD):
       self.difference_builder.clear()
 
 
-  def on_sim_message(self, headers, message):
+  def on_sim_message(self, header, message):
     #print('Received simulation message: ' + str(message), flush=True)
     if not self.keepLoopingFlag:
       return
@@ -399,7 +399,7 @@ class DeconflictionPipeline(GridAPPSD):
         print('Simulation ' + status + ' message received', flush=True)
 
     else:
-      self.messageQueue.put((True, message['message']))
+      self.messageQueue.put((None, message['message']))
 
 
   def pol2cart(self, mag, angle_deg):
@@ -450,17 +450,27 @@ class DeconflictionPipeline(GridAPPSD):
               ', pos: ' + str(self.Regulators[mrid]['step']), flush=True)
 
 
-  def on_setpoints_message(self, headers, message):
+  def on_setpoints_message(self, header, message):
     print('### Received set-points message: ' + str(message), flush=True)
-    print('### set-points header: ' + str(headers), flush=True)
-    self.messageQueue.put((False, message))
+    print('### Received set-points header: ' + str(header), flush=True)
+    self.messageQueue.put((header, message))
 
 
-  def processSetpointsMessage(self, message):
+  def get_app_name(self, header):
+    app_name = header['destination']
+
+    if app_name.startswith('/topic/goss.gridappsd.simulation.'):
+      endind = app_name[33:].find('.')
+      app_name = app_name[33:33+endind]
+
+    return app_name
+
+
+  def processSetpointsMessage(self, message, header):
     # for SHIVA conflict metric testing
     #realTime = round(time.time(), 4)
 
-    app_name = message['app_name']
+    app_name = self.get_app_name(header)
     timestamp = message['timestamp']
     set_points = message['set_points']
 
@@ -537,7 +547,7 @@ class DeconflictionPipeline(GridAPPSD):
     self.messageQueue = queue.Queue()
 
     # must enumerate all possible apps since I need separate topics for each
-    # to distinguish them via message headers
+    # to distinguish them via message header
     competing_apps = ['gridappsd-resilience-app',
                       'gridappsd-decarbonization-app',
                       'gridappsd-profit_cvr-app']
@@ -640,15 +650,15 @@ class DeconflictionPipeline(GridAPPSD):
       # as it would only make sense to discard when there is a newer setpoints
       # message from the same competing app.
       while self.messageQueue.qsize() > 0:
-        simMsgFlag, message = self.messageQueue.get()
-        if not simMsgFlag:
+        header, message = self.messageQueue.get()
+        if header != None:
           break
 
-      if simMsgFlag:
+      if header == None:
         self.processSimulationMessage(message)
 
       else:
-        self.processSetpointsMessage(message)
+        self.processSetpointsMessage(message, header)
 
     for app in competing_apps:
       gapps.unsubscribe(set_id[app])

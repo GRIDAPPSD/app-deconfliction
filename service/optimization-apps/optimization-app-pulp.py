@@ -356,14 +356,12 @@ class CompetingApp(GridAPPSD):
 
         # GDB 4/30/24 Don't send optimization problem details
         #out_message = {
-        #  'app_name': self.app_name,
         #  'timestamp': timestamp,
         #  'set_points': set_points,
         #  'opt_prob': opt_prob,
         #  'objective': objective
         #}
         out_message = {
-          'app_name': self.app_name,
           'timestamp': timestamp,
           'set_points': set_points
         }
@@ -376,8 +374,8 @@ class CompetingApp(GridAPPSD):
         self.gapps.send(self.publish_topic, out_message)
 
 
-  def on_message(self, headers, message):
-    #print('headers: ' + str(headers), flush=True)
+  def on_message(self, header, message):
+    #print('header: ' + str(header), flush=True)
     #print('message: ' + str(message), flush=True)
     if not self.keepLoopingFlag:
       return
