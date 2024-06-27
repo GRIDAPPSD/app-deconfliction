@@ -399,7 +399,7 @@ class CompetingApp(GridAPPSD):
                    'Target SoC'], tablefmt='psql'), flush=True)
 
     out_message = {
-      'app_name': self.opt_type+'-app',
+      'app_name': self.app_name,
       'timestamp': timestamp,
       'set_points': set_points
     }
@@ -962,8 +962,8 @@ class CompetingApp(GridAPPSD):
     #self.defineOptimizationStaticProblem(branch_info, RegIdx)
 
     # topic for sending out set_points messages
-    self.publish_topic = service_output_topic('gridappsd-competing-app',
-                                              simulation_id)
+    self.app_name = 'gridappsd-' + self.opt_type + '-app'
+    self.publish_topic = service_output_topic(self.app_name, simulation_id)
 
     print('\nInitialized ' + opt_type +
           ' optimization competing app, waiting for messages...\n',

@@ -452,6 +452,7 @@ class DeconflictionPipeline(GridAPPSD):
 
   def on_setpoints_message(self, headers, message):
     print('### Received set-points message: ' + str(message), flush=True)
+    print('### set-points header: ' + str(headers), flush=True)
     self.messageQueue.put((False, message))
 
 
@@ -535,9 +536,16 @@ class DeconflictionPipeline(GridAPPSD):
 
     self.messageQueue = queue.Queue()
 
-    # subscribe to competing app set-points messages
-    set_id = gapps.subscribe(service_output_topic('gridappsd-competing-app',
-                                      simulation_id), self.on_setpoints_message)
+    # must enumerate all possible apps since I need separate topics for each
+    # to distinguish them via message headers
+    competing_apps = ['gridappsd-resilience-app',
+                      'gridappsd-decarbonization-app',
+                      'gridappsd-profit_cvr-app']
+    set_id = {}
+    for app in competing_apps:
+      # subscribe to competing app set-points messages
+      set_id[app] = gapps.subscribe(service_output_topic(app,
+                                    simulation_id), self.on_setpoints_message)
 
     # subscribe to simulation log and output messages
     self.keepLoopingFlag = True
@@ -642,7 +650,8 @@ class DeconflictionPipeline(GridAPPSD):
       else:
         self.processSetpointsMessage(message)
 
-    gapps.unsubscribe(set_id)
+    for app in competing_apps:
+      gapps.unsubscribe(set_id[app])
     gapps.unsubscribe(out_id)
     gapps.unsubscribe(log_id)
 
