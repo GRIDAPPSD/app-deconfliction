@@ -82,6 +82,7 @@ class AppUtil:
     print('\nCount of Combine Regulators: ' + str(len(bindings)), flush=True)
     reg_idx = 0
     for obj in bindings:
+      rid = obj['rid']['value']
       pname = obj['pname']['value']
       if 'phs' in obj:
         phases = obj['phs']['value']
@@ -95,8 +96,8 @@ class AppUtil:
         mrid = obj['pid']['value']
         name = 'RatioTapChanger.' + pname
 
-      Regulators[mrid] = \
-              {'pname': pname, 'name': name, 'idx': reg_idx, 'phases': phases}
+      Regulators[mrid] = {'rid': rid, 'pname': pname, 'name': name, \
+                          'idx': reg_idx, 'phases': phases}
       MethodUtil.DeviceToName[mrid] = name
       MethodUtil.NameToDevice[name] = mrid
 
