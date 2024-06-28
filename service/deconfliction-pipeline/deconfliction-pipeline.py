@@ -105,14 +105,6 @@ class DeconflictionPipeline(GridAPPSD):
       #attribute = point['attribute']
       value = point['value']
 
-      name = MethodUtil.DeviceToName[device]
-      #print('device: ' + device + ', name: ' + name + ', value: ' + str(value), flush=True)
-      #if name.startswith('BatteryUnit.'):
-      #  print('~~> setpoints from app: ' + app_name +
-      #        ', timestamp: ' + str(timestamp) +
-      #        ', device: ' + device + ', name: ' + name +
-      #        ', value: ' + str(value), flush=True)
-
       if device not in self.ConflictMatrix:
         self.ConflictMatrix[device] = {}
 
