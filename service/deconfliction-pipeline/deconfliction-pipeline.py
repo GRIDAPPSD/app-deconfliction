@@ -113,14 +113,14 @@ class DeconflictionPipeline(GridAPPSD):
     print('ConflictMatrix: ' + str(self.ConflictMatrix), flush=True)
 
     if self.testDeviceName:
-      mrid = MethodUtil.NameToDevice[self.testDeviceName]
-      if mrid in set_points:
+      devid = MethodUtil.NameToDevice[self.testDeviceName]
+      if devid in set_points:
         print('~TEST: set-points message with ' + self.testDeviceName +
-              ' set-point: ' + str(set_points[mrid]) +
+              ' set-point: ' + str(set_points[devid]) +
               ', app: ' + app_name +
               ', timestamp: ' + str(timestamp), flush=True)
         print('~TEST: ConflictMatrix for ' + self.testDeviceName + ': ' +
-              str(self.ConflictMatrix[mrid]), flush=True)
+              str(self.ConflictMatrix[devid]), flush=True)
       else:
         print('~TEST: set-points message does not contain ' +
               self.testDeviceName, flush=True)
@@ -253,12 +253,12 @@ class DeconflictionPipeline(GridAPPSD):
             flush=True)
 
       if self.testDeviceName:
-        mrid = MethodUtil.NameToDevice[self.testDeviceName]
-        if mrid in newResolutionVector:
+        devid = MethodUtil.NameToDevice[self.testDeviceName]
+        if devid in newResolutionVector:
           print('~TEST: ResolutionVector (conflict) for ' +
                 self.testDeviceName + ' setpoint: ' +
-                str(newResolutionVector[mrid][1]) + ', timestamp: ' +
-                str(newResolutionVector[mrid][0]), flush=True)
+                str(newResolutionVector[devid][1]) + ', timestamp: ' +
+                str(newResolutionVector[devid][0]), flush=True)
         else:
           print('~TEST: ResolutionVector (conflict) does not contain ' +
                 self.testDeviceName, flush=True)
@@ -275,13 +275,13 @@ class DeconflictionPipeline(GridAPPSD):
             flush=True)
 
       if self.testDeviceName:
-        mrid = MethodUtil.NameToDevice[self.testDeviceName]
-        if mrid in newResolutionVector:
+        devid = MethodUtil.NameToDevice[self.testDeviceName]
+        if devid in newResolutionVector:
           print('~TEST: ResolutionVector (no conflict) for ' +
                 self.testDeviceName + ' setpoint: ' +
-                str(newResolutionVector[mrid][1]) +
+                str(newResolutionVector[devid][1]) +
                 ', timestamp: ' +
-                str(newResolutionVector[mrid][0]),
+                str(newResolutionVector[devid][0]),
                 flush=True)
         else:
           print('~TEST: ResolutionVector (no conflict) does not contain ' +
@@ -295,54 +295,54 @@ class DeconflictionPipeline(GridAPPSD):
     # different values
     diffCount = 0
 
-    for device, value in newResolutionVector.items():
-      name = MethodUtil.DeviceToName[device]
+    for devid, value in newResolutionVector.items():
+      name = MethodUtil.DeviceToName[devid]
       if name.startswith('BatteryUnit.'):
-        if value[1] != self.Batteries[device]['P_batt']:
+        if value[1] != self.Batteries[devid]['P_batt']:
           #new value before old value for DifferenceBuilder
-          self.difference_builder.add_difference(self.Batteries[device]['id'],
-                                      'PowerElectronicsConnection.p', value[1],
-                                      self.Batteries[device]['P_batt'])
+          self.difference_builder.add_difference(devid,
+                                       'PowerElectronicsConnection.p', value[1],
+                                       self.Batteries[devid]['P_batt'])
           diffCount += 1
 
-          print('~~> Dispatching to battery device: ' + device + ', name: ' +
+          print('~~> Dispatching to battery device: ' + devid + ', name: ' +
                 name + ', timestamp: ' + str(timestamp) + ', new value: ' +
                 str(value[1]) + ', old value: ' +
-                str(self.Batteries[device]['P_batt']), flush=True)
+                str(self.Batteries[devid]['P_batt']), flush=True)
 
           if self.testDeviceName and name==self.testDeviceName:
-            print('~TEST: Dispatching to battery device: ' + device +
+            print('~TEST: Dispatching to battery device: ' + devid +
                   ', name: ' + name + ', timestamp: ' + str(timestamp) +
                   ', new value: ' + str(value[1]) + ', old value: ' +
-                  str(self.Batteries[device]['P_batt']), flush=True)
+                  str(self.Batteries[devid]['P_batt']), flush=True)
 
         else:
-          print('~~> NO DISPATCH needed to battery device: ' + device +
+          print('~~> NO DISPATCH needed to battery device: ' + devid +
                 ', name: ' + name + ', timestamp: ' + str(timestamp) +
                 ', same value: ' + str(value[1]), flush=True)
 
       elif name.startswith('RatioTapChanger.'):
         # Dispatch regulator tap positions whenever they are different from the
         # current tap position
-        if value[1] != self.Regulators[device]['step']:
+        if value[1] != self.Regulators[devid]['step']:
           # new value before old value for DifferenceBuilder
-          self.difference_builder.add_difference(self.Regulators[device]['rid'],
-                   'TapChanger.step', value[1], self.Regulators[device]['step'])
+          self.difference_builder.add_difference(devid,
+                   'TapChanger.step', value[1], self.Regulators[devid]['step'])
           diffCount += 1
 
-          print('==> Dispatching to regulator device: ' + device + ', name: ' +
+          print('==> Dispatching to regulator device: ' + devid + ', name: ' +
                 name + ', timestamp: ' + str(timestamp) + ', new value: ' +
                 str(value[1]) + ', old value: ' +
-                str(self.Regulators[device]['step']), flush=True)
+                str(self.Regulators[devid]['step']), flush=True)
 
           if self.testDeviceName and name==self.testDeviceName:
-              print('~TEST: Dispatching to regulator device: ' + device +
+              print('~TEST: Dispatching to regulator device: ' + devid +
                     ', name: ' + name + ', timestamp: ' + str(timetstamp) +
                     ', new value: ' + str(value[1]) + ', old value: ' +
-                    str(self.Regulators[device]['step']), flush=True)
+                    str(self.Regulators[devid]['step']), flush=True)
 
         else:
-          print('~~> NO DISPATCH needed to regulator device: ' + device +
+          print('~~> NO DISPATCH needed to regulator device: ' + devid +
                 ', name: ' + name + ', timestamp: ' + str(timestamp) +
                 ', same value: ' + str(value[1]), flush=True)
 
@@ -350,15 +350,15 @@ class DeconflictionPipeline(GridAPPSD):
     # in the new resolution.  In this case it's a "don't care" for the new
     # resolution and the device is left at the previous value with nothing sent
     if len(self.ResolutionVector) > len(newResolutionVector):
-      for device in self.ResolutionVector:
-        if device not in newResolutionVector:
-          print('==> Device deleted from resolution: ' + device +
-                ', name: ' + MethodUtil.DeviceToName[device], flush=True)
+      for devid in self.ResolutionVector:
+        if devid not in newResolutionVector:
+          print('==> Device deleted from resolution: ' + devid +
+                ', name: ' + MethodUtil.DeviceToName[devid], flush=True)
 
           if self.testDeviceName and \
-             MethodUtil.DeviceToName[device]==self.testDeviceName:
-            print('~TEST: Device deleted from resolution: ' + device +
-                  ', name: ' + MethodUtil.DeviceToName[device], flush=True)
+             MethodUtil.DeviceToName[devid]==self.testDeviceName:
+            print('~TEST: Device deleted from resolution: ' + devid +
+                  ', name: ' + MethodUtil.DeviceToName[devid], flush=True)
 
     if diffCount > 0:
       dispatch_message = self.difference_builder.get_message()
@@ -394,44 +394,44 @@ class DeconflictionPipeline(GridAPPSD):
   def processSimulationMessage(self, message):
     # update SoC values in MethodUtil for same reason
     measurements = message['measurements']
-    for mrid in self.Batteries:
-      measid = self.Batteries[mrid]['SoC_measid']
+    for devid in self.Batteries:
+      measid = self.Batteries[devid]['SoC_measid']
       if measid in measurements:
-        self.Batteries[mrid]['SoC'] = measurements[measid]['value']/100.0
-        MethodUtil.BatterySoC[mrid] = self.Batteries[mrid]['SoC']
-        print('Timestamp ' + str(message['timestamp']) + ' updated SoC for ' + self.Batteries[mrid]['name'] + ': ' + str(self.Batteries[mrid]['SoC']), flush=True)
+        self.Batteries[devid]['SoC'] = measurements[measid]['value']/100.0
+        MethodUtil.BatterySoC[devid] = self.Batteries[devid]['SoC']
+        print('Timestamp ' + str(message['timestamp']) + ' updated SoC for ' + self.Batteries[devid]['name'] + ': ' + str(self.Batteries[devid]['SoC']), flush=True)
 
-      measid = self.Batteries[mrid]['P_batt_measid']
+      measid = self.Batteries[devid]['P_batt_measid']
       if measid in measurements:
         p, q = self.pol2cart(measurements[measid]['magnitude'],
                              measurements[measid]['angle'])
         # negate the p value from the simulation so it is directly comparable
         # to the value that must be given to GridLAB-D in a DifferenceBuilder
         # message
-        self.Batteries[mrid]['P_batt'] = -p
-        MethodUtil.BatteryP_batt[mrid] = self.Batteries[mrid]['P_batt']
-        print('Timestamp ' + str(message['timestamp']) + ' updated P_batt for ' + self.Batteries[mrid]['name'] + ': ' + str(self.Batteries[mrid]['P_batt']), flush=True)
+        self.Batteries[devid]['P_batt'] = -p
+        MethodUtil.BatteryP_batt[devid] = self.Batteries[devid]['P_batt']
+        print('Timestamp ' + str(message['timestamp']) + ' updated P_batt for ' + self.Batteries[devid]['name'] + ': ' + str(self.Batteries[devid]['P_batt']), flush=True)
 
-    for mrid in self.Regulators:
-      measid = self.Regulators[mrid]['measid']
+    for devid in self.Regulators:
+      measid = self.Regulators[devid]['measid']
       if measid in measurements:
-        self.Regulators[mrid]['step'] = measurements[measid]['value']
-        MethodUtil.RegulatorPos[mrid] = self.Regulators[mrid]['step']
-        print('Timestamp ' + str(message['timestamp']) + ' updated tap position for ' + self.Regulators[mrid]['name'] + ': ' + str(self.Regulators[mrid]['step']), flush=True)
+        self.Regulators[devid]['step'] = measurements[measid]['value']
+        MethodUtil.RegulatorPos[devid] = self.Regulators[devid]['step']
+        print('Timestamp ' + str(message['timestamp']) + ' updated tap position for ' + self.Regulators[devid]['name'] + ': ' + str(self.Regulators[devid]['step']), flush=True)
 
     if self.testDeviceName:
-      mrid = MethodUtil.NametoDevice[self.testDeviceName]
-      if mrid in self.Batteries:
+      devid = MethodUtil.NametoDevice[self.testDeviceName]
+      if devid in self.Batteries:
         print('~TEST simulation updated SoC for device name: ' +
               self.testDeviceName + ', timestamp: ' + str(message['timestamp'])+
-              ', SoC: ' + str(self.Batteries[mrid]['SoC']), flush=True)
+              ', SoC: ' + str(self.Batteries[devid]['SoC']), flush=True)
         print('~TEST simulation updated P_batt for device name: ' +
               self.testDeviceName + ', timestamp: ' + str(message['timestamp'])+
-              ', P_batt: ' + str(self.Batteries[mrid]['P_batt']), flush=True)
-      elif mrid in self.Regulators:
+              ', P_batt: ' + str(self.Batteries[devid]['P_batt']), flush=True)
+      elif devid in self.Regulators:
         print('~TEST simulation updated tap position for device name: ' +
               self.testDeviceName + ', timestamp: ' + str(message['timestamp'])+
-              ', pos: ' + str(self.Regulators[mrid]['step']), flush=True)
+              ', pos: ' + str(self.Regulators[devid]['step']), flush=True)
 
 
   def on_setpoints_message(self, header, message):

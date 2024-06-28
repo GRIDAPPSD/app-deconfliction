@@ -15,31 +15,35 @@ class AppUtil:
   """
 
   def getRegulators(sparql_mgr):
+    RegulatorMap = {}
     Regulators = {}
     bindings = sparql_mgr.regulator_query()
     #print('regulator_query results bindings: ' + str(bindings), flush=True)
     print('\nCount of Regulators: ' + str(len(bindings)), flush=True)
     for obj in bindings:
-      mrid = obj['pid']['value']
+      devid = obj['rid']['value']
+      eqid = obj['pid']['value']
+      RegulatorMap[eqid] = devid
+
       name = 'RatioTapChanger.' + obj['pname']['value']
       if 'tname' in obj:
-        mrid = obj['tid']['value']
+        eqid = obj['tid']['value']
         name = 'RatioTapChanger.' + obj['tname']['value']
       if 'phs' in obj:
         phases = obj['phs']['value']
       else:
         phases = 'ABC'
-      Regulators[mrid] = {}
-      Regulators[mrid]['phase'] = phases
-      Regulators[mrid]['name'] = name
-      Regulators[mrid]['rid'] = obj['rid']['value']
-      Regulators[mrid]['step'] = int(obj['step']['value'])
-      Regulators[mrid]['highStep'] = int(obj['highStep']['value'])
-      Regulators[mrid]['lowStep'] = int(obj['lowStep']['value'])
-      Regulators[mrid]['increment'] = float(obj['incr']['value'])
-      print('Regulator mrid: ' + mrid + ', name: ' + name + ', rid: ' + Regulators[mrid]['rid'] + ', phase: ' + Regulators[mrid]['phase'] + ', step: ' + str(Regulators[mrid]['step']), flush=True)
-      MethodUtil.DeviceToName[mrid] = name
-      MethodUtil.NameToDevice[name] = mrid
+
+      Regulators[devid] = {}
+      Regulators[devid]['phase'] = phases
+      Regulators[devid]['name'] = name
+      Regulators[devid]['step'] = int(obj['step']['value'])
+      Regulators[devid]['highStep'] = int(obj['highStep']['value'])
+      Regulators[devid]['lowStep'] = int(obj['lowStep']['value'])
+      Regulators[devid]['increment'] = float(obj['incr']['value'])
+      print('Regulator devid: ' + devid + ', name: ' + name + ', phase: ' + Regulators[devid]['phase'] + ', step: ' + str(Regulators[devid]['step']), flush=True)
+      MethodUtil.DeviceToName[devid] = name
+      MethodUtil.NameToDevice[name] = devid
 
     # Add measid key to Regulators for matching sim measurements
     objs = sparql_mgr.obj_meas_export('PowerTransformer')
@@ -53,21 +57,21 @@ class AppUtil:
         # GDB 6/25/24: This is ideally how matches should be done, but this
         # doesn't work with our current regulator query so improvising...
         #if item['eqid'] in Regulators:
-        #  Regulators[item['eqid']]['measid'] = item['measid']
+        #  Regulators[RegulatorMap[item['eqid']]]['measid'] = item['measid']
         #  matches += 1
         nameToMatch = 'RatioTapChanger.' + item['eqname']
-        for mrid in Regulators:
-          shortName = Regulators[mrid]['name'][:-1]
-          if Regulators[mrid]['name'] == nameToMatch:
-            Regulators[mrid]['measid'] = item['measid']
+        for devid in Regulators:
+          shortName = Regulators[devid]['name'][:-1]
+          if Regulators[devid]['name'] == nameToMatch:
+            Regulators[devid]['measid'] = item['measid']
             matches += 1
-            #print('Matched full name Regulator dictionary item: ' + str(Regulators[mrid]), flush=True)
+            #print('Matched full name Regulator dictionary item: ' + str(Regulators[devid]), flush=True)
             break
           elif shortName==nameToMatch and \
-               Regulators[mrid]['phase']==item['phases']:
-            Regulators[mrid]['measid'] = item['measid']
+               Regulators[devid]['phase']==item['phases']:
+            Regulators[devid]['measid'] = item['measid']
             matches += 1
-            #print('Matched short name Regulator dictionary item: ' + str(Regulators[mrid]), flush=True)
+            #print('Matched short name Regulator dictionary item: ' + str(Regulators[devid]), flush=True)
             break
 
     print('Matching Regulator measurement attempts: ' + str(attempts) + ', matches: ' + str(matches), flush=True)
@@ -82,7 +86,7 @@ class AppUtil:
     print('\nCount of Combine Regulators: ' + str(len(bindings)), flush=True)
     reg_idx = 0
     for obj in bindings:
-      rid = obj['rid']['value']
+      devid = obj['rid']['value']
       pname = obj['pname']['value']
       if 'phs' in obj:
         phases = obj['phs']['value']
@@ -90,16 +94,16 @@ class AppUtil:
         phases = 'ABC'
 
       if 'tname' in obj:
-        mrid = obj['tid']['value']
+        #mrid = obj['tid']['value']
         name = 'RatioTapChanger.' + obj['tname']['value']
       else:
-        mrid = obj['pid']['value']
+        #mrid = obj['pid']['value']
         name = 'RatioTapChanger.' + pname
 
-      Regulators[mrid] = {'rid': rid, 'pname': pname, 'name': name, \
-                          'idx': reg_idx, 'phases': phases}
-      MethodUtil.DeviceToName[mrid] = name
-      MethodUtil.NameToDevice[name] = mrid
+      Regulators[devid] = {'pname': pname, 'name': name, \
+                           'idx': reg_idx, 'phases': phases}
+      MethodUtil.DeviceToName[devid] = name
+      MethodUtil.NameToDevice[name] = devid
 
       for char in phases:
         RegIdx[pname+'.'+char] = reg_idx
@@ -110,42 +114,46 @@ class AppUtil:
 
 
   def getBatteries(sparql_mgr):
+    BatteryMap = {}
     Batteries = {}
     bindings = sparql_mgr.battery_query()
     #print('battery_query results bindings: ' + str(bindings), flush=True)
     print('\nCount of Batteries: ' + str(len(bindings)), flush=True)
     idx = 0
     for obj in bindings:
-      mrid = obj['pecid']['value']
+      devid = obj['id']['value']
+      eqid = obj['pecid']['value']
+      BatteryMap[eqid] = devid
+
+      Batteries[devid] = {}
+      Batteries[devid]['idx'] = idx
       name = 'BatteryUnit.' + obj['name']['value']
-      Batteries[mrid] = {}
-      Batteries[mrid]['idx'] = idx
-      Batteries[mrid]['name'] = name
-      Batteries[mrid]['id'] = obj['id']['value']
-      Batteries[mrid]['bus'] = obj['bus']['value']
-      Batteries[mrid]['phase'] = obj['phases']['value']
-      Batteries[mrid]['ratedkW'] = float(obj['ratedS']['value'])/1000.0
-      Batteries[mrid]['prated'] = float(obj['ratedS']['value'])
-      Batteries[mrid]['ratedE'] = float(obj['ratedE']['value'])
-      Batteries[mrid]['SoC'] = float(obj['storedE']['value'])/float(obj['ratedE']['value'])
+      Batteries[devid]['name'] = name
+      Batteries[devid]['id'] = obj['id']['value']
+      Batteries[devid]['bus'] = obj['bus']['value']
+      Batteries[devid]['phase'] = obj['phases']['value']
+      Batteries[devid]['ratedkW'] = float(obj['ratedS']['value'])/1000.0
+      Batteries[devid]['prated'] = float(obj['ratedS']['value'])
+      Batteries[devid]['ratedE'] = float(obj['ratedE']['value'])
+      Batteries[devid]['SoC'] = float(obj['storedE']['value'])/float(obj['ratedE']['value'])
       # eff_c and eff_d don't come from the query, but they are used throughout
       # and this is a convenient point to assign them along with query results
-      Batteries[mrid]['eff'] = 0.975 * 0.86
-      Batteries[mrid]['eff_c'] = 0.975 * 0.86
-      Batteries[mrid]['eff_d'] = 0.975 * 0.86
-      print('Battery mrid: ' + mrid + ', name: ' + name + ', ratedE: ' + str(round(Batteries[mrid]['ratedE'],4)) + ', SoC: ' + str(round(Batteries[mrid]['SoC'],4)), flush=True)
+      Batteries[devid]['eff'] = 0.975 * 0.86
+      Batteries[devid]['eff_c'] = 0.975 * 0.86
+      Batteries[devid]['eff_d'] = 0.975 * 0.86
+      print('Battery devid: ' + devid + ', name: ' + name + ', ratedE: ' + str(round(Batteries[devid]['ratedE'],4)) + ', SoC: ' + str(round(Batteries[devid]['SoC'],4)), flush=True)
       idx += 1
-      MethodUtil.DeviceToName[mrid] = name
-      MethodUtil.NameToDevice[name] = mrid
+      MethodUtil.DeviceToName[devid] = name
+      MethodUtil.NameToDevice[name] = devid
 
     # Add measid key to Batteries for matching sim measurements
     objs = sparql_mgr.obj_meas_export('PowerElectronicsConnection')
     for item in objs:
-      if item['eqid'] in Batteries:
+      if item['eqid'] in BatteryMap:
         if item['type'] == 'VA':
-          Batteries[item['eqid']]['P_batt_measid'] = item['measid']
+          Batteries[BatteryMap[item['eqid']]]['P_batt_measid'] = item['measid']
         elif item['type'] == 'SoC':
-          Batteries[item['eqid']]['SoC_measid'] = item['measid']
+          Batteries[BatteryMap[item['eqid']]]['SoC_measid'] = item['measid']
 
     return Batteries
 
@@ -251,13 +259,13 @@ class AppUtil:
   def make_plots(title, prefix, Batteries, t_plot, p_batt_plot, soc_plot):
     matplotlib.use('agg')
 
-    for mrid in Batteries:
-      name = MethodUtil.DeviceToName[mrid]
+    for devid in Batteries:
+      name = MethodUtil.DeviceToName[devid]
       batname = name[12:] # extract just the name for tidier plots
       plt.figure()
       fig, ax = plt.subplots()
       plt.title(title + ' P_batt:  ' + batname, pad=15.0)
-      plt.plot(t_plot, p_batt_plot[mrid])
+      plt.plot(t_plot, p_batt_plot[devid])
       ax.xaxis.set_major_formatter(md.DateFormatter('%H:%M'))
       plt.xlim([AppUtil.to_datetime(1), AppUtil.to_datetime(96)])
       plt.xticks([AppUtil.to_datetime(1), AppUtil.to_datetime(25), AppUtil.to_datetime(49), AppUtil.to_datetime(73), AppUtil.to_datetime(96)])
@@ -269,7 +277,7 @@ class AppUtil:
       plt.figure()
       fig, ax = plt.subplots()
       plt.title(title + ' SoC:  ' + batname, pad=15.0)
-      plt.plot(t_plot, soc_plot[mrid])
+      plt.plot(t_plot, soc_plot[devid])
       ax.xaxis.set_major_formatter(md.DateFormatter('%H:%M'))
       plt.xlim([AppUtil.to_datetime(1), AppUtil.to_datetime(96)])
       plt.xticks([AppUtil.to_datetime(1), AppUtil.to_datetime(25), AppUtil.to_datetime(49), AppUtil.to_datetime(73), AppUtil.to_datetime(96)])
