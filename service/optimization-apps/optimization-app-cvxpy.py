@@ -60,6 +60,7 @@ from time import sleep
 import cvxpy as cp
 
 from gridappsd import GridAPPSD
+from gridappsd import DifferenceBuilder
 from gridappsd.topics import simulation_output_topic, simulation_log_topic, service_output_topic
 
 from datetime import datetime
@@ -376,13 +377,15 @@ class CompetingApp(GridAPPSD):
     '''
 
     regulator_taps = []
-    set_points = {}
     for reg in self.Regulators:
       idx = self.Regulators[reg]['idx']
       for k in range(32):
         if self.reg_taps[(idx, k)].value:
-          set_points[reg] = k-16
+          # new value before old value for DifferenceBuilder
+          self.difference_builder.add_difference(reg, 'TapChanger.step',
+                                                 k-16, None)
           regulator_taps.append([reg, k-16, self.b_i[k]])
+          break # assume this will only happen once per regulator
 
     print(tabulate(regulator_taps, headers=['Regulator', 'Tap', 'b_i'],
                    tablefmt='psql'), '\n', flush=True)
@@ -391,26 +394,22 @@ class CompetingApp(GridAPPSD):
     for mrid in self.Batteries:
       idx = self.Batteries[mrid]['idx']
       self.Batteries[mrid]['SoC'] = self.soc[idx].value
-      set_points[mrid] = self.p_batt[idx].value
-      p_batt_setpoints.append([mrid, set_points[mrid]/1000,
+      # new value before old value for DifferenceBuilder
+      # note the optimized p_batt value is negated for the GridLAB-D
+      # DifferenceBuilder message
+      self.difference_builder.add_difference(mrid,
+           'PowerElectronicsConnection.p', -self.p_batt[idx].value, None)
+      p_batt_setpoints.append([mrid, self.p_batt[idx].value/1000,
                                self.soc[idx].value])
 
     print(tabulate(p_batt_setpoints, headers=['Battery', 'P_batt (kW)',
                    'Target SoC'], tablefmt='psql'), flush=True)
 
-    out_message = {
-      'timestamp': timestamp,
-      'set_points': set_points
-    }
-      #'opt_prob': opt_prob,
-      #'objective': objval
-
-    # for testing queue draining, etc.
-    #print('SLEEP before sending message...', flush=True)
-    #sleep(5.0)
-
-    print('Sending message: ' + str(out_message), flush=True)
-    self.gapps.send(self.publish_topic, out_message)
+    dispatch_message = self.difference_builder.get_message()
+    print('Sending DifferenceBuilder message: ' +
+          json.dumps(dispatch_message), flush=True)
+    self.gapps.send(self.publish_topic, json.dumps(dispatch_message))
+    self.difference_builder.clear()
 
 
   def on_message(self, header, message):
@@ -963,6 +962,9 @@ class CompetingApp(GridAPPSD):
     # topic for sending out set_points messages
     self.app_name = 'gridappsd-' + self.opt_type + '-app'
     self.publish_topic = service_output_topic(self.app_name, simulation_id)
+
+    # create DifferenceBuilder once and reuse it throughout the simulation
+    self.difference_builder = DifferenceBuilder(simulation_id)
 
     print('\nInitialized ' + opt_type +
           ' optimization competing app, waiting for messages...\n',

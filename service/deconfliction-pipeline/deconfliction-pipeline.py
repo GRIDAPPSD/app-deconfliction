@@ -100,7 +100,11 @@ class DeconflictionPipeline(GridAPPSD):
         self.ConflictMatrix[device].pop(app_name)
 
     # now add the new set-points for app_name
-    for device, value in set_points.items():
+    for point in set_points:
+      device = point['object']
+      #attribute = point['attribute']
+      value = point['value']
+
       name = MethodUtil.DeviceToName[device]
       #print('device: ' + device + ', name: ' + name + ', value: ' + str(value), flush=True)
       #if name.startswith('BatteryUnit.'):
@@ -193,7 +197,9 @@ class DeconflictionPipeline(GridAPPSD):
 
   def ConflictIdentification(self, app_name, timestamp, set_points):
     # Determine if there is a new conflict
-    for device in set_points:
+    for point in set_points:
+      device = point['object']
+
       for app1 in self.ConflictMatrix[device]:
         if app1!=app_name and \
            (set_points[device]!=self.ConflictMatrix[device][app1][1] \
@@ -284,11 +290,8 @@ class DeconflictionPipeline(GridAPPSD):
       newResolutionVector = copy.deepcopy(self.ResolutionVector)
 
       # next copy the new set-points over top of the previous resolution
-      for device, value in set_points.items():
-        # uncomment the following line to only include batteries in resolution
-        # for testing
-        #if device.startswith('BatteryUnit.'):
-          newResolutionVector[device] = (timestamp, value)
+      for point in set_points:
+        newResolutionVector[point['object']] = (timestamp, point['value'])
 
       print('ResolutionVector (no conflict): ' + str(newResolutionVector),
             flush=True)
@@ -320,8 +323,8 @@ class DeconflictionPipeline(GridAPPSD):
         if value[1] != self.Batteries[device]['P_batt']:
           #new value before old value for DifferenceBuilder
           self.difference_builder.add_difference(self.Batteries[device]['id'],
-                                      'PowerElectronicsConnection.p', -value[1],
-                                      -self.Batteries[device]['P_batt'])
+                                      'PowerElectronicsConnection.p', value[1],
+                                      self.Batteries[device]['P_batt'])
           diffCount += 1
 
           print('~~> Dispatching to battery device: ' + device + ', name: ' +
@@ -424,7 +427,10 @@ class DeconflictionPipeline(GridAPPSD):
       if measid in measurements:
         p, q = self.pol2cart(measurements[measid]['magnitude'],
                              measurements[measid]['angle'])
-        self.Batteries[mrid]['P_batt'] = p
+        # negate the p value from the simulation so it is directly comparable
+        # to the value that must be given to GridLAB-D in a DifferenceBuilder
+        # message
+        self.Batteries[mrid]['P_batt'] = -p
         MethodUtil.BatteryP_batt[mrid] = self.Batteries[mrid]['P_batt']
         print('Timestamp ' + str(message['timestamp']) + ' updated P_batt for ' + self.Batteries[mrid]['name'] + ': ' + str(self.Batteries[mrid]['P_batt']), flush=True)
 
@@ -453,7 +459,7 @@ class DeconflictionPipeline(GridAPPSD):
   def on_setpoints_message(self, header, message):
     print('### Received set-points message: ' + str(message), flush=True)
     print('### Received set-points header: ' + str(header), flush=True)
-    self.messageQueue.put((header, message))
+    self.messageQueue.put((header, message['input']['message']))
 
 
   def get_app_name(self, header):
@@ -471,12 +477,13 @@ class DeconflictionPipeline(GridAPPSD):
     #realTime = round(time.time(), 4)
 
     app_name = self.get_app_name(header)
-    timestamp = message['timestamp']
-    set_points = message['set_points']
 
-    # GDB 8/14/23 Comment this out while we get cvxpy optimization working
-    #MethodUtil.OptimizationProblem = message['opt_prob']
-    #MethodUtil.Objective = message['objective']
+    timestamp = message['timestamp']
+
+    # set_points used to be a simple device, value dictionary. Now it is the
+    # forward_differences part of the DifferenceBuilder message with keys of
+    # object, attribute, and value.
+    set_points = message['forward_differences']
 
     # for checking order of messages received
     print('~ORDER: timestamp: ' + str(timestamp) + ', app: ' + app_name,
