@@ -129,7 +129,6 @@ class AppUtil:
       Batteries[devid]['idx'] = idx
       name = 'BatteryUnit.' + obj['name']['value']
       Batteries[devid]['name'] = name
-      Batteries[devid]['id'] = obj['id']['value']
       Batteries[devid]['bus'] = obj['bus']['value']
       Batteries[devid]['phase'] = obj['phases']['value']
       Batteries[devid]['ratedkW'] = float(obj['ratedS']['value'])/1000.0
