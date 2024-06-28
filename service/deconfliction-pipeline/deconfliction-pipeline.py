@@ -252,20 +252,6 @@ class DeconflictionPipeline(GridAPPSD):
       print('ResolutionVector (conflict): ' + str(newResolutionVector),
             flush=True)
 
-      # GDB 6/2/23 The logic that updates ConflictMatrix below is flawed
-      # in that updates effectively indicate that apps are happy with the
-      # resolution set-points when really they may not be, which will impact
-      # subsequent resolutions in ways that are likely not valid
-      '''
-      # Update ConflictMatrix with resolution vector setpoint values so that
-      # subsequent deconfliction doesn't need to resolve the same conflicts
-      # each time in addition to new conflicts from the latest set-points
-      for device, value in newResolutionVector.items():
-        for app in self.ConflictMatrix[device]:
-          self.ConflictMatrix[device][app] = \
-                  (max(value[0], self.ConflictMatrix[device][app][0]), value[1])
-      '''
-
       if self.testDeviceName:
         mrid = MethodUtil.NameToDevice[self.testDeviceName]
         if mrid in newResolutionVector:
@@ -484,29 +470,7 @@ class DeconflictionPipeline(GridAPPSD):
     # Step 1: Setpoint Processor
     self.SetpointProcessor(app_name, timestamp, set_points)
 
-    # GDB 11/2/24 SHIVA NOVEMBER special request
-    # count messages so deconfliction is only done when all competing apps
-    # have sent their set-point messages for a timestamp
-    #if timestamp not in self.message_count:
-    #  self.message_count[timestamp] = 1
-    #else:
-    #  self.message_count[timestamp] += 1
-
-    #if self.message_count[timestamp] < 2: # hardwired for 2 apps currently
-    #  return
-
-    #del self.message_count[timestamp]
-    #if len(self.message_count) > 0:
-    #  print('*** PANIC: set-point message counter in bad state: ' + str(self.message_counter), flush=True)
-    #  exit()
-    # end SHIVA NOVEMBER special request
-
     self.ConflictMetric(timestamp)
-
-    # for Alex
-    #print('!!! ALEX ConflictMatrix START !!!', flush=True)
-    #pprint.pprint(self.ConflictMatrix)
-    #print('!!! ALEX ConflictMatrix FINISH !!!', flush=True)
 
     # Step 2: Feasibility Maintainer -- not implemented for prototype
 
@@ -533,11 +497,6 @@ class DeconflictionPipeline(GridAPPSD):
     # for SHIVA conflict metric testing
     #self.TimeConflictMatrix[realTime] = copy.deepcopy(self.ConflictMatrix)
     #self.TimeResolutionVector[realTime] = copy.deepcopy(self.ResolutionVector)
-
-    # for ALEX
-    #print('!!! ALEX ResolutionVector START !!!', flush=True)
-    #pprint.pprint(self.ResolutionVector)
-    #print('!!! ALEX ResolutionVector FINISH !!!', flush=True)
 
 
   def __init__(self, gapps, feeder_mrid, simulation_id, weights_base):
@@ -574,10 +533,6 @@ class DeconflictionPipeline(GridAPPSD):
     # 'BatteryUnit.battery1', or None to omit test output
     self.testDeviceName = None
     #self.testDeviceName = 'BatteryUnit.battery1'
-
-    # GDB 11/2/24 SHIVA NOVEMBER special request
-    #self.message_count = {}
-    # End SHIVA NOVEMBER special request
 
     SPARQLManager = getattr(importlib.import_module('sparql'),
                             'SPARQLManager')
