@@ -194,8 +194,8 @@ class DeconflictionPipeline(GridAPPSD):
 
       for app1 in self.ConflictMatrix[device]:
         if app1!=app_name and \
-           (set_points[device]!=self.ConflictMatrix[device][app1][1] \
-            or timestamp!=self.ConflictMatrix[device][app1][0]):
+           (point['value']!=self.ConflictMatrix[device][app1][1] or \
+            timestamp!=self.ConflictMatrix[device][app1][0]):
           # once a conflict is found, return immediately
           return True
 
@@ -246,7 +246,6 @@ class DeconflictionPipeline(GridAPPSD):
       # TODO: This is where the Rules & Heuristics stage deconfliction will go
 
       # Cooperation stage deconfliction
-
       # Start with a "target" resolution vector using the Optimization stage
       # code that computes a weighted centroid per device
       targetResolutionVector = self.OptimizationDeconflict(app_name, timestamp)
