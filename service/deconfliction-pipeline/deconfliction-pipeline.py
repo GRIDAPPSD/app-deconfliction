@@ -126,7 +126,7 @@ class DeconflictionPipeline(GridAPPSD):
               self.testDeviceName, flush=True)
 
 
-  def ConflictMetric(self, timestamp):
+  def ConflictMetricComputation(self, timestamp):
     centroid = {}
     apps = {}
     n_devices = len(self.ConflictMatrix)
@@ -135,7 +135,7 @@ class DeconflictionPipeline(GridAPPSD):
     if n_devices == 0:
       print('Conflict Metric: Undefined (no conflicts), timestamp: ' +
             str(timestamp), flush=True)
-      return
+      return 0.0
 
     for device in self.ConflictMatrix:
       n_apps_device = len(self.ConflictMatrix[device])
@@ -185,6 +185,8 @@ class DeconflictionPipeline(GridAPPSD):
     conflict_metric = conflict_metric * 2 / math.sqrt(n_devices)
     print('Conflict Metric: ' + str(conflict_metric) + ', timestamp: ' +
           str(timestamp), flush=True)
+
+    return conflict_metric
 
 
   def ConflictIdentification(self, app_name, timestamp, set_points):
@@ -236,71 +238,6 @@ class DeconflictionPipeline(GridAPPSD):
           ResolutionVector[device] = (optTimestamp, optNumerator/optDenominator)
 
     return ResolutionVector
-
-
-  def DeconflictionToResolution(self, app_name, timestamp, set_points,
-                                conflictFlag):
-    # If there is a conflict, then perform combined/staged deconfliction to
-    # produce a resolution
-    if conflictFlag:
-      # TODO: This is where the Rules & Heuristics stage deconfliction will go
-
-      # Cooperation stage deconfliction
-      # Start with a "target" resolution vector using the Optimization stage
-      # code that computes a weighted centroid per device
-      targetResolutionVector = self.OptimizationDeconflict(app_name, timestamp)
-
-      # Publish this target resolution vector to the cooperation topic for
-      # competing apps that support cooperation respond to
-      self.gapps.send(self.coop_topic, json.dumps(targetResolutionVector))
-
-      # TODO: Cooperation stage remaining workflow: XXX
-      # Need to refactor this code because with cooperation you don't just
-      # finish deconfliction and send a resolution to devices. Instead you are
-      # waiting on my DifferenceBuilder messages to then compare Conflict
-      # Metric values to figure out whether to finish deconfliction or hold off
-
-      # Optimization stage deconfliction
-      newResolutionVector = self.OptimizationDeconflict(app_name, timestamp)
-      print('ResolutionVector (conflict): ' + str(newResolutionVector),
-            flush=True)
-
-      if self.testDeviceName:
-        devid = MethodUtil.NameToDevice[self.testDeviceName]
-        if devid in newResolutionVector:
-          print('~TEST: ResolutionVector (conflict) for ' +
-                self.testDeviceName + ' setpoint: ' +
-                str(newResolutionVector[devid][1]) + ', timestamp: ' +
-                str(newResolutionVector[devid][0]), flush=True)
-        else:
-          print('~TEST: ResolutionVector (conflict) does not contain ' +
-                self.testDeviceName, flush=True)
-
-    else: # no conflict
-      # start with a copy of the previous resolution
-      newResolutionVector = copy.deepcopy(self.ResolutionVector)
-
-      # next copy the new set-points over top of the previous resolution
-      for point in set_points:
-        newResolutionVector[point['object']] = (timestamp, point['value'])
-
-      print('ResolutionVector (no conflict): ' + str(newResolutionVector),
-            flush=True)
-
-      if self.testDeviceName:
-        devid = MethodUtil.NameToDevice[self.testDeviceName]
-        if devid in newResolutionVector:
-          print('~TEST: ResolutionVector (no conflict) for ' +
-                self.testDeviceName + ' setpoint: ' +
-                str(newResolutionVector[devid][1]) +
-                ', timestamp: ' +
-                str(newResolutionVector[devid][0]),
-                flush=True)
-        else:
-          print('~TEST: ResolutionVector (no conflict) does not contain ' +
-                self.testDeviceName, flush=True)
-
-    return newResolutionVector
 
 
   def DeviceDispatcher(self, timestamp, newResolutionVector):
@@ -483,19 +420,77 @@ class DeconflictionPipeline(GridAPPSD):
     # Step 1: Setpoint Processor
     self.SetpointProcessor(app_name, timestamp, set_points)
 
-    self.ConflictMetric(timestamp)
+    self.ConflictMetricComputation(timestamp)
 
-    # Step 2: Feasibility Maintainer -- not implemented for prototype
+    # Step 2: Feasibility Maintainer -- not implemented yet
 
     # Step 3: Deconflictor
     # Step 3.1: Conflict Identification
     conflictFlag = self.ConflictIdentification(app_name, timestamp, set_points)
 
     # Steps 3.2 and 3.3: Deconfliction Solution and Resolution
-    newResolutionVector = self.DeconflictionToResolution(app_name, timestamp,
-                                                       set_points, conflictFlag)
 
-    # Step 4: Setpoint Validator -- not implemented for prototype
+    # If there is a conflict, then perform combined/staged deconfliction to
+    # produce a resolution
+    if conflictFlag:
+      # TODO: This is where the Rules & Heuristics stage deconfliction will go
+
+      # Cooperation stage deconfliction
+      # Start with a "target" resolution vector using the Optimization stage
+      # code that computes a weighted centroid per device
+      targetResolutionVector = self.OptimizationDeconflict(app_name, timestamp)
+
+      # Publish this target resolution vector to the cooperation topic for
+      # competing apps that support cooperation respond to
+      self.gapps.send(self.coop_topic, json.dumps(targetResolutionVector))
+
+      # TODO: Cooperation stage remaining workflow: XXX
+      # Need to refactor this code because with cooperation you don't just
+      # finish deconfliction and send a resolution to devices. Instead you are
+      # waiting on my DifferenceBuilder messages to then compare Conflict
+      # Metric values to figure out whether to finish deconfliction or hold off
+
+      # Optimization stage deconfliction
+      newResolutionVector = self.OptimizationDeconflict(app_name, timestamp)
+      print('ResolutionVector (conflict): ' + str(newResolutionVector),
+            flush=True)
+
+      if self.testDeviceName:
+        devid = MethodUtil.NameToDevice[self.testDeviceName]
+        if devid in newResolutionVector:
+          print('~TEST: ResolutionVector (conflict) for ' +
+                self.testDeviceName + ' setpoint: ' +
+                str(newResolutionVector[devid][1]) + ', timestamp: ' +
+                str(newResolutionVector[devid][0]), flush=True)
+        else:
+          print('~TEST: ResolutionVector (conflict) does not contain ' +
+                self.testDeviceName, flush=True)
+
+    else: # no conflict
+      # start with a copy of the previous resolution
+      newResolutionVector = copy.deepcopy(self.ResolutionVector)
+
+      # next copy the new set-points over top of the previous resolution
+      for point in set_points:
+        newResolutionVector[point['object']] = (timestamp, point['value'])
+
+      print('ResolutionVector (no conflict): ' + str(newResolutionVector),
+            flush=True)
+
+      if self.testDeviceName:
+        devid = MethodUtil.NameToDevice[self.testDeviceName]
+        if devid in newResolutionVector:
+          print('~TEST: ResolutionVector (no conflict) for ' +
+                self.testDeviceName + ' setpoint: ' +
+                str(newResolutionVector[devid][1]) +
+                ', timestamp: ' +
+                str(newResolutionVector[devid][0]),
+                flush=True)
+        else:
+          print('~TEST: ResolutionVector (no conflict) does not contain ' +
+                self.testDeviceName, flush=True)
+
+    # Step 4: Setpoint Validator -- not implemented yet
 
     # Step 5: Device Dispatcher
     self.DeviceDispatcher(timestamp, newResolutionVector)
