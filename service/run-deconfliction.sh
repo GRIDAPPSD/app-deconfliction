@@ -32,7 +32,10 @@ fi
 MODEL=$1
 APPS=$2
 
-OPTLIB="pulp"
+# GDB 8/23/24: Switch default from PuLP to CVXPY because Tylor said that's
+# what we want to use for supporting cooperation deconfliction
+#OPTLIB="pulp"
+OPTLIB="cvxpy"
 INTERVAL=""
 WEIGHTS=""
 # tricky logic to process optional optlib and weights arguments. This could
