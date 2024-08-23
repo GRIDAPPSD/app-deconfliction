@@ -245,7 +245,21 @@ class DeconflictionPipeline(GridAPPSD):
     if conflictFlag:
       # TODO: This is where the Rules & Heuristics stage deconfliction will go
 
-      # TODO: This is where the Cooperation stage deconfliction will go
+      # Cooperation stage deconfliction
+
+      # Start with a "target" resolution vector using the Optimization stage
+      # code that computes a weighted centroid per device
+      targetResolutionVector = self.OptimizationDeconflict(app_name, timestamp)
+
+      # Publish this target resolution vector to the cooperation topic for
+      # competing apps that support cooperation respond to
+      self.gapps.send(self.coop_topic, json.dumps(targetResolutionVector))
+
+      # TODO: Cooperation stage remaining workflow: XXX
+      # Need to refactor this code because with cooperation you don't just
+      # finish deconfliction and send a resolution to devices. Instead you are
+      # waiting on my DifferenceBuilder messages to then compare Conflict
+      # Metric values to figure out whether to finish deconfliction or hold off
 
       # Optimization stage deconfliction
       newResolutionVector = self.OptimizationDeconflict(app_name, timestamp)
@@ -524,6 +538,10 @@ class DeconflictionPipeline(GridAPPSD):
 
     # simulation topic for sending DifferenceBuilder messages
     self.publish_topic = simulation_input_topic(simulation_id)
+
+    # service topic for sending target resolution messages to cooperating apps
+    self.coop_topic = service_output_topic('gridappsd-deconflictor-app',
+                                           simulation_id)
 
     # create DifferenceBuilder once and reuse it throughout the simulation
     self.difference_builder = DifferenceBuilder(simulation_id)
