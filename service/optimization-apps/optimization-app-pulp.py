@@ -904,8 +904,8 @@ class CompetingApp(GridAPPSD):
     # optimization interval seconds is the number of simulation seconds
     # between triggering an optimization and must be a multiple of 3
     #optIntervalSec = 3 # optimize every GridLAB-D timestamp
-    # 30 seconds is a good number for a real-time simulation
-    optIntervalSec = 30
+    # 15 seconds is a good number for a real-time simulation
+    optIntervalSec = 15
     if interval != None:
       optIntervalSec = int(interval)
 
