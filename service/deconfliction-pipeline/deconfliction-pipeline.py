@@ -420,8 +420,6 @@ class DeconflictionPipeline(GridAPPSD):
     # Step 1: Setpoint Processor
     self.SetpointProcessor(app_name, timestamp, set_points)
 
-    self.ConflictMetricComputation(timestamp)
-
     # Step 2: Feasibility Maintainer -- not implemented yet
 
     # Step 3: Deconflictor
@@ -430,43 +428,61 @@ class DeconflictionPipeline(GridAPPSD):
 
     # Steps 3.2 and 3.3: Deconfliction Solution and Resolution
 
+    # save the last conflict metric before computing a new one for comparison
+    self.previousConflictMetric = self.conflictMetric
+
     # If there is a conflict, then perform combined/staged deconfliction to
     # produce a resolution
     if conflictFlag:
-      # TODO: This is where the Rules & Heuristics stage deconfliction will go
+      self.conflictMetric = self.ConflictMetricComputation(timestamp)
 
-      # Cooperation stage deconfliction
-      # Start with a "target" resolution vector using the Optimization stage
-      # code that computes a weighted centroid per device
-      targetResolutionVector = self.OptimizationDeconflict(app_name, timestamp)
+      if self.dispatchedFlag:
+        self.dispatchedFlag = False
+        # TODO: This is where the Rules & Heuristics stage deconfliction will go
 
-      # Publish this target resolution vector to the cooperation topic for
-      # competing apps that support cooperation respond to
-      self.gapps.send(self.coop_topic, json.dumps(targetResolutionVector))
+        # Cooperation stage deconfliction
+        # Start with a "target" resolution vector using the Optimization stage
+        # code that computes a weighted centroid per device
+        targetResolutionVector = self.OptimizationDeconflict(app_name,timestamp)
 
-      # TODO: Cooperation stage remaining workflow: XXX
-      # Need to refactor this code because with cooperation you don't just
-      # finish deconfliction and send a resolution to devices. Instead you are
-      # waiting on my DifferenceBuilder messages to then compare Conflict
-      # Metric values to figure out whether to finish deconfliction or hold off
+        # Publish this target resolution vector to the cooperation topic for
+        # competing apps that support cooperation can respond to
+        self.gapps.send(self.coop_topic, json.dumps(targetResolutionVector))
+        return
 
-      # Optimization stage deconfliction
-      newResolutionVector = self.OptimizationDeconflict(app_name, timestamp)
-      print('ResolutionVector (conflict): ' + str(newResolutionVector),
-            flush=True)
+      else:
+        percentConflictDelta = (self.previousConflictMetric - self.conflictMetric)/self.previousConflictMetric
 
-      if self.testDeviceName:
-        devid = MethodUtil.NameToDevice[self.testDeviceName]
-        if devid in newResolutionVector:
-          print('~TEST: ResolutionVector (conflict) for ' +
-                self.testDeviceName + ' setpoint: ' +
-                str(newResolutionVector[devid][1]) + ', timestamp: ' +
-                str(newResolutionVector[devid][0]), flush=True)
+        if percentConflictDelta > 0.05: # 5% delta threshold for bailing
+          # Issue a new Cooperation stage message to competing apps
+          targetResolutionVector = self.OptimizationDeconflict(app_name,
+                                                               timestamp)
+          self.gapps.send(self.coop_topic, json.dumps(targetResolutionVector))
+          return
+
         else:
-          print('~TEST: ResolutionVector (conflict) does not contain ' +
-                self.testDeviceName, flush=True)
+          self.dispatchedFlag = True
+
+          # Optimization stage deconfliction
+          newResolutionVector = self.OptimizationDeconflict(app_name, timestamp)
+          print('ResolutionVector (conflict): ' + str(newResolutionVector),
+                flush=True)
+
+          if self.testDeviceName:
+            devid = MethodUtil.NameToDevice[self.testDeviceName]
+            if devid in newResolutionVector:
+              print('~TEST: ResolutionVector (conflict) for ' +
+                    self.testDeviceName + ' setpoint: ' +
+                    str(newResolutionVector[devid][1]) + ', timestamp: ' +
+                    str(newResolutionVector[devid][0]), flush=True)
+            else:
+              print('~TEST: ResolutionVector (conflict) does not contain ' +
+                    self.testDeviceName, flush=True)
 
     else: # no conflict
+      # conflict metric is 0.0 based on conflictFlag
+      self.conflictMetric = 0.0
+
       # start with a copy of the previous resolution
       newResolutionVector = copy.deepcopy(self.ResolutionVector)
 
@@ -560,6 +576,12 @@ class DeconflictionPipeline(GridAPPSD):
 
     self.ConflictMatrix = {}
     self.ResolutionVector = {}
+
+    # initialize conflict metric which will later be set to the previous value
+    self.conflictMetric = 0.0
+
+    # initialize dispatched flag used to control cooperation stage
+    self.dispatchedFlag = True
 
     # for SHIVA conflict metric testing
     #self.TimeConflictMatrix = {}
