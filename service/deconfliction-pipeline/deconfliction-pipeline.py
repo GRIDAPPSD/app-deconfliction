@@ -466,7 +466,11 @@ class DeconflictionPipeline(GridAPPSD):
           # that had a lower conflict metric value. Then I need to kick off a
           # new round of cooperation with the newest setpoints. That may mean
           # that I no longer need to keep a dispatched flag and I can eliminate
-          # the logic abvoe that uses that.
+          # the logic above that uses that.
+          # Overriding this, Tylor says they've already got a better solution
+          # to do this involving changing the dimension of the conflict matrix
+          # and that somehow indicating what to do. So I need to understand
+          # this and maybe it is proper path forward.
           self.dispatchedFlag = True
 
           # Optimization stage deconfliction
