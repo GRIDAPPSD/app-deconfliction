@@ -262,7 +262,7 @@ class CompetingApp(GridAPPSD):
       self.dynamicConstraints.append(self.soc[idx] >= 0.2)
 
 
-  def doOptimization(self, timestamp):
+  def doOptimization(self, timestamp, coopFlag):
     # GDB Come back for this later to convert from PuLP to CVXPY
     #data = self.dynamicProb.to_dict()
     #opt_prob = {}
@@ -286,6 +286,19 @@ class CompetingApp(GridAPPSD):
     if self.opt_type == 'decarbonization':
       # objective
       # The latest version of cvxpy complains "unbounded" if not normalized
+
+      # ZZZ This is where Tylor thinks the modifications would be needed
+      # for cooperation messages--just for the objective functions for each
+      # type of application. I'm not sure if I can do it outside of the logic
+      # for each opt_types or it need to be within. Also, the idea of using a
+      # flag is to be able to share this method whether optimizations are
+      # triggered by new measurements or by a cooperating message
+      '''
+      if coopFlag:
+        objective = self.Psub_mod / 1000 + sum()
+      else:
+        objective = self.Psub_mod / 1000
+      '''
       objective = self.Psub_mod / 1000
 
     elif self.opt_type == 'resilience':
@@ -994,6 +1007,19 @@ class CompetingApp(GridAPPSD):
       messageCounter += 1
 
       if 'measurements' in message: # this is a simulation measurements message
+        # always update the EnergyConsumers, etc. data structures with new
+        # measurements even if we aren't going to do an optimization so
+        # they will be up to date with any cooperation messages received
+
+        self.updateEnergyConsumers(message['measurements'])
+        #print('Updated EnergyConsumers #' + str(messageCounter) + ': ' + json.dumps(self.EnergyConsumers, indent=2), flush=True)
+
+        self.updateSolarPVs(message['measurements'])
+        #print('Updated SolarPVs #' + str(messageCounter) + ': ' + json.dumps(self.SolarPVs, indent=2), flush=True)
+
+        self.updateBatterySoC(message['measurements'])
+        #print('Updated BatterySoC #' + str(messageCounter) + ': ' + json.dumps(self.Batteries, indent=2), flush=True)
+
         timestamp = int(message['timestamp'])
 
         # If doing real-time simulation must subtract 5 off timestamp to make it
@@ -1008,22 +1034,13 @@ class CompetingApp(GridAPPSD):
           print('Simulation timestamp for optimization: ' + str(timestamp),
                 flush=True)
 
-          self.updateEnergyConsumers(message['measurements'])
-          #print('Updated EnergyConsumers #' + str(messageCounter) + ': ' + json.dumps(self.EnergyConsumers, indent=2), flush=True)
-
-          self.updateSolarPVs(message['measurements'])
-          #print('Updated SolarPVs #' + str(messageCounter) + ': ' + json.dumps(self.SolarPVs, indent=2), flush=True)
-
-          self.updateBatterySoC(message['measurements'])
-          #print('Updated BatterySoC #' + str(messageCounter) + ': ' + json.dumps(self.Batteries, indent=2), flush=True)
-
           # Need to define the full optimization problem each time anything
           # changes for CVXPY to be happy
           self.defineOptimizationStaticProblem(branch_info, RegIdx)
 
           self.defineOptimizationDynamicProblem(timestamp)
 
-          self.doOptimization(timestamp)
+          self.doOptimization(timestamp, False)
 
       else: # this is a cooperation message from deconflictor
         # message consists of a target ResolutionVector that is a dictionary
@@ -1034,6 +1051,18 @@ class CompetingApp(GridAPPSD):
         targetResolutionVector = message
         for mrid in targetResolutionVector:
           print('DECONFLICTOR COOPERATE mrid ' + mrid + ' target set-point: ' + str(targetResolutionVector[mrid]), flush=True)
+
+        # Need to define the full optimization problem each time anything
+        # changes for CVXPY to be happy
+        self.defineOptimizationStaticProblem(branch_info, RegIdx)
+
+        self.defineOptimizationDynamicProblem(timestamp)
+
+        '''
+        # ZZZ hold off on actually doing an optmization until we think the
+        # objective function is properly defined
+        self.doOptimization(timestamp, True)
+        '''
 
     gapps.unsubscribe(out_id)
     gapps.unsubscribe(log_id)
