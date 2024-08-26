@@ -424,8 +424,11 @@ class CompetingApp(GridAPPSD):
         self.keepLoopingFlag = False
         print('Simulation ' + status + ' message received', flush=True)
 
-    else:
+    elif 'message' in message:
       self.messageQueue.put(message['message'])
+
+    else:
+      self.messageQueue.put(message)
 
 
 
@@ -675,6 +678,8 @@ class CompetingApp(GridAPPSD):
     self.keepLoopingFlag = True
     out_id = gapps.subscribe(simulation_output_topic(simulation_id), self)
     log_id = gapps.subscribe(simulation_log_topic(simulation_id), self)
+    coop_id = gapps.subscribe(service_output_topic('gridappsd-deconflictor-app',
+                              simulation_id), self)
 
     SPARQLManager = getattr(importlib.import_module('sparql'), 'SPARQLManager')
     sparql_mgr = SPARQLManager(gapps, feeder_mrid, simulation_id)
@@ -988,39 +993,51 @@ class CompetingApp(GridAPPSD):
       message = self.messageQueue.get()
       messageCounter += 1
 
-      timestamp = int(message['timestamp'])
+      if 'measurements' in message: # this is a simulation measurements message
+        timestamp = int(message['timestamp'])
 
-      # If doing real-time simulation must subtract 5 off timestamp to make it
-      # evenly divisble by multiples of the 3 second GridLAB-D time interval
-      if (timestamp-5) % optIntervalSec != 0:
-      # If doing non-real-time simulation remove the 5 second offset because
-      # GridLAB-D outputs at 60 second intervals
-      #if timestamp % optIntervalSec != 0:
-        print('Simulation timestamp (skipping optimization): ' + str(timestamp),
-              flush=True)
-      else:
-        print('Simulation timestamp for optimization: ' + str(timestamp),
-              flush=True)
+        # If doing real-time simulation must subtract 5 off timestamp to make it
+        # evenly divisble by multiples of the 3 second GridLAB-D time interval
+        if (timestamp-5) % optIntervalSec != 0:
+        # If doing non-real-time simulation remove the 5 second offset because
+        # GridLAB-D outputs at 60 second intervals
+        #if timestamp % optIntervalSec != 0:
+          print('Simulation timestamp (skipping optimization): ' + str(timestamp),
+                flush=True)
+        else:
+          print('Simulation timestamp for optimization: ' + str(timestamp),
+                flush=True)
 
-        self.updateEnergyConsumers(message['measurements'])
-        #print('Updated EnergyConsumers #' + str(messageCounter) + ': ' + json.dumps(self.EnergyConsumers, indent=2), flush=True)
+          self.updateEnergyConsumers(message['measurements'])
+          #print('Updated EnergyConsumers #' + str(messageCounter) + ': ' + json.dumps(self.EnergyConsumers, indent=2), flush=True)
 
-        self.updateSolarPVs(message['measurements'])
-        #print('Updated SolarPVs #' + str(messageCounter) + ': ' + json.dumps(self.SolarPVs, indent=2), flush=True)
+          self.updateSolarPVs(message['measurements'])
+          #print('Updated SolarPVs #' + str(messageCounter) + ': ' + json.dumps(self.SolarPVs, indent=2), flush=True)
 
-        self.updateBatterySoC(message['measurements'])
-        #print('Updated BatterySoC #' + str(messageCounter) + ': ' + json.dumps(self.Batteries, indent=2), flush=True)
+          self.updateBatterySoC(message['measurements'])
+          #print('Updated BatterySoC #' + str(messageCounter) + ': ' + json.dumps(self.Batteries, indent=2), flush=True)
 
-        # Need to define the full optimization problem each time anything
-        # changes for CVXPY to be happy
-        self.defineOptimizationStaticProblem(branch_info, RegIdx)
+          # Need to define the full optimization problem each time anything
+          # changes for CVXPY to be happy
+          self.defineOptimizationStaticProblem(branch_info, RegIdx)
 
-        self.defineOptimizationDynamicProblem(timestamp)
+          self.defineOptimizationDynamicProblem(timestamp)
 
-        self.doOptimization(timestamp)
+          self.doOptimization(timestamp)
+
+      else: # this is a cooperation message from deconflictor
+        # message consists of a target ResolutionVector that is a dictionary
+        # with device mrid keys and target set-point values
+        # GDB: don't think I need to do a json.loads with message and it's
+        # already usable as a dictionary
+        # ZZZ
+        targetResolutionVector = message
+        for mrid in targetResolutionVector:
+          print('DECONFLICTOR COOPERATE mrid ' + mrid + ' target set-point: ' + str(targetResolutionVector[mrid]), flush=True)
 
     gapps.unsubscribe(out_id)
     gapps.unsubscribe(log_id)
+    gapps.unsubscribe(coop_id)
 
 
 def _main():
