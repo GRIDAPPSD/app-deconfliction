@@ -461,6 +461,12 @@ class DeconflictionPipeline(GridAPPSD):
           return
 
         else:
+          # TODO NEXT: Here I am now dispatching the most recent setpoints, but
+          # I really need to back up and dispatch from the previous setpoints
+          # that had a lower conflict metric value. Then I need to kick off a
+          # new round of cooperation with the newest setpoints. That may mean
+          # that I no longer need to keep a dispatched flag and I can eliminate
+          # the logic abvoe that uses that.
           self.dispatchedFlag = True
 
           # Optimization stage deconfliction
