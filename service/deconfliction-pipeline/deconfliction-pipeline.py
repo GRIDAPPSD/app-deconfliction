@@ -204,29 +204,29 @@ class DeconflictionPipeline(GridAPPSD):
     return False
 
 
-  def OptimizationDeconflict(self, app_name, timestamp):
+  def OptimizationDeconflict(self, app_name, timestamp, ConflictMatrix):
     ResolutionVector = {}
 
-    for device in self.ConflictMatrix:
+    for device in ConflictMatrix:
       optTimestamp = 0
       optNumerator = 0.0
       optDenominator = 0.0
 
-      for app in self.ConflictMatrix[device]:
-        optTimestamp = max(optTimestamp, self.ConflictMatrix[device][app][0])
+      for app in ConflictMatrix[device]:
+        optTimestamp = max(optTimestamp, ConflictMatrix[device][app][0])
 
         if app in self.OptDevWeights and device in self.OptDevWeights[app]:
-          optNumerator += self.ConflictMatrix[device][app][1] * \
+          optNumerator += ConflictMatrix[device][app][1] * \
                           self.OptDevWeights[app][device]
           optDenominator += self.OptDevWeights[app][device]
 
         elif app in self.OptAppWeights:
-          optNumerator += self.ConflictMatrix[device][app][1] * \
+          optNumerator += ConflictMatrix[device][app][1] * \
                           self.OptAppWeights[app]
           optDenominator += self.OptAppWeights[app]
 
         else:
-          optNumerator += self.ConflictMatrix[device][app][1]
+          optNumerator += ConflictMatrix[device][app][1]
           optDenominator += 1.0
 
       if optDenominator > 0.0:
@@ -417,6 +417,9 @@ class DeconflictionPipeline(GridAPPSD):
     print('~ORDER: timestamp: ' + str(timestamp) + ', app: ' + app_name,
           flush=True)
 
+    # copy conflict matrix before updating since I need this for cooperation
+    previousConflictMatrix = copy.deepcopy(self.ConflictMatrix)
+
     # Step 1: Setpoint Processor
     self.SetpointProcessor(app_name, timestamp, set_points)
 
@@ -434,60 +437,53 @@ class DeconflictionPipeline(GridAPPSD):
     # If there is a conflict, then perform combined/staged deconfliction to
     # produce a resolution
     if conflictFlag:
+      # Here is my proposed cooperation workflow. Tylor though says they've
+      # already got a better workflow involving changing the dimension of the
+      # conflicat matrix and that somehow indicating what to do. So I need to
+      # understand what they have and likely this is the better solution.
+
+      # Always send out a cooperation message because if we end up stopping
+      # cooperation based on the threshold value then it's for the previous
+      # conflict matrix that wer are dispatching device values for and we need
+      # to kickoff cooperation again for the new conflict matrix.
+
+      # Start with a "target" resolution vector using the Optimization stage
+      # code that computes a weighted centroid per device
+      targetResolutionVector = self.OptimizationDeconflict(app_name,
+                                                 timestamp, self.ConflictMatrix)
+
+      # Publish this target resolution vector to the cooperation topic for
+      # competing apps that support cooperation can respond to
+      self.gapps.send(self.coop_topic, json.dumps(targetResolutionVector))
+
       self.conflictMetric = self.ConflictMetricComputation(timestamp)
 
-      if self.dispatchedFlag:
-        self.dispatchedFlag = False
-        # TODO: This is where the Rules & Heuristics stage deconfliction will go
+      percentConflictDelta = (self.previousConflictMetric - self.conflictMetric)/self.previousConflictMetric
 
-        # Cooperation stage deconfliction
-        # Start with a "target" resolution vector using the Optimization stage
-        # code that computes a weighted centroid per device
-        targetResolutionVector = self.OptimizationDeconflict(app_name,timestamp)
-
-        # Publish this target resolution vector to the cooperation topic for
-        # competing apps that support cooperation can respond to
-        self.gapps.send(self.coop_topic, json.dumps(targetResolutionVector))
+      # if we haven't tried cooperation yet since the last device dispatch
+      # of if we are cooperating the the conflict has gone down > 5%
+      if not self.coopFlag or percentConflictDelta>0.05:
+        self.coopFlag = True # flag to say we are trying to cooperate
         return
 
       else:
-        percentConflictDelta = (self.previousConflictMetric - self.conflictMetric)/self.previousConflictMetric
+        # Optimization stage deconfliction
+        # base this on previous conflict matrix that had a lower metric
+        newResolutionVector = self.OptimizationDeconflict(app_name, timestamp,
+                                                         previousConflictMatrix)
+        print('ResolutionVector (conflict): ' + str(newResolutionVector),
+              flush=True)
 
-        if percentConflictDelta > 0.05: # 5% delta threshold for bailing
-          # Issue a new Cooperation stage message to competing apps
-          targetResolutionVector = self.OptimizationDeconflict(app_name,
-                                                               timestamp)
-          self.gapps.send(self.coop_topic, json.dumps(targetResolutionVector))
-          return
-
-        else:
-          # TODO NEXT: Here I am now dispatching the most recent setpoints, but
-          # I really need to back up and dispatch from the previous setpoints
-          # that had a lower conflict metric value. Then I need to kick off a
-          # new round of cooperation with the newest setpoints. That may mean
-          # that I no longer need to keep a dispatched flag and I can eliminate
-          # the logic above that uses that.
-          # Overriding this, Tylor says they've already got a better solution
-          # to do this involving changing the dimension of the conflict matrix
-          # and that somehow indicating what to do. So I need to understand
-          # this and maybe it is proper path forward.
-          self.dispatchedFlag = True
-
-          # Optimization stage deconfliction
-          newResolutionVector = self.OptimizationDeconflict(app_name, timestamp)
-          print('ResolutionVector (conflict): ' + str(newResolutionVector),
-                flush=True)
-
-          if self.testDeviceName:
-            devid = MethodUtil.NameToDevice[self.testDeviceName]
-            if devid in newResolutionVector:
-              print('~TEST: ResolutionVector (conflict) for ' +
-                    self.testDeviceName + ' setpoint: ' +
-                    str(newResolutionVector[devid][1]) + ', timestamp: ' +
-                    str(newResolutionVector[devid][0]), flush=True)
-            else:
-              print('~TEST: ResolutionVector (conflict) does not contain ' +
-                    self.testDeviceName, flush=True)
+        if self.testDeviceName:
+          devid = MethodUtil.NameToDevice[self.testDeviceName]
+          if devid in newResolutionVector:
+            print('~TEST: ResolutionVector (conflict) for ' +
+                  self.testDeviceName + ' setpoint: ' +
+                  str(newResolutionVector[devid][1]) + ', timestamp: ' +
+                  str(newResolutionVector[devid][0]), flush=True)
+          else:
+            print('~TEST: ResolutionVector (conflict) does not contain ' +
+                  self.testDeviceName, flush=True)
 
     else: # no conflict
       # conflict metric is 0.0 based on conflictFlag
@@ -515,6 +511,8 @@ class DeconflictionPipeline(GridAPPSD):
         else:
           print('~TEST: ResolutionVector (no conflict) does not contain ' +
                 self.testDeviceName, flush=True)
+
+    self.coopFlag = False # reset the cooperation control flag
 
     # Step 4: Setpoint Validator -- not implemented yet
 
@@ -590,8 +588,8 @@ class DeconflictionPipeline(GridAPPSD):
     # initialize conflict metric which will later be set to the previous value
     self.conflictMetric = 0.0
 
-    # initialize dispatched flag used to control cooperation stage
-    self.dispatchedFlag = True
+    # initialize cooperation stage control flag
+    self.coopFlag = False
 
     # for SHIVA conflict metric testing
     #self.TimeConflictMatrix = {}
