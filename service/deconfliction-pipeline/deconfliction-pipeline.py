@@ -458,7 +458,9 @@ class DeconflictionPipeline(GridAPPSD):
 
       self.conflictMetric = self.ConflictMetricComputation(timestamp)
 
-      percentConflictDelta = (self.previousConflictMetric - self.conflictMetric)/self.previousConflictMetric
+      percentConflictDelta = 0.0 # for no previous conflict metric value
+      if self.previousConflictMetric > 0.0:
+        percentConflictDelta = (self.previousConflictMetric - self.conflictMetric)/self.previousConflictMetric
 
       # if we haven't tried cooperation yet since the last device dispatch
       # of if we are cooperating the the conflict has gone down > 5%
