@@ -210,9 +210,11 @@ class DeconflictionPipeline(GridAPPSD):
     for devid in self.Batteries:
       chargeSoCMax = 0.9 - self.Batteries[devid]['SoC']
       self.Batteries[devid]['P_batt_charge_max'] = chargeSoCMax*self.Batteries[devid]['ratedE']/(self.Batteries[devid]['eff_c']*self.deltaT)
+      print('RulesForBatteries for ' + MethodUtil.DeviceToName[devid] + ', max charge SoC contribution: ' + str(chargeSoCMax) + ', max charge P_batt: ' + str(self.Batteries[devid]['P_batt_charge_max']), flush=True)
 
       dischargeSoCMax = 0.2 - self.Batteries[devid]['SoC']
       self.Batteries[devid]['P_batt_discharge_max'] = dischargeSoCMax*self.Batteries[devid]['ratedE']/(1/self.Batteries[devid]['eff_d']*self.deltaT)
+      print('RulesForBatteries for ' + MethodUtil.DeviceToName[devid] + ', max discharge SoC contribution: ' + str(dischargeSoCMax) + ', max discharge P_batt: ' + str(self.Batteries[devid]['P_batt_discharge_max']), flush=True)
 
     # iterate over all battery setpoints in ConflictMatrix to make sure they
     # fall within the acceptable P_batt range and set them to max values if not
@@ -222,13 +224,16 @@ class DeconflictionPipeline(GridAPPSD):
         for app in self.ConflictMatrix[device]:
           if self.ConflictMatrix[device][app][1] > \
              self.Batteries[devid]['P_batt_charge_max']:
+            print('RulesForBatteries for ' + name + ' for app ' + app + '--P_batt setpoint above max charge P_batt: ' + str(self.ConflictMatrix[device][app][1]), flush=True)
             self.ConflictMatrix[device][app][1] = \
                                self.Batteries[devid]['P_batt_charge_max']
+            print('RulesForBatteries for ' + name + ' for app ' + app + '--P_batt setpoint reset to max charge P_batt: ' + str(self.ConflictMatrix[device][app][1]), flush=True)
           elif self.ConflictMatrix[device][app][1] < \
              self.Batteries[devid]['P_batt_discharge_max']:
+            print('RulesForBatteries for ' + name + ' for app ' + app + '--P_batt setpoint below max discharge P_batt: ' + str(self.ConflictMatrix[device][app][1]), flush=True)
             self.ConflictMatrix[device][app][1] = \
                                self.Batteries[devid]['P_batt_discharge_max']
-    return
+            print('RulesForBatteries for ' + name + ' for app ' + app + '--P_batt setpoint reset to max discharge P_batt: ' + str(self.ConflictMatrix[device][app][1]), flush=True)
 
 
   def RulesForTransformers(self):
