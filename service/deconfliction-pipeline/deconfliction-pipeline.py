@@ -205,16 +205,14 @@ class DeconflictionPipeline(GridAPPSD):
 
 
   def RulesForBatteries(self):
-    deltaT = 3.0/3600 # fractional hours for a GridLAB-D time step
-
     # find the maximum P_batt charge and discharge values per battery to
     # prevent overcharging or undercharging
     for devid in self.Batteries:
       chargeSoCMax = 0.9 - self.Batteries[devid]['SoC']
-      self.Batteries[devid]['P_batt_charge_max'] = chargeSoCMax*self.Batteries[devid]['ratedE']/(self.Batteries[devid]['eff_c']*deltaT)
+      self.Batteries[devid]['P_batt_charge_max'] = chargeSoCMax*self.Batteries[devid]['ratedE']/(self.Batteries[devid]['eff_c']*self.deltaT)
 
       dischargeSoCMax = 0.2 - self.Batteries[devid]['SoC']
-      self.Batteries[devid]['P_batt_discharge_max'] = dischargeSoCMax*self.Batteries[devid]['ratedE']/(1/self.Batteries[devid]['eff_d']*deltaT)
+      self.Batteries[devid]['P_batt_discharge_max'] = dischargeSoCMax*self.Batteries[devid]['ratedE']/(1/self.Batteries[devid]['eff_d']*self.deltaT)
 
     # iterate over all battery setpoints in ConflictMatrix to make sure they
     # fall within the acceptable P_batt range and set them to max values if not
@@ -572,7 +570,7 @@ class DeconflictionPipeline(GridAPPSD):
     #self.TimeResolutionVector[realTime] = copy.deepcopy(self.ResolutionVector)
 
 
-  def __init__(self, gapps, feeder_mrid, simulation_id, weights_base):
+  def __init__(self, gapps, feeder_mrid, simulation_id, weights_base, interval):
     self.gapps = gapps
 
     self.messageQueue = queue.Queue()
@@ -621,7 +619,18 @@ class DeconflictionPipeline(GridAPPSD):
     self.Regulators = AppUtil.getRegulators(MethodUtil.sparql_mgr)
     print('Starting Regulators: ' + str(self.Regulators), flush=True)
 
-    self.deltaT = 0.25 # timestamp interval in fractional hours, 0.25 = 15 min
+    # deltaT is time between timesteps as fractional hours
+    # optimization interval seconds is the number of simulation seconds
+    # between triggering an optimization and must be a multiple of 3
+    #optIntervalSec = 3 # optimize every GridLAB-D timestamp
+    # 15 seconds is a good number for a real-time simulation
+    optIntervalSec = 15
+    # if attempting non-real-time, something like 600 is reasonable
+    #optIntervalSec = 600
+    if interval != None:
+      optIntervalSec = int(interval)
+
+    self.deltaT = optIntervalSec/3600.0
 
     self.ConflictMatrix = {}
     self.ResolutionVector = {}
@@ -718,6 +727,7 @@ def _main():
   parser.add_argument("simulation_id", help="Simulation ID")
   parser.add_argument("request", help="Simulation Request")
   parser.add_argument("--weights", nargs='?', help="Optimization Weights Base Filename")
+  parser.add_argument("--interval", nargs='?', help="Optimization Interval")
   opts = parser.parse_args()
 
   sim_request = json.loads(opts.request.replace("\'",""))
@@ -732,7 +742,8 @@ def _main():
   gapps = GridAPPSD(opts.simulation_id)
   assert gapps.connected
 
-  DeconflictionPipeline(gapps, feeder_mrid, opts.simulation_id, opts.weights)
+  DeconflictionPipeline(gapps, feeder_mrid, opts.simulation_id,
+                        opts.weights, opts.interval)
 
   print('Goodbye!', flush=True)
 

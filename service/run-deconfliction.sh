@@ -94,6 +94,6 @@ if [[ $APPS == *"p"* || $APPS == *"P"* ]]; then
 fi
 
 cd ../deconfliction-pipeline
-./run-pipeline.sh $SIMID "$SIMREQ" $WEIGHTS
+./run-pipeline.sh $SIMID "$SIMREQ" $WEIGHTS $INTERVAL
 
 trap - SIGINT SIGTERM EXIT

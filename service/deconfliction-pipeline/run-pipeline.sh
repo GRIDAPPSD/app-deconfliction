@@ -15,6 +15,11 @@ if [ "$#" -gt 2 ]; then
   WEIGHTS="--weights=""$3"
 fi
 
+INTERVAL=""
+if [ "$#" -gt 3 ]; then
+  INTERVAL="--interval=""$4"
+fi
+
 mkdir -p log
-python3 deconfliction-pipeline.py $SIMID "$SIMREQ" $WEIGHTS 2>&1 | tee log/deconfliction-pipeline.log
+python3 deconfliction-pipeline.py $SIMID "$SIMREQ" $WEIGHTS $INTERVAL 2>&1 | tee log/deconfliction-pipeline.log
 
