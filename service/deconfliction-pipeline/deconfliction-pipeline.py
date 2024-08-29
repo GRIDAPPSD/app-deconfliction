@@ -249,7 +249,7 @@ class DeconflictionPipeline(GridAPPSD):
                                               maxTapBudget, 16)
       self.Regulators[devid]['minStep'] = max(self.Regulators[devid]['step'] - \
                                               maxTapBudget, -16)
-      print('RulesForTransformers for ' + MethodUtil.DeviceToName[devid] + ', min tap pos: ' + str(self.Regulators[devid]['minStep']) + ', max tap pos: ' + tr(self.Regulators[devid]['maxStep']), flush=True)
+      print('RulesForTransformers for ' + MethodUtil.DeviceToName[devid] + ', min tap pos: ' + str(self.Regulators[devid]['minStep']) + ', max tap pos: ' + str(self.Regulators[devid]['maxStep']), flush=True)
 
     # iterate over all regulator tap setpoints in ConflictMatrix to make sure
     # they fall within the acceptable maxTapBudget range of the current position
