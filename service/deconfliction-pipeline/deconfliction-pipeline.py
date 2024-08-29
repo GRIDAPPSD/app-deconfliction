@@ -225,20 +225,53 @@ class DeconflictionPipeline(GridAPPSD):
           if self.ConflictMatrix[device][app][1] > \
              self.Batteries[devid]['P_batt_charge_max']:
             print('RulesForBatteries for ' + name + ' for app ' + app + '--P_batt setpoint above max charge P_batt: ' + str(self.ConflictMatrix[device][app][1]), flush=True)
-            self.ConflictMatrix[device][app][1] = \
-                               self.Batteries[devid]['P_batt_charge_max']
+            self.ConflictMatrix[device][app] = \
+                               (self.ConflictMatrix[device][app][0],
+                                self.Batteries[devid]['P_batt_charge_max'])
             print('RulesForBatteries for ' + name + ' for app ' + app + '--P_batt setpoint reset to max charge P_batt: ' + str(self.ConflictMatrix[device][app][1]), flush=True)
+
           elif self.ConflictMatrix[device][app][1] < \
              self.Batteries[devid]['P_batt_discharge_max']:
             print('RulesForBatteries for ' + name + ' for app ' + app + '--P_batt setpoint below max discharge P_batt: ' + str(self.ConflictMatrix[device][app][1]), flush=True)
-            self.ConflictMatrix[device][app][1] = \
-                               self.Batteries[devid]['P_batt_discharge_max']
+            self.ConflictMatrix[device][app]= \
+                               (self.ConflictMatrix[device][app][0],
+                                self.Batteries[devid]['P_batt_discharge_max'])
             print('RulesForBatteries for ' + name + ' for app ' + app + '--P_batt setpoint reset to max discharge P_batt: ' + str(self.ConflictMatrix[device][app][1]), flush=True)
 
 
   def RulesForTransformers(self):
-    # TODO: This will be derived from Alex and Andy's RBDM.py code
-    return
+    # This is derived from Alex and Andy's RBDM.py code
+    maxTapBudget = 3
+
+    # set max/min allowable tap positions based on current position
+    for devid in self.Regulators:
+      self.Regulators[devid]['maxStep'] = min(self.Regulators[devid]['step'] + \
+                                              maxTapBudget, 16)
+      self.Regulators[devid]['minStep'] = max(self.Regulators[devid]['step'] - \
+                                              maxTapBudget, -16)
+      print('RulesForTransformers for ' + MethodUtil.DeviceToName[devid] + ', min tap pos: ' + str(self.Regulators[devid]['minStep']) + ', max tap pos: ' + tr(self.Regulators[devid]['maxStep']), flush=True)
+
+    # iterate over all regulator tap setpoints in ConflictMatrix to make sure
+    # they fall within the acceptable maxTapBudget range of the current position
+    for device in self.ConflictMatrix:
+      name = MethodUtil.DeviceToName[device]
+      if name.startswith('RatioTapChanger.'):
+        for app in self.ConflictMatrix[device]:
+          if self.ConflictMatrix[device][app][1] > \
+             self.Regulators[device]['maxStep']:
+            print('RulesForTransformers for ' + name + ' for app ' + app + '--tap pos setpoint above max allowable asset health pos: ' + str(self.ConflictMatrix[device][app][1]), flush=True)
+            self.ConflictMatrix[device][app] = \
+                               (self.ConflictMatrix[device][app][0],
+                                self.Regulators[device]['maxStep'])
+            print('RulesForTransformers for ' + name + ' for app ' + app + '--tap pos setpoint reset to max allowable asset health pos: ' + str(self.ConflictMatrix[device][app][1]), flush=True)
+
+          elif self.ConflictMatrix[device][app][1] < \
+             self.Regulators[device]['minStep']:
+            print('RulesForTransformers for ' + name + ' for app ' + app + '--tap pos setpoint below min allowable asset health pos: ' + str(self.ConflictMatrix[device][app][1]), flush=True)
+            self.ConflictMatrix[device][app] = \
+                               (self.ConflictMatrix[device][app][0],
+                                self.Regulators[device]['minStep'])
+            print('RulesForTransformers for ' + name + ' for app ' + app + '--tap pos setpoint reset to min allowable asset health pos: ' + str(self.ConflictMatrix[device][app][1]), flush=True)
 
 
   def OptimizationDeconflict(self, app_name, timestamp, ConflictMatrix):
