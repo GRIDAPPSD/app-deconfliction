@@ -906,11 +906,11 @@ class CompetingApp(GridAPPSD):
     #optIntervalSec = 3 # optimize every GridLAB-D timestamp
     # 15 seconds is a good number for a real-time simulation
     optIntervalSec = 15
+    # if attempting non-real-time, something like 600 is reasonable
+    #optIntervalSec = 600
     if interval != None:
       optIntervalSec = int(interval)
 
-    # if attempting non-real-time, something like 600 is reasonable
-    #optIntervalSec = 600
     self.deltaT = optIntervalSec/3600.0
 
     self.b_i = np.arange(0.9, 1.1, 0.00625)
