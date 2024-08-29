@@ -273,6 +273,11 @@ class DeconflictionPipeline(GridAPPSD):
                                 self.Regulators[device]['minStep'])
             print('RulesForTransformers for ' + name + ' for app ' + app + '--tap pos setpoint reset to min allowable asset health pos: ' + str(self.ConflictMatrix[device][app][1]), flush=True)
 
+    # Here is my rolling history rule to limit the total number of steps
+    # per transformer for asset health
+    for devid in self.Regulators:
+      print('RulesForTransformers RegulatorHistory for ' + MethodUtil.DeviceToName[devid] + ': ' + str(self.RegulatorHistory[devid]), flush=True)
+
 
   def OptimizationDeconflict(self, app_name, timestamp, ConflictMatrix):
     ResolutionVector = {}
@@ -435,9 +440,15 @@ class DeconflictionPipeline(GridAPPSD):
     for devid in self.Regulators:
       measid = self.Regulators[devid]['measid']
       if measid in measurements:
-        self.Regulators[devid]['step'] = measurements[measid]['value']
-        MethodUtil.RegulatorPos[devid] = self.Regulators[devid]['step']
-        print('Timestamp ' + str(message['timestamp']) + ' updated tap position for ' + self.Regulators[devid]['name'] + ': ' + str(self.Regulators[devid]['step']), flush=True)
+        # only update if there is a value change
+        if measurements[measid]['value'] != self.Regulators[devid]['step']:
+          self.Regulators[devid]['step'] = measurements[measid]['value']
+          MethodUtil.RegulatorPos[devid] = self.Regulators[devid]['step']
+          print('Timestamp ' + str(message['timestamp']) + ' updated tap position for ' + self.Regulators[devid]['name'] + ': ' + str(self.Regulators[devid]['step']), flush=True)
+
+          # append the timestamp, step to the running history
+          self.RegulatorHistory[devid].append((message['timestamp'],
+                                               self.Regulators[devid]['step']))
 
     if self.testDeviceName:
       devid = MethodUtil.NametoDevice[self.testDeviceName]
@@ -656,6 +667,14 @@ class DeconflictionPipeline(GridAPPSD):
 
     self.Regulators = AppUtil.getRegulators(MethodUtil.sparql_mgr)
     print('Starting Regulators: ' + str(self.Regulators), flush=True)
+
+    # dictionary of lists for the rolling time interval rules stage
+    # deconfliction limiting the total number of steps changed for asset health
+    # I could make this another element in self.Regulators, but for now I'll
+    # promote it as a separate top-level data structure
+    self.RegulatorHistory = {}
+    for devid in self.Regulators:
+      self.RegulatorHistory[devid] = []
 
     # deltaT is time between timesteps as fractional hours
     # optimization interval seconds is the number of simulation seconds
