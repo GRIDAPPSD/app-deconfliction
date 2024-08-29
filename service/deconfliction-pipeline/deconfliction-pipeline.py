@@ -239,16 +239,40 @@ class DeconflictionPipeline(GridAPPSD):
             print('RulesForBatteries for ' + name + ' for app ' + app + '--P_batt setpoint reset to max discharge P_batt: ' + str(self.ConflictMatrix[device][app][1]), flush=True)
 
 
-  def RulesForTransformers(self):
-    # This is derived from Alex and Andy's RBDM.py code
-    maxTapBudget = 3
+  def RulesForTransformers(self, timestamp):
+    # This is derived from Alex and Andy's RBDM.py code for per-timestamp step
+    # limits integrated with my own rule for rolling time interval step limits
+    timestampTapBudget = 3
+
+    rollingTimeInterval = 30
+    rollingStepsAllowed = 10
+    rollingStartTime = timestamp - rollingTimeInterval
 
     # set max/min allowable tap positions based on current position
     for devid in self.Regulators:
+      histList = self.RegulatorHistory[devid]
+      print('RulesForTransformers RegulatorHistory for ' + MethodUtil.DeviceToName[devid] + ': ' + str(histList), flush=True)
+
+      # iterate backwards through histList counting steps changed
+      rollingStepCount = 0
+      previousStep = self.Regulators[devid]['step']
+      for hist in reversed(histList):
+        if hist[0] < rollingStartTime:
+          break
+        rollingStepCount += abs(previousStep - hist[1])
+        previousStep = hist[1]
+
+      rollingTapBudget = max(0, rollingStepsAllowed - rollingStepCount)
+      print('RulesForTransformers for ' + MethodUtil.DeviceToName[devid] + ', total steps in rolling interval: ' + str(rollingStepCount) + ', steps allowed in rolling interval: ' + str(rollingStepsAllowed), flush=True)
+
+      tapBudget = min(timestampTapBudget, rollingTapBudget)
+      print('RulesForTransformers for ' + MethodUtil.DeviceToName[devid] + ', per-timestamp tap budget: ' + str(timestampTapBudget) + ', rolling interval tap budget: ' + str(rollingTapBudget) + ', overall tap budget: ' + str(tapBudget), flush=True)
+
+      # constrain by the overall tap budget and physical device limits
       self.Regulators[devid]['maxStep'] = min(self.Regulators[devid]['step'] + \
-                                              maxTapBudget, 16)
+                                              tapBudget, 16)
       self.Regulators[devid]['minStep'] = max(self.Regulators[devid]['step'] - \
-                                              maxTapBudget, -16)
+                                              tapBudget, -16)
       print('RulesForTransformers for ' + MethodUtil.DeviceToName[devid] + ', min tap pos: ' + str(self.Regulators[devid]['minStep']) + ', max tap pos: ' + str(self.Regulators[devid]['maxStep']), flush=True)
 
     # iterate over all regulator tap setpoints in ConflictMatrix to make sure
@@ -272,11 +296,6 @@ class DeconflictionPipeline(GridAPPSD):
                                (self.ConflictMatrix[device][app][0],
                                 self.Regulators[device]['minStep'])
             print('RulesForTransformers for ' + name + ' for app ' + app + '--tap pos setpoint reset to min allowable asset health pos: ' + str(self.ConflictMatrix[device][app][1]), flush=True)
-
-    # Here is my rolling history rule to limit the total number of steps
-    # per transformer for asset health
-    for devid in self.Regulators:
-      print('RulesForTransformers RegulatorHistory for ' + MethodUtil.DeviceToName[devid] + ': ' + str(self.RegulatorHistory[devid]), flush=True)
 
 
   def OptimizationDeconflict(self, app_name, timestamp, ConflictMatrix):
@@ -509,7 +528,7 @@ class DeconflictionPipeline(GridAPPSD):
     # no conflict a setpoint request can still violate rules
     self.RulesForBatteries()
 
-    self.RulesForTransformers()
+    self.RulesForTransformers(timestamp)
 
     # Step 3: Deconflictor
     # Step 3.1: Conflict Identification
