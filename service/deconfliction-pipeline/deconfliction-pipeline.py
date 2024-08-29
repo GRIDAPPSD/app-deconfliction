@@ -204,6 +204,40 @@ class DeconflictionPipeline(GridAPPSD):
     return False
 
 
+  def RulesForBatteries(self):
+    deltaT = 3.0/3600 # fractional hours for a GridLAB-D time step
+
+    # find the maximum P_batt charge and discharge values per battery to
+    # prevent overcharging or undercharging
+    for devid in self.Batteries:
+      chargeSoCMax = 0.9 - self.Batteries[devid]['SoC']
+      self.Batteries[devid]['P_batt_charge_max'] = chargeSoCMax*self.Batteries[devid]['ratedE']/(self.Batteries[devid]['eff_c']*deltaT)
+
+      dischargeSoCMax = 0.2 - self.Batteries[devid]['SoC']
+      self.Batteries[devid]['P_batt_discharge_max'] = dischargeSoCMax*self.Batteries[devid]['ratedE']/(1/self.Batteries[devid]['eff_d']*deltaT)
+
+    # iterate over all battery setpoints in ConflictMatrix to make sure they
+    # fall within the acceptable P_batt range and set them to max values if not
+    for device in self.ConflictMatrix:
+      name = MethodUtil.DeviceToName[device]
+      if name.startswith('BatteryUnit.'):
+        for app in self.ConflictMatrix[device]:
+          if self.ConflictMatrix[device][app][1] > \
+             self.Batteries[devid]['P_batt_charge_max']:
+            self.ConflictMatrix[device][app][1] = \
+                               self.Batteries[devid]['P_batt_charge_max']
+          elif self.ConflictMatrix[device][app][1] < \
+             self.Batteries[devid]['P_batt_discharge_max']:
+            self.ConflictMatrix[device][app][1] = \
+                               self.Batteries[devid]['P_batt_discharge_max']
+    return
+
+
+  def RulesForTransformers(self):
+    # TODO: This will be derived from Alex and Andy's RBDM.py code
+    return
+
+
   def OptimizationDeconflict(self, app_name, timestamp, ConflictMatrix):
     ResolutionVector = {}
 
@@ -424,6 +458,11 @@ class DeconflictionPipeline(GridAPPSD):
     self.SetpointProcessor(app_name, timestamp, set_points)
 
     # Step 2: Feasibility Maintainer -- not implemented yet
+    # Apply Rules & Heuristics stage deconfliction here because even with
+    # no conflict a setpoint request can still violate rules
+    self.RulesForBatteries()
+
+    self.RulesForTransformers()
 
     # Step 3: Deconflictor
     # Step 3.1: Conflict Identification
