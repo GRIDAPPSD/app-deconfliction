@@ -293,8 +293,8 @@ class DeconflictionPipeline(GridAPPSD):
                                 self.Regulators[device]['maxStep'])
             print('RulesForTransformers for ' + name + ' for app ' + app + '--tap pos setpoint reset to max allowable asset health pos: ' + str(self.ConflictMatrix[device][app][1]), flush=True)
 
-          if self.ConflictMatrix[device][app][1] < \
-             self.Regulators[device]['minStep']:
+          elif self.ConflictMatrix[device][app][1] < \
+               self.Regulators[device]['minStep']:
             print('RulesForTransformers for ' + name + ' for app ' + app + '--tap pos setpoint below min allowable asset health pos: ' + str(self.ConflictMatrix[device][app][1]), flush=True)
             self.ConflictMatrix[device][app] = \
                                (self.ConflictMatrix[device][app][0],
