@@ -222,6 +222,17 @@ class DeconflictionPipeline(GridAPPSD):
       name = MethodUtil.DeviceToName[device]
       if name.startswith('BatteryUnit.'):
         for app in self.ConflictMatrix[device]:
+          # check vs. battery rated power
+          if abs(self.ConflictMatrix[device][app][1]) > \
+             self.Batteries[devid]['prated']:
+            print('RulesForBatteries for ' + name + ' for app ' + app + '--P_batt setpoint exceeds battery rated power: ' + str(self.ConflictMatrix[device][app][1]), flush=True)
+            if self.ConflictMatrix[device][app][1] > 0:
+              self.ConflictMatrix[device][app] = (self.ConflictMatrix[device][app][0], self.Batteries[devid]['prated'])
+            else:
+              self.ConflictMatrix[device][app] = (self.ConflictMatrix[device][app][0], -self.Batteries[devid]['prated'])
+            print('RulesForBatteries for ' + name + ' for app ' + app + '--P_batt setpoint reset to battery rated power: ' + str(self.ConflictMatrix[device][app][1]), flush=True)
+
+          # check vs. battery SoC limits
           if self.ConflictMatrix[device][app][1] > \
              self.Batteries[devid]['P_batt_charge_max']:
             print('RulesForBatteries for ' + name + ' for app ' + app + '--P_batt setpoint above max charge P_batt: ' + str(self.ConflictMatrix[device][app][1]), flush=True)
