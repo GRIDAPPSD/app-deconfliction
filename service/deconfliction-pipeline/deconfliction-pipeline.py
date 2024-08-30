@@ -240,12 +240,11 @@ class DeconflictionPipeline(GridAPPSD):
 
 
   def RulesForTransformers(self):
-    # This is derived from Alex and Andy's RBDM.py code for per-timestamp step
-    # limits integrated with my own rule for rolling time interval step limits
-    timestampTapBudget = 3
+    # comment out to disable per-timestamp limit on tap position changes
+    #timestampTapBudget = 3
 
     rollingTimeInterval = 60
-    rollingStepsAllowed = 8
+    rollingStepsAllowed = 6 # picked to trigger the rule a reasonable # of times
 
     # set max/min allowable tap positions based on current position
     for devid in self.Regulators:
@@ -264,10 +263,14 @@ class DeconflictionPipeline(GridAPPSD):
         previousStep = hist[1]
 
       rollingTapBudget = max(0, rollingStepsAllowed - rollingStepCount)
-      print('RulesForTransformers for ' + MethodUtil.DeviceToName[devid] + ', rolling total steps: ' + str(rollingStepCount) + ', vs. allowed: ' + str(rollingStepsAllowed), flush=True)
+      print('RulesForTransformers for ' + MethodUtil.DeviceToName[devid] + ', rolling steps: ' + str(rollingStepCount) + ', vs. allowed: ' + str(rollingStepsAllowed) + ', rolling budget: ' + str(rollingTapBudget), flush=True)
 
-      tapBudget = min(timestampTapBudget, rollingTapBudget)
-      print('RulesForTransformers for ' + MethodUtil.DeviceToName[devid] + ', per-timestamp tap budget: ' + str(timestampTapBudget) + ', rolling tap budget: ' + str(rollingTapBudget) + ', final tap budget: ' + str(tapBudget), flush=True)
+      # comment out next line and uncoment the following on to disable
+      # per-timestamp limit
+      #tapBudget = min(timestampTapBudget, rollingTapBudget)
+      tapBudget = rollingTapBudget
+
+      #print('RulesForTransformers for ' + MethodUtil.DeviceToName[devid] + ', per-timestamp tap budget: ' + str(timestampTapBudget) + ', rolling tap budget: ' + str(rollingTapBudget) + ', final tap budget: ' + str(tapBudget), flush=True)
 
       # constrain by the overall tap budget and physical device limits
       self.Regulators[devid]['maxStep'] = min(self.Regulators[devid]['step'] + \
