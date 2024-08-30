@@ -239,14 +239,13 @@ class DeconflictionPipeline(GridAPPSD):
             print('RulesForBatteries for ' + name + ' for app ' + app + '--P_batt setpoint reset to max discharge P_batt: ' + str(self.ConflictMatrix[device][app][1]), flush=True)
 
 
-  def RulesForTransformers(self, timestamp):
+  def RulesForTransformers(self):
     # This is derived from Alex and Andy's RBDM.py code for per-timestamp step
     # limits integrated with my own rule for rolling time interval step limits
     timestampTapBudget = 3
 
-    rollingTimeInterval = 30
-    rollingStepsAllowed = 10
-    rollingStartTime = timestamp - rollingTimeInterval
+    rollingTimeInterval = 60
+    rollingStepsAllowed = 8
 
     # set max/min allowable tap positions based on current position
     for devid in self.Regulators:
@@ -255,6 +254,8 @@ class DeconflictionPipeline(GridAPPSD):
 
       # iterate backwards through histList counting steps changed
       rollingStepCount = 0
+      rollingStartTime = self.Regulators[devid]['timestamp'] - \
+                         rollingTimeInterval
       previousStep = self.Regulators[devid]['step']
       for hist in reversed(histList):
         if hist[0] < rollingStartTime:
@@ -263,10 +264,10 @@ class DeconflictionPipeline(GridAPPSD):
         previousStep = hist[1]
 
       rollingTapBudget = max(0, rollingStepsAllowed - rollingStepCount)
-      print('RulesForTransformers for ' + MethodUtil.DeviceToName[devid] + ', total steps in rolling interval: ' + str(rollingStepCount) + ', steps allowed in rolling interval: ' + str(rollingStepsAllowed), flush=True)
+      print('RulesForTransformers for ' + MethodUtil.DeviceToName[devid] + ', rolling total steps: ' + str(rollingStepCount) + ', vs. allowed: ' + str(rollingStepsAllowed), flush=True)
 
       tapBudget = min(timestampTapBudget, rollingTapBudget)
-      print('RulesForTransformers for ' + MethodUtil.DeviceToName[devid] + ', per-timestamp tap budget: ' + str(timestampTapBudget) + ', rolling interval tap budget: ' + str(rollingTapBudget) + ', overall tap budget: ' + str(tapBudget), flush=True)
+      print('RulesForTransformers for ' + MethodUtil.DeviceToName[devid] + ', per-timestamp tap budget: ' + str(timestampTapBudget) + ', rolling tap budget: ' + str(rollingTapBudget) + ', final tap budget: ' + str(tapBudget), flush=True)
 
       # constrain by the overall tap budget and physical device limits
       self.Regulators[devid]['maxStep'] = min(self.Regulators[devid]['step'] + \
@@ -289,7 +290,7 @@ class DeconflictionPipeline(GridAPPSD):
                                 self.Regulators[device]['maxStep'])
             print('RulesForTransformers for ' + name + ' for app ' + app + '--tap pos setpoint reset to max allowable asset health pos: ' + str(self.ConflictMatrix[device][app][1]), flush=True)
 
-          elif self.ConflictMatrix[device][app][1] < \
+          if self.ConflictMatrix[device][app][1] < \
              self.Regulators[device]['minStep']:
             print('RulesForTransformers for ' + name + ' for app ' + app + '--tap pos setpoint below min allowable asset health pos: ' + str(self.ConflictMatrix[device][app][1]), flush=True)
             self.ConflictMatrix[device][app] = \
@@ -459,7 +460,10 @@ class DeconflictionPipeline(GridAPPSD):
     for devid in self.Regulators:
       measid = self.Regulators[devid]['measid']
       if measid in measurements:
-        # only update if there is a value change
+        # always update timestamp because it's needed for running history rule
+        self.Regulators[devid]['timestamp'] = message['timestamp']
+
+        # only update the rest if there is a value change
         if measurements[measid]['value'] != self.Regulators[devid]['step']:
           self.Regulators[devid]['step'] = measurements[measid]['value']
           MethodUtil.RegulatorPos[devid] = self.Regulators[devid]['step']
@@ -528,7 +532,7 @@ class DeconflictionPipeline(GridAPPSD):
     # no conflict a setpoint request can still violate rules
     self.RulesForBatteries()
 
-    self.RulesForTransformers(timestamp)
+    self.RulesForTransformers()
 
     # Step 3: Deconflictor
     # Step 3.1: Conflict Identification
