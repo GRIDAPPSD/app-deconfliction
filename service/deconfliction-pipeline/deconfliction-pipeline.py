@@ -523,14 +523,14 @@ class DeconflictionPipeline(GridAPPSD):
 
         if 'P_batt_inv' in self.Batteries[devid] and \
             meas_P_batt_inv!=self.Batteries[devid]['P_batt_inv']:
-          print('BatteryHistory candidate for ' + devid + ': old: ' + str(self.Batteries[devid]['P_batt_inv']) + ', new: ' + str(meas_P_batt_inv), flush=True)
+          print('BatteryHistory candidate for ' + self.Batteries[devid]['name'] + ': old: ' + str(self.Batteries[devid]['P_batt_inv']) + ', new: ' + str(meas_P_batt_inv), flush=True)
           # check if this is a change from charging to discharging or vice versa
           if (meas_P_batt_inv>0 and self.Batteries[devid]['P_batt_inv']<0) or \
              (meas_P_batt_inv<0 and self.Batteries[devid]['P_batt_inv']>0):
             # append the timestamp, P_batt_inv to the running history
             self.BatteryHistory[devid].append((message['timestamp'],
                                                meas_P_batt_inv))
-            print('BatteryHistory match for ' + devid + ': ' + str(self.BatteryHistory[devid]), flush=True)
+            print('BatteryHistory match for ' + self.Batteries[devid]['name'] + ': ' + str(self.BatteryHistory[devid]), flush=True)
 
         self.Batteries[devid]['P_batt_inv'] = meas_P_batt_inv
         MethodUtil.BatteryP_batt_inv[devid] = meas_P_batt_inv
