@@ -364,16 +364,23 @@ class DeconflictionPipeline(GridAPPSD):
                                        self.Batteries[devid]['P_batt_inv'])
           diffCount += 1
 
+          switchStr = ''
+          if value[1]>0 and self.Batteries[devid]['P_batt_inv']<0:
+            switchStr = ' (SWITCH from discharging to charging)'
+          elif value[1]<0 and self.Batteries[devid]['P_batt_inv']>0:
+            switchStr = ' (SWITCH from charging to discharging)'
+
           print('~~> Dispatching to battery device: ' + devid + ', name: ' +
                 name + ', timestamp: ' + str(timestamp) + ', new value: ' +
                 str(value[1]) + ', old value: ' +
-                str(self.Batteries[devid]['P_batt_inv']), flush=True)
+                str(self.Batteries[devid]['P_batt_inv']) + switchStr,flush=True)
 
           if self.testDeviceName and name==self.testDeviceName:
             print('~TEST: Dispatching to battery device: ' + devid +
                   ', name: ' + name + ', timestamp: ' + str(timestamp) +
                   ', new value: ' + str(value[1]) + ', old value: ' +
-                  str(self.Batteries[devid]['P_batt_inv']), flush=True)
+                  str(self.Batteries[devid]['P_batt_inv']) + switchStr,
+                  flush=True)
 
         else:
           print('~~> NO DISPATCH needed to battery device: ' + devid +
@@ -467,9 +474,23 @@ class DeconflictionPipeline(GridAPPSD):
         # negate the p value from the simulation so it is directly comparable
         # to the value that must be given to GridLAB-D in a DifferenceBuilder
         # message
-        self.Batteries[devid]['P_batt_inv'] = -p
-        MethodUtil.BatteryP_batt_inv[devid] =self.Batteries[devid]['P_batt_inv']
+        meas_P_batt_inv = -p
+
+        if 'P_batt_inv' in self.Batteries[devid] and \
+            meas_P_batt_inv!=self.Batteries[devid]['P_batt_inv']:
+          print('BatteryHistory candidate for ' + devid + ': old: ' + str(self.Batteries[devid]['P_batt_inv']) + ', new: ' + str(meas_P_batt_inv), flush=True)
+          # check if this is a change from charging to discharging or vice versa
+          if (meas_P_batt_inv>0 and self.Batteries[devid]['P_batt_inv']<0) or \
+             (meas_P_batt_inv<0 and self.Batteries[devid]['P_batt_inv']>0):
+            # append the timestamp, P_batt_inv to the running history
+            self.BatteryHistory[devid].append((message['timestamp'],
+                                               meas_P_batt_inv))
+            print('BatteryHistory match for ' + devid + ': ' + str(self.BatteryHistory[devid]), flush=True)
+
+        self.Batteries[devid]['P_batt_inv'] = meas_P_batt_inv
+        MethodUtil.BatteryP_batt_inv[devid] = meas_P_batt_inv
         print('Timestamp ' + str(message['timestamp']) + ' updated P_batt_inv for ' + self.Batteries[devid]['name'] + ': ' + str(self.Batteries[devid]['P_batt_inv']), flush=True)
+
 
     for devid in self.Regulators:
       measid = self.Regulators[devid]['measid']
@@ -702,11 +723,22 @@ class DeconflictionPipeline(GridAPPSD):
     self.Batteries = AppUtil.getBatteries(MethodUtil.sparql_mgr)
     print('Starting Batteries: ' + str(self.Batteries), flush=True)
 
+    # dictionary of lists for the rolling time interval rules stage
+    # deconfliction limiting the number of changes from charging to discharging
+    # or vice versa for battery for asset health
+    # I could make this another element in self.Batteries, but for now I'll
+    # promote it as a separate top-level data structure
+    self.BatteryHistory = {}
+    for devid in self.Batteries:
+      self.BatteryHistory[devid] = []
+
     self.Regulators = AppUtil.getRegulators(MethodUtil.sparql_mgr)
+
     print('Starting Regulators: ' + str(self.Regulators), flush=True)
 
     # dictionary of lists for the rolling time interval rules stage
-    # deconfliction limiting the total number of steps changed for asset health
+    # deconfliction limiting the total number of steps changed for transformer
+    # asset health
     # I could make this another element in self.Regulators, but for now I'll
     # promote it as a separate top-level data structure
     self.RegulatorHistory = {}
