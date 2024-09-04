@@ -205,6 +205,35 @@ class DeconflictionPipeline(GridAPPSD):
 
 
   def RulesForBatteries(self):
+    rollingTimeInterval = 60
+    # number of changes between charging and discharging, and vice versa,
+    # allowed in the rolling time interval
+    rollingSwitchesAllowed = 1
+
+    # set max/min allowable tap positions based on current position
+    for devid in self.Batteries:
+      histList = self.BatteryHistory[devid]
+      print('RulesForBatteries BatteryHistory for ' + MethodUtil.DeviceToName[devid] + ': ' + str(histList), flush=True)
+
+      # iterate backwards through histList counting switches
+      rollingSwitchCount = 0
+      rollingStartTime = self.Batteries[devid]['timestamp'] - \
+                         rollingTimeInterval
+      for hist in reversed(histList):
+        if hist[0] < rollingStartTime:
+          break
+        rollingSwitchCount += 1
+
+      print('RulesForBatteries for ' + MethodUtil.DeviceToName[devid] + ', rolling charge/discharge switches: ' + str(rollingSwitchCount) + ', vs. allowed: ' + str(rollingSwitchesAllowed), flush=True)
+
+      if rollingSwitchCount >= rollingSwitchesAllowed:
+        # save the final P_batt_inv in the history list since we need to make
+        # sure not to allow the opposite direction in any setpoint requests
+        self.Batteries[devid]['switch_P_batt_inv'] = \
+                              self.BatteryHistory[devid][-1][1]
+      else:
+        self.Batteries[devid]['switch_P_batt_inv'] = None
+
     # find the maximum P_batt charge and discharge values per battery to
     # prevent overcharging or undercharging
     for devid in self.Batteries:
@@ -224,30 +253,43 @@ class DeconflictionPipeline(GridAPPSD):
         for app in self.ConflictMatrix[device]:
           # check vs. battery rated power
           if abs(self.ConflictMatrix[device][app][1]) > \
-             self.Batteries[devid]['prated']:
+             self.Batteries[device]['prated']:
             print('RulesForBatteries for ' + name + ' for app ' + app + '--P_batt setpoint exceeds battery rated power: ' + str(self.ConflictMatrix[device][app][1]), flush=True)
             if self.ConflictMatrix[device][app][1] > 0:
-              self.ConflictMatrix[device][app] = (self.ConflictMatrix[device][app][0], self.Batteries[devid]['prated'])
+              self.ConflictMatrix[device][app] = (self.ConflictMatrix[device][app][0], self.Batteries[device]['prated'])
             else:
-              self.ConflictMatrix[device][app] = (self.ConflictMatrix[device][app][0], -self.Batteries[devid]['prated'])
+              self.ConflictMatrix[device][app] = (self.ConflictMatrix[device][app][0], -self.Batteries[device]['prated'])
             print('RulesForBatteries for ' + name + ' for app ' + app + '--P_batt setpoint reset to battery rated power: ' + str(self.ConflictMatrix[device][app][1]), flush=True)
 
           # check vs. battery SoC limits
           if self.ConflictMatrix[device][app][1] > \
-             self.Batteries[devid]['P_batt_charge_max']:
+             self.Batteries[device]['P_batt_charge_max']:
             print('RulesForBatteries for ' + name + ' for app ' + app + '--P_batt setpoint above max charge P_batt: ' + str(self.ConflictMatrix[device][app][1]), flush=True)
             self.ConflictMatrix[device][app] = \
                                (self.ConflictMatrix[device][app][0],
-                                self.Batteries[devid]['P_batt_charge_max'])
+                                self.Batteries[device]['P_batt_charge_max'])
             print('RulesForBatteries for ' + name + ' for app ' + app + '--P_batt setpoint reset to max charge P_batt: ' + str(self.ConflictMatrix[device][app][1]), flush=True)
 
           elif self.ConflictMatrix[device][app][1] < \
-             self.Batteries[devid]['P_batt_discharge_max']:
+             self.Batteries[device]['P_batt_discharge_max']:
             print('RulesForBatteries for ' + name + ' for app ' + app + '--P_batt setpoint below max discharge P_batt: ' + str(self.ConflictMatrix[device][app][1]), flush=True)
             self.ConflictMatrix[device][app]= \
                                (self.ConflictMatrix[device][app][0],
-                                self.Batteries[devid]['P_batt_discharge_max'])
+                                self.Batteries[device]['P_batt_discharge_max'])
             print('RulesForBatteries for ' + name + ' for app ' + app + '--P_batt setpoint reset to max discharge P_batt: ' + str(self.ConflictMatrix[device][app][1]), flush=True)
+
+          # check for switching between charge/discharge if over limit
+          if self.Batteries[device]['switch_P_batt_inv'] != None:
+            prev_P_batt_inv = self.Batteries[device]['switch_P_batt_inv']
+            if prev_P_batt_inv>0 and self.ConflictMatrix[device][app][1]<0 or \
+               prev_P_batt_inv<0 and self.ConflictMatrix[device][app][1]>0:
+              print('RulesForBatteries for ' + name + ' for app ' + app + '--P_batt setpoint attempted to change charge/discharge state: ' + str(self.ConflictMatrix[device][app][1]), flush=True)
+              # this is pretty harsh to force the setpoint request back to zero
+              # to avoid a possible change in charge/discharge state, but no
+              # other choice when the rule is applied before other stages
+              self.ConflictMatrix[device][app]= \
+                                  (self.ConflictMatrix[device][app][0], 0.0)
+              print('RulesForBatteries for ' + name + ' for app ' + app + '--P_batt setpoint reset to zero', flush=True)
 
 
   def RulesForTransformers(self):
@@ -469,6 +511,9 @@ class DeconflictionPipeline(GridAPPSD):
 
       measid = self.Batteries[devid]['P_batt_measid']
       if measid in measurements:
+        # always update timestamp because it's needed for running history rule
+        self.Batteries[devid]['timestamp'] = message['timestamp']
+
         p, q = self.pol2cart(measurements[measid]['magnitude'],
                              measurements[measid]['angle'])
         # negate the p value from the simulation so it is directly comparable
