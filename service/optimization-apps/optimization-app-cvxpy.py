@@ -286,19 +286,6 @@ class CompetingApp(GridAPPSD):
     if self.opt_type == 'decarbonization':
       # objective
       # The latest version of cvxpy complains "unbounded" if not normalized
-
-      # ZZZ This is where Tylor thinks the modifications would be needed
-      # for cooperation messages--just for the objective functions for each
-      # type of application. I'm not sure if I can do it outside of the logic
-      # for each opt_types or it need to be within. Also, the idea of using a
-      # flag is to be able to share this method whether optimizations are
-      # triggered by new measurements or by a cooperating message
-      '''
-      if coopFlag:
-        objective = self.Psub_mod / 1000 + sum()
-      else:
-        objective = self.Psub_mod / 1000
-      '''
       objective = self.Psub_mod / 1000
 
     elif self.opt_type == 'resilience':
@@ -312,6 +299,12 @@ class CompetingApp(GridAPPSD):
     elif self.opt_type == 'profit_cvr':
       # objective
       objective = sum((self.v_A[i] + self.v_B[i] + self.v_C[i]) for i in range(len(self.bus_info)))
+
+    if coopFlag:
+      # objective function for cooperartion from Tylor is added to the
+      # base objective funtion regardless of whether it's decarbonization,
+      # resilience, or profit_cvr
+      objective += -1 * math.sqrt(sum((self.p_batt[i] - self.p_batt_proposed[i])**2 for i in range(len(self.Batteries))))/math.sqrt(sum((self.p_batt_greedy[i] - self.p_batt_proposed[i])**2 for i in range(len(self.Batteries))))
 
     # TODO: For some reason CVXPY fails to print the regulator taps unless
     #  substation regulator tap is fixed. For now fixing it to zero position
