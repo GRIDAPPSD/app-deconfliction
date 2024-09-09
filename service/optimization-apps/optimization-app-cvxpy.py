@@ -304,7 +304,9 @@ class CompetingApp(GridAPPSD):
       # objective function for cooperartion from Tylor is added to the
       # base objective funtion regardless of whether it's decarbonization,
       # resilience, or profit_cvr
-      objective += -1 * math.sqrt(sum((self.p_batt[i] - self.p_batt_proposed[i])**2 for i in range(len(self.Batteries))))/math.sqrt(sum((self.p_batt_greedy[i] - self.p_batt_proposed[i])**2 for i in range(len(self.Batteries))))
+      #objective += -1 * cp.sqrt(sum(cp.square(self.p_batt[i] - self.p_batt_proposed[i]) for i in range(len(self.Batteries))))/cp.sqrt(sum(cp.square(self.p_batt_greedy[i] - self.p_batt_proposed[i]) for i in range(len(self.Batteries))))
+      #objective += -1 * sum(cp.square(self.p_batt[i] - self.p_batt_proposed[i]) for i in range(len(self.Batteries)))/sum(cp.square(self.p_batt_greedy[i] - self.p_batt_proposed[i]) for i in range(len(self.Batteries)))
+      objective += sum(cp.square(self.p_batt[i] - self.p_batt_proposed[i]) for i in range(len(self.Batteries)))/sum(cp.square(self.p_batt_greedy[i] - self.p_batt_proposed[i]) for i in range(len(self.Batteries)))
 
     # TODO: For some reason CVXPY fails to print the regulator taps unless
     #  substation regulator tap is fixed. For now fixing it to zero position
@@ -1078,8 +1080,8 @@ class CompetingApp(GridAPPSD):
         '''
         # ZZZ hold off on actually doing an optmization until we think the
         # objective function is properly defined
-        self.doOptimization(timestamp, True)
         '''
+        self.doOptimization(timestamp, True)
 
     gapps.unsubscribe(out_id)
     gapps.unsubscribe(log_id)
