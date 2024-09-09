@@ -305,8 +305,8 @@ class CompetingApp(GridAPPSD):
       # base objective funtion regardless of whether it's decarbonization,
       # resilience, or profit_cvr
       #objective += -1 * cp.sqrt(sum(cp.square(self.p_batt[i] - self.p_batt_proposed[i]) for i in range(len(self.Batteries))))/cp.sqrt(sum(cp.square(self.p_batt_greedy[i] - self.p_batt_proposed[i]) for i in range(len(self.Batteries))))
-      #objective += -1 * sum(cp.square(self.p_batt[i] - self.p_batt_proposed[i]) for i in range(len(self.Batteries)))/sum(cp.square(self.p_batt_greedy[i] - self.p_batt_proposed[i]) for i in range(len(self.Batteries)))
-      objective += sum(cp.square(self.p_batt[i] - self.p_batt_proposed[i]) for i in range(len(self.Batteries)))/sum(cp.square(self.p_batt_greedy[i] - self.p_batt_proposed[i]) for i in range(len(self.Batteries)))
+      objective += -1 * sum(cp.square(self.p_batt[i] - self.p_batt_proposed[i]) for i in range(len(self.Batteries)))/sum(cp.square(self.p_batt_greedy[i] - self.p_batt_proposed[i]) for i in range(len(self.Batteries)))
+      #objective += sum(cp.square(self.p_batt[i] - self.p_batt_proposed[i]) for i in range(len(self.Batteries)))/sum(cp.square(self.p_batt_greedy[i] - self.p_batt_proposed[i]) for i in range(len(self.Batteries)))
 
     # TODO: For some reason CVXPY fails to print the regulator taps unless
     #  substation regulator tap is fixed. For now fixing it to zero position
@@ -397,6 +397,12 @@ class CompetingApp(GridAPPSD):
 
     print(tabulate(regulator_taps, headers=['Regulator', 'Tap', 'b_i'],
                    tablefmt='psql'), '\n', flush=True)
+
+    # set p_batt_greedy with every optimization based on measurements
+    if not coopFlag:
+      for mrid in self.Batteries:
+        idx = self.Batteries[mrid]['idx']
+        self.p_batt_greedy[idx] = self.p_batt[idx].value
 
     p_batt_setpoints = []
     for mrid in self.Batteries:
@@ -1059,13 +1065,8 @@ class CompetingApp(GridAPPSD):
           print('DECONFLICTOR COOPERATE mrid ' + mrid + ' target set-point: ' + str(targetResolutionVector[mrid]), flush=True)
 
         for mrid in self.Batteries:
-          idx = self.Batteries[mrid]['idx']
-          # TODO: I am setting p_batt_greedy from the p_batt of the most recent
-          # optimization, but that could also include cooperation optimizations.
-          # It could be that I should only be setting this after performing
-          # optimizations using new simulation measurements without cooperation.
-          self.p_batt_greedy[idx] = self.p_batt[idx].value
           if mrid in targetResolutionVector:
+            idx = self.Batteries[mrid]['idx']
             self.p_batt_proposed[idx] = -targetResolutionVector[mrid][1]
 
         print('DECONFLICTOR COOPERATE p_batt_greedy: ' + str(self.p_batt_greedy), flush=True)
