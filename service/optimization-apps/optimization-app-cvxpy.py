@@ -478,6 +478,20 @@ class CompetingApp(GridAPPSD):
     self.reg_taps = cp.Variable((len_Regulators, 32), boolean=True,
                                 name='reg_taps')
 
+    # cooperation variables
+    # since these are held constant, I'm not sure if they need to be defined
+    # as optimization variables or not so I'll start with them as being fixed
+    # length vectors and see what happens
+    '''
+    self.p_batt_proposed = cp.Variable(len_Batteries, integer=False,
+                                     name='p_batt_proposed')
+
+    self.p_batt_greedy = cp.Variable(len_Batteries, integer=False,
+                                     name='p_batt_greedy')
+    '''
+    self.p_batt_proposed = [None] * len_Batteries
+    self.p_batt_greedy = [None] * len_Batteries
+
 
   def defineOptimizationStaticProblem(self, branch_info, RegIdx):
     # define base/static optimization problem that doesn't change with the
@@ -1044,6 +1058,15 @@ class CompetingApp(GridAPPSD):
         targetResolutionVector = message
         for mrid in targetResolutionVector:
           print('DECONFLICTOR COOPERATE mrid ' + mrid + ' target set-point: ' + str(targetResolutionVector[mrid]), flush=True)
+
+        for mrid in self.Batteries:
+          idx = self.Batteries[mrid]['idx']
+          self.p_batt_greedy[idx] = self.p_batt[idx].value
+          if mrid in targetResolutionVector:
+            self.p_batt_proposed[idx] = -targetResolutionVector[mrid][1]
+
+        print('DECONFLICTOR COOPERATE p_batt_greedy: ' + str(self.p_batt_greedy), flush=True)
+        print('DECONFLICTOR COOPERATE p_batt_proposed: ' + str(self.p_batt_proposed), flush=True)
 
         # Need to define the full optimization problem each time anything
         # changes for CVXPY to be happy
