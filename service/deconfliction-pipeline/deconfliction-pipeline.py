@@ -649,11 +649,12 @@ class DeconflictionPipeline(GridAPPSD):
 
       percentConflictDelta = 0.0 # for no previous conflict metric value
       if self.previousConflictMetric > 0.0:
-        percentConflictDelta = (self.previousConflictMetric - self.conflictMetric)/self.previousConflictMetric
+        percentConflictDelta = 100.0 * (self.previousConflictMetric - self.conflictMetric)/self.previousConflictMetric
+        print('Previous conflict metric: ' + str(self.previousConflictMetric) + ', new conflict metric: ' + str(self.conflictMetric) + ', % change: ' + str(percentConflictDelta), flush=True)
 
       # if we haven't tried cooperation yet since the last device dispatch
       # of if we are cooperating the the conflict has gone down > 5%
-      if not self.coopFlag or percentConflictDelta>0.05:
+      if not self.coopFlag or percentConflictDelta>5.0:
         self.coopFlag = True # flag to say we are trying to cooperate
         return
 
@@ -677,9 +678,6 @@ class DeconflictionPipeline(GridAPPSD):
                   self.testDeviceName, flush=True)
 
     else: # no conflict
-      # conflict metric is 0.0 based on conflictFlag
-      self.conflictMetric = 0.0
-
       # start with a copy of the previous resolution
       newResolutionVector = copy.deepcopy(self.ResolutionVector)
 
@@ -702,6 +700,8 @@ class DeconflictionPipeline(GridAPPSD):
         else:
           print('~TEST: ResolutionVector (no conflict) does not contain ' +
                 self.testDeviceName, flush=True)
+
+    self.conflictMetric = 0.0 # reset conflict metric
 
     self.coopFlag = False # reset the cooperation control flag
 
