@@ -1052,15 +1052,16 @@ class CompetingApp(GridAPPSD):
       else: # this is a cooperation message from deconflictor
         # message consists of a target ResolutionVector that is a dictionary
         # with device mrid keys and target set-point values
-        # GDB: don't think I need to do a json.loads with message and it's
-        # already usable as a dictionary
-        # ZZZ
         targetResolutionVector = message
         for mrid in targetResolutionVector:
           print('DECONFLICTOR COOPERATE mrid ' + mrid + ' target set-point: ' + str(targetResolutionVector[mrid]), flush=True)
 
         for mrid in self.Batteries:
           idx = self.Batteries[mrid]['idx']
+          # TODO: I am setting p_batt_greedy from the p_batt of the most recent
+          # optimization, but that could also include cooperation optimizations.
+          # It could be that I should only be setting this after performing
+          # optimizations using new simulation measurements without cooperation.
           self.p_batt_greedy[idx] = self.p_batt[idx].value
           if mrid in targetResolutionVector:
             self.p_batt_proposed[idx] = -targetResolutionVector[mrid][1]
