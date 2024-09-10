@@ -403,11 +403,18 @@ class CompetingApp(GridAPPSD):
     print(tabulate(regulator_taps, headers=['Regulator', 'Tap', 'b_i'],
                    tablefmt='psql'), '\n', flush=True)
 
-    # set p_batt_greedy with every optimization based on measurements
+    # set p_batt_greedy/reg_greedy with every optimization based on measurements
     if not coopFlag:
       for mrid in self.Batteries:
         idx = self.Batteries[mrid]['idx']
         self.p_batt_greedy[idx] = self.p_batt[idx].value
+
+      for reg in self.Regulators:
+        idx = self.Regulators[reg]['idx']
+        for k in range(32):
+          if self.reg_taps[(idx, k)].value:
+            self.reg_greedy[idx] = k-16
+            break # assume this will only happen once per regulator
 
     p_batt_setpoints = []
     for mrid in self.Batteries:
@@ -499,6 +506,8 @@ class CompetingApp(GridAPPSD):
     # but still need these vectors so I'll leave them as defined here.
     self.p_batt_proposed = [None] * len_Batteries
     self.p_batt_greedy = [None] * len_Batteries
+    self.reg_proposed = [None] * len_Regulators
+    self.reg_greedy = [None] * len_Regulators
 
 
   def defineOptimizationStaticProblem(self, branch_info, RegIdx):
@@ -1061,8 +1070,8 @@ class CompetingApp(GridAPPSD):
         # message consists of a target ResolutionVector that is a dictionary
         # with device mrid keys and target set-point values
         targetResolutionVector = message
-        for mrid in targetResolutionVector:
-          print('DECONFLICTOR COOPERATE mrid ' + mrid + ' target set-point: ' + str(targetResolutionVector[mrid]), flush=True)
+        #for mrid in targetResolutionVector:
+        #  print('DECONFLICTOR COOPERATE mrid ' + mrid + ' target set-point: ' + str(targetResolutionVector[mrid]), flush=True)
 
         for mrid in self.Batteries:
           if mrid in targetResolutionVector:
@@ -1071,6 +1080,14 @@ class CompetingApp(GridAPPSD):
 
         print('DECONFLICTOR COOPERATE p_batt_greedy: ' + str(self.p_batt_greedy), flush=True)
         print('DECONFLICTOR COOPERATE p_batt_proposed: ' + str(self.p_batt_proposed), flush=True)
+
+        for reg in self.Regulators:
+          if reg in targetResolutionVector:
+            idx = self.Regulators[reg]['idx']
+            self.reg_proposed[idx] = targetResolutionVector[reg][1]
+
+        print('DECONFLICTOR COOPERATE reg_greedy: ' + str(self.reg_greedy), flush=True)
+        print('DECONFLICTOR COOPERATE reg_proposed: ' + str(self.reg_proposed), flush=True)
 
         # Need to define the full optimization problem each time anything
         # changes for CVXPY to be happy
@@ -1088,7 +1105,7 @@ class CompetingApp(GridAPPSD):
 
         # GDB 9/10/24: Here is the alternative support for cooperation via
         # ranking the differences between proposed and greedy setpoints:
-        # First, create a list of differences
+        # first, create a list of differences
         len_Batteries = len(self.Batteries)
         p_batt_diff = [None] * len_Batteries
         for i in range(len_Batteries):
@@ -1106,7 +1123,7 @@ class CompetingApp(GridAPPSD):
         # find the value associated with the last "cooperating" battery
         diffMax = p_batt_sort[coopCount-1]
 
-        print('DECONFLICTOR COOPERATE coopCount: ' + str(coopCount) + ', diffMax: ' + str(diffMax), flush=True)
+        print('DECONFLICTOR COOPERATE batteries coopCount: ' + str(coopCount) + ', diffMax: ' + str(diffMax), flush=True)
 
         # start with assuming no cooperation by copying p_batt_greedy
         p_batt_coop = self.p_batt_greedy.copy()
@@ -1119,14 +1136,43 @@ class CompetingApp(GridAPPSD):
 
         print('DECONFLICTOR COOPERATE p_batt_coop: ' + str(p_batt_coop), flush=True)
 
+        # now do the same for regulators
+        len_Regulators = len(self.Regulators)
+        reg_diff = [None] * len_Regulators
+        for i in range(len_Regulators):
+          reg_diff[i] = abs(self.reg_greedy[i] - self.reg_proposed[i])
+
+        print('DECONFLICTOR COOPERATE reg_diff: ' + str(reg_diff), flush=True)
+
+        # copy the list because it will be sorted in place
+        reg_sort = reg_diff.copy()
+        reg_sort.sort()
+
+        # determine the number of regulators that will "cooperate"
+        coopCount = max(1, len_Regulators//2) # integer "floor" division
+
+        # find the value associated with the last "cooperating" regulator
+        diffMax = reg_sort[coopCount-1]
+
+        print('DECONFLICTOR COOPERATE regulators coopCount: ' + str(coopCount) + ', diffMax: ' + str(diffMax), flush=True)
+
+        # start with assuming no cooperation by copying p_batt_greedy
+        reg_coop = self.reg_greedy.copy()
+
+        for i in range(len_Regulators):
+          # check if this is a "cooperating" regulator
+          if reg_diff[i] <= diffMax:
+            # if so, set it to the proposed value
+            reg_coop[i] = self.reg_proposed[i]
+
+        print('DECONFLICTOR COOPERATE reg_coop: ' + str(reg_coop), flush=True)
+
+        # finally, send out the cooperation setpoints via DifferenceBuilder msg
         for reg in self.Regulators:
           idx = self.Regulators[reg]['idx']
-          for k in range(32):
-            if self.reg_taps[(idx, k)].value:
-              # new value before old value for DifferenceBuilder
-              self.difference_builder.add_difference(reg, 'TapChanger.step',
-                                                     k-16, None)
-              break # assume this will only happen once per regulator
+          # new value before old value for DifferenceBuilder
+          self.difference_builder.add_difference(reg, 'TapChanger.step',
+                                                 reg_coop[idx], None)
 
         for mrid in self.Batteries:
           idx = self.Batteries[mrid]['idx']
