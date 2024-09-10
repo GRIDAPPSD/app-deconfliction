@@ -492,16 +492,11 @@ class CompetingApp(GridAPPSD):
                                 name='reg_taps')
 
     # cooperation variables
-    # since these are held constant, I'm not sure if they need to be defined
-    # as optimization variables or not so I'll start with them as being fixed
-    # length vectors and see what happens
-    '''
-    self.p_batt_proposed = cp.Variable(len_Batteries, integer=False,
-                                     name='p_batt_proposed')
-
-    self.p_batt_greedy = cp.Variable(len_Batteries, integer=False,
-                                     name='p_batt_greedy')
-    '''
+    # since these are held constant, I don't need to define them with
+    # cp.Variable calls, but as fixed length vectors. It's still convenient
+    # though to define them along with the other optimization variables.
+    # GDB 9/9/24: I no longer attempt to perform cooperation optimizations,
+    # but still need these vectors so I'll leave them as defined here.
     self.p_batt_proposed = [None] * len_Batteries
     self.p_batt_greedy = [None] * len_Batteries
 
