@@ -1086,6 +1086,39 @@ class CompetingApp(GridAPPSD):
         self.doOptimization(timestamp, True)
         '''
 
+        # GDB 9/10/24: Here is the alternative support for cooperation via
+        # ranking the differences between proposed and greedy setpoints:
+        # First, create a list of differences
+        len_Batteries = len(self.Batteries)
+        p_batt_diff = [None] * len_Batteries
+        for i in range(len_Batteries):
+          p_batt_diff[i] = abs(self.p_batt_greedy[i] - self.p_batt_proposed[i])
+
+        print('DECONFLICTOR COOPERATE p_batt_diff: ' + str(p_batt_diff), flush=True)
+
+        # copy the list because it will be sorted in place
+        p_batt_sort = p_batt_diff.copy()
+        p_batt_sort.sort()
+
+        # determine the number of batteries that will "cooperate"
+        coopCount = max(1, len_Batteries//2) # integer "floor" division
+
+        # find the value associated with the last "cooperating" battery
+        diffMax = p_batt_sort[coopCount-1]
+
+        print('DECONFLICTOR COOPERATE coopCount: ' + str(coopCount) + ', diffMax: ' + str(diffMax), flush=True)
+
+        # start with assuming no cooperation by copying p_batt_greedy
+        p_batt_coop = self.p_batt_greedy.copy()
+
+        for i in range(len_Batteries):
+          # check if this is a "cooperating" battery
+          if p_batt_diff[i] <= diffMax:
+            # if so, set it to the proposed value
+            p_batt_coop[i] = self.p_batt_proposed[i]
+
+        print('DECONFLICTOR COOPERATE p_batt_coop: ' + str(p_batt_coop), flush=True)
+
     gapps.unsubscribe(out_id)
     gapps.unsubscribe(log_id)
     gapps.unsubscribe(coop_id)
