@@ -304,9 +304,14 @@ class CompetingApp(GridAPPSD):
       # objective function for cooperartion from Tylor is added to the
       # base objective funtion regardless of whether it's decarbonization,
       # resilience, or profit_cvr
-      #objective += -1 * cp.sqrt(sum(cp.square(self.p_batt[i] - self.p_batt_proposed[i]) for i in range(len(self.Batteries))))/cp.sqrt(sum(cp.square(self.p_batt_greedy[i] - self.p_batt_proposed[i]) for i in range(len(self.Batteries))))
-      objective += -1 * sum(cp.square(self.p_batt[i] - self.p_batt_proposed[i]) for i in range(len(self.Batteries)))/sum(cp.square(self.p_batt_greedy[i] - self.p_batt_proposed[i]) for i in range(len(self.Batteries)))
-      #objective += sum(cp.square(self.p_batt[i] - self.p_batt_proposed[i]) for i in range(len(self.Batteries)))/sum(cp.square(self.p_batt_greedy[i] - self.p_batt_proposed[i]) for i in range(len(self.Batteries)))
+      # GDB 9/9/24: This creates a non-linear/non-convex objective function
+      # that CVXPY free solvers balk at. The commercial Gurobi solver would
+      # handle it according to Rabayet and Anita Bowers is the one to talk
+      # to and tell her we are using it for research/publication purposes
+      # to get a license without cost. But, we don't have time for that given
+      # the end of FY24 deconfliction service deliverable so for now we won't
+      # call doOptimization with coopFlag as True.
+      objective += -1 * cp.sqrt(sum(cp.square(self.p_batt[i] - self.p_batt_proposed[i]) for i in range(len(self.Batteries))))/cp.sqrt(sum(cp.square(self.p_batt_greedy[i] - self.p_batt_proposed[i]) for i in range(len(self.Batteries))))
 
     # TODO: For some reason CVXPY fails to print the regulator taps unless
     #  substation regulator tap is fixed. For now fixing it to zero position
@@ -1074,15 +1079,17 @@ class CompetingApp(GridAPPSD):
 
         # Need to define the full optimization problem each time anything
         # changes for CVXPY to be happy
+        # GDB 9/9/24: Can't do a new optimization for cooperation because
+        # the objective function is non-linear/non-convex so we have an
+        # alternative workflow implementation for supporting cooperation in
+        # order to meet the FY24 deconfliction service deliverable
+        '''
         self.defineOptimizationStaticProblem(branch_info, RegIdx)
 
         self.defineOptimizationDynamicProblem(timestamp)
 
-        '''
-        # ZZZ hold off on actually doing an optmization until we think the
-        # objective function is properly defined
-        '''
         self.doOptimization(timestamp, True)
+        '''
 
     gapps.unsubscribe(out_id)
     gapps.unsubscribe(log_id)
