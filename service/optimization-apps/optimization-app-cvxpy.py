@@ -425,7 +425,7 @@ class CompetingApp(GridAPPSD):
                    'Target SoC'], tablefmt='psql'), flush=True)
 
     dispatch_message = self.difference_builder.get_message()
-    print('Sending DifferenceBuilder message: ' +
+    print('Sending Measurements DifferenceBuilder message: ' +
           json.dumps(dispatch_message), flush=True)
     self.gapps.send(self.publish_topic, json.dumps(dispatch_message))
     self.difference_builder.clear()
@@ -1118,6 +1118,29 @@ class CompetingApp(GridAPPSD):
             p_batt_coop[i] = self.p_batt_proposed[i]
 
         print('DECONFLICTOR COOPERATE p_batt_coop: ' + str(p_batt_coop), flush=True)
+
+        for reg in self.Regulators:
+          idx = self.Regulators[reg]['idx']
+          for k in range(32):
+            if self.reg_taps[(idx, k)].value:
+              # new value before old value for DifferenceBuilder
+              self.difference_builder.add_difference(reg, 'TapChanger.step',
+                                                     k-16, None)
+              break # assume this will only happen once per regulator
+
+        for mrid in self.Batteries:
+          idx = self.Batteries[mrid]['idx']
+          # new value before old value for DifferenceBuilder
+          # note the p_batt value is negated for the GridLAB-D
+          # DifferenceBuilder message
+          self.difference_builder.add_difference(mrid,
+               'PowerElectronicsConnection.p', -p_batt_coop[idx], None)
+
+        dispatch_message = self.difference_builder.get_message()
+        print('Sending Cooperation DifferenceBuilder message: ' +
+              json.dumps(dispatch_message), flush=True)
+        self.gapps.send(self.publish_topic, json.dumps(dispatch_message))
+        self.difference_builder.clear()
 
     gapps.unsubscribe(out_id)
     gapps.unsubscribe(log_id)
