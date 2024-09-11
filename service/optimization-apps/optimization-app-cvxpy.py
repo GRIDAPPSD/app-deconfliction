@@ -435,7 +435,7 @@ class CompetingApp(GridAPPSD):
     print('Sending Measurements DifferenceBuilder message!', flush=True)
     #print('Sending Measurements DifferenceBuilder message: ' +
     #      json.dumps(dispatch_message), flush=True)
-    self.gapps.send(self.publish_topic, json.dumps(dispatch_message))
+    self.gapps.send(self.meas_publish_topic, json.dumps(dispatch_message))
     self.difference_builder.clear()
 
 
@@ -1004,7 +1004,10 @@ class CompetingApp(GridAPPSD):
 
     # topic for sending out set_points messages
     self.app_name = 'gridappsd-' + self.opt_type + '-app'
-    self.publish_topic = service_output_topic(self.app_name, simulation_id)
+    self.meas_publish_topic = service_output_topic(self.app_name+':meas',
+                                                   simulation_id)
+    self.coop_publish_topic = service_output_topic(self.app_name+':coop',
+                                                   simulation_id)
 
     # create DifferenceBuilder once and reuse it throughout the simulation
     self.difference_builder = DifferenceBuilder(simulation_id)
@@ -1196,7 +1199,7 @@ class CompetingApp(GridAPPSD):
         print('Sending Cooperation DifferenceBuilder message!', flush=True)
         #print('Sending Cooperation DifferenceBuilder message: ' +
         #      json.dumps(dispatch_message), flush=True)
-        self.gapps.send(self.publish_topic, json.dumps(dispatch_message))
+        self.gapps.send(self.coop_publish_topic, json.dumps(dispatch_message))
         self.difference_builder.clear()
 
     gapps.unsubscribe(out_id)

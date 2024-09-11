@@ -496,7 +496,7 @@ class DeconflictionPipeline(GridAPPSD):
         print('Simulation ' + status + ' message received', flush=True)
 
     else:
-      self.messageQueue.put((None, message['message']))
+      self.messageQueue.put((None, None, message['message']))
 
 
   def pol2cart(self, mag, angle_deg):
@@ -576,27 +576,37 @@ class DeconflictionPipeline(GridAPPSD):
               ', pos: ' + str(self.Regulators[devid]['step']), flush=True)
 
 
-  def on_setpoints_message(self, header, message):
-    #print('### Received set-points message: ' + str(message), flush=True)
-    #print('### Received set-points header: ' + str(header), flush=True)
-    self.messageQueue.put((header, message['input']['message']))
-
-
   def get_app_name(self, header):
-    app_name = header['destination']
+    app_info = header['destination']
 
-    if app_name.startswith('/topic/goss.gridappsd.simulation.'):
-      endind = app_name[33:].find('.')
-      app_name = app_name[33:33+endind]
+    if app_info.startswith('/topic/goss.gridappsd.simulation.'):
+      endind = app_info[33:].find('.')
+      app_info = app_info[33:33+endind]
 
-    return app_name
+    return app_info.split(':')[0]
 
 
-  def processSetpointsMessage(self, message, header):
-    # for SHIVA conflict metric testing
-    #realTime = round(time.time(), 4)
+  def on_meas_setpoints_message(self, header, message):
+    #print('### Received meas set-points message: ' + str(message), flush=True)
+    #print('### Received meas set-points header: ' + str(header), flush=True)
 
     app_name = self.get_app_name(header)
+
+    self.messageQueue.put((app_name, 'meas', message['input']['message']))
+
+
+  def on_coop_setpoints_message(self, header, message):
+    #print('### Received coop set-points message: ' + str(message), flush=True)
+    #print('### Received coop set-points header: ' + str(header), flush=True)
+
+    app_name = self.get_app_name(header)
+
+    self.messageQueue.put((app_name, 'coop', message['input']['message']))
+
+
+  def processSetpointsMessage(self, message, app_name, message_type):
+    # for SHIVA conflict metric testing
+    #realTime = round(time.time(), 4)
 
     timestamp = message['timestamp']
 
@@ -752,8 +762,10 @@ class DeconflictionPipeline(GridAPPSD):
     set_id = {}
     for app in competing_apps:
       # subscribe to competing app set-points messages
-      set_id[app] = gapps.subscribe(service_output_topic(app,
-                                    simulation_id), self.on_setpoints_message)
+      set_id[app+':meas'] = gapps.subscribe(service_output_topic(app + ':meas',
+                                 simulation_id), self.on_meas_setpoints_message)
+      set_id[app+':coop'] = gapps.subscribe(service_output_topic(app + ':coop',
+                                 simulation_id), self.on_coop_setpoints_message)
 
     # subscribe to simulation log and output messages
     self.keepLoopingFlag = True
@@ -884,18 +896,18 @@ class DeconflictionPipeline(GridAPPSD):
       # as it would only make sense to discard when there is a newer setpoints
       # message from the same competing app.
       while self.messageQueue.qsize() > 0:
-        header, message = self.messageQueue.get()
-        if header != None:
+        app_name, message_type, message = self.messageQueue.get()
+        if app_name != None:
           break
 
-      if header == None:
+      if app_name == None:
         self.processSimulationMessage(message)
 
       else:
-        self.processSetpointsMessage(message, header)
+        self.processSetpointsMessage(message, app_name, message_type)
 
-    for app in competing_apps:
-      gapps.unsubscribe(set_id[app])
+    for id in set_id:
+      gapps.unsubscribe(set_id[id])
     gapps.unsubscribe(out_id)
     gapps.unsubscribe(log_id)
 
