@@ -617,7 +617,7 @@ class DeconflictionPipeline(GridAPPSD):
 
     # for checking order of messages received
     print('PROCESS SETPOINTS: timestamp: ' + str(timestamp) + ', app: ' +
-          app_name, flush=True)
+          app_name + ', type: ' + message_type, flush=True)
 
     # copy conflict matrix before updating since I need this for cooperation
     previousConflictMatrix = copy.deepcopy(self.ConflictMatrix)
