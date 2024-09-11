@@ -476,6 +476,7 @@ class DeconflictionPipeline(GridAPPSD):
                   ', name: ' + MethodUtil.DeviceToName[devid], flush=True)
 
     if diffCount > 0:
+      dispatch_message = self.difference_builder.get_message()
       print('~~> Sending device dispatch DifferenceBuilder message!', flush=True)
       #print('~~> Sending device dispatch DifferenceBuilder message: ' +
       #      json.dumps(dispatch_message), flush=True)
