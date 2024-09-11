@@ -403,19 +403,6 @@ class CompetingApp(GridAPPSD):
     print(tabulate(regulator_taps, headers=['Regulator', 'Tap', 'b_i'],
                    tablefmt='psql'), '\n', flush=True)
 
-    # set p_batt_greedy/reg_greedy with every optimization based on measurements
-    if not coopFlag:
-      for mrid in self.Batteries:
-        idx = self.Batteries[mrid]['idx']
-        self.p_batt_greedy[idx] = self.p_batt[idx].value
-
-      for reg in self.Regulators:
-        idx = self.Regulators[reg]['idx']
-        for k in range(32):
-          if self.reg_taps[(idx, k)].value:
-            self.reg_greedy[idx] = k-16
-            break # assume this will only happen once per regulator
-
     p_batt_setpoints = []
     for mrid in self.Batteries:
       idx = self.Batteries[mrid]['idx']
@@ -430,6 +417,19 @@ class CompetingApp(GridAPPSD):
 
     print(tabulate(p_batt_setpoints, headers=['Battery', 'P_batt (kW)',
                    'Target SoC'], tablefmt='psql'), flush=True)
+
+    # set p_batt_greedy/reg_greedy with every optimization based on measurements
+    if not coopFlag:
+      for mrid in self.Batteries:
+        idx = self.Batteries[mrid]['idx']
+        self.p_batt_greedy[idx] = self.p_batt[idx].value
+
+      for reg in self.Regulators:
+        idx = self.Regulators[reg]['idx']
+        for k in range(32):
+          if self.reg_taps[(idx, k)].value:
+            self.reg_greedy[idx] = k-16
+            break # assume this will only happen once per regulator
 
     dispatch_message = self.difference_builder.get_message()
     print('Sending Measurements DifferenceBuilder message!', flush=True)
@@ -1056,7 +1056,7 @@ class CompetingApp(GridAPPSD):
         # If doing non-real-time simulation remove the 5 second offset because
         # GridLAB-D outputs at 60 second intervals
         #if timestamp % optIntervalSec != 0:
-          print('Simulation timestamp (skipping optimization): ' + str(timestamp),
+          print('Simulation timestamp (skipping optimization): '+str(timestamp),
                 flush=True)
         else:
           print('Simulation timestamp for optimization: ' + str(timestamp),
