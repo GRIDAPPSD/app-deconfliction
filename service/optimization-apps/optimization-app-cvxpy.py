@@ -432,8 +432,9 @@ class CompetingApp(GridAPPSD):
                    'Target SoC'], tablefmt='psql'), flush=True)
 
     dispatch_message = self.difference_builder.get_message()
-    print('Sending Measurements DifferenceBuilder message: ' +
-          json.dumps(dispatch_message), flush=True)
+    print('Sending Measurements DifferenceBuilder message!', flush=True)
+    #print('Sending Measurements DifferenceBuilder message: ' +
+    #      json.dumps(dispatch_message), flush=True)
     self.gapps.send(self.publish_topic, json.dumps(dispatch_message))
     self.difference_builder.clear()
 
@@ -1078,16 +1079,10 @@ class CompetingApp(GridAPPSD):
             idx = self.Batteries[mrid]['idx']
             self.p_batt_proposed[idx] = -targetResolutionVector[mrid][1]
 
-        print('DECONFLICTOR COOPERATE p_batt_greedy: ' + str(self.p_batt_greedy), flush=True)
-        print('DECONFLICTOR COOPERATE p_batt_proposed: ' + str(self.p_batt_proposed), flush=True)
-
         for reg in self.Regulators:
           if reg in targetResolutionVector:
             idx = self.Regulators[reg]['idx']
             self.reg_proposed[idx] = targetResolutionVector[reg][1]
-
-        print('DECONFLICTOR COOPERATE reg_greedy: ' + str(self.reg_greedy), flush=True)
-        print('DECONFLICTOR COOPERATE reg_proposed: ' + str(self.reg_proposed), flush=True)
 
         # Need to define the full optimization problem each time anything
         # changes for CVXPY to be happy
@@ -1103,6 +1098,9 @@ class CompetingApp(GridAPPSD):
         self.doOptimization(timestamp, True)
         '''
 
+        print('DECONFLICTOR COOPERATE p_batt_greedy: ' + str(self.p_batt_greedy), flush=True)
+        print('DECONFLICTOR COOPERATE p_batt_proposed: ' + str(self.p_batt_proposed), flush=True)
+
         # GDB 9/10/24: Here is the alternative support for cooperation via
         # ranking the differences between proposed and greedy setpoints:
         # first, create a list of differences
@@ -1113,12 +1111,16 @@ class CompetingApp(GridAPPSD):
 
         print('DECONFLICTOR COOPERATE p_batt_diff: ' + str(p_batt_diff), flush=True)
 
-        # copy the list because it will be sorted in place
-        p_batt_sort = p_batt_diff.copy()
+        # omit any setpoints where proposed == greeedy
+        p_batt_sort = []
+        for i in range(len_Batteries):
+          if p_batt_diff[i] > 0:
+            p_batt_sort.append(p_batt_diff[i])
+
+        # sorts in place
         p_batt_sort.sort()
 
-        # determine the number of batteries that will "cooperate"
-        coopCount = max(1, len_Batteries//2) # integer "floor" division
+        coopCount = max(1, len(p_batt_sort)//2) # integer "floor" division
 
         # find the value associated with the last "cooperating" battery
         diffMax = p_batt_sort[coopCount-1]
@@ -1137,6 +1139,9 @@ class CompetingApp(GridAPPSD):
         print('DECONFLICTOR COOPERATE p_batt_coop: ' + str(p_batt_coop), flush=True)
 
         # now do the same for regulators
+        print('DECONFLICTOR COOPERATE reg_greedy: ' + str(self.reg_greedy), flush=True)
+        print('DECONFLICTOR COOPERATE reg_proposed: ' + str(self.reg_proposed), flush=True)
+
         len_Regulators = len(self.Regulators)
         reg_diff = [None] * len_Regulators
         for i in range(len_Regulators):
@@ -1144,12 +1149,17 @@ class CompetingApp(GridAPPSD):
 
         print('DECONFLICTOR COOPERATE reg_diff: ' + str(reg_diff), flush=True)
 
-        # copy the list because it will be sorted in place
-        reg_sort = reg_diff.copy()
+        # omit any setpoints where proposed == greeedy
+        reg_sort = []
+        for i in range(len_Regulators):
+          if reg_diff[i] > 0:
+            reg_sort.append(reg_diff[i])
+
+        # sorts in place
         reg_sort.sort()
 
         # determine the number of regulators that will "cooperate"
-        coopCount = max(1, len_Regulators//2) # integer "floor" division
+        coopCount = max(1, len(reg_sort)//2) # integer "floor" division
 
         # find the value associated with the last "cooperating" regulator
         diffMax = reg_sort[coopCount-1]
@@ -1183,8 +1193,9 @@ class CompetingApp(GridAPPSD):
                'PowerElectronicsConnection.p', -p_batt_coop[idx], None)
 
         dispatch_message = self.difference_builder.get_message()
-        print('Sending Cooperation DifferenceBuilder message: ' +
-              json.dumps(dispatch_message), flush=True)
+        print('Sending Cooperation DifferenceBuilder message!', flush=True)
+        #print('Sending Cooperation DifferenceBuilder message: ' +
+        #      json.dumps(dispatch_message), flush=True)
         self.gapps.send(self.publish_topic, json.dumps(dispatch_message))
         self.difference_builder.clear()
 

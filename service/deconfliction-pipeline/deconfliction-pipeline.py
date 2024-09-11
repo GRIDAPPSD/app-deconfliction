@@ -204,7 +204,7 @@ class DeconflictionPipeline(GridAPPSD):
     return False
 
 
-  def RulesForBatteries(self):
+  def RulesForBatteries(self, printAllFlag=False):
     rollingTimeInterval = 60
     # number of changes between charging and discharging, and vice versa,
     # allowed in the rolling time interval
@@ -213,7 +213,8 @@ class DeconflictionPipeline(GridAPPSD):
     # set max/min allowable tap positions based on current position
     for devid in self.Batteries:
       histList = self.BatteryHistory[devid]
-      print('RulesForBatteries BatteryHistory for ' + MethodUtil.DeviceToName[devid] + ': ' + str(histList), flush=True)
+      if printAllFlag:
+        print('RulesForBatteries BatteryHistory for ' + MethodUtil.DeviceToName[devid] + ': ' + str(histList), flush=True)
 
       # iterate backwards through histList counting switches
       rollingSwitchCount = 0
@@ -224,7 +225,8 @@ class DeconflictionPipeline(GridAPPSD):
           break
         rollingSwitchCount += 1
 
-      print('RulesForBatteries for ' + MethodUtil.DeviceToName[devid] + ', rolling charge/discharge switches: ' + str(rollingSwitchCount) + ', vs. allowed: ' + str(rollingSwitchesAllowed), flush=True)
+      if printAllFlag:
+        print('RulesForBatteries for ' + MethodUtil.DeviceToName[devid] + ', rolling charge/discharge switches: ' + str(rollingSwitchCount) + ', vs. allowed: ' + str(rollingSwitchesAllowed), flush=True)
 
       if rollingSwitchCount >= rollingSwitchesAllowed:
         # save the final P_batt_inv in the history list since we need to make
@@ -239,11 +241,13 @@ class DeconflictionPipeline(GridAPPSD):
     for devid in self.Batteries:
       chargeSoCMax = 0.9 - self.Batteries[devid]['SoC']
       self.Batteries[devid]['P_batt_charge_max'] = chargeSoCMax*self.Batteries[devid]['ratedE']/(self.Batteries[devid]['eff_c']*self.deltaT)
-      print('RulesForBatteries for ' + MethodUtil.DeviceToName[devid] + ', max charge SoC contribution: ' + str(chargeSoCMax) + ', max charge P_batt: ' + str(self.Batteries[devid]['P_batt_charge_max']), flush=True)
+      if printAllFlag:
+        print('RulesForBatteries for ' + MethodUtil.DeviceToName[devid] + ', max charge SoC contribution: ' + str(chargeSoCMax) + ', max charge P_batt: ' + str(self.Batteries[devid]['P_batt_charge_max']), flush=True)
 
       dischargeSoCMax = 0.2 - self.Batteries[devid]['SoC']
       self.Batteries[devid]['P_batt_discharge_max'] = dischargeSoCMax*self.Batteries[devid]['ratedE']/(1/self.Batteries[devid]['eff_d']*self.deltaT)
-      print('RulesForBatteries for ' + MethodUtil.DeviceToName[devid] + ', max discharge SoC contribution: ' + str(dischargeSoCMax) + ', max discharge P_batt: ' + str(self.Batteries[devid]['P_batt_discharge_max']), flush=True)
+      if printAllFlag:
+        print('RulesForBatteries for ' + MethodUtil.DeviceToName[devid] + ', max discharge SoC contribution: ' + str(dischargeSoCMax) + ', max discharge P_batt: ' + str(self.Batteries[devid]['P_batt_discharge_max']), flush=True)
 
     # iterate over all battery setpoints in ConflictMatrix to make sure they
     # fall within the acceptable P_batt range and set them to max values if not
@@ -292,7 +296,7 @@ class DeconflictionPipeline(GridAPPSD):
               print('RulesForBatteries for ' + name + ' for app ' + app + '--P_batt setpoint reset to zero', flush=True)
 
 
-  def RulesForTransformers(self):
+  def RulesForRegulators(self, printAllFlag=False):
     # comment out to disable per-timestamp limit on tap position changes
     #timestampTapBudget = 3
 
@@ -302,7 +306,8 @@ class DeconflictionPipeline(GridAPPSD):
     # set max/min allowable tap positions based on current position
     for devid in self.Regulators:
       histList = self.RegulatorHistory[devid]
-      print('RulesForTransformers RegulatorHistory for ' + MethodUtil.DeviceToName[devid] + ': ' + str(histList), flush=True)
+      if printAllFlag:
+        print('RulesForRegulators RegulatorHistory for ' + MethodUtil.DeviceToName[devid] + ': ' + str(histList), flush=True)
 
       # iterate backwards through histList counting steps changed
       rollingStepCount = 0
@@ -316,21 +321,23 @@ class DeconflictionPipeline(GridAPPSD):
         previousStep = hist[1]
 
       rollingTapBudget = max(0, rollingStepsAllowed - rollingStepCount)
-      print('RulesForTransformers for ' + MethodUtil.DeviceToName[devid] + ', rolling steps: ' + str(rollingStepCount) + ', vs. allowed: ' + str(rollingStepsAllowed) + ', rolling budget: ' + str(rollingTapBudget), flush=True)
+      if printAllFlag:
+        print('RulesForRegulators for ' + MethodUtil.DeviceToName[devid] + ', rolling steps: ' + str(rollingStepCount) + ', vs. allowed: ' + str(rollingStepsAllowed) + ', rolling budget: ' + str(rollingTapBudget), flush=True)
 
       # comment out next line and uncoment the following on to disable
       # per-timestamp limit
       #tapBudget = min(timestampTapBudget, rollingTapBudget)
       tapBudget = rollingTapBudget
 
-      #print('RulesForTransformers for ' + MethodUtil.DeviceToName[devid] + ', per-timestamp tap budget: ' + str(timestampTapBudget) + ', rolling tap budget: ' + str(rollingTapBudget) + ', final tap budget: ' + str(tapBudget), flush=True)
+      #print('RulesForRegulators for ' + MethodUtil.DeviceToName[devid] + ', per-timestamp tap budget: ' + str(timestampTapBudget) + ', rolling tap budget: ' + str(rollingTapBudget) + ', final tap budget: ' + str(tapBudget), flush=True)
 
       # constrain by the overall tap budget and physical device limits
       self.Regulators[devid]['maxStep'] = min(self.Regulators[devid]['step'] + \
                                               tapBudget, 16)
       self.Regulators[devid]['minStep'] = max(self.Regulators[devid]['step'] - \
                                               tapBudget, -16)
-      print('RulesForTransformers for ' + MethodUtil.DeviceToName[devid] + ', min tap pos: ' + str(self.Regulators[devid]['minStep']) + ', max tap pos: ' + str(self.Regulators[devid]['maxStep']), flush=True)
+      if printAllFlag:
+        print('RulesForRegulators for ' + MethodUtil.DeviceToName[devid] + ', min tap pos: ' + str(self.Regulators[devid]['minStep']) + ', max tap pos: ' + str(self.Regulators[devid]['maxStep']), flush=True)
 
     # iterate over all regulator tap setpoints in ConflictMatrix to make sure
     # they fall within the acceptable maxTapBudget range of the current position
@@ -340,19 +347,19 @@ class DeconflictionPipeline(GridAPPSD):
         for app in self.ConflictMatrix[device]:
           if self.ConflictMatrix[device][app][1] > \
              self.Regulators[device]['maxStep']:
-            print('RulesForTransformers for ' + name + ' for app ' + app + '--tap pos setpoint above max allowable asset health pos: ' + str(self.ConflictMatrix[device][app][1]), flush=True)
+            print('RulesForRegulators for ' + name + ' for app ' + app + '--tap pos setpoint above max allowable asset health pos: ' + str(self.ConflictMatrix[device][app][1]), flush=True)
             self.ConflictMatrix[device][app] = \
                                (self.ConflictMatrix[device][app][0],
                                 self.Regulators[device]['maxStep'])
-            print('RulesForTransformers for ' + name + ' for app ' + app + '--tap pos setpoint reset to max allowable asset health pos: ' + str(self.ConflictMatrix[device][app][1]), flush=True)
+            print('RulesForRegulators for ' + name + ' for app ' + app + '--tap pos setpoint reset to max allowable asset health pos: ' + str(self.ConflictMatrix[device][app][1]), flush=True)
 
           elif self.ConflictMatrix[device][app][1] < \
                self.Regulators[device]['minStep']:
-            print('RulesForTransformers for ' + name + ' for app ' + app + '--tap pos setpoint below min allowable asset health pos: ' + str(self.ConflictMatrix[device][app][1]), flush=True)
+            print('RulesForRegulators for ' + name + ' for app ' + app + '--tap pos setpoint below min allowable asset health pos: ' + str(self.ConflictMatrix[device][app][1]), flush=True)
             self.ConflictMatrix[device][app] = \
                                (self.ConflictMatrix[device][app][0],
                                 self.Regulators[device]['minStep'])
-            print('RulesForTransformers for ' + name + ' for app ' + app + '--tap pos setpoint reset to min allowable asset health pos: ' + str(self.ConflictMatrix[device][app][1]), flush=True)
+            print('RulesForRegulators for ' + name + ' for app ' + app + '--tap pos setpoint reset to min allowable asset health pos: ' + str(self.ConflictMatrix[device][app][1]), flush=True)
 
 
   def OptimizationDeconflict(self, app_name, timestamp, ConflictMatrix):
@@ -469,9 +476,9 @@ class DeconflictionPipeline(GridAPPSD):
                   ', name: ' + MethodUtil.DeviceToName[devid], flush=True)
 
     if diffCount > 0:
-      dispatch_message = self.difference_builder.get_message()
-      print('~~> Sending device dispatch DifferenceBuilder message: ' +
-            json.dumps(dispatch_message), flush=True)
+      print('~~> Sending device dispatch DifferenceBuilder message!', flush=True)
+      #print('~~> Sending device dispatch DifferenceBuilder message: ' +
+      #      json.dumps(dispatch_message), flush=True)
       self.gapps.send(self.publish_topic, json.dumps(dispatch_message))
       self.difference_builder.clear()
 
@@ -569,8 +576,8 @@ class DeconflictionPipeline(GridAPPSD):
 
 
   def on_setpoints_message(self, header, message):
-    print('### Received set-points message: ' + str(message), flush=True)
-    print('### Received set-points header: ' + str(header), flush=True)
+    #print('### Received set-points message: ' + str(message), flush=True)
+    #print('### Received set-points header: ' + str(header), flush=True)
     self.messageQueue.put((header, message['input']['message']))
 
 
@@ -598,8 +605,8 @@ class DeconflictionPipeline(GridAPPSD):
     set_points = message['forward_differences']
 
     # for checking order of messages received
-    print('~ORDER: timestamp: ' + str(timestamp) + ', app: ' + app_name,
-          flush=True)
+    print('PROCESS SETPOINTS: timestamp: ' + str(timestamp) + ', app: ' +
+          app_name, flush=True)
 
     # copy conflict matrix before updating since I need this for cooperation
     previousConflictMatrix = copy.deepcopy(self.ConflictMatrix)
@@ -610,9 +617,8 @@ class DeconflictionPipeline(GridAPPSD):
     # Step 2: Feasibility Maintainer -- not implemented yet
     # Apply Rules & Heuristics stage deconfliction here because even with
     # no conflict a setpoint request can still violate rules
-    self.RulesForBatteries()
-
-    self.RulesForTransformers()
+    self.RulesForBatteries(False)
+    self.RulesForRegulators(False)
 
     # Step 3: Deconflictor
     # Step 3.1: Conflict Identification
@@ -626,6 +632,8 @@ class DeconflictionPipeline(GridAPPSD):
     # If there is a conflict, then perform combined/staged deconfliction to
     # produce a resolution
     if conflictFlag:
+      print('CONFLICT logic', flush=True)
+
       # Here is my proposed cooperation workflow. Tylor though says they've
       # already got a better workflow involving changing the dimension of the
       # conflicat matrix and that somehow indicating what to do. So I need to
@@ -656,9 +664,15 @@ class DeconflictionPipeline(GridAPPSD):
       # of if we are cooperating the the conflict has gone down > 5%
       if not self.coopFlag or percentConflictDelta>5.0:
         self.coopFlag = True # flag to say we are trying to cooperate
+        if percentConflictDelta > 5.0:
+          print('CONTINUING COOPERATION due to % conflict change > 5.0', flush=True)
+        else:
+          print('KICKING OFF COOPERATION after recent device dispatch', flush=True)
         return
 
       else:
+        print('POST COOPERATION logic', flush=True)
+
         # Optimization stage deconfliction
         # base this on previous conflict matrix that had a lower metric
         newResolutionVector = self.OptimizationDeconflict(app_name, timestamp,
@@ -678,6 +692,8 @@ class DeconflictionPipeline(GridAPPSD):
                   self.testDeviceName, flush=True)
 
     else: # no conflict
+      print('NO CONFLICT logic', flush=True)
+
       # start with a copy of the previous resolution
       newResolutionVector = copy.deepcopy(self.ResolutionVector)
 
