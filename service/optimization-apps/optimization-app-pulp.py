@@ -236,136 +236,148 @@ class CompetingApp(GridAPPSD):
 
 
   def doOptimization(self, timestamp):
-        # this code only needed for FY23 deconfliction prototype
-        '''
-        data = self.dynamicProb.to_dict()
-        opt_prob = {}
-        opt_prob['utility_function'] = data['objective']
-        opt_prob['constraints'] = data['constraints']
-        opt_prob['variables'] = data['variables']
-        opt_prob['parameters'] = data['parameters']
-        opt_prob['sos1'] = data['sos1']
-        opt_prob['sos2'] = data['sos2']
+    # this code only needed for FY23 deconfliction prototype
+    '''
+    data = self.dynamicProb.to_dict()
+    opt_prob = {}
+    opt_prob['utility_function'] = data['objective']
+    opt_prob['constraints'] = data['constraints']
+    opt_prob['variables'] = data['variables']
+    opt_prob['parameters'] = data['parameters']
+    opt_prob['sos1'] = data['sos1']
+    opt_prob['sos2'] = data['sos2']
 
-        # Dump optimization problem formulation to a file for Orestis'
-        # methodology that combines them from multiple competing apps.
-        # Eventually he'll get this from the message bus message, but
-        # for now he reads from files
-        json_opt = open('log/' + self.opt_type + '_' +
-                        str(timestamp) + '.json', 'w')
-        json.dump(data, json_opt, indent=4)
-        json_opt.close()
-        '''
+    # Dump optimization problem formulation to a file for Orestis'
+    # methodology that combines them from multiple competing apps.
+    # Eventually he'll get this from the message bus message, but
+    # for now he reads from files
+    json_opt = open('log/' + self.opt_type + '_' +
+                    str(timestamp) + '.json', 'w')
+    json.dump(data, json_opt, indent=4)
+    json_opt.close()
+    '''
 
-        # solve
-        self.dynamicProb.solve(PULP_CBC_CMD(msg=0, gapRel=self.gapRel,
-                               timeLimit=5))
-        print('Optimization status:', LpStatus[self.dynamicProb.status],
-              flush=True)
+    # solve
+    self.dynamicProb.solve(PULP_CBC_CMD(msg=0, gapRel=self.gapRel,
+                           timeLimit=5))
+    print('Optimization status:', LpStatus[self.dynamicProb.status],
+          flush=True)
 
-        objective = pulp.value(self.dynamicProb.objective)
+    objective = pulp.value(self.dynamicProb.objective)
 
-        # Second stage for the decarbonization app
-        if self.opt_type == 'decarbonization':
-          bus_idx_batt = {'A': [], 'B': [], 'C': []}
-          for mrid in self.Batteries:
-            idx = self.Batteries[mrid]['idx']
-            self.dynamicProb += self.p_batt[idx] == self.p_batt[idx].varValue
-            bus = self.Batteries[mrid]['bus']
-            if 'A' in self.Batteries[mrid]['phase']:
-              bus_idx_batt['A'].append(self.bus_info[bus]['idx'])
-            elif 'B' in self.Batteries[mrid]['phase']:
-              bus_idx_batt['B'].append(self.bus_info[bus]['idx'])
-            else:
-              bus_idx_batt['C'].append(self.bus_info[bus]['idx'])
+    # Second stage for the decarbonization app
+    if self.opt_type == 'decarbonization':
+      bus_idx_batt = {'A': [], 'B': [], 'C': []}
+      for mrid in self.Batteries:
+        idx = self.Batteries[mrid]['idx']
+        self.dynamicProb += self.p_batt[idx] == self.p_batt[idx].varValue
+        bus = self.Batteries[mrid]['bus']
+        if 'A' in self.Batteries[mrid]['phase']:
+          bus_idx_batt['A'].append(self.bus_info[bus]['idx'])
+        elif 'B' in self.Batteries[mrid]['phase']:
+          bus_idx_batt['B'].append(self.bus_info[bus]['idx'])
+        else:
+          bus_idx_batt['C'].append(self.bus_info[bus]['idx'])
 
-          self.dynamicProb += self.dynamicProb.objective-self.Psub_mod + \
-                              lpSum(-self.v_A[i] for i in bus_idx_batt['A']) + \
-                              lpSum(-self.v_B[i] for i in bus_idx_batt['B']) + \
-                              lpSum(-self.v_C[i] for i in bus_idx_batt['C'])
-          self.dynamicProb.solve(GLPK_CMD(msg=0, options=['--mipgap', '0.01']))
-          print('Optimization Stage II:', LpStatus[self.dynamicProb.status],
-                flush=True)
+      self.dynamicProb += self.dynamicProb.objective-self.Psub_mod + \
+                          lpSum(-self.v_A[i] for i in bus_idx_batt['A']) + \
+                          lpSum(-self.v_B[i] for i in bus_idx_batt['B']) + \
+                          lpSum(-self.v_C[i] for i in bus_idx_batt['C'])
+      self.dynamicProb.solve(GLPK_CMD(msg=0, options=['--mipgap', '0.01']))
+      print('Optimization Stage II:', LpStatus[self.dynamicProb.status],
+            flush=True)
 
-        # self.dynamicProb.writeLP('log/' + self.opt_type + '_' +
-        #                          str(timestamp) + '.lp')
+    # self.dynamicProb.writeLP('log/' + self.opt_type + '_' +
+    #                          str(timestamp) + '.lp')
 
-        '''
-        branch_flow = []
-        for branch in branch_info:
-          idx = branch_info[branch]['idx']
-          branch_flow.append([branch, branch_info[branch]['from_bus'],
-                      branch_info[branch]['to_bus'], p_flow_A[idx].varValue,
-                      p_flow_B[idx].varValue, p_flow_C[idx].varValue,
-                      q_flow_A[idx].varValue, q_flow_B[idx].varValue,
-                      q_flow_C[idx].varValue])
+    '''
+    branch_flow = []
+    for branch in branch_info:
+      idx = branch_info[branch]['idx']
+      branch_flow.append([branch, branch_info[branch]['from_bus'],
+                  branch_info[branch]['to_bus'], p_flow_A[idx].varValue,
+                  p_flow_B[idx].varValue, p_flow_C[idx].varValue,
+                  q_flow_A[idx].varValue, q_flow_B[idx].varValue,
+                  q_flow_C[idx].varValue])
 
-        print(tabulate(branch_flow, headers=['Line Name', 'from', 'to',
-                      'P_A', 'P_B', 'P_C', 'Q_A', 'Q_B', 'Q_C'], tablefmt='psql'))
+    print(tabulate(branch_flow, headers=['Line Name', 'from', 'to',
+                  'P_A', 'P_B', 'P_C', 'Q_A', 'Q_B', 'Q_C'], tablefmt='psql'))
 
-        for idx in [118]:
-          print('P Flow line ' + str(idx) + ', A:', p_flow_A[idx].varValue/1000,
-                ', B:', p_flow_B[idx].varValue/1000,
-                ', C:', p_flow_C[idx].varValue/1000, flush=True)
-          print('Q Flow line ' + str(idx) + ', A:', q_flow_A[idx].varValue/1000,
-                ', B:', q_flow_B[idx].varValue/1000,
-                ', C:', q_flow_C[idx].varValue/1000, flush=True)
+    for idx in [118]:
+      print('P Flow line ' + str(idx) + ', A:', p_flow_A[idx].varValue/1000,
+            ', B:', p_flow_B[idx].varValue/1000,
+            ', C:', p_flow_C[idx].varValue/1000, flush=True)
+      print('Q Flow line ' + str(idx) + ', A:', q_flow_A[idx].varValue/1000,
+            ', B:', q_flow_B[idx].varValue/1000,
+            ', C:', q_flow_C[idx].varValue/1000, flush=True)
 
-        print('Total Real Power ' + ', A:', feeder_power['p']['A']/1000,
-              ', B:', feeder_power['p']['B']/1000,
-              ', C:', feeder_power['p']['C']/1000, flush=True)
-        print('Total Reactive Power ' + ', A:', feeder_power['q']['A']/1000,
-              ', B:', feeder_power['q']['B']/1000,
-              ', C:', feeder_power['q']['C']/1000, flush=True)
+    print('Total Real Power ' + ', A:', feeder_power['p']['A']/1000,
+          ', B:', feeder_power['p']['B']/1000,
+          ', C:', feeder_power['p']['C']/1000, flush=True)
+    print('Total Reactive Power ' + ', A:', feeder_power['q']['A']/1000,
+          ', B:', feeder_power['q']['B']/1000,
+          ', C:', feeder_power['q']['C']/1000, flush=True)
 
-        bus_voltage = []
-        v = []
-        for bus in bus_info:
-          idx = bus_info[bus]['idx']
-          bus_voltage.append([bus, math.sqrt(v_A[idx].varValue),
-                      math.sqrt(v_B[idx].varValue), math.sqrt(v_C[idx].varValue)])
-          v.append(math.sqrt(v_A[idx].varValue) / 2401.77)
-          v.append(math.sqrt(v_B[idx].varValue) / 2401.77)
-          v.append(math.sqrt(v_C[idx].varValue) / 2401.77)
+    bus_voltage = []
+    v = []
+    for bus in bus_info:
+      idx = bus_info[bus]['idx']
+      bus_voltage.append([bus, math.sqrt(v_A[idx].varValue),
+                  math.sqrt(v_B[idx].varValue), math.sqrt(v_C[idx].varValue)])
+      v.append(math.sqrt(v_A[idx].varValue) / 2401.77)
+      v.append(math.sqrt(v_B[idx].varValue) / 2401.77)
+      v.append(math.sqrt(v_C[idx].varValue) / 2401.77)
 
-        print(tabulate(bus_voltage, headers=['Bus', 'V_A', 'V_B', 'V_C'],
-                       tablefmt='psql'))
-        '''
+    print(tabulate(bus_voltage, headers=['Bus', 'V_A', 'V_B', 'V_C'],
+                   tablefmt='psql'))
+    '''
 
-        regulator_taps = []
-        for reg in self.Regulators:
-          idx = self.Regulators[reg]['idx']
-          for k in range(32):
-            if self.reg_taps[(idx, k)].varValue >= 0.5:
-              # new value before old value for DifferenceBuilder
-              self.difference_builder.add_difference(reg, 'TapChanger.step',
-                                                     k-16, None)
-              regulator_taps.append([reg, k-16, self.b_i[k]])
-              break # assume this will only happen once per regulator
-
-        print(tabulate(regulator_taps, headers=['Regulator', 'Tap', 'b_i'],
-                       tablefmt='psql'), '\n', flush=True)
-
-        p_batt_setpoints = []
-        for mrid in self.Batteries:
-          idx = self.Batteries[mrid]['idx']
-          self.Batteries[mrid]['SoC'] = self.soc[idx].varValue
+    regulator_taps = []
+    for reg in self.Regulators:
+      idx = self.Regulators[reg]['idx']
+      for k in range(32):
+        if self.reg_taps[(idx, k)].varValue >= 0.5:
           # new value before old value for DifferenceBuilder
-          # note the optimized p_batt value is negated for the GridLAB-D
-          # DifferenceBuilder message
-          self.difference_builder.add_difference(mrid,
-               'PowerElectronicsConnection.p', -self.p_batt[idx].varValue, None)
-          p_batt_setpoints.append([mrid, self.p_batt[idx].varValue/1000,
-                                   self.soc[idx].varValue])
+          self.difference_builder.add_difference(reg, 'TapChanger.step',
+                                                 k-16, None)
+          regulator_taps.append([reg, k-16, self.b_i[k]])
+          break # assume this will only happen once per regulator
 
-        print(tabulate(p_batt_setpoints, headers=['Battery', 'P_batt (kW)',
-                       'Target SoC'], tablefmt='psql'), flush=True)
+    print(tabulate(regulator_taps, headers=['Regulator', 'Tap', 'b_i'],
+                   tablefmt='psql'), '\n', flush=True)
 
-        dispatch_message = self.difference_builder.get_message()
-        print('Sending DifferenceBuilder message: ' +
-              json.dumps(dispatch_message), flush=True)
-        self.gapps.send(self.publish_topic, json.dumps(dispatch_message))
-        self.difference_builder.clear()
+    p_batt_setpoints = []
+    for mrid in self.Batteries:
+      idx = self.Batteries[mrid]['idx']
+      self.Batteries[mrid]['SoC'] = self.soc[idx].varValue
+      # new value before old value for DifferenceBuilder
+      # note the optimized p_batt value is negated for the GridLAB-D
+      # DifferenceBuilder message
+      self.difference_builder.add_difference(mrid,
+           'PowerElectronicsConnection.p', -self.p_batt[idx].varValue, None)
+      p_batt_setpoints.append([mrid, self.p_batt[idx].varValue/1000,
+                               self.soc[idx].varValue])
+
+    print(tabulate(p_batt_setpoints, headers=['Battery', 'P_batt (kW)',
+                   'Target SoC'], tablefmt='psql'), flush=True)
+
+    for mrid in self.Batteries:
+      idx = self.Batteries[mrid]['idx']
+      self.p_batt_greedy[idx] = self.p_batt[idx].varValue
+
+    for reg in self.Regulators:
+      idx = self.Regulators[reg]['idx']
+      for k in range(32):
+        if self.reg_taps[(idx, k)].varValue >= 0.5:
+          self.reg_greedy[idx] = k-16
+          break # assume this will only happen once per regulator
+
+    dispatch_message = self.difference_builder.get_message()
+    print('Sending DifferenceBuilder message!', flush=True)
+    #print('Sending Measurements DifferenceBuilder message: ' +
+    #      json.dumps(dispatch_message), flush=True)
+    self.gapps.send(self.meas_publish_topic, json.dumps(dispatch_message))
+    self.difference_builder.clear()
 
 
   def on_message(self, header, message):
@@ -380,8 +392,11 @@ class CompetingApp(GridAPPSD):
         self.keepLoopingFlag = False
         print('Simulation ' + status + ' message received', flush=True)
 
-    else:
+    elif 'message' in message:
       self.messageQueue.put(message['message'])
+
+    else:
+      self.messageQueue.put(message)
 
 
   def defineOptimizationVariables(self, len_branch_info, len_bus_info,
@@ -444,6 +459,15 @@ class CompetingApp(GridAPPSD):
     self.reg_taps = LpVariable.dicts("reg_tap", [(i, tap) for i in
                           range(len_Regulators) for tap in range(32)],
                           lowBound=0, upBound=1, cat='Binary')
+
+    # cooperation variables
+    # since these are held constant, I don't need to define them with
+    # cp.Variable calls, but as fixed length vectors. It's still convenient
+    # though to define them along with the other optimization variables.
+    self.p_batt_proposed = [None] * len_Batteries
+    self.p_batt_greedy = [None] * len_Batteries
+    self.reg_proposed = [None] * len_Regulators
+    self.reg_greedy = [None] * len_Regulators
 
 
   def defineOptimizationStaticProblem(self, branch_info, RegIdx,
@@ -638,6 +662,8 @@ class CompetingApp(GridAPPSD):
     self.keepLoopingFlag = True
     out_id = gapps.subscribe(simulation_output_topic(simulation_id), self)
     log_id = gapps.subscribe(simulation_log_topic(simulation_id), self)
+    coop_id = gapps.subscribe(service_output_topic('gridappsd-deconflictor-app',
+                              simulation_id), self)
 
     SPARQLManager = getattr(importlib.import_module('sparql'), 'SPARQLManager')
     sparql_mgr = SPARQLManager(gapps, feeder_mrid, simulation_id)
@@ -923,7 +949,10 @@ class CompetingApp(GridAPPSD):
 
     # topic for sending out set_points messages
     self.app_name = 'gridappsd-' + self.opt_type + '-app'
-    self.publish_topic = service_output_topic(self.app_name, simulation_id)
+    self.meas_publish_topic = service_output_topic(self.app_name+':meas',
+                                                   simulation_id)
+    self.coop_publish_topic = service_output_topic(self.app_name+':coop',
+                                                   simulation_id)
 
     # create DifferenceBuilder once and reuse it throughout the simulation
     self.difference_builder = DifferenceBuilder(simulation_id)
@@ -950,19 +979,10 @@ class CompetingApp(GridAPPSD):
       message = self.messageQueue.get()
       messageCounter += 1
 
-      timestamp = int(message['timestamp'])
-
-      # If doing real-time simulation must subtract 5 off timestamp to make it
-      # evenly divisble by multiples of the 3 second GridLAB-D time interval
-      if (timestamp-5) % optIntervalSec != 0:
-      # If doing non-real-time simulation remove the 5 second offset because
-      # GridLAB-D outputs at 60 second intervals
-      #if timestamp % optIntervalSec != 0:
-        print('Simulation timestamp (skipping optimization): ' + str(timestamp),
-              flush=True)
-      else:
-        print('Simulation timestamp for optimization: ' + str(timestamp),
-              flush=True)
+      if 'measurements' in message: # this is a simulation measurements message
+        # always update the EnergyConsumers, etc. data structures with new
+        # measurements even if we aren't going to do an optimization so
+        # they will be up to date with any cooperation messages received
 
         self.updateEnergyConsumers(message['measurements'])
         #print('Updated EnergyConsumers #' + str(messageCounter) + ': ' + json.dumps(self.EnergyConsumers, indent=2), flush=True)
@@ -973,12 +993,145 @@ class CompetingApp(GridAPPSD):
         self.updateBatterySoC(message['measurements'])
         #print('Updated BatterySoC #' + str(messageCounter) + ': ' + json.dumps(self.Batteries, indent=2), flush=True)
 
-        self.defineOptimizationDynamicProblem(timestamp)
+        timestamp = int(message['timestamp'])
 
-        self.doOptimization(timestamp)
+        # If doing real-time simulation must subtract 5 off timestamp to make it
+        # evenly divisble by multiples of the 3 second GridLAB-D time interval
+        if (timestamp-5) % optIntervalSec != 0:
+        # If doing non-real-time simulation remove the 5 second offset because
+        # GridLAB-D outputs at 60 second intervals
+        #if timestamp % optIntervalSec != 0:
+          print('Simulation timestamp (skipping optimization): '+str(timestamp),
+                flush=True)
+        else:
+          print('Simulation timestamp for optimization: ' + str(timestamp),
+                flush=True)
+
+          self.defineOptimizationDynamicProblem(timestamp)
+
+          self.doOptimization(timestamp)
+
+      else: # this is a cooperation message from deconflictor
+        # message consists of a target ResolutionVector that is a dictionary
+        # with device mrid keys and target set-point values
+        targetResolutionVector = message
+        #for mrid in targetResolutionVector:
+        #  print('DECONFLICTOR COOPERATE mrid ' + mrid + ' target set-point: ' + str(targetResolutionVector[mrid]), flush=True)
+
+        for mrid in self.Batteries:
+          if mrid in targetResolutionVector:
+            idx = self.Batteries[mrid]['idx']
+            self.p_batt_proposed[idx] = -targetResolutionVector[mrid][1]
+
+        for reg in self.Regulators:
+          if reg in targetResolutionVector:
+            idx = self.Regulators[reg]['idx']
+            self.reg_proposed[idx] = targetResolutionVector[reg][1]
+
+        print('DECONFLICTOR COOPERATE p_batt_greedy: ' + str(self.p_batt_greedy), flush=True)
+        print('DECONFLICTOR COOPERATE p_batt_proposed: ' + str(self.p_batt_proposed), flush=True)
+
+        # GDB 9/10/24: Here is the alternative support for cooperation via
+        # ranking the differences between proposed and greedy setpoints:
+        # first, create a list of differences
+        len_Batteries = len(self.Batteries)
+        p_batt_diff = [None] * len_Batteries
+        for i in range(len_Batteries):
+          p_batt_diff[i] = abs(self.p_batt_greedy[i] - self.p_batt_proposed[i])
+
+        print('DECONFLICTOR COOPERATE p_batt_diff: ' + str(p_batt_diff), flush=True)
+
+        # omit any setpoints where proposed == greeedy
+        p_batt_sort = []
+        for i in range(len_Batteries):
+          if p_batt_diff[i] > 0:
+            p_batt_sort.append(p_batt_diff[i])
+
+        # sorts in place
+        p_batt_sort.sort()
+
+        coopCount = max(1, len(p_batt_sort)//2) # integer "floor" division
+
+        # find the value associated with the last "cooperating" battery
+        diffMax = p_batt_sort[coopCount-1]
+
+        print('DECONFLICTOR COOPERATE batteries coopCount: ' + str(coopCount) + ', diffMax: ' + str(diffMax), flush=True)
+
+        # start with assuming no cooperation by copying p_batt_greedy
+        p_batt_coop = self.p_batt_greedy.copy()
+
+        for i in range(len_Batteries):
+          # check if this is a "cooperating" battery
+          if p_batt_diff[i] <= diffMax:
+            # if so, set it to the proposed value
+            p_batt_coop[i] = self.p_batt_proposed[i]
+
+        print('DECONFLICTOR COOPERATE p_batt_coop: ' + str(p_batt_coop), flush=True)
+
+        # now do the same for regulators
+        print('DECONFLICTOR COOPERATE reg_greedy: ' + str(self.reg_greedy), flush=True)
+        print('DECONFLICTOR COOPERATE reg_proposed: ' + str(self.reg_proposed), flush=True)
+
+        len_Regulators = len(self.Regulators)
+        reg_diff = [None] * len_Regulators
+        for i in range(len_Regulators):
+          reg_diff[i] = abs(self.reg_greedy[i] - self.reg_proposed[i])
+
+        print('DECONFLICTOR COOPERATE reg_diff: ' + str(reg_diff), flush=True)
+
+        # omit any setpoints where proposed == greeedy
+        reg_sort = []
+        for i in range(len_Regulators):
+          if reg_diff[i] > 0:
+            reg_sort.append(reg_diff[i])
+
+        # sorts in place
+        reg_sort.sort()
+
+        # determine the number of regulators that will "cooperate"
+        coopCount = max(1, len(reg_sort)//2) # integer "floor" division
+
+        # find the value associated with the last "cooperating" regulator
+        diffMax = reg_sort[coopCount-1]
+
+        print('DECONFLICTOR COOPERATE regulators coopCount: ' + str(coopCount) + ', diffMax: ' + str(diffMax), flush=True)
+
+        # start with assuming no cooperation by copying p_batt_greedy
+        reg_coop = self.reg_greedy.copy()
+
+        for i in range(len_Regulators):
+          # check if this is a "cooperating" regulator
+          if reg_diff[i] <= diffMax:
+            # if so, set it to the proposed value
+            reg_coop[i] = self.reg_proposed[i]
+
+        print('DECONFLICTOR COOPERATE reg_coop: ' + str(reg_coop), flush=True)
+
+        # finally, send out the cooperation setpoints via DifferenceBuilder msg
+        for reg in self.Regulators:
+          idx = self.Regulators[reg]['idx']
+          # new value before old value for DifferenceBuilder
+          self.difference_builder.add_difference(reg, 'TapChanger.step',
+                                                 reg_coop[idx], None)
+
+        for mrid in self.Batteries:
+          idx = self.Batteries[mrid]['idx']
+          # new value before old value for DifferenceBuilder
+          # note the p_batt value is negated for the GridLAB-D
+          # DifferenceBuilder message
+          self.difference_builder.add_difference(mrid,
+               'PowerElectronicsConnection.p', -p_batt_coop[idx], None)
+
+        dispatch_message = self.difference_builder.get_message()
+        print('Sending Cooperation DifferenceBuilder message!', flush=True)
+        #print('Sending Cooperation DifferenceBuilder message: ' +
+        #      json.dumps(dispatch_message), flush=True)
+        self.gapps.send(self.coop_publish_topic, json.dumps(dispatch_message))
+        self.difference_builder.clear()
 
     gapps.unsubscribe(out_id)
     gapps.unsubscribe(log_id)
+    gapps.unsubscribe(coop_id)
 
 
 def _main():
