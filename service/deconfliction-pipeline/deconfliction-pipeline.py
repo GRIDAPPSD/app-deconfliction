@@ -645,11 +645,6 @@ class DeconflictionPipeline(GridAPPSD):
     if conflictFlag:
       print('CONFLICT logic', flush=True)
 
-      # Here is my proposed cooperation workflow. Tylor though says they've
-      # already got a better workflow involving changing the dimension of the
-      # conflicat matrix and that somehow indicating what to do. So I need to
-      # understand what they have and likely this is the better solution.
-
       # Always send out a cooperation message because if we end up stopping
       # cooperation based on the threshold value then it's for the previous
       # conflict matrix that wer are dispatching device values for and we need
