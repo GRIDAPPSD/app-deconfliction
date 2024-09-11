@@ -622,6 +622,9 @@ class DeconflictionPipeline(GridAPPSD):
     # copy conflict matrix before updating since I need this for cooperation
     previousConflictMatrix = copy.deepcopy(self.ConflictMatrix)
 
+    # save the last conflict metric before computing a new one for comparison
+    previousConflictMetric = self.conflictMetric
+
     # Step 1: Setpoint Processor
     self.SetpointProcessor(app_name, timestamp, set_points)
 
@@ -636,9 +639,6 @@ class DeconflictionPipeline(GridAPPSD):
     conflictFlag = self.ConflictIdentification(app_name, timestamp, set_points)
 
     # Steps 3.2 and 3.3: Deconfliction Solution and Resolution
-
-    # save the last conflict metric before computing a new one for comparison
-    self.previousConflictMetric = self.conflictMetric
 
     # If there is a conflict, then perform combined/staged deconfliction to
     # produce a resolution
@@ -662,9 +662,9 @@ class DeconflictionPipeline(GridAPPSD):
       self.conflictMetric = self.ConflictMetricComputation(timestamp)
 
       percentConflictDelta = 0.0 # for no previous conflict metric value
-      if self.previousConflictMetric > 0.0:
-        percentConflictDelta = 100.0 * (self.previousConflictMetric - self.conflictMetric)/self.previousConflictMetric
-        print('Previous conflict metric: ' + str(self.previousConflictMetric) + ', new conflict metric: ' + str(self.conflictMetric) + ', % change: ' + str(percentConflictDelta), flush=True)
+      if previousConflictMetric > 0.0:
+        percentConflictDelta = 100.0 * (previousConflictMetric - self.conflictMetric)/previousConflictMetric
+        print('Previous conflict metric: ' + str(previousConflictMetric) + ', new conflict metric: ' + str(self.conflictMetric) + ', % change: ' + str(percentConflictDelta), flush=True)
 
       # if we haven't tried cooperation yet since the last device dispatch
       # of if we are cooperating the the conflict has gone down > 5%
