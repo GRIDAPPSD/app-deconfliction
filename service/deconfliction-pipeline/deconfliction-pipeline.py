@@ -592,7 +592,7 @@ class DeconflictionPipeline(GridAPPSD):
 
     app_name = self.get_app_name(header)
 
-    self.messageQueue.put((app_name, 'meas', message['input']['message']))
+    self.messageQueue.put((app_name, True, message['input']['message']))
 
 
   def on_coop_setpoints_message(self, header, message):
@@ -601,10 +601,165 @@ class DeconflictionPipeline(GridAPPSD):
 
     app_name = self.get_app_name(header)
 
-    self.messageQueue.put((app_name, 'coop', message['input']['message']))
+    self.messageQueue.put((app_name, False, message['input']['message']))
 
 
-  def processSetpointsMessage(self, message, app_name, message_type):
+  def processSetpointsMessage(self, message, app_name, meas_msg_flag):
+    timestamp = message['timestamp']
+
+    print('PROCESS SETPOINTS: timestamp: ' + str(timestamp) + ', app: ' +
+          app_name + ', meas_msg_flag: ' + str(meas_msg_flag), flush=True)
+
+    if not meas_msg_flag and \
+       (self.coopTimestamp==0 or timestamp<=self.coopTimestamp):
+      # discard any cooperation messages when not currently cooperating or
+      # when from a previous cooperation phase
+      return
+
+    if meas_msg_flag and self.coopTimestamp>0:
+      # we were cooperating when a measurement message arrived so need to
+      # conclude that cooperation before processing the new message
+
+      # OPTIMIZATION stage deconfliction
+      newResolutionVector = self.OptimizationDeconflict(app_name, timestamp,
+                                                        self.ConflictMatrix)
+
+      # Step 4: Setpoint Validator -- not implemented yet
+      # Step 5: Device Dispatcher
+      self.DeviceDispatcher(timestamp, newResolutionVector)
+
+      # update the current resolution to the new resolution to be ready for the
+      # next dispatch
+      self.ResolutionVector.clear()
+      self.ResolutionVector = newResolutionVector
+
+    # set_points are the forward_differences part of the DifferenceBuilder
+    # message with keys of object, attribute, and value
+    set_points = message['forward_differences']
+
+    # Step 1: Setpoint Processor
+    self.SetpointProcessor(app_name, timestamp, set_points)
+
+    # Step 2: Feasibility Maintainer -- not implemented yet
+
+    # RULES & HEURISTICS stage deconfliction
+    self.RulesForBatteries(False)
+    self.RulesForRegulators(False)
+
+    # Step 3: Deconflictor
+    # Step 3.1: Conflict Identification
+    conflictFlag = self.ConflictIdentification(app_name, timestamp, set_points)
+
+    if not conflictFlag:
+      # zero conflict metric since by definition there is none
+      self.conflictMetric = 0.0
+
+      # start with a copy of the previous resolution
+      newResolutionVector = copy.deepcopy(self.ResolutionVector)
+
+      # copy the new set-points over top of the previous resolution
+      for point in set_points:
+        newResolutionVector[point['object']] = (timestamp, point['value'])
+
+      print('ResolutionVector (no conflict): ' + str(newResolutionVector),
+            flush=True)
+
+      if self.testDeviceName:
+        devid = MethodUtil.NameToDevice[self.testDeviceName]
+        if devid in newResolutionVector:
+          print('~TEST: ResolutionVector (no conflict) for ' +
+                self.testDeviceName + ' setpoint: ' +
+                str(newResolutionVector[devid][1]) +
+                ', timestamp: ' +
+                str(newResolutionVector[devid][0]),
+                flush=True)
+        else:
+          print('~TEST: ResolutionVector (no conflict) does not contain ' +
+                self.testDeviceName, flush=True)
+
+      # Step 4: Setpoint Validator -- not implemented yet
+      # Step 5: Device Dispatcher
+      self.DeviceDispatcher(timestamp, newResolutionVector)
+
+      # update the current resolution to the new resolution to be ready for the
+      # next dispatch
+      self.ResolutionVector.clear()
+      self.ResolutionVector = newResolutionVector
+
+      # zero the cooperation timestamp to indicate no active cooperation
+      self.coopTimestamp = 0
+      return
+
+    # conflict identified logic
+    if meas_msg_flag:
+      # COOPERATION stage deconfliction
+
+      # compute conflict metric for later comparison during later cooperation
+      self.conflictMetric = self.ConflictMetricComputation(timestamp)
+
+      # start with a "target" resolution vector using the optimization code
+      # that computes a weighted centroid per device
+      targetResolutionVector = self.OptimizationDeconflict(app_name, timestamp,
+                                                           self.ConflictMatrix)
+
+      # publish this target resolution vector to the cooperation topic for
+      # competing apps that support cooperation to respond to
+      self.gapps.send(self.coop_topic, json.dumps(targetResolutionVector))
+
+      # set the cooperation timestamp to indicate when cooperation was initiated
+      self.coopTimestamp = timestamp
+      return
+
+    # coop message with conflict to get here
+
+    # save the previous conflict metric for comparison
+    prevConflictMetric = self.conflictMetric
+
+    self.conflictMetric = self.ConflictMetricComputation(timestamp)
+
+    perConflictDelta = 100.0 # for no previous conflict metric value
+    if prevConflictMetric > 0.0:
+      perConflictDelta = 100.0 * (prevConflictMetric - self.conflictMetric)/prevConflictMetric
+      print('Previous conflict metric: ' + str(prevConflictMetric) + ', new conflict metric: ' + str(self.conflictMetric) + ', % change: ' + str(perConflictDelta), flush=True)
+
+    # thresholds for ending cooperation are either a conflict metric value
+    # below 0.2 or a % conflict change less than 5%
+    # check for NOT meeting thresholds
+    if self.conflictMetric>0.2 and perConflictDelta>5.0:
+      # initiate further cooperation
+
+      # start with a "target" resolution vector using the optimization code
+      # that computes a weighted centroid per device
+
+      # TODO: add running app weights logic to incentivize apps to cooperate
+      targetResolutionVector = self.OptimizationDeconflict(app_name, timestamp,
+                                                           self.ConflictMatrix)
+
+      # publish this target resolution vector to the cooperation topic for
+      # competing apps that support cooperation to respond to
+      self.gapps.send(self.coop_topic, json.dumps(targetResolutionVector))
+      return
+
+    # thresholds for ending cooperation have been met to get here
+
+    # OPTIMIZATION stage deconfliction
+    newResolutionVector = self.OptimizationDeconflict(app_name, timestamp,
+                                                      self.ConflictMatrix)
+
+    # Step 4: Setpoint Validator -- not implemented yet
+    # Step 5: Device Dispatcher
+    self.DeviceDispatcher(timestamp, newResolutionVector)
+
+    # update the current resolution to the new resolution to be ready for the
+    # next dispatch
+    self.ResolutionVector.clear()
+    self.ResolutionVector = newResolutionVector
+
+    # zero the cooperation timestamp to indicate no active cooperation
+    self.coopTimestamp = 0
+
+
+  def processSetpointsMessageOld(self, message, app_name, meas_msg_flag):
     # for SHIVA conflict metric testing
     #realTime = round(time.time(), 4)
 
@@ -827,11 +982,10 @@ class DeconflictionPipeline(GridAPPSD):
     self.ConflictMatrix = {}
     self.ResolutionVector = {}
 
-    # initialize conflict metric which will later be set to the previous value
+    # initialize conflict metric
     self.conflictMetric = 0.0
-
-    # initialize cooperation stage control flag
-    self.coopFlag = False
+    # initialize combination cooperation timestamp and control flag
+    self.coopTimestamp = 0
 
     # for SHIVA conflict metric testing
     #self.TimeConflictMatrix = {}
@@ -888,7 +1042,7 @@ class DeconflictionPipeline(GridAPPSD):
       # as it would only make sense to discard when there is a newer setpoints
       # message from the same competing app.
       while self.messageQueue.qsize() > 0:
-        app_name, message_type, message = self.messageQueue.get()
+        app_name, meas_msg_flag, message = self.messageQueue.get()
         if app_name != None:
           break
 
@@ -896,7 +1050,7 @@ class DeconflictionPipeline(GridAPPSD):
         self.processSimulationMessage(message)
 
       else:
-        self.processSetpointsMessage(message, app_name, message_type)
+        self.processSetpointsMessage(message, app_name, meas_msg_flag)
 
     for id in set_id:
       gapps.unsubscribe(set_id[id])
