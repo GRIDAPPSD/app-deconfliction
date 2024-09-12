@@ -616,14 +616,11 @@ class DeconflictionPipeline(GridAPPSD):
     set_points = message['forward_differences']
 
     # for checking order of messages received
-    print('PROCESS SETPOINTS: timestamp: ' + str(timestamp) + ', app: ' +
+    print('GARY PROCESS SETPOINTS: timestamp: ' + str(timestamp) + ', app: ' +
           app_name + ', type: ' + message_type, flush=True)
 
     # copy conflict matrix before updating since I need this for cooperation
     previousConflictMatrix = copy.deepcopy(self.ConflictMatrix)
-
-    # save the last conflict metric before computing a new one for comparison
-    previousConflictMetric = self.conflictMetric
 
     # Step 1: Setpoint Processor
     self.SetpointProcessor(app_name, timestamp, set_points)
@@ -643,21 +640,10 @@ class DeconflictionPipeline(GridAPPSD):
     # If there is a conflict, then perform combined/staged deconfliction to
     # produce a resolution
     if conflictFlag:
-      print('CONFLICT logic', flush=True)
+      print('GARY CONFLICT logic', flush=True)
 
-      # Always send out a cooperation message because if we end up stopping
-      # cooperation based on the threshold value then it's for the previous
-      # conflict matrix that wer are dispatching device values for and we need
-      # to kickoff cooperation again for the new conflict matrix.
-
-      # Start with a "target" resolution vector using the Optimization stage
-      # code that computes a weighted centroid per device
-      targetResolutionVector = self.OptimizationDeconflict(app_name,
-                                                 timestamp, self.ConflictMatrix)
-
-      # Publish this target resolution vector to the cooperation topic for
-      # competing apps that support cooperation can respond to
-      self.gapps.send(self.coop_topic, json.dumps(targetResolutionVector))
+      # save the last conflict metric before computing a new one for comparison
+      previousConflictMetric = self.conflictMetric
 
       self.conflictMetric = self.ConflictMetricComputation(timestamp)
 
@@ -670,14 +656,25 @@ class DeconflictionPipeline(GridAPPSD):
       # of if we are cooperating the the conflict has gone down > 5%
       if not self.coopFlag or percentConflictDelta>5.0:
         self.coopFlag = True # flag to say we are trying to cooperate
+
         if percentConflictDelta > 5.0:
-          print('CONTINUING COOPERATION due to % conflict change > 5.0', flush=True)
+          print('GARY CONTINUING COOPERATION due to % conflict change > 5.0, ' + str(percentConflictDelta), flush=True)
         else:
-          print('KICKING OFF COOPERATION after recent device dispatch', flush=True)
+          print('GARY KICKING OFF COOPERATION after recent device dispatch', flush=True)
+
+        # Start with a "target" resolution vector using the Optimization stage
+        # code that computes a weighted centroid per device
+        targetResolutionVector = self.OptimizationDeconflict(app_name,
+                                                 timestamp, self.ConflictMatrix)
+
+        # Publish this target resolution vector to the cooperation topic for
+        # competing apps that support cooperation can respond to
+        self.gapps.send(self.coop_topic, json.dumps(targetResolutionVector))
+
         return
 
       else:
-        print('POST COOPERATION logic', flush=True)
+        print('GARY BAILING ON COOPERATION logic with % conflict change ' + str(percentConflictDelta), flush=True)
 
         # Optimization stage deconfliction
         # base this on previous conflict matrix that had a lower metric
@@ -698,7 +695,7 @@ class DeconflictionPipeline(GridAPPSD):
                   self.testDeviceName, flush=True)
 
     else: # no conflict
-      print('NO CONFLICT logic', flush=True)
+      print('GARY NO CONFLICT logic', flush=True)
 
       # start with a copy of the previous resolution
       newResolutionVector = copy.deepcopy(self.ResolutionVector)
