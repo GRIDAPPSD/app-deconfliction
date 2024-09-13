@@ -1014,7 +1014,7 @@ class CompetingApp(GridAPPSD):
       else: # this is a cooperation message from deconflictor
         # message consists of a target ResolutionVector that is a dictionary
         # with device mrid keys and target set-point values
-        targetResolutionVector = message
+        targetResolutionVector = message['targetResolutionVector']
         #for mrid in targetResolutionVector:
         #  print('DECONFLICTOR COOPERATE mrid ' + mrid + ' target set-point: ' + str(targetResolutionVector[mrid]), flush=True)
 
@@ -1123,6 +1123,8 @@ class CompetingApp(GridAPPSD):
                'PowerElectronicsConnection.p', -p_batt_coop[idx], None)
 
         dispatch_message = self.difference_builder.get_message()
+        dispatch_message['cooperationIdentifier'] = \
+                         message['cooperationIdentifier']
         print('Sending Cooperation DifferenceBuilder message!', flush=True)
         #print('Sending Cooperation DifferenceBuilder message: ' +
         #      json.dumps(dispatch_message), flush=True)
