@@ -796,6 +796,10 @@ class DeconflictionPipeline(GridAPPSD):
       self.ResolutionVector.clear()
       self.ResolutionVector = newResolutionVector
 
+    # copy conflict matrix before updating since I need this if cooperation
+    # iteration results in an increased conflict metric
+    previousConflictMatrix = copy.deepcopy(self.ConflictMatrix)
+
     # set_points are the forward_differences part of the DifferenceBuilder
     # message with keys of object, attribute, and value
     set_points = message['forward_differences']
@@ -919,8 +923,13 @@ class DeconflictionPipeline(GridAPPSD):
     print('WORKFLOW CONFLICT with coop message thresholds YES met, concluding cooperation', flush=True)
 
     # OPTIMIZATION stage deconfliction
-    newResolutionVector = self.OptimizationDeconflict(app_name, timestamp,
-                                                      self.ConflictMatrix)
+    if perConflictDelta < 0.0:
+      print('WORKFLOW CONFLICT conflict metric has increased--using previous conflict matrix', flush=True)
+      newResolutionVector = self.OptimizationDeconflict(app_name, timestamp,
+                                                        previousConflictMatrix)
+    else:
+      newResolutionVector = self.OptimizationDeconflict(app_name, timestamp,
+                                                        self.ConflictMatrix)
 
     # RULES & HEURISTICS stage deconfliction done last
     if not self.rulesStageFirstFlag:
