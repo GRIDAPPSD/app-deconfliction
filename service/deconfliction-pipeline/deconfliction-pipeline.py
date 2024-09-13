@@ -204,7 +204,7 @@ class DeconflictionPipeline(GridAPPSD):
     return False
 
 
-  def RulesForBatteries(self, printAllFlag=False):
+  def RulesForBatteriesConflict(self, printAllFlag=False):
     rollingTimeInterval = 60
     # number of changes between charging and discharging, and vice versa,
     # allowed in the rolling time interval
@@ -214,7 +214,7 @@ class DeconflictionPipeline(GridAPPSD):
     for devid in self.Batteries:
       histList = self.BatteryHistory[devid]
       if printAllFlag:
-        print('RulesForBatteries BatteryHistory for ' + MethodUtil.DeviceToName[devid] + ': ' + str(histList), flush=True)
+        print('RulesForBatteriesConflict BatteryHistory for ' + MethodUtil.DeviceToName[devid] + ': ' + str(histList), flush=True)
 
       # iterate backwards through histList counting switches
       rollingSwitchCount = 0
@@ -226,7 +226,7 @@ class DeconflictionPipeline(GridAPPSD):
         rollingSwitchCount += 1
 
       if printAllFlag:
-        print('RulesForBatteries for ' + MethodUtil.DeviceToName[devid] + ', rolling charge/discharge switches: ' + str(rollingSwitchCount) + ', vs. allowed: ' + str(rollingSwitchesAllowed), flush=True)
+        print('RulesForBatteriesConflict for ' + MethodUtil.DeviceToName[devid] + ', rolling charge/discharge switches: ' + str(rollingSwitchCount) + ', vs. allowed: ' + str(rollingSwitchesAllowed), flush=True)
 
       if rollingSwitchCount >= rollingSwitchesAllowed:
         # save the final P_batt_inv in the history list since we need to make
@@ -242,12 +242,12 @@ class DeconflictionPipeline(GridAPPSD):
       chargeSoCMax = 0.9 - self.Batteries[devid]['SoC']
       self.Batteries[devid]['P_batt_charge_max'] = chargeSoCMax*self.Batteries[devid]['ratedE']/(self.Batteries[devid]['eff_c']*self.deltaT)
       if printAllFlag:
-        print('RulesForBatteries for ' + MethodUtil.DeviceToName[devid] + ', max charge SoC contribution: ' + str(chargeSoCMax) + ', max charge P_batt: ' + str(self.Batteries[devid]['P_batt_charge_max']), flush=True)
+        print('RulesForBatteriesConflict for ' + MethodUtil.DeviceToName[devid] + ', max charge SoC contribution: ' + str(chargeSoCMax) + ', max charge P_batt: ' + str(self.Batteries[devid]['P_batt_charge_max']), flush=True)
 
       dischargeSoCMax = 0.2 - self.Batteries[devid]['SoC']
       self.Batteries[devid]['P_batt_discharge_max'] = dischargeSoCMax*self.Batteries[devid]['ratedE']/(1/self.Batteries[devid]['eff_d']*self.deltaT)
       if printAllFlag:
-        print('RulesForBatteries for ' + MethodUtil.DeviceToName[devid] + ', max discharge SoC contribution: ' + str(dischargeSoCMax) + ', max discharge P_batt: ' + str(self.Batteries[devid]['P_batt_discharge_max']), flush=True)
+        print('RulesForBatteriesConflict for ' + MethodUtil.DeviceToName[devid] + ', max discharge SoC contribution: ' + str(dischargeSoCMax) + ', max discharge P_batt: ' + str(self.Batteries[devid]['P_batt_discharge_max']), flush=True)
 
     # iterate over all battery setpoints in ConflictMatrix to make sure they
     # fall within the acceptable P_batt range and set them to max values if not
@@ -258,45 +258,136 @@ class DeconflictionPipeline(GridAPPSD):
           # check vs. battery rated power
           if abs(self.ConflictMatrix[device][app][1]) > \
              self.Batteries[device]['prated']:
-            print('RulesForBatteries for ' + name + ' for app ' + app + '--P_batt setpoint exceeds battery rated power: ' + str(self.ConflictMatrix[device][app][1]), flush=True)
+            print('RulesForBatteriesConflict for ' + name + ' for app ' + app + '--P_batt setpoint exceeds battery rated power: ' + str(self.ConflictMatrix[device][app][1]), flush=True)
             if self.ConflictMatrix[device][app][1] > 0:
               self.ConflictMatrix[device][app] = (self.ConflictMatrix[device][app][0], self.Batteries[device]['prated'])
             else:
               self.ConflictMatrix[device][app] = (self.ConflictMatrix[device][app][0], -self.Batteries[device]['prated'])
-            print('RulesForBatteries for ' + name + ' for app ' + app + '--P_batt setpoint reset to battery rated power: ' + str(self.ConflictMatrix[device][app][1]), flush=True)
+            print('RulesForBatteriesConflict for ' + name + ' for app ' + app + '--P_batt setpoint reset to battery rated power: ' + str(self.ConflictMatrix[device][app][1]), flush=True)
 
           # check vs. battery SoC limits
           if self.ConflictMatrix[device][app][1] > \
              self.Batteries[device]['P_batt_charge_max']:
-            print('RulesForBatteries for ' + name + ' for app ' + app + '--P_batt setpoint above max charge P_batt: ' + str(self.ConflictMatrix[device][app][1]), flush=True)
+            print('RulesForBatteriesConflict for ' + name + ' for app ' + app + '--P_batt setpoint above max charge P_batt: ' + str(self.ConflictMatrix[device][app][1]), flush=True)
             self.ConflictMatrix[device][app] = \
                                (self.ConflictMatrix[device][app][0],
                                 self.Batteries[device]['P_batt_charge_max'])
-            print('RulesForBatteries for ' + name + ' for app ' + app + '--P_batt setpoint reset to max charge P_batt: ' + str(self.ConflictMatrix[device][app][1]), flush=True)
+            print('RulesForBatteriesConflict for ' + name + ' for app ' + app + '--P_batt setpoint reset to max charge P_batt: ' + str(self.ConflictMatrix[device][app][1]), flush=True)
 
           elif self.ConflictMatrix[device][app][1] < \
              self.Batteries[device]['P_batt_discharge_max']:
-            print('RulesForBatteries for ' + name + ' for app ' + app + '--P_batt setpoint below max discharge P_batt: ' + str(self.ConflictMatrix[device][app][1]), flush=True)
+            print('RulesForBatteriesConflict for ' + name + ' for app ' + app + '--P_batt setpoint below max discharge P_batt: ' + str(self.ConflictMatrix[device][app][1]), flush=True)
             self.ConflictMatrix[device][app]= \
                                (self.ConflictMatrix[device][app][0],
                                 self.Batteries[device]['P_batt_discharge_max'])
-            print('RulesForBatteries for ' + name + ' for app ' + app + '--P_batt setpoint reset to max discharge P_batt: ' + str(self.ConflictMatrix[device][app][1]), flush=True)
+            print('RulesForBatteriesConflict for ' + name + ' for app ' + app + '--P_batt setpoint reset to max discharge P_batt: ' + str(self.ConflictMatrix[device][app][1]), flush=True)
 
           # check for switching between charge/discharge if over limit
           if self.Batteries[device]['switch_P_batt_inv'] != None:
             prev_P_batt_inv = self.Batteries[device]['switch_P_batt_inv']
             if prev_P_batt_inv>0 and self.ConflictMatrix[device][app][1]<0 or \
                prev_P_batt_inv<0 and self.ConflictMatrix[device][app][1]>0:
-              print('RulesForBatteries for ' + name + ' for app ' + app + '--P_batt setpoint attempted to change charge/discharge state: ' + str(self.ConflictMatrix[device][app][1]), flush=True)
+              print('RulesForBatteriesConflict for ' + name + ' for app ' + app + '--P_batt setpoint attempted to change charge/discharge state: ' + str(self.ConflictMatrix[device][app][1]), flush=True)
               # this is pretty harsh to force the setpoint request back to zero
               # to avoid a possible change in charge/discharge state, but no
               # other choice when the rule is applied before other stages
               self.ConflictMatrix[device][app]= \
                                   (self.ConflictMatrix[device][app][0], 0.0)
-              print('RulesForBatteries for ' + name + ' for app ' + app + '--P_batt setpoint reset to zero', flush=True)
+              print('RulesForBatteriesConflict for ' + name + ' for app ' + app + '--P_batt setpoint reset to zero', flush=True)
 
 
-  def RulesForRegulators(self, printAllFlag=False):
+  def RulesForBatteriesResolution(self, newResolutionVector,printAllFlag=False):
+    rollingTimeInterval = 60
+    # number of changes between charging and discharging, and vice versa,
+    # allowed in the rolling time interval
+    rollingSwitchesAllowed = 1
+
+    # set max/min allowable tap positions based on current position
+    for devid in self.Batteries:
+      histList = self.BatteryHistory[devid]
+      if printAllFlag:
+        print('RulesForBatteriesResolution BatteryHistory for ' + MethodUtil.DeviceToName[devid] + ': ' + str(histList), flush=True)
+
+      # iterate backwards through histList counting switches
+      rollingSwitchCount = 0
+      rollingStartTime = self.Batteries[devid]['timestamp'] - \
+                         rollingTimeInterval
+      for hist in reversed(histList):
+        if hist[0] < rollingStartTime:
+          break
+        rollingSwitchCount += 1
+
+      if printAllFlag:
+        print('RulesForBatteriesResolution for ' + MethodUtil.DeviceToName[devid] + ', rolling charge/discharge switches: ' + str(rollingSwitchCount) + ', vs. allowed: ' + str(rollingSwitchesAllowed), flush=True)
+
+      if rollingSwitchCount >= rollingSwitchesAllowed:
+        # save the final P_batt_inv in the history list since we need to make
+        # sure not to allow the opposite direction in any setpoint requests
+        self.Batteries[devid]['switch_P_batt_inv'] = \
+                              self.BatteryHistory[devid][-1][1]
+      else:
+        self.Batteries[devid]['switch_P_batt_inv'] = None
+
+    # find the maximum P_batt charge and discharge values per battery to
+    # prevent overcharging or undercharging
+    for devid in self.Batteries:
+      chargeSoCMax = 0.9 - self.Batteries[devid]['SoC']
+      self.Batteries[devid]['P_batt_charge_max'] = chargeSoCMax*self.Batteries[devid]['ratedE']/(self.Batteries[devid]['eff_c']*self.deltaT)
+      if printAllFlag:
+        print('RulesForBatteriesResolution for ' + MethodUtil.DeviceToName[devid] + ', max charge SoC contribution: ' + str(chargeSoCMax) + ', max charge P_batt: ' + str(self.Batteries[devid]['P_batt_charge_max']), flush=True)
+
+      dischargeSoCMax = 0.2 - self.Batteries[devid]['SoC']
+      self.Batteries[devid]['P_batt_discharge_max'] = dischargeSoCMax*self.Batteries[devid]['ratedE']/(1/self.Batteries[devid]['eff_d']*self.deltaT)
+      if printAllFlag:
+        print('RulesForBatteriesResolution for ' + MethodUtil.DeviceToName[devid] + ', max discharge SoC contribution: ' + str(dischargeSoCMax) + ', max discharge P_batt: ' + str(self.Batteries[devid]['P_batt_discharge_max']), flush=True)
+
+    # iterate over all battery setpoints in newResolutionVector to insure they
+    # fall within the acceptable P_batt range and set them to max values if not
+    for device in newResolutionVector:
+      name = MethodUtil.DeviceToName[device]
+      if name.startswith('BatteryUnit.'):
+        # check vs. battery rated power
+        if abs(newResolutionVector[device][1]) > \
+           self.Batteries[device]['prated']:
+          print('RulesForBatteriesResolution for ' + name + '--P_batt setpoint exceeds battery rated power: ' + str(newResolutionVector[device][1]), flush=True)
+          if newResolutionVector[device][1] > 0:
+            newResolutionVector[device] = (newResolutionVector[device][0], self.Batteries[device]['prated'])
+          else:
+            newResolutionVector[device] = (newResolutionVector[device][0], -self.Batteries[device]['prated'])
+          print('RulesForBatteriesResolution for ' + name + '--P_batt setpoint reset to battery rated power: ' + str(newResolutionVector[device][1]), flush=True)
+
+        # check vs. battery SoC limits
+        if newResolutionVector[device][1] > \
+           self.Batteries[device]['P_batt_charge_max']:
+          print('RulesForBatteriesResolution for ' + name + '--P_batt setpoint above max charge P_batt: ' + str(newResolutionVector[device][1]), flush=True)
+          newResolutionVector[device] = \
+                             (newResolutionVector[device][0],
+                              self.Batteries[device]['P_batt_charge_max'])
+          print('RulesForBatteriesResolution for ' + name + '--P_batt setpoint reset to max charge P_batt: ' + str(newResolutionVector[device][1]), flush=True)
+
+        elif newResolutionVector[device][1] < \
+           self.Batteries[device]['P_batt_discharge_max']:
+          print('RulesForBatteriesResolution for ' + name + '--P_batt setpoint below max discharge P_batt: ' + str(newResolutionVector[device][1]), flush=True)
+          newResolutionVector[device] = \
+                             (newResolutionVector[device][0],
+                              self.Batteries[device]['P_batt_discharge_max'])
+          print('RulesForBatteriesResolution for ' + name + '--P_batt setpoint reset to max discharge P_batt: ' + str(newResolutionVector[device][1]), flush=True)
+
+        # check for switching between charge/discharge if over limit
+        if self.Batteries[device]['switch_P_batt_inv'] != None:
+          prev_P_batt_inv = self.Batteries[device]['switch_P_batt_inv']
+          if prev_P_batt_inv>0 and newResolutionVector[device][1]<0 or \
+             prev_P_batt_inv<0 and newResolutionVector[device][1]>0:
+            print('RulesForBatteriesResolution for ' + name + '--P_batt setpoint attempted to change charge/discharge state: ' + str(newResolutionVector[device][1]), flush=True)
+            # this is pretty harsh to force the setpoint request back to zero
+            # to avoid a possible change in charge/discharge state, but no
+            # other choice when the rule is applied before other stages
+            newResolutionVector[device] = \
+                                (newResolutionVector[device][0], 0.0)
+            print('RulesForBatteriesResolution for ' + name + '--P_batt setpoint reset to zero', flush=True)
+
+
+  def RulesForRegulatorsConflict(self, printAllFlag=False):
     # comment out to disable per-timestamp limit on tap position changes
     #timestampTapBudget = 3
 
@@ -307,7 +398,7 @@ class DeconflictionPipeline(GridAPPSD):
     for devid in self.Regulators:
       histList = self.RegulatorHistory[devid]
       if printAllFlag:
-        print('RulesForRegulators RegulatorHistory for ' + MethodUtil.DeviceToName[devid] + ': ' + str(histList), flush=True)
+        print('RulesForRegulatorsConflict RegulatorHistory for ' + MethodUtil.DeviceToName[devid] + ': ' + str(histList), flush=True)
 
       # iterate backwards through histList counting steps changed
       rollingStepCount = 0
@@ -322,14 +413,14 @@ class DeconflictionPipeline(GridAPPSD):
 
       rollingTapBudget = max(0, rollingStepsAllowed - rollingStepCount)
       if printAllFlag:
-        print('RulesForRegulators for ' + MethodUtil.DeviceToName[devid] + ', rolling steps: ' + str(rollingStepCount) + ', vs. allowed: ' + str(rollingStepsAllowed) + ', rolling budget: ' + str(rollingTapBudget), flush=True)
+        print('RulesForRegulatorsConflict for ' + MethodUtil.DeviceToName[devid] + ', rolling steps: ' + str(rollingStepCount) + ', vs. allowed: ' + str(rollingStepsAllowed) + ', rolling budget: ' + str(rollingTapBudget), flush=True)
 
       # comment out next line and uncoment the following on to disable
       # per-timestamp limit
       #tapBudget = min(timestampTapBudget, rollingTapBudget)
       tapBudget = rollingTapBudget
 
-      #print('RulesForRegulators for ' + MethodUtil.DeviceToName[devid] + ', per-timestamp tap budget: ' + str(timestampTapBudget) + ', rolling tap budget: ' + str(rollingTapBudget) + ', final tap budget: ' + str(tapBudget), flush=True)
+      #print('RulesForRegulatorsConflict for ' + MethodUtil.DeviceToName[devid] + ', per-timestamp tap budget: ' + str(timestampTapBudget) + ', rolling tap budget: ' + str(rollingTapBudget) + ', final tap budget: ' + str(tapBudget), flush=True)
 
       # constrain by the overall tap budget and physical device limits
       self.Regulators[devid]['maxStep'] = min(self.Regulators[devid]['step'] + \
@@ -337,7 +428,7 @@ class DeconflictionPipeline(GridAPPSD):
       self.Regulators[devid]['minStep'] = max(self.Regulators[devid]['step'] - \
                                               tapBudget, -16)
       if printAllFlag:
-        print('RulesForRegulators for ' + MethodUtil.DeviceToName[devid] + ', min tap pos: ' + str(self.Regulators[devid]['minStep']) + ', max tap pos: ' + str(self.Regulators[devid]['maxStep']), flush=True)
+        print('RulesForRegulatorsConflict for ' + MethodUtil.DeviceToName[devid] + ', min tap pos: ' + str(self.Regulators[devid]['minStep']) + ', max tap pos: ' + str(self.Regulators[devid]['maxStep']), flush=True)
 
     # iterate over all regulator tap setpoints in ConflictMatrix to make sure
     # they fall within the acceptable maxTapBudget range of the current position
@@ -347,19 +438,84 @@ class DeconflictionPipeline(GridAPPSD):
         for app in self.ConflictMatrix[device]:
           if self.ConflictMatrix[device][app][1] > \
              self.Regulators[device]['maxStep']:
-            print('RulesForRegulators for ' + name + ' for app ' + app + '--tap pos setpoint above max allowable asset health pos: ' + str(self.ConflictMatrix[device][app][1]), flush=True)
+            print('RulesForRegulatorsConflict for ' + name + ' for app ' + app + '--tap pos setpoint above max allowable asset health pos: ' + str(self.ConflictMatrix[device][app][1]), flush=True)
             self.ConflictMatrix[device][app] = \
                                (self.ConflictMatrix[device][app][0],
                                 self.Regulators[device]['maxStep'])
-            print('RulesForRegulators for ' + name + ' for app ' + app + '--tap pos setpoint reset to max allowable asset health pos: ' + str(self.ConflictMatrix[device][app][1]), flush=True)
+            print('RulesForRegulatorsConflict for ' + name + ' for app ' + app + '--tap pos setpoint reset to max allowable asset health pos: ' + str(self.ConflictMatrix[device][app][1]), flush=True)
 
           elif self.ConflictMatrix[device][app][1] < \
                self.Regulators[device]['minStep']:
-            print('RulesForRegulators for ' + name + ' for app ' + app + '--tap pos setpoint below min allowable asset health pos: ' + str(self.ConflictMatrix[device][app][1]), flush=True)
+            print('RulesForRegulatorsConflict for ' + name + ' for app ' + app + '--tap pos setpoint below min allowable asset health pos: ' + str(self.ConflictMatrix[device][app][1]), flush=True)
             self.ConflictMatrix[device][app] = \
                                (self.ConflictMatrix[device][app][0],
                                 self.Regulators[device]['minStep'])
-            print('RulesForRegulators for ' + name + ' for app ' + app + '--tap pos setpoint reset to min allowable asset health pos: ' + str(self.ConflictMatrix[device][app][1]), flush=True)
+            print('RulesForRegulatorsConflict for ' + name + ' for app ' + app + '--tap pos setpoint reset to min allowable asset health pos: ' + str(self.ConflictMatrix[device][app][1]), flush=True)
+
+
+  def RulesForRegulatorsResolution(self,newResolutionVector,printAllFlag=False):
+    # comment out to disable per-timestamp limit on tap position changes
+    #timestampTapBudget = 3
+
+    rollingTimeInterval = 60
+    rollingStepsAllowed = 6 # picked to trigger the rule a reasonable # of times
+
+    # set max/min allowable tap positions based on current position
+    for devid in self.Regulators:
+      histList = self.RegulatorHistory[devid]
+      if printAllFlag:
+        print('RulesForRegulatorsResolution RegulatorHistory for ' + MethodUtil.DeviceToName[devid] + ': ' + str(histList), flush=True)
+
+      # iterate backwards through histList counting steps changed
+      rollingStepCount = 0
+      rollingStartTime = self.Regulators[devid]['timestamp'] - \
+                         rollingTimeInterval
+      previousStep = self.Regulators[devid]['step']
+      for hist in reversed(histList):
+        if hist[0] < rollingStartTime:
+          break
+        rollingStepCount += abs(previousStep - hist[1])
+        previousStep = hist[1]
+
+      rollingTapBudget = max(0, rollingStepsAllowed - rollingStepCount)
+      if printAllFlag:
+        print('RulesForRegulatorsResolution for ' + MethodUtil.DeviceToName[devid] + ', rolling steps: ' + str(rollingStepCount) + ', vs. allowed: ' + str(rollingStepsAllowed) + ', rolling budget: ' + str(rollingTapBudget), flush=True)
+
+      # comment out next line and uncoment the following on to disable
+      # per-timestamp limit
+      #tapBudget = min(timestampTapBudget, rollingTapBudget)
+      tapBudget = rollingTapBudget
+
+      #print('RulesForRegulatorsResolution for ' + MethodUtil.DeviceToName[devid] + ', per-timestamp tap budget: ' + str(timestampTapBudget) + ', rolling tap budget: ' + str(rollingTapBudget) + ', final tap budget: ' + str(tapBudget), flush=True)
+
+      # constrain by the overall tap budget and physical device limits
+      self.Regulators[devid]['maxStep'] = min(self.Regulators[devid]['step'] + \
+                                              tapBudget, 16)
+      self.Regulators[devid]['minStep'] = max(self.Regulators[devid]['step'] - \
+                                              tapBudget, -16)
+      if printAllFlag:
+        print('RulesForRegulatorsResolution for ' + MethodUtil.DeviceToName[devid] + ', min tap pos: ' + str(self.Regulators[devid]['minStep']) + ', max tap pos: ' + str(self.Regulators[devid]['maxStep']), flush=True)
+
+    # iterate over all regulator tap setpoints in newResolutionVector to insure
+    # they fall within the acceptable maxTapBudget range of the current position
+    for device in newResolutionVector:
+      name = MethodUtil.DeviceToName[device]
+      if name.startswith('RatioTapChanger.'):
+        if newResolutionVector[device][1] > \
+           self.Regulators[device]['maxStep']:
+          print('RulesForRegulatorsResolution for ' + name + '--tap pos setpoint above max allowable asset health pos: ' + str(newResolutionVector[device][1]), flush=True)
+          newResolutionVector[device] = \
+                             (newResolutionVector[device][0],
+                              self.Regulators[device]['maxStep'])
+          print('RulesForRegulatorsResolution for ' + name + '--tap pos setpoint reset to max allowable asset health pos: ' + str(newResolutionVector[device][1]), flush=True)
+
+        elif newResolutionVector[device][1] < \
+             self.Regulators[device]['minStep']:
+          print('RulesForRegulatorsResolution for ' + name + '--tap pos setpoint below min allowable asset health pos: ' + str(newResolutionVector[device][1]), flush=True)
+          newResolutionVector[device] = \
+                             (newResolutionVector[device][0],
+                              self.Regulators[device]['minStep'])
+          print('RulesForRegulatorsResolution for ' + name + '--tap pos setpoint reset to min allowable asset health pos: ' + str(newResolutionVector[device][1]), flush=True)
 
 
   def OptimizationDeconflict(self, app_name, timestamp, ConflictMatrix):
@@ -649,9 +805,10 @@ class DeconflictionPipeline(GridAPPSD):
 
     # Step 2: Feasibility Maintainer -- not implemented yet
 
-    # RULES & HEURISTICS stage deconfliction
-    self.RulesForBatteries(False)
-    self.RulesForRegulators(False)
+    # RULES & HEURISTICS stage deconfliction done first
+    if self.rulesStageFirstFlag:
+      self.RulesForBatteriesConflict(False)
+      self.RulesForRegulatorsConflict(False)
 
     # Step 3: Deconflictor
     # Step 3.1: Conflict Identification
@@ -684,6 +841,11 @@ class DeconflictionPipeline(GridAPPSD):
         else:
           print('~TEST: ResolutionVector (no conflict) does not contain ' +
                 self.testDeviceName, flush=True)
+
+      # RULES & HEURISTICS stage deconfliction done last
+      if not self.rulesStageFirstFlag:
+        self.RulesForBatteriesResolution(newResolutionVector, False)
+        self.RulesForRegulatorsResolution(newResolutionVector, False)
 
       # Step 4: Setpoint Validator -- not implemented yet
       # Step 5: Device Dispatcher
@@ -760,6 +922,11 @@ class DeconflictionPipeline(GridAPPSD):
     newResolutionVector = self.OptimizationDeconflict(app_name, timestamp,
                                                       self.ConflictMatrix)
 
+    # RULES & HEURISTICS stage deconfliction done last
+    if not self.rulesStageFirstFlag:
+      self.RulesForBatteriesResolution(newResolutionVector, False)
+      self.RulesForRegulatorsResolution(newResolutionVector, False)
+
     # Step 4: Setpoint Validator -- not implemented yet
     # Step 5: Device Dispatcher
     self.DeviceDispatcher(timestamp, newResolutionVector)
@@ -797,8 +964,8 @@ class DeconflictionPipeline(GridAPPSD):
     # Step 2: Feasibility Maintainer -- not implemented yet
     # Apply Rules & Heuristics stage deconfliction here because even with
     # no conflict a setpoint request can still violate rules
-    self.RulesForBatteries(False)
-    self.RulesForRegulators(False)
+    self.RulesForBatteriesConflict(False)
+    self.RulesForRegulatorsConflict(False)
 
     # Step 3: Deconflictor
     # Step 3.1: Conflict Identification
@@ -1000,6 +1167,11 @@ class DeconflictionPipeline(GridAPPSD):
     self.conflictMetric = 0.0
     # initialize combination cooperation timestamp and control flag
     self.coopTimestamp = 0
+
+    # controls whether rules stage deconfliction is done as the first stage
+    # using the ConflictMatrix or deferred until the last stage before device
+    # dispatch using the ResolutionVector
+    self.rulesStageFirstFlag = True
 
     # for SHIVA conflict metric testing
     #self.TimeConflictMatrix = {}
