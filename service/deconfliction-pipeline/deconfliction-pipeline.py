@@ -639,6 +639,8 @@ class DeconflictionPipeline(GridAPPSD):
       self.gapps.send(self.publish_topic, json.dumps(dispatch_message))
       self.difference_builder.clear()
 
+    return diffCount
+
 
   def on_sim_message(self, header, message):
     #print('Received simulation message: ' + str(message), flush=True)
@@ -793,8 +795,8 @@ class DeconflictionPipeline(GridAPPSD):
 
         # Step 4: Setpoint Validator -- not implemented yet
         # Step 5: Device Dispatcher
-        print('WORKFLOW-07 device dispatch for previous cooperation', flush=True)
-        self.DeviceDispatcher(timestamp, newResolutionVector)
+        dispatchCount = self.DeviceDispatcher(timestamp, newResolutionVector)
+        print('WORKFLOW-07 device dispatch for previous cooperation--# dispatched: ' + str(dispatchCount), flush=True)
 
         # update the current resolution to the new resolution to be ready for
         # the next dispatch
@@ -861,8 +863,8 @@ class DeconflictionPipeline(GridAPPSD):
 
       # Step 4: Setpoint Validator -- not implemented yet
       # Step 5: Device Dispatcher
-      print('WORKFLOW-13 device dispatch', flush=True)
-      self.DeviceDispatcher(timestamp, newResolutionVector)
+      dispatchCount = self.DeviceDispatcher(timestamp, newResolutionVector)
+      print('WORKFLOW-13 device dispatch--# dispatched: ' + str(dispatchCount), flush=True)
 
       # update the current resolution to the new resolution to be ready for the
       # next dispatch
@@ -960,8 +962,8 @@ class DeconflictionPipeline(GridAPPSD):
 
     # Step 4: Setpoint Validator -- not implemented yet
     # Step 5: Device Dispatcher
-    print('WORKFLOW-27 device dispatch', flush=True)
-    self.DeviceDispatcher(timestamp, newResolutionVector)
+    dispatchCount = self.DeviceDispatcher(timestamp, newResolutionVector)
+    print('WORKFLOW-27 device dispatch--# dispatched: ' + str(dispatchCount), flush=True)
 
     # update the current resolution to the new resolution to be ready for the
     # next dispatch
