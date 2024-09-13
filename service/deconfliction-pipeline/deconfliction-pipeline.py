@@ -768,35 +768,38 @@ class DeconflictionPipeline(GridAPPSD):
 
     if not meas_msg_flag and coop_id!=self.coopIdentifier:
       # discard any cooperation messages when not currently cooperating or
-      # when from a previous cooperation phase/iteration
+      # when from a previous cooperation phase
       print('WORKFLOW-02 immediate discard of nonmatching coop message--message coop_id: ' + coop_id + ', current coop_id: ' + str(self.coopIdentifier), flush=True)
       print('WORKFLOW-03 finished processing setpoints message--timestamp: ' + str(timestamp) + ', app: ' + app_name + ', meas_msg_flag: ' + str(meas_msg_flag), flush=True)
       return
 
-    if meas_msg_flag and self.coopTimestamp!=0 and \
-                         self.coopTimestamp!=timestamp:
-      # final condition fixes a special case where we've already ended the last
-      # phase of cooperation but then more meas messages arrive and we don't
-      # want to immediately do further dispatches
-      print('WORKFLOW-04 must conclude running cooperation phase with meas message arriving--coopTimestamp: ' + str(self.coopTimestamp), flush=True)
+    if meas_msg_flag and self.coopIdentifier!=None:
+      if self.coopTimestamp == timestamp:
+        print('WORKFLOW-04 special case skipping device dispatch for meas message with active cooperation initiated for the same timestamp: ' + str(timestamp), flush=True)
 
-      # we were cooperating when a measurement message arrived so need to
-      # conclude that cooperation before processing the new message
+      else:
+        # final condition fixes a special case where we've already ended the
+        # last phase of cooperation but then more meas messages arrive and we
+        # don't want to immediately do further dispatches
+        print('WORKFLOW-05 must conclude running cooperation phase with meas message arriving--coopTimestamp: ' + str(self.coopTimestamp), flush=True)
 
-      # OPTIMIZATION stage deconfliction
-      print('WORKFLOW-05 applying OPTIMIZATION stage deconfliction for previous cooperation', flush=True)
-      newResolutionVector = self.OptimizationDeconflict(app_name, timestamp,
-                                                        self.ConflictMatrix)
+        # we were cooperating when a measurement message arrived so need to
+        # conclude that cooperation before processing the new message
 
-      # Step 4: Setpoint Validator -- not implemented yet
-      # Step 5: Device Dispatcher
-      print('WORKFLOW-06 device dispatch for previous cooperation', flush=True)
-      self.DeviceDispatcher(timestamp, newResolutionVector)
+        # OPTIMIZATION stage deconfliction
+        print('WORKFLOW-06 applying OPTIMIZATION stage deconfliction for previous cooperation', flush=True)
+        newResolutionVector = self.OptimizationDeconflict(app_name, timestamp,
+                                                          self.ConflictMatrix)
 
-      # update the current resolution to the new resolution to be ready for
-      # the next dispatch
-      self.ResolutionVector.clear()
-      self.ResolutionVector = newResolutionVector
+        # Step 4: Setpoint Validator -- not implemented yet
+        # Step 5: Device Dispatcher
+        print('WORKFLOW-07 device dispatch for previous cooperation', flush=True)
+        self.DeviceDispatcher(timestamp, newResolutionVector)
+
+        # update the current resolution to the new resolution to be ready for
+        # the next dispatch
+        self.ResolutionVector.clear()
+        self.ResolutionVector = newResolutionVector
 
     # copy conflict matrix before updating since I need this if cooperation
     # iteration results in an increased conflict metric
@@ -807,24 +810,24 @@ class DeconflictionPipeline(GridAPPSD):
     set_points = message['forward_differences']
 
     # Step 1: Setpoint Processor
-    print('WORKFLOW-07 setpoint processor', flush=True)
+    print('WORKFLOW-08 setpoint processor', flush=True)
     self.SetpointProcessor(app_name, timestamp, set_points)
 
     # Step 2: Feasibility Maintainer -- not implemented yet
 
     # RULES & HEURISTICS stage deconfliction done first
     if self.rulesStageFirstFlag:
-      print('WORKFLOW-08 applying initial RULES & HEURISTICS stage deconfliction', flush=True)
+      print('WORKFLOW-09 applying initial RULES & HEURISTICS stage deconfliction', flush=True)
       self.RulesForBatteriesConflict(False)
       self.RulesForRegulatorsConflict(False)
 
     # Step 3: Deconflictor
     # Step 3.1: Conflict Identification
-    print('WORKFLOW-09 conflict identification', flush=True)
+    print('WORKFLOW-10 conflict identification', flush=True)
     conflictFlag = self.ConflictIdentification(app_name, timestamp, set_points)
 
     if not conflictFlag:
-      print('WORKFLOW-10 NO conflict found in conflict matrix', flush=True)
+      print('WORKFLOW-11 NO conflict found in conflict matrix', flush=True)
       # zero conflict metric since by definition there is none
       self.conflictMetric = 0.0
 
@@ -837,7 +840,7 @@ class DeconflictionPipeline(GridAPPSD):
 
       # RULES & HEURISTICS stage deconfliction done last
       if not self.rulesStageFirstFlag:
-        print('WORKFLOW-11 applying final RULES & HEURISTICS stage deconfliction', flush=True)
+        print('WORKFLOW-12 applying final RULES & HEURISTICS stage deconfliction', flush=True)
         self.RulesForBatteriesResolution(newResolutionVector, False)
         self.RulesForRegulatorsResolution(newResolutionVector, False)
 
@@ -858,7 +861,7 @@ class DeconflictionPipeline(GridAPPSD):
 
       # Step 4: Setpoint Validator -- not implemented yet
       # Step 5: Device Dispatcher
-      print('WORKFLOW-12 device dispatch', flush=True)
+      print('WORKFLOW-13 device dispatch', flush=True)
       self.DeviceDispatcher(timestamp, newResolutionVector)
 
       # update the current resolution to the new resolution to be ready for the
@@ -869,14 +872,14 @@ class DeconflictionPipeline(GridAPPSD):
       # zero the cooperation timestamp to indicate no active cooperation
       self.coopTimestamp = 0
       self.coopIdentifier = None
-      print('WORKFLOW-13 finished processing setpoints message--timestamp: ' + str(timestamp) + ', app: ' + app_name + ', meas_msg_flag: ' + str(meas_msg_flag), flush=True)
+      print('WORKFLOW-14 finished processing setpoints message--timestamp: ' + str(timestamp) + ', app: ' + app_name + ', meas_msg_flag: ' + str(meas_msg_flag) + ', coop_id: ' + str(coop_id), flush=True)
       return
 
     # conflict identified logic
-    print('WORKFLOW-14 YES conflict found in conflict matrix', flush=True)
+    print('WORKFLOW-15 YES conflict found in conflict matrix', flush=True)
     if meas_msg_flag:
       # COOPERATION stage deconfliction
-      print('WORKFLOW-15 applying COOPERATION stage deconfliction for meas message', flush=True)
+      print('WORKFLOW-16 applying COOPERATION stage deconfliction for meas message', flush=True)
 
       # compute conflict metric for later comparison during later cooperation
       self.conflictMetric = self.ConflictMetricComputation(timestamp)
@@ -893,14 +896,15 @@ class DeconflictionPipeline(GridAPPSD):
       coopMessage = {'cooperationIdentifier': self.coopIdentifier,
                      'targetResolutionVector': targetResolutionVector}
       self.gapps.send(self.coop_topic, json.dumps(coopMessage))
+      print('WORKFLOW-17 kicked off new cooperation phase--updated coopIdentifier: ' + self.coopIdentifier, flush=True)
 
       # set the cooperation timestamp to indicate when cooperation was initiated
       self.coopTimestamp = timestamp
-      print('WORKFLOW-16 finished processing setpoints message--timestamp: ' + str(timestamp) + ', app: ' + app_name + ', meas_msg_flag: ' + str(meas_msg_flag), flush=True)
+      print('WORKFLOW-18 finished processing setpoints message--timestamp: ' + str(timestamp) + ', app: ' + app_name + ', meas_msg_flag: ' + str(meas_msg_flag) + ', coop_id: ' + str(coop_id), flush=True)
       return
 
     # coop message with conflict to get here
-    print('WORKFLOW-17 conflict found with with coop message--checking thresholds', flush=True)
+    print('WORKFLOW-19 conflict found with with coop message--checking thresholds', flush=True)
 
     # save the previous conflict metric for comparison
     prevConflictMetric = self.conflictMetric
@@ -911,14 +915,14 @@ class DeconflictionPipeline(GridAPPSD):
     if prevConflictMetric > 0.0:
       perConflictDelta = 100.0 * (prevConflictMetric - self.conflictMetric)/prevConflictMetric
 
-    print('WORKFLOW-18 thresholds--previous conflict metric: ' + str(prevConflictMetric) + ', new conflict metric: ' + str(self.conflictMetric) + ', % change: ' + str(perConflictDelta), flush=True)
+    print('WORKFLOW-20 thresholds--previous conflict metric: ' + str(prevConflictMetric) + ', new conflict metric: ' + str(self.conflictMetric) + ', % change: ' + str(perConflictDelta), flush=True)
 
     # thresholds for ending cooperation are either a conflict metric value
     # below 0.2 or a % conflict change less than 2%
     # check for NOT meeting thresholds
     if self.conflictMetric>0.2 and perConflictDelta>2.0:
       # initiate further cooperation
-      print('WORKFLOW-19 NO thresholds met--initiating further cooperation', flush=True)
+      print('WORKFLOW-21 NO thresholds met--initiating further cooperation', flush=True)
 
       # start with a "target" resolution vector using the optimization code
       # that computes a weighted centroid per device
@@ -929,36 +933,34 @@ class DeconflictionPipeline(GridAPPSD):
 
       # publish this target resolution vector to the cooperation topic for
       # competing apps that support cooperation to respond to
-      self.coopCounter += 1
-      self.coopIdentifier = 'COOP-' + str(self.coopCounter)
       coopMessage = {'cooperationIdentifier': self.coopIdentifier,
                      'targetResolutionVector': targetResolutionVector}
       self.gapps.send(self.coop_topic, json.dumps(coopMessage))
-      print('WORKFLOW-20 finished processing setpoints message--timestamp: ' + str(timestamp) + ', app: ' + app_name + ', meas_msg_flag: ' + str(meas_msg_flag), flush=True)
+      print('WORKFLOW-22 finished processing setpoints message--timestamp: ' + str(timestamp) + ', app: ' + app_name + ', meas_msg_flag: ' + str(meas_msg_flag) + ', coop_id: ' + str(coop_id), flush=True)
       return
 
     # thresholds for ending cooperation have been met to get here
-    print('WORKFLOW-21 YES thresholds met--concluding cooperation', flush=True)
+    print('WORKFLOW-23 YES thresholds met--concluding cooperation', flush=True)
 
     # OPTIMIZATION stage deconfliction
-    print('WORKFLOW-22 applying OPTIMIZATION stage deconfliction', flush=True)
     if perConflictDelta < 0.0:
-      print('WORKFLOW-23 conflict metric has increased--using previous conflict matrix', flush=True)
+      print('WORKFLOW-24 applying OPTIMIZATION stage deconfliction to previous conflict matrix due to increased conflict metric', flush=True)
       newResolutionVector = self.OptimizationDeconflict(app_name, timestamp,
                                                         previousConflictMatrix)
     else:
+      print('WORKFLOW-25 applying OPTIMIZATION stage deconfliction', flush=True)
       newResolutionVector = self.OptimizationDeconflict(app_name, timestamp,
                                                         self.ConflictMatrix)
 
     # RULES & HEURISTICS stage deconfliction done last
     if not self.rulesStageFirstFlag:
-      print('WORKFLOW-24 applying final RULES & HEURISTICS stage deconfliction', flush=True)
+      print('WORKFLOW-26 applying final RULES & HEURISTICS stage deconfliction', flush=True)
       self.RulesForBatteriesResolution(newResolutionVector, False)
       self.RulesForRegulatorsResolution(newResolutionVector, False)
 
     # Step 4: Setpoint Validator -- not implemented yet
     # Step 5: Device Dispatcher
-    print('WORKFLOW-25 device dispatch', flush=True)
+    print('WORKFLOW-27 device dispatch', flush=True)
     self.DeviceDispatcher(timestamp, newResolutionVector)
 
     # update the current resolution to the new resolution to be ready for the
@@ -969,7 +971,7 @@ class DeconflictionPipeline(GridAPPSD):
     # zero the cooperation timestamp to indicate no active cooperation
     self.coopTimestamp = 0
     self.coopIdentifier = None
-    print('WORKFLOW-26 finished processing setpoints message--timestamp: ' + str(timestamp) + ', app: ' + app_name + ', meas_msg_flag: ' + str(meas_msg_flag), flush=True)
+    print('WORKFLOW-28 finished processing setpoints message--timestamp: ' + str(timestamp) + ', app: ' + app_name + ', meas_msg_flag: ' + str(meas_msg_flag) + ', coop_id: ' + str(coop_id), flush=True)
 
 
   def __init__(self, gapps, feeder_mrid, simulation_id, weights_base, interval):
