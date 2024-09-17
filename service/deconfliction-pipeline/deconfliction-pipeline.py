@@ -274,7 +274,7 @@ class DeconflictionPipeline(GridAPPSD):
     weightLoss = 0.75 * minWeight # boost the incentive
     for app in app_list:
       self.OptAppWeights[app] -= weightLoss
-      print('Cooperation weight updated--timestamp: ' + str(timestamp) + ', app: ' + app + ', adjusted weight: ' + str(self.OptAppWeights[app]), flush=True)
+      print('Cooperation weight updated--timestamp: ' + str(timestamp) + ', app: ' + app + ', adj. weight: ' + str(self.OptAppWeights[app]), flush=True)
 
 
   def CooperationWeightsClear(self, timestamp, ConflictMatrix):
