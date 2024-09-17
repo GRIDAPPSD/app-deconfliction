@@ -189,6 +189,83 @@ class DeconflictionPipeline(GridAPPSD):
     return conflict_metric
 
 
+  def CooperationWeightsComputation(self, ConflictMatrix,
+                                    TargetResolutionVector):
+    sigma_d_t = {}
+    app_list = []
+
+    # find the sigma values for the target resolution vector first because
+    # they are needed while iterating over each of the apps later
+    for device in TargetResolutionVector:
+      gamma_d_t = TargetResolutionVector[device][1]
+
+      name = MethodUtil.DeviceToName[device]
+      if name.startswith('BatteryUnit.'):
+        # Normalize setpoints using max charge and discharge possible
+        sigma_d_t[device] = (gamma_d_t + self.Batteries[device]['prated']) / \
+                            (2 * self.Batteries[device]['prated'])
+
+      elif name.startswith('RatioTapChanger.'):
+        # Normalize setpoints using highStep and lowStep
+        sigma_d_t[device] = (gamma_d_t +
+                             abs(self.Regulators[device]['highStep'])) / \
+                            (self.Regulators[device]['highStep'] + \
+                             abs(self.Regulators[device]['lowStep']))
+
+      # while we are iterating over devices, build up a list of apps we
+      # need to compute weights for since that's buried down a level within
+      # the conflict matrix
+      for app in ConflictMatrix[device]:
+        if app not in app_list:
+          app_list.append(app)
+
+    # now with a list of apps we can loop over that at the top level since
+    # we ultimately need a weight for every app (that includes all devices)
+    for app in app_list:
+      centroid = {}
+      sigma_d_a = {}
+
+      for device in TargetResolutionVector:
+        # need to make sure the app has an entry for the device
+        if app in ConflictMatrix[device]:
+          gamma_d_a = ConflictMatrix[device][app][1]
+
+          name = MethodUtil.DeviceToName[device]
+          if name.startswith('BatteryUnit.'):
+            # Normalize setpoints using max charge and discharge possible
+            sigma = (gamma_d_a + self.Batteries[device]['prated']) / \
+                    (2 * self.Batteries[device]['prated'])
+            sigma_d_a[device] = sigma
+            centroid[device] = (sigma + sigma_d_t[device]) / 2
+
+          elif name.startswith('RatioTapChanger.'):
+            # Normalize setpoints using highStep and lowStep
+            sigma = (gamma_d_a + abs(self.Regulators[device]['highStep'])) / \
+                    (self.Regulators[device]['highStep'] + \
+                     abs(self.Regulators[device]['lowStep']))
+            sigma_d_a[device] = sigma
+            centroid[device] = (sigma + sigma_d_t[device]) / 2
+
+      # Distance vector:
+      sum_dist_a = 0
+      sum_dist_t = 0
+      for device in centroid:
+        sum_dist_a += (centroid[device] - sigma_d_a[device]) ** 2
+        sum_dist_t += (centroid[device] - sigma_d_t[device]) ** 2
+
+      dist_centroid_a = math.sqrt(sum_dist_a)
+      dist_centroid_t = math.sqrt(sum_dist_t)
+
+      # Compute conflict metric: average distance
+      conflict_metric = (dist_centroid_a + dist_centroid_t) / 2
+      # Ensuring 0 <= conflict_metric <= 1
+      conflict_metric = conflict_metric * 2 / math.sqrt(len(sigma_d_a))
+
+      # The lower the conflict metric, the higher the incentive weight value
+      self.OptAppWeights[app] = 1.0 - conflict_metric
+      print('Cooperation Weight--app: ' + app + ', weight: ' + str(self.OptAppWeights[app]), flush=True)
+
+
   def ConflictIdentification(self, app_name, timestamp, set_points):
     # Determine if there is a new conflict
     for point in set_points:
@@ -780,13 +857,17 @@ class DeconflictionPipeline(GridAPPSD):
         print('WORKFLOW-04 special case skipping device dispatch for meas message with active cooperation initiated for the same timestamp: ' + str(timestamp), flush=True)
 
       else:
-        # final condition fixes a special case where we've already ended the
-        # last phase of cooperation but then more meas messages arrive and we
-        # don't want to immediately do further dispatches
+        # checking for coopTimestamp!=timestamp fixes a special case where we've
+        # already ended the last phase of cooperation but then more meas
+        # messages arrive and we don't want to immediately do further dispatches
         print('WORKFLOW-05 must conclude running cooperation phase with meas message arriving--coopTimestamp: ' + str(self.coopTimestamp), flush=True)
 
         # we were cooperating when a measurement message arrived so need to
         # conclude that cooperation before processing the new message
+
+        # update incentive weights
+        self.CooperationWeightsComputation(self.ConflictMatrix,
+                                           self.TargetResolutionVector)
 
         # OPTIMIZATION stage deconfliction
         print('WORKFLOW-06 applying OPTIMIZATION stage deconfliction for previous cooperation', flush=True)
@@ -888,15 +969,15 @@ class DeconflictionPipeline(GridAPPSD):
 
       # start with a "target" resolution vector using the optimization code
       # that computes a weighted centroid per device
-      targetResolutionVector = self.OptimizationDeconflict(app_name, timestamp,
-                                                           self.ConflictMatrix)
+      self.TargetResolutionVector = self.OptimizationDeconflict(app_name,
+                                                 timestamp, self.ConflictMatrix)
 
       # publish this target resolution vector to the cooperation topic for
       # competing apps that support cooperation to respond to
       self.coopCounter += 1
       self.coopIdentifier = 'COOP-' + str(self.coopCounter)
       coopMessage = {'cooperationIdentifier': self.coopIdentifier,
-                     'targetResolutionVector': targetResolutionVector}
+                     'targetResolutionVector': self.TargetResolutionVector}
       self.gapps.send(self.coop_topic, json.dumps(coopMessage))
       print('WORKFLOW-17 kicked off new cooperation phase--updated coopIdentifier: ' + self.coopIdentifier, flush=True)
 
@@ -928,15 +1009,13 @@ class DeconflictionPipeline(GridAPPSD):
 
       # start with a "target" resolution vector using the optimization code
       # that computes a weighted centroid per device
-
-      # TODO: add running app weights logic to incentivize apps to cooperate
-      targetResolutionVector = self.OptimizationDeconflict(app_name, timestamp,
-                                                           self.ConflictMatrix)
+      newTargetResolutionVector = self.OptimizationDeconflict(app_name,
+                                                 timestamp, self.ConflictMatrix)
 
       # publish this target resolution vector to the cooperation topic for
       # competing apps that support cooperation to respond to
       coopMessage = {'cooperationIdentifier': self.coopIdentifier,
-                     'targetResolutionVector': targetResolutionVector}
+                     'targetResolutionVector': newTargetResolutionVector}
       self.gapps.send(self.coop_topic, json.dumps(coopMessage))
       print('WORKFLOW-22 finished processing setpoints message--timestamp: ' + str(timestamp) + ', app: ' + app_name + ', meas_msg_flag: ' + str(meas_msg_flag) + ', coop_id: ' + str(coop_id), flush=True)
       return
@@ -947,10 +1026,16 @@ class DeconflictionPipeline(GridAPPSD):
     # OPTIMIZATION stage deconfliction
     if perConflictDelta < 0.0:
       print('WORKFLOW-24 applying OPTIMIZATION stage deconfliction to previous conflict matrix due to increased conflict metric', flush=True)
+      # update incentive weights
+      self.CooperationWeightsComputation(previousConflictMatrix,
+                                         self.TargetResolutionVector)
       newResolutionVector = self.OptimizationDeconflict(app_name, timestamp,
                                                         previousConflictMatrix)
     else:
       print('WORKFLOW-25 applying OPTIMIZATION stage deconfliction', flush=True)
+      # update incentive weights
+      self.CooperationWeightsComputation(self.ConflictMatrix,
+                                         self.TargetResolutionVector)
       newResolutionVector = self.OptimizationDeconflict(app_name, timestamp,
                                                         self.ConflictMatrix)
 
@@ -1061,6 +1146,7 @@ class DeconflictionPipeline(GridAPPSD):
 
     self.ConflictMatrix = {}
     self.ResolutionVector = {}
+    self.TargetResolutionVector = {}
 
     # initialize conflict metric
     self.conflictMetric = 0.0
