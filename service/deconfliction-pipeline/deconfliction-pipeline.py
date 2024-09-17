@@ -189,8 +189,8 @@ class DeconflictionPipeline(GridAPPSD):
     return conflict_metric
 
 
-  def CooperationWeightsComputation(self, timestamp, ConflictMatrix,
-                                    TargetResolutionVector):
+  def CooperationWeightsUpdate(self, timestamp, ConflictMatrix,
+                               TargetResolutionVector):
     sigma_d_t = {}
     app_list = []
     minWeight = 1.0
@@ -264,7 +264,7 @@ class DeconflictionPipeline(GridAPPSD):
 
       # The lower the conflict metric, the higher the incentive weight value
       self.OptAppWeights[app] = 1.0 - conflict_metric
-      print('Cooperation Weight updated--timestamp: ' + str(timestamp) + ', app: ' + app + ', initial weight: ' + str(self.OptAppWeights[app]), flush=True)
+      #print('Cooperation weight updated--timestamp: ' + str(timestamp) + ', app: ' + app + ', initial weight: ' + str(self.OptAppWeights[app]), flush=True)
 
       # compute lowest weight over all apps to make adjustments later
       # block comment out from here to end of function to bypass adjustments
@@ -274,7 +274,7 @@ class DeconflictionPipeline(GridAPPSD):
     weightLoss = 0.75 * minWeight # boost the incentive
     for app in app_list:
       self.OptAppWeights[app] -= weightLoss
-      print('Cooperation Weight updated--timestamp: ' + str(timestamp) + ', app: ' + app + ', adjusted weight: ' + str(self.OptAppWeights[app]), flush=True)
+      print('Cooperation weight updated--timestamp: ' + str(timestamp) + ', app: ' + app + ', adjusted weight: ' + str(self.OptAppWeights[app]), flush=True)
 
 
   def CooperationWeightsClear(self, timestamp, ConflictMatrix):
@@ -292,7 +292,7 @@ class DeconflictionPipeline(GridAPPSD):
       # remove weight by calling pop because that works even if the app isn't
       # in the dictionary
       self.OptAppWeights.pop(app, None)
-      print('Cooperation Weight cleared--timestamp: ' + str(timestamp) + ', app: ' + app, flush=True)
+      print('Cooperation weight cleared--timestamp: ' + str(timestamp) + ', app: ' + app, flush=True)
 
 
   def ConflictIdentification(self, app_name, timestamp, set_points):
@@ -1037,8 +1037,8 @@ class DeconflictionPipeline(GridAPPSD):
       print('WORKFLOW-21 NO thresholds met--initiating further cooperation', flush=True)
 
       # update incentive weights for every cooperation iteration
-      self.CooperationWeightsComputation(timestamp, self.ConflictMatrix,
-                                         self.TargetResolutionVector)
+      self.CooperationWeightsUpdate(timestamp, self.ConflictMatrix,
+                                    self.TargetResolutionVector)
 
       # start with a "target" resolution vector using the optimization code
       # that computes a weighted centroid per device
@@ -1061,8 +1061,8 @@ class DeconflictionPipeline(GridAPPSD):
       print('WORKFLOW-24 applying OPTIMIZATION stage deconfliction to previous conflict matrix due to increased conflict metric', flush=True)
       # update incentive weights using previous conflict metric before final
       # optimization stage and device dispatch
-      self.CooperationWeightsComputation(timestamp, previousConflictMatrix,
-                                         self.TargetResolutionVector)
+      self.CooperationWeightsUpdate(timestamp, previousConflictMatrix,
+                                    self.TargetResolutionVector)
 
       newResolutionVector = self.OptimizationDeconflict(app_name, timestamp,
                                                         previousConflictMatrix)
@@ -1070,8 +1070,8 @@ class DeconflictionPipeline(GridAPPSD):
       print('WORKFLOW-25 applying OPTIMIZATION stage deconfliction', flush=True)
       # update incentive weights using current conflict metric before final
       # optimization stage and device dispatch
-      self.CooperationWeightsComputation(timestamp, self.ConflictMatrix,
-                                         self.TargetResolutionVector)
+      self.CooperationWeightsUpdate(timestamp, self.ConflictMatrix,
+                                    self.TargetResolutionVector)
 
       newResolutionVector = self.OptimizationDeconflict(app_name, timestamp,
                                                         self.ConflictMatrix)
