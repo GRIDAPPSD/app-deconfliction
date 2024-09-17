@@ -49,7 +49,9 @@
 # UNITED STATES DEPARTMENT OF ENERGY under Contract DE-AC05-76RL01830
 # ------------------------------------------------------------------------------
 """
-Created on March 8, 2023
+Created: March 8, 2023
+FY23 Prototype: August 14, 2023
+FY24 Service: September 17, 2024
 
 @author: Gary Black
 """""
@@ -60,20 +62,13 @@ import argparse
 import json
 import importlib
 import math
-import pprint
-import numpy as np
-import csv
 import copy
 import queue
-
-from time import sleep
-
+import time
 
 from gridappsd import GridAPPSD
 from gridappsd import DifferenceBuilder
 from gridappsd.topics import simulation_output_topic, simulation_log_topic, simulation_input_topic, service_output_topic
-
-from datetime import datetime
 
 # for loading shared modules
 if (os.path.isdir('shared')):
@@ -766,8 +761,8 @@ class DeconflictionPipeline(GridAPPSD):
   def pol2cart(self, mag, angle_deg):
         # Convert degrees to radians. GridAPPS-D spits angle in degrees
         angle_rad =  math.radians(angle_deg)
-        p = mag * np.cos(angle_rad)
-        q = mag * np.sin(angle_rad)
+        p = mag * math.cos(angle_rad)
+        q = mag * math.sin(angle_rad)
         return p, q
 
 
@@ -1239,7 +1234,7 @@ class DeconflictionPipeline(GridAPPSD):
 
     while self.keepLoopingFlag:
       if self.messageQueue.qsize() == 0:
-        sleep(0.1)
+        time.sleep(0.1)
         continue
 
       # GDB 5/20/24: Queue draining for the pipeline can't be done the same
