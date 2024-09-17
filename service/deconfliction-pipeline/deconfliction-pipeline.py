@@ -189,10 +189,11 @@ class DeconflictionPipeline(GridAPPSD):
     return conflict_metric
 
 
-  def CooperationWeightsComputation(self, ConflictMatrix,
+  def CooperationWeightsComputation(self, timestamp, ConflictMatrix,
                                     TargetResolutionVector):
     sigma_d_t = {}
     app_list = []
+    minWeight = 1.0
 
     # find the sigma values for the target resolution vector first because
     # they are needed while iterating over each of the apps later
@@ -263,7 +264,17 @@ class DeconflictionPipeline(GridAPPSD):
 
       # The lower the conflict metric, the higher the incentive weight value
       self.OptAppWeights[app] = 1.0 - conflict_metric
-      print('Cooperation Weight--app: ' + app + ', weight: ' + str(self.OptAppWeights[app]), flush=True)
+      print('Cooperation Weight--timestamp: ' + str(timestamp) + ', app: ' + app + ', initial weight: ' + str(self.OptAppWeights[app]), flush=True)
+
+      # compute lowest weight over all apps to make adjustments later
+      # block comment out from here to end of function to bypass adjustments
+      minWeight = min(minWeight, self.OptAppWeights[app])
+
+    # Adjust weights to give even more inventive for better cooperating apps
+    weightLoss = 0.75 * minWeight # boost the incentive
+    for app in app_list:
+      self.OptAppWeights[app] -= weightLoss
+      print('Cooperation Weight--timestamp: ' + str(timestamp) + ', app: ' + app + ', adjusted weight: ' + str(self.OptAppWeights[app]), flush=True)
 
 
   def ConflictIdentification(self, app_name, timestamp, set_points):
@@ -866,7 +877,7 @@ class DeconflictionPipeline(GridAPPSD):
         # conclude that cooperation before processing the new message
 
         # update incentive weights
-        self.CooperationWeightsComputation(self.ConflictMatrix,
+        self.CooperationWeightsComputation(timestamp, self.ConflictMatrix,
                                            self.TargetResolutionVector)
 
         # OPTIMIZATION stage deconfliction
@@ -1027,14 +1038,14 @@ class DeconflictionPipeline(GridAPPSD):
     if perConflictDelta < 0.0:
       print('WORKFLOW-24 applying OPTIMIZATION stage deconfliction to previous conflict matrix due to increased conflict metric', flush=True)
       # update incentive weights
-      self.CooperationWeightsComputation(previousConflictMatrix,
+      self.CooperationWeightsComputation(timestamp, previousConflictMatrix,
                                          self.TargetResolutionVector)
       newResolutionVector = self.OptimizationDeconflict(app_name, timestamp,
                                                         previousConflictMatrix)
     else:
       print('WORKFLOW-25 applying OPTIMIZATION stage deconfliction', flush=True)
       # update incentive weights
-      self.CooperationWeightsComputation(self.ConflictMatrix,
+      self.CooperationWeightsComputation(timestamp, self.ConflictMatrix,
                                          self.TargetResolutionVector)
       newResolutionVector = self.OptimizationDeconflict(app_name, timestamp,
                                                         self.ConflictMatrix)
