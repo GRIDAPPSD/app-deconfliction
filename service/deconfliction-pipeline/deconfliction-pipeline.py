@@ -264,7 +264,7 @@ class DeconflictionPipeline(GridAPPSD):
 
       # The lower the conflict metric, the higher the incentive weight value
       self.OptAppWeights[app] = 1.0 - conflict_metric
-      print('Cooperation Weight--timestamp: ' + str(timestamp) + ', app: ' + app + ', initial weight: ' + str(self.OptAppWeights[app]), flush=True)
+      print('Cooperation Weight updated--timestamp: ' + str(timestamp) + ', app: ' + app + ', initial weight: ' + str(self.OptAppWeights[app]), flush=True)
 
       # compute lowest weight over all apps to make adjustments later
       # block comment out from here to end of function to bypass adjustments
@@ -274,7 +274,25 @@ class DeconflictionPipeline(GridAPPSD):
     weightLoss = 0.75 * minWeight # boost the incentive
     for app in app_list:
       self.OptAppWeights[app] -= weightLoss
-      print('Cooperation Weight--timestamp: ' + str(timestamp) + ', app: ' + app + ', adjusted weight: ' + str(self.OptAppWeights[app]), flush=True)
+      print('Cooperation Weight updated--timestamp: ' + str(timestamp) + ', app: ' + app + ', adjusted weight: ' + str(self.OptAppWeights[app]), flush=True)
+
+
+  def CooperationWeightsClear(self, timestamp, ConflictMatrix):
+    app_list = []
+
+    for device in ConflictMatrix:
+      for app in ConflictMatrix[device]:
+        # build up a list of apps we need to clear weights for since that's
+        # buried down a level within the conflict matrix
+        if app not in app_list:
+          app_list.append(app)
+
+    # now with a list of apps we can loop over that to clear weights
+    for app in app_list:
+      # remove weight by calling pop because that works even if the app isn't
+      # in the dictionary
+      self.OptAppWeights.pop(app, None)
+      print('Cooperation Weight cleared--timestamp: ' + str(timestamp) + ', app: ' + app, flush=True)
 
 
   def ConflictIdentification(self, app_name, timestamp, set_points):
@@ -876,10 +894,6 @@ class DeconflictionPipeline(GridAPPSD):
         # we were cooperating when a measurement message arrived so need to
         # conclude that cooperation before processing the new message
 
-        # update incentive weights
-        self.CooperationWeightsComputation(timestamp, self.ConflictMatrix,
-                                           self.TargetResolutionVector)
-
         # OPTIMIZATION stage deconfliction
         print('WORKFLOW-06 applying OPTIMIZATION stage deconfliction for previous cooperation', flush=True)
         newResolutionVector = self.OptimizationDeconflict(app_name, timestamp,
@@ -978,8 +992,12 @@ class DeconflictionPipeline(GridAPPSD):
       # compute conflict metric for later comparison during later cooperation
       self.conflictMetric = self.ConflictMetricComputation(timestamp)
 
+      # clear incentive weights before kicking off cooperation phase because
+      # we always start from scratch
+      self.CooperationWeightsClear(timestamp, self.ConflictMatrix)
+
       # start with a "target" resolution vector using the optimization code
-      # that computes a weighted centroid per device
+      # that computes a centroid/target per device
       self.TargetResolutionVector = self.OptimizationDeconflict(app_name,
                                                  timestamp, self.ConflictMatrix)
 
@@ -1018,6 +1036,10 @@ class DeconflictionPipeline(GridAPPSD):
       # initiate further cooperation
       print('WORKFLOW-21 NO thresholds met--initiating further cooperation', flush=True)
 
+      # update incentive weights for every cooperation iteration
+      self.CooperationWeightsComputation(timestamp, self.ConflictMatrix,
+                                         self.TargetResolutionVector)
+
       # start with a "target" resolution vector using the optimization code
       # that computes a weighted centroid per device
       newTargetResolutionVector = self.OptimizationDeconflict(app_name,
@@ -1037,16 +1059,20 @@ class DeconflictionPipeline(GridAPPSD):
     # OPTIMIZATION stage deconfliction
     if perConflictDelta < 0.0:
       print('WORKFLOW-24 applying OPTIMIZATION stage deconfliction to previous conflict matrix due to increased conflict metric', flush=True)
-      # update incentive weights
+      # update incentive weights using previous conflict metric before final
+      # optimization stage and device dispatch
       self.CooperationWeightsComputation(timestamp, previousConflictMatrix,
                                          self.TargetResolutionVector)
+
       newResolutionVector = self.OptimizationDeconflict(app_name, timestamp,
                                                         previousConflictMatrix)
     else:
       print('WORKFLOW-25 applying OPTIMIZATION stage deconfliction', flush=True)
-      # update incentive weights
+      # update incentive weights using current conflict metric before final
+      # optimization stage and device dispatch
       self.CooperationWeightsComputation(timestamp, self.ConflictMatrix,
                                          self.TargetResolutionVector)
+
       newResolutionVector = self.OptimizationDeconflict(app_name, timestamp,
                                                         self.ConflictMatrix)
 
