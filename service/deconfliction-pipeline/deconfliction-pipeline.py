@@ -894,10 +894,11 @@ class DeconflictionPipeline(GridAPPSD):
       if measid in measurements:
         self.Batteries[devid]['SoC'] = measurements[measid]['value']/100.0
         MethodUtil.BatterySoC[devid] = self.Batteries[devid]['SoC']
-        print('ProcessSimulationMessage--timestamp ' +
-              str(message['timestamp']) + ', device: ' +
-              self.Batteries[devid]['name'] +
-              ', updated SoC: ' + str(self.Batteries[devid]['SoC']))
+        # comment this out and output it below with P_batt_inv to save space
+        #print('ProcessSimulationMessage--timestamp ' +
+        #      str(message['timestamp']) + ', device: ' +
+        #      self.Batteries[devid]['name'] +
+        #      ', SoC: ' + str(self.Batteries[devid]['SoC']))
 
       measid = self.Batteries[devid]['P_batt_measid']
       if measid in measurements:
@@ -931,8 +932,9 @@ class DeconflictionPipeline(GridAPPSD):
         MethodUtil.BatteryP_batt_inv[devid] = meas_P_batt_inv
         print('ProcessSimulationMessage--timestamp ' +
               str(message['timestamp']) + ', device: ' +
-              self.Batteries[devid]['name'] + ', updated P_batt_inv: ' +
-              str(self.Batteries[devid]['P_batt_inv']))
+              self.Batteries[devid]['name'] + ', P_batt_inv: ' +
+              str(self.Batteries[devid]['P_batt_inv']) + ', SoC: ' +
+              str(self.Batteries[devid]['SoC']))
 
 
     for devid in self.Regulators:
@@ -947,7 +949,7 @@ class DeconflictionPipeline(GridAPPSD):
           MethodUtil.RegulatorPos[devid] = self.Regulators[devid]['step']
           print('ProcessSimulationMessage--timestamp ' +
                 str(message['timestamp']) + ', device: ' +
-                self.Regulators[devid]['name'] + ', updated tap position: ' +
+                self.Regulators[devid]['name'] + ', tap position: ' +
                 str(self.Regulators[devid]['step']))
 
           # append the timestamp, step to the running history
@@ -997,7 +999,7 @@ class DeconflictionPipeline(GridAPPSD):
   def ProcessSetpointsMessage(self, message, app_name, meas_msg_flag, coop_id):
     timestamp = message['timestamp']
 
-    print('ProcessSetpointsMessage--start processing, timestamp: ' +
+    print('\nProcessSetpointsMessage--start processing, timestamp: ' +
           str(timestamp) + ', app: ' + app_name + ', meas_msg_flag: ' +
           str(meas_msg_flag) + ', coop_id: ' + str(coop_id))
 
@@ -1303,7 +1305,7 @@ class DeconflictionPipeline(GridAPPSD):
     MethodUtil.sparql_mgr = SPARQLManager(gapps, feeder_mrid, simulation_id)
 
     self.Batteries = AppUtil.getBatteries(MethodUtil.sparql_mgr)
-    print('Intialialization--starting Batteries: ' + str(self.Batteries))
+    #print('Intialialization--starting Batteries: ' + str(self.Batteries))
 
     # dictionary of lists for the rolling time interval rules stage
     # deconfliction limiting the number of changes from charging to discharging
@@ -1315,8 +1317,7 @@ class DeconflictionPipeline(GridAPPSD):
       self.BatteryHistory[devid] = []
 
     self.Regulators = AppUtil.getRegulators(MethodUtil.sparql_mgr)
-
-    print('Initialization--starting Regulators: ' + str(self.Regulators))
+    #print('Initialization--starting Regulators: ' + str(self.Regulators))
 
     # dictionary of lists for the rolling time interval rules stage
     # deconfliction limiting the total number of steps changed for transformer
