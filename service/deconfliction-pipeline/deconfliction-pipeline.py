@@ -60,7 +60,6 @@ import sys
 import os
 import argparse
 import json
-import importlib
 import math
 import copy
 import queue
@@ -71,7 +70,11 @@ from gridappsd import DifferenceBuilder
 from gridappsd.topics import simulation_output_topic, simulation_log_topic
 from gridappsd.topics import simulation_input_topic, service_output_topic
 
-# for loading shared modules
+# magic so all print statements flush without having to add flush=True
+import functools
+print = functools.partial(print, flush=True)
+
+# for loading the shared modules just below
 if (os.path.isdir('shared')):
   sys.path.append('./shared')
 elif (os.path.isdir('../shared')):
@@ -83,10 +86,7 @@ else:
 
 from AppUtil import AppUtil
 import MethodUtil
-
-# magic so all print statements flush without having to add flush=True
-import functools
-print = functools.partial(print, flush=True)
+from sparql import SPARQLManager
 
 
 class DeconflictionPipeline(GridAPPSD):
@@ -111,7 +111,7 @@ class DeconflictionPipeline(GridAPPSD):
 
       self.ConflictMatrix[device][app_name] = (timestamp, value)
 
-    print('ConflictMatrix: ' + str(self.ConflictMatrix))
+    print('SetpointProcessor--ConflictMatrix: ' + str(self.ConflictMatrix))
 
     if self.testDeviceName:
       devid = MethodUtil.NameToDevice[self.testDeviceName]
@@ -133,8 +133,8 @@ class DeconflictionPipeline(GridAPPSD):
 
     # GDB 5/21/24: Don't crash with an empty ConflictMatrix
     if n_devices == 0:
-      print('Conflict Metric: Undefined (no conflicts), timestamp: ' +
-            str(timestamp))
+      print('ConflictMetricComputation--conflict metric undefined ' +
+            '(no conflicts), timestamp: ' + str(timestamp))
       return 0.0
 
     for device in self.ConflictMatrix:
@@ -183,8 +183,8 @@ class DeconflictionPipeline(GridAPPSD):
     conflict_metric = sum(dist_centroid) / n_apps
     # Ensuring 0 <= conflict_metric <= 1
     conflict_metric = conflict_metric * 2 / math.sqrt(n_devices)
-    print('Conflict Metric: ' + str(conflict_metric) + ', timestamp: ' +
-          str(timestamp))
+    print('ConflictMetricComputation--conflict metric: ' +
+          str(conflict_metric) + ', timestamp: ' + str(timestamp))
 
     return conflict_metric
 
@@ -264,7 +264,7 @@ class DeconflictionPipeline(GridAPPSD):
 
       # The lower the conflict metric, the higher the incentive weight value
       self.OptAppWeights[app] = 1.0 - conflict_metric
-      #print('Cooperation weight updated--timestamp: ' + str(timestamp) +
+      #print('CooperationWeightsUpdate--timestamp: ' + str(timestamp) +
       #   ', app: ' + app + ', initial weight: ' + str(self.OptAppWeights[app]))
 
       # compute lowest weight over all apps to make adjustments later
@@ -275,7 +275,7 @@ class DeconflictionPipeline(GridAPPSD):
     weightLoss = 0.75 * minWeight # boost the incentive
     for app in app_list:
       self.OptAppWeights[app] -= weightLoss
-      print('Cooperation weight updated--timestamp: ' + str(timestamp) +
+      print('CooperationWeightsUpdate--timestamp: ' + str(timestamp) +
             ', app: ' + app + ', adj. weight: ' + str(self.OptAppWeights[app]))
 
 
@@ -294,7 +294,7 @@ class DeconflictionPipeline(GridAPPSD):
       # remove weight by calling pop because that works even if the app isn't
       # in the dictionary
       self.OptAppWeights.pop(app, None)
-      print('Cooperation weight cleared--timestamp: ' + str(timestamp) +
+      print('CooperationWeightsClear--timestamp: ' + str(timestamp) +
             ', app: ' + app)
 
 
@@ -323,8 +323,9 @@ class DeconflictionPipeline(GridAPPSD):
     for devid in self.Batteries:
       histList = self.BatteryHistory[devid]
       if printAllFlag:
-        print('RulesForBatteriesConflict BatteryHistory for ' +
-              MethodUtil.DeviceToName[devid] + ': ' + str(histList))
+        print('RulesForBatteriesConflict--device: ' +
+              MethodUtil.DeviceToName[devid] + ', BatteryHistory: ' +
+              str(histList))
 
       # iterate backwards through histList counting switches
       rollingSwitchCount = 0
@@ -336,7 +337,8 @@ class DeconflictionPipeline(GridAPPSD):
         rollingSwitchCount += 1
 
       if printAllFlag:
-        print('RulesForBatteriesConflict for ' + MethodUtil.DeviceToName[devid]+
+        print('RulesForBatteriesConflict--device: ' +
+              MethodUtil.DeviceToName[devid] +
               ', rolling charge/discharge switches: ' + str(rollingSwitchCount)+
               ', vs. allowed: ' + str(rollingSwitchesAllowed))
 
@@ -356,7 +358,8 @@ class DeconflictionPipeline(GridAPPSD):
                          (chargeSoCMax*self.Batteries[devid]['ratedE']) / \
                          (self.Batteries[devid]['eff_c']*self.deltaT)
       if printAllFlag:
-        print('RulesForBatteriesConflict for ' + MethodUtil.DeviceToName[devid]+
+        print('RulesForBatteriesConflict--device: ' +
+              MethodUtil.DeviceToName[devid] +
               ', max charge SoC contribution: ' + str(chargeSoCMax) +
               ', max charge P_batt: ' +
               str(self.Batteries[devid]['P_batt_charge_max']))
@@ -366,7 +369,8 @@ class DeconflictionPipeline(GridAPPSD):
                            (dischargeSoCMax*self.Batteries[devid]['ratedE']) / \
                            (1/self.Batteries[devid]['eff_d']*self.deltaT)
       if printAllFlag:
-        print('RulesForBatteriesConflict for ' + MethodUtil.DeviceToName[devid]+
+        print('RulesForBatteriesConflict--device: ' +
+              MethodUtil.DeviceToName[devid] +
               ', max discharge SoC contribution: ' + str(dischargeSoCMax) +
               ', max discharge P_batt: ' +
               str(self.Batteries[devid]['P_batt_discharge_max']))
@@ -380,8 +384,8 @@ class DeconflictionPipeline(GridAPPSD):
           # check vs. battery rated power
           if abs(self.ConflictMatrix[device][app][1]) > \
              self.Batteries[device]['prated']:
-            print('RulesForBatteriesConflict for ' + name + ' for app ' + app +
-                  '--P_batt setpoint exceeds battery rated power: ' +
+            print('RulesForBatteriesConflict--device: ' + name + ', app: ' +
+                  app + ', P_batt setpoint exceeds battery rated power: ' +
                   str(self.ConflictMatrix[device][app][1]))
             if self.ConflictMatrix[device][app][1] > 0:
               self.ConflictMatrix[device][app] = \
@@ -391,33 +395,33 @@ class DeconflictionPipeline(GridAPPSD):
               self.ConflictMatrix[device][app] = \
                                          (self.ConflictMatrix[device][app][0],
                                           -self.Batteries[device]['prated'])
-            print('RulesForBatteriesConflict for ' + name + ' for app ' + app +
-                  '--P_batt setpoint reset to battery rated power: ' +
+            print('RulesForBatteriesConflict--device: ' + name + ', app: ' +
+                  app + ', P_batt setpoint reset to battery rated power: ' +
                   str(self.ConflictMatrix[device][app][1]))
 
           # check vs. battery SoC limits
           if self.ConflictMatrix[device][app][1] > \
              self.Batteries[device]['P_batt_charge_max']:
-            print('RulesForBatteriesConflict for ' + name + ' for app ' + app +
-                  '--P_batt setpoint above max charge P_batt: ' +
+            print('RulesForBatteriesConflict--device: ' + name + ', app: ' +
+                  app + ', P_batt setpoint above max charge P_batt: ' +
                   str(self.ConflictMatrix[device][app][1]))
             self.ConflictMatrix[device][app] = \
                                (self.ConflictMatrix[device][app][0],
                                 self.Batteries[device]['P_batt_charge_max'])
-            print('RulesForBatteriesConflict for ' + name + ' for app ' + app +
-                  '--P_batt setpoint reset to max charge P_batt: ' +
+            print('RulesForBatteriesConflict--device: ' + name + ', app: ' +
+                  app + ', P_batt setpoint reset to max charge P_batt: ' +
                   str(self.ConflictMatrix[device][app][1]))
 
           elif self.ConflictMatrix[device][app][1] < \
              self.Batteries[device]['P_batt_discharge_max']:
-            print('RulesForBatteriesConflict for ' + name + ' for app ' + app +
-                  '--P_batt setpoint below max discharge P_batt: ' +
+            print('RulesForBatteriesConflict--device: ' + name + ', app ' +
+                  app + ', P_batt setpoint below max discharge P_batt: ' +
                   str(self.ConflictMatrix[device][app][1]))
             self.ConflictMatrix[device][app]= \
                                (self.ConflictMatrix[device][app][0],
                                 self.Batteries[device]['P_batt_discharge_max'])
-            print('RulesForBatteriesConflict for ' + name + ' for app ' + app +
-                  '--P_batt setpoint reset to max discharge P_batt: ' +
+            print('RulesForBatteriesConflict--device: ' + name + ', app: ' +
+                  app + ', P_batt setpoint reset to max discharge P_batt: ' +
                   str(self.ConflictMatrix[device][app][1]))
 
           # check for switching between charge/discharge if over limit
@@ -425,16 +429,17 @@ class DeconflictionPipeline(GridAPPSD):
             prev_P_batt_inv = self.Batteries[device]['switch_P_batt_inv']
             if prev_P_batt_inv>0 and self.ConflictMatrix[device][app][1]<0 or \
                prev_P_batt_inv<0 and self.ConflictMatrix[device][app][1]>0:
-              print('RulesForBatteriesConflict for ' + name + ' for app ' + app+
-               '--P_batt setpoint attempted to change charge/discharge state: '+
-               str(self.ConflictMatrix[device][app][1]))
+              print('RulesForBatteriesConflict--device: ' + name + ', app: ' +
+                     app + ', P_batt setpoint attempted to change ' +
+                     'charge/discharge state: ' +
+                     str(self.ConflictMatrix[device][app][1]))
               # this is pretty harsh to force the setpoint request back to zero
               # to avoid a possible change in charge/discharge state, but no
               # other choice when the rule is applied before other stages
               self.ConflictMatrix[device][app]= \
                                   (self.ConflictMatrix[device][app][0], 0.0)
-              print('RulesForBatteriesConflict for ' + name + ' for app ' + app+
-                    '--P_batt setpoint reset to zero')
+              print('RulesForBatteriesConflict--device: ' + name + ', app: ' +
+                    app + ', P_batt setpoint reset to zero')
 
 
   def RulesForBatteriesResolution(self, newResolutionVector,printAllFlag=False):
@@ -447,8 +452,9 @@ class DeconflictionPipeline(GridAPPSD):
     for devid in self.Batteries:
       histList = self.BatteryHistory[devid]
       if printAllFlag:
-        print('RulesForBatteriesResolution BatteryHistory for ' +
-              MethodUtil.DeviceToName[devid] + ': ' + str(histList))
+        print('RulesForBatteriesResolution--device: ' +
+              MethodUtil.DeviceToName[devid] + ', BatteryHistory: ' +
+              str(histList))
 
       # iterate backwards through histList counting switches
       rollingSwitchCount = 0
@@ -460,7 +466,7 @@ class DeconflictionPipeline(GridAPPSD):
         rollingSwitchCount += 1
 
       if printAllFlag:
-        print('RulesForBatteriesResolution for ' +
+        print('RulesForBatteriesResolution--device: ' +
               MethodUtil.DeviceToName[devid] +
               ', rolling charge/discharge switches: ' + str(rollingSwitchCount)+
               ', vs. allowed: ' + str(rollingSwitchesAllowed))
@@ -481,7 +487,7 @@ class DeconflictionPipeline(GridAPPSD):
                             (chargeSoCMax*self.Batteries[devid]['ratedE']) / \
                             (self.Batteries[devid]['eff_c']*self.deltaT)
       if printAllFlag:
-        print('RulesForBatteriesResolution for ' +
+        print('RulesForBatteriesResolution--device: ' +
             MethodUtil.DeviceToName[devid] + ', max charge SoC contribution: ' +
             str(chargeSoCMax) + ', max charge P_batt: ' +
             str(self.Batteries[devid]['P_batt_charge_max']))
@@ -491,7 +497,7 @@ class DeconflictionPipeline(GridAPPSD):
                            (dischargeSoCMax*self.Batteries[devid]['ratedE']) / \
                            (1/self.Batteries[devid]['eff_d']*self.deltaT)
       if printAllFlag:
-        print('RulesForBatteriesResolution for ' +
+        print('RulesForBatteriesResolution--device: ' +
          MethodUtil.DeviceToName[devid] + ', max discharge SoC contribution: ' +
          str(dischargeSoCMax) + ', max discharge P_batt: ' +
          str(self.Batteries[devid]['P_batt_discharge_max']))
@@ -504,8 +510,8 @@ class DeconflictionPipeline(GridAPPSD):
         # check vs. battery rated power
         if abs(newResolutionVector[device][1]) > \
            self.Batteries[device]['prated']:
-          print('RulesForBatteriesResolution for ' + name +
-                '--P_batt setpoint exceeds battery rated power: ' +
+          print('RulesForBatteriesResolution--device: ' + name +
+                ', P_batt setpoint exceeds battery rated power: ' +
                 str(newResolutionVector[device][1]))
           if newResolutionVector[device][1] > 0:
             newResolutionVector[device] = (newResolutionVector[device][0],
@@ -513,33 +519,33 @@ class DeconflictionPipeline(GridAPPSD):
           else:
             newResolutionVector[device] = (newResolutionVector[device][0],
                                            -self.Batteries[device]['prated'])
-          print('RulesForBatteriesResolution for ' + name +
-                '--P_batt setpoint reset to battery rated power: ' +
+          print('RulesForBatteriesResolution--device: ' + name +
+                ', P_batt setpoint reset to battery rated power: ' +
                 str(newResolutionVector[device][1]))
 
         # check vs. battery SoC limits
         if newResolutionVector[device][1] > \
            self.Batteries[device]['P_batt_charge_max']:
-          print('RulesForBatteriesResolution for ' + name +
-                '--P_batt setpoint above max charge P_batt: ' +
+          print('RulesForBatteriesResolution--device: ' + name +
+                ', P_batt setpoint above max charge P_batt: ' +
                 str(newResolutionVector[device][1]))
           newResolutionVector[device] = \
                              (newResolutionVector[device][0],
                               self.Batteries[device]['P_batt_charge_max'])
-          print('RulesForBatteriesResolution for ' + name +
-                '--P_batt setpoint reset to max charge P_batt: ' +
+          print('RulesForBatteriesResolution--device: ' + name +
+                ', P_batt setpoint reset to max charge P_batt: ' +
                 str(newResolutionVector[device][1]))
 
         elif newResolutionVector[device][1] < \
            self.Batteries[device]['P_batt_discharge_max']:
-          print('RulesForBatteriesResolution for ' + name +
-                '--P_batt setpoint below max discharge P_batt: ' +
+          print('RulesForBatteriesResolution--device: ' + name +
+                ', P_batt setpoint below max discharge P_batt: ' +
                 str(newResolutionVector[device][1]))
           newResolutionVector[device] = \
                              (newResolutionVector[device][0],
                               self.Batteries[device]['P_batt_discharge_max'])
-          print('RulesForBatteriesResolution for ' + name +
-                '--P_batt setpoint reset to max discharge P_batt: ' +
+          print('RulesForBatteriesResolution--device: ' + name +
+                ', P_batt setpoint reset to max discharge P_batt: ' +
                 str(newResolutionVector[device][1]))
 
         # check for switching between charge/discharge if over limit
@@ -547,16 +553,16 @@ class DeconflictionPipeline(GridAPPSD):
           prev_P_batt_inv = self.Batteries[device]['switch_P_batt_inv']
           if prev_P_batt_inv>0 and newResolutionVector[device][1]<0 or \
              prev_P_batt_inv<0 and newResolutionVector[device][1]>0:
-            print('RulesForBatteriesResolution for ' + name +
-              '--P_batt setpoint attempted to change charge/discharge state: ' +
+            print('RulesForBatteriesResolution--device: ' + name +
+              ', P_batt setpoint attempted to change charge/discharge state: ' +
               str(newResolutionVector[device][1]))
             # this is pretty harsh to force the setpoint request back to zero
             # to avoid a possible change in charge/discharge state, but no
             # other choice when the rule is applied before other stages
             newResolutionVector[device] = \
                                 (newResolutionVector[device][0], 0.0)
-            print('RulesForBatteriesResolution for ' + name +
-                  '--P_batt setpoint reset to zero')
+            print('RulesForBatteriesResolution--device: ' + name +
+                  ', P_batt setpoint reset to zero')
 
 
   def RulesForRegulatorsConflict(self, printAllFlag=False):
@@ -570,8 +576,9 @@ class DeconflictionPipeline(GridAPPSD):
     for devid in self.Regulators:
       histList = self.RegulatorHistory[devid]
       if printAllFlag:
-        print('RulesForRegulatorsConflict RegulatorHistory for ' +
-              MethodUtil.DeviceToName[devid] + ': ' + str(histList))
+        print('RulesForRegulatorsConflict--device: ' +
+              MethodUtil.DeviceToName[devid] +
+              ', RegulatorHistory: ' + str(histList))
 
       # iterate backwards through histList counting steps changed
       rollingStepCount = 0
@@ -586,7 +593,7 @@ class DeconflictionPipeline(GridAPPSD):
 
       rollingTapBudget = max(0, rollingStepsAllowed - rollingStepCount)
       if printAllFlag:
-        print('RulesForRegulatorsConflict for ' +
+        print('RulesForRegulatorsConflict--device: ' +
               MethodUtil.DeviceToName[devid] +
               ', rolling steps: ' + str(rollingStepCount) +
               ', vs. allowed: ' + str(rollingStepsAllowed) +
@@ -597,7 +604,8 @@ class DeconflictionPipeline(GridAPPSD):
       #tapBudget = min(timestampTapBudget, rollingTapBudget)
       tapBudget = rollingTapBudget
 
-      #print('RulesForRegulatorsConflict for ' + MethodUtil.DeviceToName[devid]+
+      #print('RulesForRegulatorsConflict--device: ' +
+      #      MethodUtil.DeviceToName[devid] +
       #      ', per-timestamp tap budget: ' + str(timestampTapBudget) +
       #      ', rolling tap budget: ' + str(rollingTapBudget) +
       #      ', final tap budget: ' + str(tapBudget))
@@ -608,7 +616,7 @@ class DeconflictionPipeline(GridAPPSD):
       self.Regulators[devid]['minStep'] = max(self.Regulators[devid]['step'] - \
                                               tapBudget, -16)
       if printAllFlag:
-        print('RulesForRegulatorsConflict for ' +
+        print('RulesForRegulatorsConflict--device: ' +
               MethodUtil.DeviceToName[devid] +
               ', min tap pos: ' + str(self.Regulators[devid]['minStep']) +
               ', max tap pos: ' + str(self.Regulators[devid]['maxStep']))
@@ -621,27 +629,27 @@ class DeconflictionPipeline(GridAPPSD):
         for app in self.ConflictMatrix[device]:
           if self.ConflictMatrix[device][app][1] > \
              self.Regulators[device]['maxStep']:
-            print('RulesForRegulatorsConflict for ' + name + ' for app ' + app +
-                  '--tap pos setpoint above max allowable asset health pos: ' +
-                  str(self.ConflictMatrix[device][app][1]))
+            print('RulesForRegulatorsConflict--device: ' + name + ', app: ' +
+                  app + '--tap pos setpoint above max allowable asset ' +
+                  'health pos: ' + str(self.ConflictMatrix[device][app][1]))
             self.ConflictMatrix[device][app] = \
                                (self.ConflictMatrix[device][app][0],
                                 self.Regulators[device]['maxStep'])
-            print('RulesForRegulatorsConflict for ' + name + ' for app ' + app +
-                '--tap pos setpoint reset to max allowable asset health pos: ' +
-                str(self.ConflictMatrix[device][app][1]))
+            print('RulesForRegulatorsConflict--device: ' + name + ', app: ' +
+                  app + '--tap pos setpoint reset to max allowable asset ' +
+                  'health pos: ' + str(self.ConflictMatrix[device][app][1]))
 
           elif self.ConflictMatrix[device][app][1] < \
                self.Regulators[device]['minStep']:
-            print('RulesForRegulatorsConflict for ' + name + ' for app ' + app +
-                  '--tap pos setpoint below min allowable asset health pos: ' +
-                  str(self.ConflictMatrix[device][app][1]))
+            print('RulesForRegulatorsConflict--device: ' + name + ', app :' +
+                  app + '--tap pos setpoint below min allowable asset ' +
+                  'health pos: ' + str(self.ConflictMatrix[device][app][1]))
             self.ConflictMatrix[device][app] = \
                                (self.ConflictMatrix[device][app][0],
                                 self.Regulators[device]['minStep'])
-            print('RulesForRegulatorsConflict for ' + name + ' for app ' + app +
-                '--tap pos setpoint reset to min allowable asset health pos: ' +
-                str(self.ConflictMatrix[device][app][1]))
+            print('RulesForRegulatorsConflict--device: ' + name + ', app: ' +
+                  app + '--tap pos setpoint reset to min allowable asset ' +
+                  'health pos: ' + str(self.ConflictMatrix[device][app][1]))
 
 
   def RulesForRegulatorsResolution(self,newResolutionVector,printAllFlag=False):
@@ -655,8 +663,9 @@ class DeconflictionPipeline(GridAPPSD):
     for devid in self.Regulators:
       histList = self.RegulatorHistory[devid]
       if printAllFlag:
-        print('RulesForRegulatorsResolution RegulatorHistory for ' +
-              MethodUtil.DeviceToName[devid] + ': ' + str(histList))
+        print('RulesForRegulatorsResolution--device: ' +
+              MethodUtil.DeviceToName[devid] +
+              ', RegulatorHistory: ' + str(histList))
 
       # iterate backwards through histList counting steps changed
       rollingStepCount = 0
@@ -671,7 +680,7 @@ class DeconflictionPipeline(GridAPPSD):
 
       rollingTapBudget = max(0, rollingStepsAllowed - rollingStepCount)
       if printAllFlag:
-        print('RulesForRegulatorsResolution for ' +
+        print('RulesForRegulatorsResolution--device: ' +
               MethodUtil.DeviceToName[devid] +
               ', rolling steps: ' + str(rollingStepCount) +
               ', vs. allowed: ' + str(rollingStepsAllowed) +
@@ -682,7 +691,7 @@ class DeconflictionPipeline(GridAPPSD):
       #tapBudget = min(timestampTapBudget, rollingTapBudget)
       tapBudget = rollingTapBudget
 
-      #print('RulesForRegulatorsResolution for ' +
+      #print('RulesForRegulatorsResolution--device: ' +
       #      MethodUtil.DeviceToName[devid] +
       #      ', per-timestamp tap budget: ' + str(timestampTapBudget) +
       #      ', rolling tap budget: ' + str(rollingTapBudget) +
@@ -694,7 +703,7 @@ class DeconflictionPipeline(GridAPPSD):
       self.Regulators[devid]['minStep'] = max(self.Regulators[devid]['step'] - \
                                               tapBudget, -16)
       if printAllFlag:
-        print('RulesForRegulatorsResolution for ' +
+        print('RulesForRegulatorsResolution--device: ' +
               MethodUtil.DeviceToName[devid] +
               ', min tap pos: ' + str(self.Regulators[devid]['minStep']) +
               ', max tap pos: ' + str(self.Regulators[devid]['maxStep']))
@@ -706,26 +715,26 @@ class DeconflictionPipeline(GridAPPSD):
       if name.startswith('RatioTapChanger.'):
         if newResolutionVector[device][1] > \
            self.Regulators[device]['maxStep']:
-          print('RulesForRegulatorsResolution for ' + name +
-                '--tap pos setpoint above max allowable asset health pos: ' +
+          print('RulesForRegulatorsResolution--device: ' + name +
+                ', tap pos setpoint above max allowable asset health pos: ' +
                 str(newResolutionVector[device][1]))
           newResolutionVector[device] = \
                              (newResolutionVector[device][0],
                               self.Regulators[device]['maxStep'])
-          print('RulesForRegulatorsResolution for ' + name +
-                '--tap pos setpoint reset to max allowable asset health pos: ' +
+          print('RulesForRegulatorsResolution--device: ' + name +
+                ', tap pos setpoint reset to max allowable asset health pos: ' +
                 str(newResolutionVector[device][1]))
 
         elif newResolutionVector[device][1] < \
              self.Regulators[device]['minStep']:
-          print('RulesForRegulatorsResolution for ' + name +
-                '--tap pos setpoint below min allowable asset health pos: ' +
+          print('RulesForRegulatorsResolution--device: ' + name +
+                ', tap pos setpoint below min allowable asset health pos: ' +
                 str(newResolutionVector[device][1]))
           newResolutionVector[device] = \
                              (newResolutionVector[device][0],
                               self.Regulators[device]['minStep'])
-          print('RulesForRegulatorsResolution for ' + name +
-                '--tap pos setpoint reset to min allowable asset health pos: ' +
+          print('RulesForRegulatorsResolution--device: ' + name +
+                ', tap pos setpoint reset to min allowable asset health pos: ' +
                 str(newResolutionVector[device][1]))
 
 
@@ -786,20 +795,20 @@ class DeconflictionPipeline(GridAPPSD):
           elif value[1]<0 and self.Batteries[devid]['P_batt_inv']>0:
             switchStr = ' (SWITCH from charging to discharging)'
 
-          print('~~> Dispatching to battery device: ' + devid + ', name: ' +
-                name + ', timestamp: ' + str(timestamp) + ', new value: ' +
+          print('DeviceDispatcher--battery device: ' + name +
+                ', timestamp: ' + str(timestamp) + ', new value: ' +
                 str(value[1]) + ', old value: ' +
                 str(self.Batteries[devid]['P_batt_inv']) + switchStr)
 
           if self.testDeviceName and name==self.testDeviceName:
-            print('~TEST: Dispatching to battery device: ' + devid +
-                  ', name: ' + name + ', timestamp: ' + str(timestamp) +
+            print('~TEST: Dispatching to battery id: ' + devid +
+                  ', device: ' + name + ', timestamp: ' + str(timestamp) +
                   ', new value: ' + str(value[1]) + ', old value: ' +
                   str(self.Batteries[devid]['P_batt_inv']) + switchStr)
 
         else:
-          print('~~> NO DISPATCH needed to battery device: ' + devid +
-                ', name: ' + name + ', timestamp: ' + str(timestamp) +
+          print('DeviceDispatcher--NO DISPATCH needed, battery device: ' +
+                name + ', timestamp: ' + str(timestamp) +
                 ', same value: ' + str(value[1]))
 
       elif name.startswith('RatioTapChanger.'):
@@ -811,20 +820,20 @@ class DeconflictionPipeline(GridAPPSD):
                    'TapChanger.step', value[1], self.Regulators[devid]['step'])
           diffCount += 1
 
-          print('==> Dispatching to regulator device: ' + devid + ', name: ' +
-                name + ', timestamp: ' + str(timestamp) + ', new value: ' +
+          print('DeviceDispatcher--regulator device: ' + name +
+                ', timestamp: ' + str(timestamp) + ', new value: ' +
                 str(value[1]) + ', old value: ' +
                 str(self.Regulators[devid]['step']))
 
           if self.testDeviceName and name==self.testDeviceName:
-              print('~TEST: Dispatching to regulator device: ' + devid +
-                    ', name: ' + name + ', timestamp: ' + str(timetstamp) +
+              print('~TEST: Dispatching to regulator id: ' + devid +
+                    ', device: ' + name + ', timestamp: ' + str(timetstamp) +
                     ', new value: ' + str(value[1]) + ', old value: ' +
                     str(self.Regulators[devid]['step']))
 
         else:
-          print('~~> NO DISPATCH needed to regulator device: ' + devid +
-                ', name: ' + name + ', timestamp: ' + str(timestamp) +
+          print('DeviceDispatcher--NO DISPATCH needed, regulator device: ' +
+                name + ', timestamp: ' + str(timestamp) +
                 ', same value: ' + str(value[1]))
 
     # it's also possible a device from the last resolution does not appear
@@ -833,27 +842,28 @@ class DeconflictionPipeline(GridAPPSD):
     if len(self.ResolutionVector) > len(newResolutionVector):
       for devid in self.ResolutionVector:
         if devid not in newResolutionVector:
-          print('==> Device deleted from resolution: ' + devid +
-                ', name: ' + MethodUtil.DeviceToName[devid])
+          print('DeviceDispatcher--deleted from resolution, device: ' +
+                MethodUtil.DeviceToName[devid])
 
           if self.testDeviceName and \
              MethodUtil.DeviceToName[devid]==self.testDeviceName:
-            print('~TEST: Device deleted from resolution: ' + devid +
-                  ', name: ' + MethodUtil.DeviceToName[devid])
+            print('~TEST: deleted from resolution, id: ' + devid +
+                  ', device: ' + MethodUtil.DeviceToName[devid])
 
     if diffCount > 0:
       dispatch_message = self.difference_builder.get_message()
-      print('~~> Sending device dispatch DifferenceBuilder message!')
-      #print('~~> Sending device dispatch DifferenceBuilder message: ' +
-      #      json.dumps(dispatch_message))
+      print('DeviceDispatcher--sending device dispatch ' +
+            'DifferenceBuilder message!')
+      #print('DeviceDispatcher--sending device dispatch ' +
+      #      'DifferenceBuilder message: ' + json.dumps(dispatch_message))
       self.gapps.send(self.publish_topic, json.dumps(dispatch_message))
       self.difference_builder.clear()
 
     return diffCount
 
 
-  def on_sim_message(self, header, message):
-    #print('Received simulation message: ' + str(message))
+  def OnSimMessage(self, header, message):
+    #print('OnSimMessage--received message: ' + str(message))
     if not self.keepLoopingFlag:
       return
 
@@ -861,7 +871,8 @@ class DeconflictionPipeline(GridAPPSD):
       status = message['processStatus']
       if status=='COMPLETE' or status=='CLOSED':
         self.keepLoopingFlag = False
-        print('Simulation ' + status + ' message received')
+        print('OnSimMessage--simulation status message received, status: ' +
+              status)
 
     else:
       self.messageQueue.put((None, None, None, message['message']))
@@ -875,7 +886,7 @@ class DeconflictionPipeline(GridAPPSD):
         return p, q
 
 
-  def processSimulationMessage(self, message):
+  def ProcessSimulationMessage(self, message):
     # update SoC values in MethodUtil for same reason
     measurements = message['measurements']
     for devid in self.Batteries:
@@ -883,9 +894,10 @@ class DeconflictionPipeline(GridAPPSD):
       if measid in measurements:
         self.Batteries[devid]['SoC'] = measurements[measid]['value']/100.0
         MethodUtil.BatterySoC[devid] = self.Batteries[devid]['SoC']
-        print('Timestamp ' + str(message['timestamp']) +
-              ' updated SoC for ' + self.Batteries[devid]['name'] +
-              ': ' + str(self.Batteries[devid]['SoC']))
+        print('ProcessSimulationMessage--timestamp ' +
+              str(message['timestamp']) + ', device: ' +
+              self.Batteries[devid]['name'] +
+              ', updated SoC: ' + str(self.Batteries[devid]['SoC']))
 
       measid = self.Batteries[devid]['P_batt_measid']
       if measid in measurements:
@@ -901,8 +913,9 @@ class DeconflictionPipeline(GridAPPSD):
 
         if 'P_batt_inv' in self.Batteries[devid] and \
             meas_P_batt_inv!=self.Batteries[devid]['P_batt_inv']:
-          print('BatteryHistory candidate for ' + self.Batteries[devid]['name']+
-                ': old: ' + str(self.Batteries[devid]['P_batt_inv']) +
+          print('ProcessSimulationMessage--BatteryHistory candidate, device: ' +
+                self.Batteries[devid]['name'] +
+                ', old: ' + str(self.Batteries[devid]['P_batt_inv']) +
                 ', new: ' + str(meas_P_batt_inv))
           # check if this is a change from charging to discharging or vice versa
           if (meas_P_batt_inv>0 and self.Batteries[devid]['P_batt_inv']<0) or \
@@ -910,14 +923,16 @@ class DeconflictionPipeline(GridAPPSD):
             # append the timestamp, P_batt_inv to the running history
             self.BatteryHistory[devid].append((message['timestamp'],
                                                meas_P_batt_inv))
-            print('BatteryHistory match for ' + self.Batteries[devid]['name'] +
-                  ': ' + str(self.BatteryHistory[devid]))
+            print('ProcessSimulationMessage--BatteryHistory match, device: ' +
+                  self.Batteries[devid]['name'] +
+                  ', history: ' + str(self.BatteryHistory[devid]))
 
         self.Batteries[devid]['P_batt_inv'] = meas_P_batt_inv
         MethodUtil.BatteryP_batt_inv[devid] = meas_P_batt_inv
-        print('Timestamp ' + str(message['timestamp']) +
-              ' updated P_batt_inv for ' + self.Batteries[devid]['name'] +
-              ': ' + str(self.Batteries[devid]['P_batt_inv']))
+        print('ProcessSimulationMessage--timestamp ' +
+              str(message['timestamp']) + ', device: ' +
+              self.Batteries[devid]['name'] + ', updated P_batt_inv: ' +
+              str(self.Batteries[devid]['P_batt_inv']))
 
 
     for devid in self.Regulators:
@@ -930,9 +945,10 @@ class DeconflictionPipeline(GridAPPSD):
         if measurements[measid]['value'] != self.Regulators[devid]['step']:
           self.Regulators[devid]['step'] = measurements[measid]['value']
           MethodUtil.RegulatorPos[devid] = self.Regulators[devid]['step']
-          print('Timestamp ' + str(message['timestamp']) +
-                ' updated tap position for ' + self.Regulators[devid]['name'] +
-                ': ' + str(self.Regulators[devid]['step']))
+          print('ProcessSimulationMessage--timestamp ' +
+                str(message['timestamp']) + ', device: ' +
+                self.Regulators[devid]['name'] + ', updated tap position: ' +
+                str(self.Regulators[devid]['step']))
 
           # append the timestamp, step to the running history
           self.RegulatorHistory[devid].append((message['timestamp'],
@@ -953,7 +969,7 @@ class DeconflictionPipeline(GridAPPSD):
               ', pos: ' + str(self.Regulators[devid]['step']))
 
 
-  def get_app_name(self, header):
+  def getAppName(self, header):
     app_info = header['destination']
 
     if app_info.startswith('/topic/goss.gridappsd.simulation.'):
@@ -963,70 +979,67 @@ class DeconflictionPipeline(GridAPPSD):
     return app_info.split(':')[0]
 
 
-  def on_meas_setpoints_message(self, header, message):
-    #print('### Received meas set-points message: ' + str(message))
-    #print('### Received meas set-points header: ' + str(header))
-
-    app_name = self.get_app_name(header)
-
+  def OnMeasSetpointsMessage(self, header, message):
+    #print('OnMeasSetpointsMessage--received message: ' + str(message))
+    #print('OnMeasSetpointsMessage--received header: ' + str(header))
+    app_name = self.getAppName(header)
     self.messageQueue.put((app_name, True, None, message['input']['message']))
 
 
-  def on_coop_setpoints_message(self, header, message):
-    #print('### Received coop set-points message: ' + str(message))
-    #print('### Received coop set-points header: ' + str(header))
-
-    app_name = self.get_app_name(header)
-
+  def OnCoopSetpointsMessage(self, header, message):
+    #print('OnCoopSetpointsMessage--received message: ' + str(message))
+    #print('OnCoopSetpointsMessage--received header: ' + str(header))
+    app_name = self.getAppName(header)
     self.messageQueue.put((app_name, False, message['cooperationIdentifier'],
                            message['input']['message']))
 
 
-  def processSetpointsMessage(self, message, app_name, meas_msg_flag, coop_id):
+  def ProcessSetpointsMessage(self, message, app_name, meas_msg_flag, coop_id):
     timestamp = message['timestamp']
 
-    print('WORKFLOW-01 start processing setpoints message--timestamp: ' +
+    print('ProcessSetpointsMessage--start processing, timestamp: ' +
           str(timestamp) + ', app: ' + app_name + ', meas_msg_flag: ' +
           str(meas_msg_flag) + ', coop_id: ' + str(coop_id))
 
     if not meas_msg_flag and coop_id!=self.coopIdentifier:
       # discard any cooperation messages when not currently cooperating or
       # when from a previous cooperation phase
-      print('WORKFLOW-02 immediate discard of nonmatching coop message' +
-            '--message coop_id: ' + coop_id + ', current coop_id: ' +
+      print('ProcessSetpointsMessage--immediate discard of nonmatching coop ' +
+            'message, coop_id: ' + coop_id + ', current coop_id: ' +
             str(self.coopIdentifier))
-      print('WORKFLOW-03 finished processing setpoints message--timestamp: ' +
-            str(timestamp) + ', app: ' + app_name +
-            ', meas_msg_flag: ' + str(meas_msg_flag))
+      print('ProcessSetpointsMessage--finished processing, timestamp: ' +
+            str(timestamp) + ', app: ' + app_name + ', meas_msg_flag: ' +
+            str(meas_msg_flag) + ', coop_id: ' + str(coop_id))
       return
 
     if meas_msg_flag and self.coopIdentifier!=None:
       if self.coopTimestamp == timestamp:
-        print('WORKFLOW-04 special case skipping device dispatch for meas ' +
-          'message with active cooperation initiated for the same timestamp: ' +
-          str(timestamp))
+        print('ProcessSetpointsMessage--special case skipping device ' +
+              'dispatch for meas message with running cooperation initiated ' +
+              'for same timestamp: ' + str(timestamp))
 
       else:
         # checking for coopTimestamp!=timestamp fixes a special case where we've
         # already ended the last phase of cooperation but then more meas
         # messages arrive and we don't want to immediately do further dispatches
-        print('WORKFLOW-05 must conclude running cooperation phase with meas ' +
-              'message arriving--coopTimestamp: ' + str(self.coopTimestamp))
+        print('ProcessSetpointsMessage--conclude running cooperation phase ' +
+              'with new meas message received, coopTimestamp: ' +
+              str(self.coopTimestamp))
 
         # we were cooperating when a measurement message arrived so need to
         # conclude that cooperation before processing the new message
 
         # OPTIMIZATION stage deconfliction
-        print('WORKFLOW-06 applying OPTIMIZATION stage deconfliction for ' +
-              'previous cooperation')
+        print('ProcessSetpointsMessage--applying OPTIMIZATION stage ' +
+              'deconfliction for running cooperation')
         newResolutionVector = self.OptimizationDeconflict(app_name, timestamp,
                                                           self.ConflictMatrix)
 
         # Step 4: Setpoint Validator -- not implemented yet
         # Step 5: Device Dispatcher
         dispatchCount = self.DeviceDispatcher(timestamp, newResolutionVector)
-        print('WORKFLOW-07 device dispatch for previous cooperation--' +
-              '# dispatched: ' + str(dispatchCount))
+        print('ProcessSetpointsMessage--invoked device dispatch for ' +
+              'running cooperation, # devices dispatched: ' +str(dispatchCount))
 
         # update the current resolution to the new resolution to be ready for
         # the next dispatch
@@ -1042,25 +1055,25 @@ class DeconflictionPipeline(GridAPPSD):
     set_points = message['forward_differences']
 
     # Step 1: Setpoint Processor
-    print('WORKFLOW-08 setpoint processor')
+    print('ProcessSetpointsMessage--invoking setpoint processor')
     self.SetpointProcessor(app_name, timestamp, set_points)
 
     # Step 2: Feasibility Maintainer -- not implemented yet
 
     # RULES & HEURISTICS stage deconfliction done first
     if self.rulesStageFirstFlag:
-      print('WORKFLOW-09 applying initial RULES & HEURISTICS stage ' +
-            'deconfliction')
+      print('ProcessSetpointsMessage--applying initial RULES & HEURISTICS ' +
+            'stage deconfliction')
       self.RulesForBatteriesConflict(False)
       self.RulesForRegulatorsConflict(False)
 
     # Step 3: Deconflictor
     # Step 3.1: Conflict Identification
-    print('WORKFLOW-10 conflict identification')
+    print('ProcessSetpointsMessage--invoking conflict identification')
     conflictFlag = self.ConflictIdentification(app_name, timestamp, set_points)
 
     if not conflictFlag:
-      print('WORKFLOW-11 NO conflict found in conflict matrix')
+      print('ProcessSetpointsMessage--NO conflict found in conflict matrix')
       # zero conflict metric since by definition there is none
       self.conflictMetric = 0.0
 
@@ -1073,12 +1086,13 @@ class DeconflictionPipeline(GridAPPSD):
 
       # RULES & HEURISTICS stage deconfliction done last
       if not self.rulesStageFirstFlag:
-        print('WORKFLOW-12 applying final RULES & HEURISTICS stage ' +
-              'deconfliction')
+        print('ProcessSetpointsMessage--applying final RULES & HEURISTICS ' +
+              'stage deconfliction')
         self.RulesForBatteriesResolution(newResolutionVector, False)
         self.RulesForRegulatorsResolution(newResolutionVector, False)
 
-      print('ResolutionVector (no conflict): ' + str(newResolutionVector))
+      print('ProcessSetpointsMessage--ResolutionVector (no conflict): ' +
+            str(newResolutionVector))
 
       if self.testDeviceName:
         devid = MethodUtil.NameToDevice[self.testDeviceName]
@@ -1095,7 +1109,8 @@ class DeconflictionPipeline(GridAPPSD):
       # Step 4: Setpoint Validator -- not implemented yet
       # Step 5: Device Dispatcher
       dispatchCount = self.DeviceDispatcher(timestamp, newResolutionVector)
-      print('WORKFLOW-13 device dispatch--# dispatched: ' + str(dispatchCount))
+      print('ProcessSetpointsMessage--invoked device dispatch, # devices ' +
+            'dispatched: ' +str(dispatchCount))
 
       # update the current resolution to the new resolution to be ready for the
       # next dispatch
@@ -1105,17 +1120,17 @@ class DeconflictionPipeline(GridAPPSD):
       # zero the cooperation timestamp to indicate no active cooperation
       self.coopTimestamp = 0
       self.coopIdentifier = None
-      print('WORKFLOW-14 finished processing setpoints message--timestamp: ' +
+      print('ProcessSetpointsMessage--finished processing, timestamp: ' +
             str(timestamp) + ', app: ' + app_name + ', meas_msg_flag: ' +
             str(meas_msg_flag) + ', coop_id: ' + str(coop_id))
       return
 
     # conflict identified logic
-    print('WORKFLOW-15 YES conflict found in conflict matrix')
+    print('ProcessSetpointsMessage--YES conflict found in conflict matrix')
     if meas_msg_flag:
       # COOPERATION stage deconfliction
-      print('WORKFLOW-16 applying COOPERATION stage deconfliction for meas ' +
-            'message')
+      print('ProcessSetpointsMessage--applying COOPERATION stage ' +
+            'deconfliction for meas message')
 
       # compute conflict metric for later comparison during later cooperation
       self.conflictMetric = self.ConflictMetricComputation(timestamp)
@@ -1136,18 +1151,18 @@ class DeconflictionPipeline(GridAPPSD):
       coopMessage = {'cooperationIdentifier': self.coopIdentifier,
                      'targetResolutionVector': self.TargetResolutionVector}
       self.gapps.send(self.coop_topic, json.dumps(coopMessage))
-      print('WORKFLOW-17 kicked off new cooperation phase--' +
+      print('ProcessSetpointsMessage--kicked off new cooperation phase, ' +
             'updated coopIdentifier: ' + self.coopIdentifier)
 
       # set the cooperation timestamp to indicate when cooperation was initiated
       self.coopTimestamp = timestamp
-      print('WORKFLOW-18 finished processing setpoints message--timestamp: ' +
+      print('ProcessSetpointsMessage--finished processing, timestamp: ' +
             str(timestamp) + ', app: ' + app_name + ', meas_msg_flag: ' +
             str(meas_msg_flag) + ', coop_id: ' + str(coop_id))
       return
 
     # coop message with conflict to get here
-    print('WORKFLOW-19 conflict found with with coop message--' +
+    print('ProcessSetpointsMessage--conflict found with with coop message, ' +
           'checking thresholds')
 
     # save the previous conflict metric for comparison
@@ -1160,7 +1175,7 @@ class DeconflictionPipeline(GridAPPSD):
       perConflictDelta = 100.0 * (prevConflictMetric - self.conflictMetric)/ \
                                  prevConflictMetric
 
-    print('WORKFLOW-20 thresholds--previous conflict metric: ' +
+    print('ProcessSetpointsMessage--thresholds, previous conflict metric: ' +
           str(prevConflictMetric) + ', new conflict metric: ' +
           str(self.conflictMetric) + ', % change: ' + str(perConflictDelta))
 
@@ -1169,7 +1184,8 @@ class DeconflictionPipeline(GridAPPSD):
     # check for NOT meeting thresholds
     if self.conflictMetric>0.2 and perConflictDelta>2.0:
       # initiate further cooperation
-      print('WORKFLOW-21 NO thresholds met--initiating further cooperation')
+      print('ProcessSetpointsMessage--NO thresholds met, initiating ' +
+            'further cooperation')
 
       # update incentive weights for every cooperation iteration
       self.CooperationWeightsUpdate(timestamp, self.ConflictMatrix,
@@ -1185,18 +1201,20 @@ class DeconflictionPipeline(GridAPPSD):
       coopMessage = {'cooperationIdentifier': self.coopIdentifier,
                      'targetResolutionVector': newTargetResolutionVector}
       self.gapps.send(self.coop_topic, json.dumps(coopMessage))
-      print('WORKFLOW-22 finished processing setpoints message--timestamp: ' +
+      print('ProcessSetpointsMessage--finished processing, timestamp: ' +
             str(timestamp) + ', app: ' + app_name + ', meas_msg_flag: ' +
             str(meas_msg_flag) + ', coop_id: ' + str(coop_id))
       return
 
     # thresholds for ending cooperation have been met to get here
-    print('WORKFLOW-23 YES thresholds met--concluding cooperation')
+    print('ProcessSetpointsMessage---YES thresholds met, concluding ' +
+          'cooperation')
 
     # OPTIMIZATION stage deconfliction
     if perConflictDelta < 0.0:
-      print('WORKFLOW-24 applying OPTIMIZATION stage deconfliction to ' +
-            'previous conflict matrix due to increased conflict metric')
+      print('ProcessSetpointsMessage--applying OPTIMIZATION stage ' +
+            'deconfliction to previous conflict matrix due to increased ' +
+            'conflict metric')
       # update incentive weights using previous conflict metric before final
       # optimization stage and device dispatch
       self.CooperationWeightsUpdate(timestamp, previousConflictMatrix,
@@ -1205,7 +1223,8 @@ class DeconflictionPipeline(GridAPPSD):
       newResolutionVector = self.OptimizationDeconflict(app_name, timestamp,
                                                         previousConflictMatrix)
     else:
-      print('WORKFLOW-25 applying OPTIMIZATION stage deconfliction')
+      print('ProcessSetpointsMessage--applying OPTIMIZATION stage ' +
+            'deconfliction')
       # update incentive weights using current conflict metric before final
       # optimization stage and device dispatch
       self.CooperationWeightsUpdate(timestamp, self.ConflictMatrix,
@@ -1216,14 +1235,16 @@ class DeconflictionPipeline(GridAPPSD):
 
     # RULES & HEURISTICS stage deconfliction done last
     if not self.rulesStageFirstFlag:
-      print('WORKFLOW-26 applying final RULES & HEURISTICS stage deconfliction')
+      print('ProcessSetpointsMessage--applying final RULES & HEURISTICS ' +
+            'stage deconfliction')
       self.RulesForBatteriesResolution(newResolutionVector, False)
       self.RulesForRegulatorsResolution(newResolutionVector, False)
 
     # Step 4: Setpoint Validator -- not implemented yet
     # Step 5: Device Dispatcher
     dispatchCount = self.DeviceDispatcher(timestamp, newResolutionVector)
-    print('WORKFLOW-27 device dispatch--# dispatched: ' + str(dispatchCount))
+    print('ProcessSetpointsMessage--invoked device dispatch, # devices ' +
+          'dispatched: ' +str(dispatchCount))
 
     # update the current resolution to the new resolution to be ready for the
     # next dispatch
@@ -1233,7 +1254,7 @@ class DeconflictionPipeline(GridAPPSD):
     # zero the cooperation timestamp to indicate no active cooperation
     self.coopTimestamp = 0
     self.coopIdentifier = None
-    print('WORKFLOW-28 finished processing setpoints message--timestamp: ' +
+    print('ProcessSetpointsMessage--finished processing, timestamp: ' +
           str(timestamp) + ', app: ' + app_name + ', meas_msg_flag: ' +
           str(meas_msg_flag) + ', coop_id: ' + str(coop_id))
 
@@ -1252,16 +1273,16 @@ class DeconflictionPipeline(GridAPPSD):
     for app in competing_apps:
       # subscribe to competing app set-points messages
       set_id[app+':meas'] = gapps.subscribe(service_output_topic(app + ':meas',
-                                 simulation_id), self.on_meas_setpoints_message)
+                                 simulation_id), self.OnMeasSetpointsMessage)
       set_id[app+':coop'] = gapps.subscribe(service_output_topic(app + ':coop',
-                                 simulation_id), self.on_coop_setpoints_message)
+                                 simulation_id), self.OnCoopSetpointsMessage)
 
     # subscribe to simulation log and output messages
     self.keepLoopingFlag = True
     out_id = gapps.subscribe(simulation_output_topic(simulation_id),
-                             self.on_sim_message)
+                             self.OnSimMessage)
     log_id = gapps.subscribe(simulation_log_topic(simulation_id),
-                             self.on_sim_message)
+                             self.OnSimMessage)
 
     # simulation topic for sending DifferenceBuilder messages
     self.publish_topic = simulation_input_topic(simulation_id)
@@ -1279,12 +1300,10 @@ class DeconflictionPipeline(GridAPPSD):
     self.testDeviceName = None
     #self.testDeviceName = 'BatteryUnit.battery1'
 
-    SPARQLManager = getattr(importlib.import_module('sparql'),
-                            'SPARQLManager')
     MethodUtil.sparql_mgr = SPARQLManager(gapps, feeder_mrid, simulation_id)
 
     self.Batteries = AppUtil.getBatteries(MethodUtil.sparql_mgr)
-    print('Starting Batteries: ' + str(self.Batteries))
+    print('Intialialization--starting Batteries: ' + str(self.Batteries))
 
     # dictionary of lists for the rolling time interval rules stage
     # deconfliction limiting the number of changes from charging to discharging
@@ -1297,7 +1316,7 @@ class DeconflictionPipeline(GridAPPSD):
 
     self.Regulators = AppUtil.getRegulators(MethodUtil.sparql_mgr)
 
-    print('Starting Regulators: ' + str(self.Regulators))
+    print('Initialization--starting Regulators: ' + str(self.Regulators))
 
     # dictionary of lists for the rolling time interval rules stage
     # deconfliction limiting the total number of steps changed for transformer
@@ -1354,9 +1373,8 @@ class DeconflictionPipeline(GridAPPSD):
         with open(appname) as f:
           data = f.read()
           self.OptAppWeights = json.loads(data)
-          print('\nApplying optimization deconfliction stage application ' +
-                'weighting factors in ' + appname + ': ' +
-                str(self.OptAppWeights))
+          print('\nInitalization--applying optimization application weighting '+
+                'factors in ' + appname + ': ' + str(self.OptAppWeights))
       except:
         appflag = True
 
@@ -1366,19 +1384,20 @@ class DeconflictionPipeline(GridAPPSD):
         with open(devname) as f:
           data = f.read()
           self.OptDevWeights = json.loads(data)
-          print('\nApplying optimization deconfliction stage device ' +
-             'weighting factors in ' + devname + ': ' + str(self.OptDevWeights))
+          print('\nInitialization--applying optimization device weighting ' +
+                'factors in ' + devname + ': ' + str(self.OptDevWeights))
       except:
         devflag = True
 
       if appflag and devflag:
-        print('\n*** WARNING: Could not find or load either optimization ' +
-              'weighting factors files ' + appname + ' or ' + devname)
+        print('\nInitialization *** WARNING: Could not find or load either ' +
+              'optimization weighting factors files ' + appname +
+              ' or ' + devname)
 
     else:
-      print('\nNo optimization deconfliction stage weighting factors applied')
+      print('\nInitialization--no optimization weighting factors applied')
 
-    print('\nInitialized deconfliction pipeline, waiting for messages...\n')
+    print('\nInitialization--finished, waiting for messages...\n')
 
     while self.keepLoopingFlag:
       if self.messageQueue.qsize() == 0:
@@ -1401,10 +1420,10 @@ class DeconflictionPipeline(GridAPPSD):
           break
 
       if app_name == None:
-        self.processSimulationMessage(message)
+        self.ProcessSimulationMessage(message)
 
       else:
-        self.processSetpointsMessage(message, app_name, meas_msg_flag, coop_id)
+        self.ProcessSetpointsMessage(message, app_name, meas_msg_flag, coop_id)
 
     for id in set_id:
       gapps.unsubscribe(set_id[id])
@@ -1421,7 +1440,7 @@ class DeconflictionPipeline(GridAPPSD):
 
 
 def _main():
-  print('Starting deconfliction pipeline code...')
+  print('Starting deconfliction pipeline...')
 
   parser = argparse.ArgumentParser()
   parser.add_argument("simulation_id", help="Simulation ID")
