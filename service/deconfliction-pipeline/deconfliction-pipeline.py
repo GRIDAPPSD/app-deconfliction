@@ -91,7 +91,8 @@ from sparql import SPARQLManager
 
 class DeconflictionPipeline(GridAPPSD):
 
-  def SetpointProcessor(self, app_name, timestamp, set_points):
+  def SetpointProcessor(self, app_name, timestamp, set_points,
+                        printAllFlag=False):
     # Update ConflictMatrix with newly provided set-points
 
     # delete any existing matches for app_name so there are no stragglers
@@ -111,7 +112,8 @@ class DeconflictionPipeline(GridAPPSD):
 
       self.ConflictMatrix[device][app_name] = (timestamp, value)
 
-    print('SetpointProcessor--ConflictMatrix: ' + str(self.ConflictMatrix))
+    if printAllFlag:
+      print('SetpointProcessor--ConflictMatrix: ' + str(self.ConflictMatrix))
 
     if self.testDeviceName:
       devid = MethodUtil.NameToDevice[self.testDeviceName]
@@ -774,7 +776,7 @@ class DeconflictionPipeline(GridAPPSD):
     return ResolutionVector
 
 
-  def DeviceDispatcher(self, timestamp, newResolutionVector):
+  def DeviceDispatcher(self, timestamp, newResolutionVector,printAllFlag=False):
     # Iterate over resolution and send set-points to devices that have
     # different values
     diffCount = 0
@@ -795,10 +797,11 @@ class DeconflictionPipeline(GridAPPSD):
           elif value[1]<0 and self.Batteries[devid]['P_batt_inv']>0:
             switchStr = ' (SWITCH from charging to discharging)'
 
-          print('DeviceDispatcher--battery device: ' + name +
-                ', timestamp: ' + str(timestamp) + ', new value: ' +
-                str(value[1]) + ', old value: ' +
-                str(self.Batteries[devid]['P_batt_inv']) + switchStr)
+          if printAllFlag:
+            print('DeviceDispatcher--battery device: ' + name +
+                  ', timestamp: ' + str(timestamp) + ', new value: ' +
+                  str(value[1]) + ', old value: ' +
+                  str(self.Batteries[devid]['P_batt_inv']) + switchStr)
 
           if self.testDeviceName and name==self.testDeviceName:
             print('~TEST: Dispatching to battery id: ' + devid +
@@ -806,7 +809,7 @@ class DeconflictionPipeline(GridAPPSD):
                   ', new value: ' + str(value[1]) + ', old value: ' +
                   str(self.Batteries[devid]['P_batt_inv']) + switchStr)
 
-        else:
+        elif printAllFlag:
           print('DeviceDispatcher--NO DISPATCH needed, battery device: ' +
                 name + ', timestamp: ' + str(timestamp) +
                 ', same value: ' + str(value[1]))
@@ -820,10 +823,11 @@ class DeconflictionPipeline(GridAPPSD):
                    'TapChanger.step', value[1], self.Regulators[devid]['step'])
           diffCount += 1
 
-          print('DeviceDispatcher--regulator device: ' + name +
-                ', timestamp: ' + str(timestamp) + ', new value: ' +
-                str(value[1]) + ', old value: ' +
-                str(self.Regulators[devid]['step']))
+          if printAllFlag:
+            print('DeviceDispatcher--regulator device: ' + name +
+                  ', timestamp: ' + str(timestamp) + ', new value: ' +
+                  str(value[1]) + ', old value: ' +
+                  str(self.Regulators[devid]['step']))
 
           if self.testDeviceName and name==self.testDeviceName:
               print('~TEST: Dispatching to regulator id: ' + devid +
@@ -831,7 +835,7 @@ class DeconflictionPipeline(GridAPPSD):
                     ', new value: ' + str(value[1]) + ', old value: ' +
                     str(self.Regulators[devid]['step']))
 
-        else:
+        elif printAllFlag:
           print('DeviceDispatcher--NO DISPATCH needed, regulator device: ' +
                 name + ', timestamp: ' + str(timestamp) +
                 ', same value: ' + str(value[1]))
@@ -842,8 +846,9 @@ class DeconflictionPipeline(GridAPPSD):
     if len(self.ResolutionVector) > len(newResolutionVector):
       for devid in self.ResolutionVector:
         if devid not in newResolutionVector:
-          print('DeviceDispatcher--deleted from resolution, device: ' +
-                MethodUtil.DeviceToName[devid])
+          if printAllFlag:
+            print('DeviceDispatcher--deleted from resolution, device: ' +
+                  MethodUtil.DeviceToName[devid])
 
           if self.testDeviceName and \
              MethodUtil.DeviceToName[devid]==self.testDeviceName:
@@ -852,10 +857,14 @@ class DeconflictionPipeline(GridAPPSD):
 
     if diffCount > 0:
       dispatch_message = self.difference_builder.get_message()
-      print('DeviceDispatcher--sending device dispatch ' +
-            'DifferenceBuilder message!')
-      #print('DeviceDispatcher--sending device dispatch ' +
-      #      'DifferenceBuilder message: ' + json.dumps(dispatch_message))
+
+      if printAllFlag:
+        print('DeviceDispatcher--sending device dispatch ' +
+              'DifferenceBuilder message: ' + json.dumps(dispatch_message))
+      else:
+        print('DeviceDispatcher--sending device dispatch ' +
+              'DifferenceBuilder message!')
+
       self.gapps.send(self.publish_topic, json.dumps(dispatch_message))
       self.difference_builder.clear()
 
@@ -987,21 +996,26 @@ class DeconflictionPipeline(GridAPPSD):
 
 
   def OnMeasSetpointsMessage(self, header, message):
-    #print('OnMeasSetpointsMessage--received message: ' + str(message))
-    #print('OnMeasSetpointsMessage--received header: ' + str(header))
+    if self.printAllFlag:
+      print('OnMeasSetpointsMessage--received message: ' + str(message))
+      print('OnMeasSetpointsMessage--received header: ' + str(header))
+
     app_name = self.getAppName(header)
     self.messageQueue.put((app_name, True, None, message['input']['message']))
 
 
   def OnCoopSetpointsMessage(self, header, message):
-    #print('OnCoopSetpointsMessage--received message: ' + str(message))
-    #print('OnCoopSetpointsMessage--received header: ' + str(header))
+    if self.printAllFlag:
+      print('OnCoopSetpointsMessage--received message: ' + str(message))
+      print('OnCoopSetpointsMessage--received header: ' + str(header))
+
     app_name = self.getAppName(header)
     self.messageQueue.put((app_name, False, message['cooperationIdentifier'],
                            message['input']['message']))
 
 
-  def ProcessSetpointsMessage(self, message, app_name, meas_msg_flag, coop_id):
+  def ProcessSetpointsMessage(self, message, app_name, meas_msg_flag, coop_id,
+                              printAllFlag):
     timestamp = message['timestamp']
 
     print('\nProcessSetpointsMessage--start processing, timestamp: ' +
@@ -1044,7 +1058,8 @@ class DeconflictionPipeline(GridAPPSD):
 
         # Step 4: Setpoint Validator -- not implemented yet
         # Step 5: Device Dispatcher
-        dispatchCount = self.DeviceDispatcher(timestamp, newResolutionVector)
+        dispatchCount = self.DeviceDispatcher(timestamp, newResolutionVector,
+                                              self.printAllFlag)
         print('ProcessSetpointsMessage--invoked device dispatch for ' +
               'running cooperation, # devices dispatched: ' +str(dispatchCount))
 
@@ -1063,7 +1078,7 @@ class DeconflictionPipeline(GridAPPSD):
 
     # Step 1: Setpoint Processor
     print('ProcessSetpointsMessage--invoking setpoint processor')
-    self.SetpointProcessor(app_name, timestamp, set_points)
+    self.SetpointProcessor(app_name, timestamp, set_points, self.printAllFlag)
 
     # Step 2: Feasibility Maintainer -- not implemented yet
 
@@ -1098,8 +1113,9 @@ class DeconflictionPipeline(GridAPPSD):
         self.RulesForBatteriesResolution(newResolutionVector, self.printAllFlag)
         self.RulesForRegulatorsResolution(newResolutionVector,self.printAllFlag)
 
-      print('ProcessSetpointsMessage--ResolutionVector (no conflict): ' +
-            str(newResolutionVector))
+      if printAllFlag:
+        print('ProcessSetpointsMessage--ResolutionVector (no conflict): ' +
+              str(newResolutionVector))
 
       if self.testDeviceName:
         devid = MethodUtil.NameToDevice[self.testDeviceName]
@@ -1115,7 +1131,8 @@ class DeconflictionPipeline(GridAPPSD):
 
       # Step 4: Setpoint Validator -- not implemented yet
       # Step 5: Device Dispatcher
-      dispatchCount = self.DeviceDispatcher(timestamp, newResolutionVector)
+      dispatchCount = self.DeviceDispatcher(timestamp, newResolutionVector,
+                                            self.printAllFlag)
       print('ProcessSetpointsMessage--invoked device dispatch, # devices ' +
             'dispatched: ' +str(dispatchCount))
 
@@ -1249,7 +1266,8 @@ class DeconflictionPipeline(GridAPPSD):
 
     # Step 4: Setpoint Validator -- not implemented yet
     # Step 5: Device Dispatcher
-    dispatchCount = self.DeviceDispatcher(timestamp, newResolutionVector)
+    dispatchCount = self.DeviceDispatcher(timestamp, newResolutionVector,
+                                          self.printAllFlag)
     print('ProcessSetpointsMessage--invoked device dispatch, # devices ' +
           'dispatched: ' +str(dispatchCount))
 
@@ -1404,7 +1422,8 @@ class DeconflictionPipeline(GridAPPSD):
               ' or ' + devname)
 
     else:
-      print('\nInitialization--no optimization weighting factors applied')
+      print('\nInitialization--no file-based optimization weighting factors ' +
+            'applied')
 
     print('\nInitialization--finished, waiting for messages...\n')
 
@@ -1429,10 +1448,11 @@ class DeconflictionPipeline(GridAPPSD):
           break
 
       if app_name == None:
-        self.ProcessSimulationMessage(message)
+        self.ProcessSimulationMessage(message, self.printAllFlag)
 
       else:
-        self.ProcessSetpointsMessage(message, app_name, meas_msg_flag, coop_id)
+        self.ProcessSetpointsMessage(message, app_name, meas_msg_flag, coop_id,
+                                     self.printAllFlag)
 
     for id in set_id:
       gapps.unsubscribe(set_id[id])
