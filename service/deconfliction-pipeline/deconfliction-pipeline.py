@@ -778,7 +778,8 @@ class DeconflictionPipeline(GridAPPSD):
     return ResolutionVector
 
 
-  def DeviceDispatcher(self, timestamp, newResolutionVector,printAllFlag=False):
+  def DeviceDispatcher(self, timestamp, newResolutionVector,
+                       printAllDispatchFlag=False):
     # Iterate over resolution and send set-points to devices that have
     # different values
     diffCount = 0
@@ -799,7 +800,7 @@ class DeconflictionPipeline(GridAPPSD):
           elif value[1]<0 and self.Batteries[devid]['P_batt_inv']>0:
             switchStr = ' (SWITCH from charging to discharging)'
 
-          if printAllFlag:
+          if printAllDispatchFlag:
             print('DeviceDispatcher--battery device: ' + name +
                   ', timestamp: ' + str(timestamp) + ', new value: ' +
                   str(value[1]) + ', old value: ' +
@@ -811,7 +812,7 @@ class DeconflictionPipeline(GridAPPSD):
                   ', new value: ' + str(value[1]) + ', old value: ' +
                   str(self.Batteries[devid]['P_batt_inv']) + switchStr)
 
-        elif printAllFlag:
+        elif printAllDispatchFlag:
           print('DeviceDispatcher--NO DISPATCH needed, battery device: ' +
                 name + ', timestamp: ' + str(timestamp) +
                 ', same value: ' + str(value[1]))
@@ -825,7 +826,7 @@ class DeconflictionPipeline(GridAPPSD):
                    'TapChanger.step', value[1], self.Regulators[devid]['step'])
           diffCount += 1
 
-          if printAllFlag:
+          if printAllDispatchFlag:
             print('DeviceDispatcher--regulator device: ' + name +
                   ', timestamp: ' + str(timestamp) + ', new value: ' +
                   str(value[1]) + ', old value: ' +
@@ -837,7 +838,7 @@ class DeconflictionPipeline(GridAPPSD):
                     ', new value: ' + str(value[1]) + ', old value: ' +
                     str(self.Regulators[devid]['step']))
 
-        elif printAllFlag:
+        elif printAllDispatchFlag:
           print('DeviceDispatcher--NO DISPATCH needed, regulator device: ' +
                 name + ', timestamp: ' + str(timestamp) +
                 ', same value: ' + str(value[1]))
@@ -848,7 +849,7 @@ class DeconflictionPipeline(GridAPPSD):
     if len(self.ResolutionVector) > len(newResolutionVector):
       for devid in self.ResolutionVector:
         if devid not in newResolutionVector:
-          if printAllFlag:
+          if printAllDispatchFlag:
             print('DeviceDispatcher--deleted from resolution, device: ' +
                   MethodUtil.DeviceToName[devid])
 
@@ -860,7 +861,7 @@ class DeconflictionPipeline(GridAPPSD):
     if diffCount > 0:
       dispatch_message = self.difference_builder.get_message()
 
-      if printAllFlag:
+      if printAllDispatchFlag:
         print('DeviceDispatcher--sending device dispatch ' +
               'DifferenceBuilder message: ' + json.dumps(dispatch_message))
       else:
@@ -1061,7 +1062,7 @@ class DeconflictionPipeline(GridAPPSD):
         # Step 4: Setpoint Validator -- not implemented yet
         # Step 5: Device Dispatcher
         dispatchCount = self.DeviceDispatcher(timestamp, newResolutionVector,
-                                              self.printAllFlag)
+                                              self.printAllDispatchFlag)
         print('ProcessSetpointsMessage--invoked device dispatch for ' +
               'running cooperation, # devices dispatched: ' +str(dispatchCount))
 
@@ -1136,7 +1137,7 @@ class DeconflictionPipeline(GridAPPSD):
       # Step 4: Setpoint Validator -- not implemented yet
       # Step 5: Device Dispatcher
       dispatchCount = self.DeviceDispatcher(timestamp, newResolutionVector,
-                                            self.printAllFlag)
+                                            self.printAllDispatchFlag)
       print('ProcessSetpointsMessage--invoked device dispatch, # devices ' +
             'dispatched: ' +str(dispatchCount))
 
@@ -1273,7 +1274,7 @@ class DeconflictionPipeline(GridAPPSD):
     # Step 4: Setpoint Validator -- not implemented yet
     # Step 5: Device Dispatcher
     dispatchCount = self.DeviceDispatcher(timestamp, newResolutionVector,
-                                          self.printAllFlag)
+                                          self.printAllDispatchFlag)
     print('ProcessSetpointsMessage--invoked device dispatch, # devices ' +
           'dispatched: ' +str(dispatchCount))
 
@@ -1385,6 +1386,7 @@ class DeconflictionPipeline(GridAPPSD):
     # verbose logging control
     self.printAllFlag = False
     self.printAllRulesFlag = False
+    self.printAllDispatchFlag = False
 
     # controls whether rules stage deconfliction is done as the first stage
     # using the ConflictMatrix or deferred until the last stage before device
