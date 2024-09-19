@@ -128,7 +128,7 @@ class DeconflictionPipeline(GridAPPSD):
               self.testDeviceName)
 
 
-  def ConflictMetricComputation(self, timestamp):
+  def ConflictMetricComputation(self, timestamp, printAllMetricsFlag=False):
     centroid = {}
     apps = {}
     n_devices = len(self.ConflictMatrix)
@@ -149,6 +149,11 @@ class DeconflictionPipeline(GridAPPSD):
         if app not in apps:
           apps[app] = {}
         name = MethodUtil.DeviceToName[device]
+
+        if printAllMetricsFlag:
+          print('ConflictMetricComputation--device: ' + name + ', app: ' +
+                app + ', setpoint: ' + str(gamma_d_a))
+
         if name.startswith('BatteryUnit.'):
           # Normalize setpoints using max charge and discharge possible
           sigma_d_a = (gamma_d_a + self.Batteries[device]['prated']) / \
@@ -1163,7 +1168,8 @@ class DeconflictionPipeline(GridAPPSD):
             'deconfliction for meas message')
 
       # compute conflict metric for later comparison during later cooperation
-      self.conflictMetric = self.ConflictMetricComputation(timestamp)
+      self.conflictMetric = self.ConflictMetricComputation(timestamp,
+                                                       self.printAllMetricsFlag)
 
       # clear incentive weights before kicking off cooperation phase because
       # we always start from scratch
@@ -1198,7 +1204,8 @@ class DeconflictionPipeline(GridAPPSD):
     # save the previous conflict metric for comparison
     prevConflictMetric = self.conflictMetric
 
-    self.conflictMetric = self.ConflictMetricComputation(timestamp)
+    self.conflictMetric = self.ConflictMetricComputation(timestamp,
+                                                       self.printAllMetricsFlag)
 
     perConflictDelta = 100.0 # for no previous conflict metric value
     if prevConflictMetric > 0.0:
@@ -1388,6 +1395,7 @@ class DeconflictionPipeline(GridAPPSD):
     self.printAllMessagesFlag = False
     self.printAllRulesFlag = False
     self.printAllDispatchesFlag = False
+    self.printAllMetricsFlag = False
     self.printAllConflictsResolutionsFlag = False
 
     # controls whether rules stage deconfliction is done as the first stage
