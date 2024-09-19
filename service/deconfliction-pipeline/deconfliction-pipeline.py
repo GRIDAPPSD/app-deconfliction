@@ -1182,6 +1182,7 @@ class DeconflictionPipeline(GridAPPSD):
 
       # publish this target resolution vector to the cooperation topic for
       # competing apps that support cooperation to respond to
+      self.coopIter = 0
       self.coopCounter += 1
       self.coopIdentifier = 'COOP-' + str(self.coopCounter)
       coopMessage = {'cooperationIdentifier': self.coopIdentifier,
@@ -1201,6 +1202,8 @@ class DeconflictionPipeline(GridAPPSD):
     print('ProcessSetpointsMessage--conflict found with with coop message, ' +
           'checking thresholds')
 
+    self.coopIter += 1
+
     # save the previous conflict metric for comparison
     prevConflictMetric = self.conflictMetric
 
@@ -1214,7 +1217,8 @@ class DeconflictionPipeline(GridAPPSD):
 
     print('ProcessSetpointsMessage--thresholds, previous conflict metric: ' +
           str(prevConflictMetric) + ', new conflict metric: ' +
-          str(self.conflictMetric) + ', % change: ' + str(perConflictDelta))
+          str(self.conflictMetric) + ', % change: ' + str(perConflictDelta) +
+          ', iteration: ' + str(self.coopIter))
 
     # thresholds for ending cooperation are either a conflict metric value
     # below 0.2 or a % conflict change less than 2%
@@ -1222,7 +1226,7 @@ class DeconflictionPipeline(GridAPPSD):
     if self.conflictMetric>0.2 and perConflictDelta>2.0:
       # initiate further cooperation
       print('ProcessSetpointsMessage--NO thresholds met, initiating ' +
-            'further cooperation')
+            'further cooperation at iteration: ' + str(self.coopIter))
 
       # update incentive weights for every cooperation iteration
       self.CooperationWeightsUpdate(timestamp, self.ConflictMatrix,
@@ -1245,7 +1249,7 @@ class DeconflictionPipeline(GridAPPSD):
 
     # thresholds for ending cooperation have been met to get here
     print('ProcessSetpointsMessage---YES thresholds met, concluding ' +
-          'cooperation')
+          'cooperation at iteration: ' + str(self.coopIter))
 
     # OPTIMIZATION stage deconfliction
     if perConflictDelta < 0.0:
@@ -1387,6 +1391,7 @@ class DeconflictionPipeline(GridAPPSD):
     self.conflictMetric = 0.0
     # initialize combination cooperation timestamp and control flag
     self.coopTimestamp = 0
+    self.coopIter = 0
     # initialize counter used to uniquely identify cooperation messages
     self.coopCounter = 0
     self.coopIdentifier = None
