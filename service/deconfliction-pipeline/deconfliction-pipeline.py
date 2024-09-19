@@ -51,7 +51,7 @@
 """
 Created: March 8, 2023
 FY23 Prototype: August 14, 2023
-FY24 Service: September 17, 2024
+FY24 Service: September 19, 2024
 
 @author: Gary Black
 """""
@@ -886,8 +886,10 @@ class DeconflictionPipeline(GridAPPSD):
         return p, q
 
 
-  def ProcessSimulationMessage(self, message):
-    # update SoC values in MethodUtil for same reason
+  def ProcessSimulationMessage(self, message, printAllFlag=False):
+    if not printAllFlag:
+      print('ProcessSimulationMessage--timestamp: ' + str(message['timestamp']))
+
     measurements = message['measurements']
     for devid in self.Batteries:
       measid = self.Batteries[devid]['SoC_measid']
@@ -895,10 +897,11 @@ class DeconflictionPipeline(GridAPPSD):
         self.Batteries[devid]['SoC'] = measurements[measid]['value']/100.0
         MethodUtil.BatterySoC[devid] = self.Batteries[devid]['SoC']
         # comment this out and output it below with P_batt_inv to save space
-        #print('ProcessSimulationMessage--timestamp ' +
-        #      str(message['timestamp']) + ', device: ' +
-        #      self.Batteries[devid]['name'] +
-        #      ', SoC: ' + str(self.Batteries[devid]['SoC']))
+        #if printAllFlag:
+        #  print('ProcessSimulationMessage--timestamp: ' +
+        #        str(message['timestamp']) + ', device: ' +
+        #        self.Batteries[devid]['name'] +
+        #        ', SoC: ' + str(self.Batteries[devid]['SoC']))
 
       measid = self.Batteries[devid]['P_batt_measid']
       if measid in measurements:
@@ -914,10 +917,11 @@ class DeconflictionPipeline(GridAPPSD):
 
         if 'P_batt_inv' in self.Batteries[devid] and \
             meas_P_batt_inv!=self.Batteries[devid]['P_batt_inv']:
-          print('ProcessSimulationMessage--BatteryHistory candidate, device: ' +
-                self.Batteries[devid]['name'] +
-                ', old: ' + str(self.Batteries[devid]['P_batt_inv']) +
-                ', new: ' + str(meas_P_batt_inv))
+          if printAllFlag:
+            print('ProcessSimulationMessage--BatteryHistory candidate,' +
+                  'device: ' + self.Batteries[devid]['name'] +
+                  ', old: ' + str(self.Batteries[devid]['P_batt_inv']) +
+                  ', new: ' + str(meas_P_batt_inv))
           # check if this is a change from charging to discharging or vice versa
           if (meas_P_batt_inv>0 and self.Batteries[devid]['P_batt_inv']<0) or \
              (meas_P_batt_inv<0 and self.Batteries[devid]['P_batt_inv']>0):
@@ -930,12 +934,12 @@ class DeconflictionPipeline(GridAPPSD):
 
         self.Batteries[devid]['P_batt_inv'] = meas_P_batt_inv
         MethodUtil.BatteryP_batt_inv[devid] = meas_P_batt_inv
-        print('ProcessSimulationMessage--timestamp ' +
-              str(message['timestamp']) + ', device: ' +
-              self.Batteries[devid]['name'] + ', P_batt_inv: ' +
-              str(self.Batteries[devid]['P_batt_inv']) + ', SoC: ' +
-              str(self.Batteries[devid]['SoC']))
-
+        if printAllFlag:
+          print('ProcessSimulationMessage--timestamp: ' +
+                str(message['timestamp']) + ', device: ' +
+                self.Batteries[devid]['name'] + ', P_batt_inv: ' +
+                str(self.Batteries[devid]['P_batt_inv']) + ', SoC: ' +
+                str(self.Batteries[devid]['SoC']))
 
     for devid in self.Regulators:
       measid = self.Regulators[devid]['measid']
@@ -947,10 +951,11 @@ class DeconflictionPipeline(GridAPPSD):
         if measurements[measid]['value'] != self.Regulators[devid]['step']:
           self.Regulators[devid]['step'] = measurements[measid]['value']
           MethodUtil.RegulatorPos[devid] = self.Regulators[devid]['step']
-          print('ProcessSimulationMessage--timestamp ' +
-                str(message['timestamp']) + ', device: ' +
-                self.Regulators[devid]['name'] + ', tap position: ' +
-                str(self.Regulators[devid]['step']))
+          if printAllFlag:
+            print('ProcessSimulationMessage--timestamp: ' +
+                  str(message['timestamp']) + ', device: ' +
+                  self.Regulators[devid]['name'] + ', tap position: ' +
+                  str(self.Regulators[devid]['step']))
 
           # append the timestamp, step to the running history
           self.RegulatorHistory[devid].append((message['timestamp'],
@@ -1066,8 +1071,8 @@ class DeconflictionPipeline(GridAPPSD):
     if self.rulesStageFirstFlag:
       print('ProcessSetpointsMessage--applying initial RULES & HEURISTICS ' +
             'stage deconfliction')
-      self.RulesForBatteriesConflict(False)
-      self.RulesForRegulatorsConflict(False)
+      self.RulesForBatteriesConflict(self.printAllFlag)
+      self.RulesForRegulatorsConflict(self.printAllFlag)
 
     # Step 3: Deconflictor
     # Step 3.1: Conflict Identification
@@ -1090,8 +1095,8 @@ class DeconflictionPipeline(GridAPPSD):
       if not self.rulesStageFirstFlag:
         print('ProcessSetpointsMessage--applying final RULES & HEURISTICS ' +
               'stage deconfliction')
-        self.RulesForBatteriesResolution(newResolutionVector, False)
-        self.RulesForRegulatorsResolution(newResolutionVector, False)
+        self.RulesForBatteriesResolution(newResolutionVector, self.printAllFlag)
+        self.RulesForRegulatorsResolution(newResolutionVector,self.printAllFlag)
 
       print('ProcessSetpointsMessage--ResolutionVector (no conflict): ' +
             str(newResolutionVector))
@@ -1239,8 +1244,8 @@ class DeconflictionPipeline(GridAPPSD):
     if not self.rulesStageFirstFlag:
       print('ProcessSetpointsMessage--applying final RULES & HEURISTICS ' +
             'stage deconfliction')
-      self.RulesForBatteriesResolution(newResolutionVector, False)
-      self.RulesForRegulatorsResolution(newResolutionVector, False)
+      self.RulesForBatteriesResolution(newResolutionVector, self.printAllFlag)
+      self.RulesForRegulatorsResolution(newResolutionVector, self.printAllFlag)
 
     # Step 4: Setpoint Validator -- not implemented yet
     # Step 5: Device Dispatcher
@@ -1352,6 +1357,9 @@ class DeconflictionPipeline(GridAPPSD):
     # initialize counter used to uniquely identify cooperation messages
     self.coopCounter = 0
     self.coopIdentifier = None
+
+    # verbose logging control
+    self.printAllFlag = False
 
     # controls whether rules stage deconfliction is done as the first stage
     # using the ConflictMatrix or deferred until the last stage before device
