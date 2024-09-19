@@ -283,7 +283,7 @@ class DeconflictionPipeline(GridAPPSD):
     for app in app_list:
       self.OptAppWeights[app] -= weightLoss
       print('CooperationWeightsUpdate--timestamp: ' + str(timestamp) +
-            ', app: ' + app + ', adj. weight: ' + str(self.OptAppWeights[app]))
+            ', app: ' + app + ', weight: ' + str(self.OptAppWeights[app]))
 
 
   def CooperationWeightsClear(self, timestamp, ConflictMatrix):
@@ -649,7 +649,7 @@ class DeconflictionPipeline(GridAPPSD):
 
           elif self.ConflictMatrix[device][app][1] < \
                self.Regulators[device]['minStep']:
-            print('RulesForRegulatorsConflict--device: ' + name + ', app :' +
+            print('RulesForRegulatorsConflict--device: ' + name + ', app: ' +
                   app + '--tap pos setpoint below min allowable asset ' +
                   'health pos: ' + str(self.ConflictMatrix[device][app][1]))
             self.ConflictMatrix[device][app] = \
