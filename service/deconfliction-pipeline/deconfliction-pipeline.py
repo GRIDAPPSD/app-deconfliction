@@ -315,7 +315,7 @@ class DeconflictionPipeline(GridAPPSD):
     return False
 
 
-  def RulesForBatteriesConflict(self, printAllFlag=False):
+  def RulesForBatteriesConflict(self, printAllRulesFlag=False):
     rollingTimeInterval = 60
     # number of changes between charging and discharging, and vice versa,
     # allowed in the rolling time interval
@@ -324,7 +324,7 @@ class DeconflictionPipeline(GridAPPSD):
     # set max/min allowable tap positions based on current position
     for devid in self.Batteries:
       histList = self.BatteryHistory[devid]
-      if printAllFlag:
+      if printAllRulesFlag:
         print('RulesForBatteriesConflict--device: ' +
               MethodUtil.DeviceToName[devid] + ', BatteryHistory: ' +
               str(histList))
@@ -338,7 +338,7 @@ class DeconflictionPipeline(GridAPPSD):
           break
         rollingSwitchCount += 1
 
-      if printAllFlag:
+      if printAllRulesFlag:
         print('RulesForBatteriesConflict--device: ' +
               MethodUtil.DeviceToName[devid] +
               ', rolling charge/discharge switches: ' + str(rollingSwitchCount)+
@@ -359,7 +359,7 @@ class DeconflictionPipeline(GridAPPSD):
       self.Batteries[devid]['P_batt_charge_max'] = \
                          (chargeSoCMax*self.Batteries[devid]['ratedE']) / \
                          (self.Batteries[devid]['eff_c']*self.deltaT)
-      if printAllFlag:
+      if printAllRulesFlag:
         print('RulesForBatteriesConflict--device: ' +
               MethodUtil.DeviceToName[devid] +
               ', max charge SoC contribution: ' + str(chargeSoCMax) +
@@ -370,7 +370,7 @@ class DeconflictionPipeline(GridAPPSD):
       self.Batteries[devid]['P_batt_discharge_max'] = \
                            (dischargeSoCMax*self.Batteries[devid]['ratedE']) / \
                            (1/self.Batteries[devid]['eff_d']*self.deltaT)
-      if printAllFlag:
+      if printAllRulesFlag:
         print('RulesForBatteriesConflict--device: ' +
               MethodUtil.DeviceToName[devid] +
               ', max discharge SoC contribution: ' + str(dischargeSoCMax) +
@@ -444,7 +444,8 @@ class DeconflictionPipeline(GridAPPSD):
                     app + ', P_batt setpoint reset to zero')
 
 
-  def RulesForBatteriesResolution(self, newResolutionVector,printAllFlag=False):
+  def RulesForBatteriesResolution(self, newResolutionVector,
+                                  printAllRulesFlag=False):
     rollingTimeInterval = 60
     # number of changes between charging and discharging, and vice versa,
     # allowed in the rolling time interval
@@ -453,7 +454,7 @@ class DeconflictionPipeline(GridAPPSD):
     # set max/min allowable tap positions based on current position
     for devid in self.Batteries:
       histList = self.BatteryHistory[devid]
-      if printAllFlag:
+      if printAllRulesFlag:
         print('RulesForBatteriesResolution--device: ' +
               MethodUtil.DeviceToName[devid] + ', BatteryHistory: ' +
               str(histList))
@@ -467,7 +468,7 @@ class DeconflictionPipeline(GridAPPSD):
           break
         rollingSwitchCount += 1
 
-      if printAllFlag:
+      if printAllRulesFlag:
         print('RulesForBatteriesResolution--device: ' +
               MethodUtil.DeviceToName[devid] +
               ', rolling charge/discharge switches: ' + str(rollingSwitchCount)+
@@ -488,7 +489,7 @@ class DeconflictionPipeline(GridAPPSD):
       self.Batteries[devid]['P_batt_charge_max'] = \
                             (chargeSoCMax*self.Batteries[devid]['ratedE']) / \
                             (self.Batteries[devid]['eff_c']*self.deltaT)
-      if printAllFlag:
+      if printAllRulesFlag:
         print('RulesForBatteriesResolution--device: ' +
             MethodUtil.DeviceToName[devid] + ', max charge SoC contribution: ' +
             str(chargeSoCMax) + ', max charge P_batt: ' +
@@ -498,7 +499,7 @@ class DeconflictionPipeline(GridAPPSD):
       self.Batteries[devid]['P_batt_discharge_max'] = \
                            (dischargeSoCMax*self.Batteries[devid]['ratedE']) / \
                            (1/self.Batteries[devid]['eff_d']*self.deltaT)
-      if printAllFlag:
+      if printAllRulesFlag:
         print('RulesForBatteriesResolution--device: ' +
          MethodUtil.DeviceToName[devid] + ', max discharge SoC contribution: ' +
          str(dischargeSoCMax) + ', max discharge P_batt: ' +
@@ -567,7 +568,7 @@ class DeconflictionPipeline(GridAPPSD):
                   ', P_batt setpoint reset to zero')
 
 
-  def RulesForRegulatorsConflict(self, printAllFlag=False):
+  def RulesForRegulatorsConflict(self, printAllRulesFlag=False):
     # comment out to disable per-timestamp limit on tap position changes
     #timestampTapBudget = 3
 
@@ -577,7 +578,7 @@ class DeconflictionPipeline(GridAPPSD):
     # set max/min allowable tap positions based on current position
     for devid in self.Regulators:
       histList = self.RegulatorHistory[devid]
-      if printAllFlag:
+      if printAllRulesFlag:
         print('RulesForRegulatorsConflict--device: ' +
               MethodUtil.DeviceToName[devid] +
               ', RegulatorHistory: ' + str(histList))
@@ -594,7 +595,7 @@ class DeconflictionPipeline(GridAPPSD):
         previousStep = hist[1]
 
       rollingTapBudget = max(0, rollingStepsAllowed - rollingStepCount)
-      if printAllFlag:
+      if printAllRulesFlag:
         print('RulesForRegulatorsConflict--device: ' +
               MethodUtil.DeviceToName[devid] +
               ', rolling steps: ' + str(rollingStepCount) +
@@ -617,7 +618,7 @@ class DeconflictionPipeline(GridAPPSD):
                                               tapBudget, 16)
       self.Regulators[devid]['minStep'] = max(self.Regulators[devid]['step'] - \
                                               tapBudget, -16)
-      if printAllFlag:
+      if printAllRulesFlag:
         print('RulesForRegulatorsConflict--device: ' +
               MethodUtil.DeviceToName[devid] +
               ', min tap pos: ' + str(self.Regulators[devid]['minStep']) +
@@ -654,7 +655,8 @@ class DeconflictionPipeline(GridAPPSD):
                   'health pos: ' + str(self.ConflictMatrix[device][app][1]))
 
 
-  def RulesForRegulatorsResolution(self,newResolutionVector,printAllFlag=False):
+  def RulesForRegulatorsResolution(self,newResolutionVector,
+                                   printAllRulesFlag=False):
     # comment out to disable per-timestamp limit on tap position changes
     #timestampTapBudget = 3
 
@@ -664,7 +666,7 @@ class DeconflictionPipeline(GridAPPSD):
     # set max/min allowable tap positions based on current position
     for devid in self.Regulators:
       histList = self.RegulatorHistory[devid]
-      if printAllFlag:
+      if printAllRulesFlag:
         print('RulesForRegulatorsResolution--device: ' +
               MethodUtil.DeviceToName[devid] +
               ', RegulatorHistory: ' + str(histList))
@@ -681,7 +683,7 @@ class DeconflictionPipeline(GridAPPSD):
         previousStep = hist[1]
 
       rollingTapBudget = max(0, rollingStepsAllowed - rollingStepCount)
-      if printAllFlag:
+      if printAllRulesFlag:
         print('RulesForRegulatorsResolution--device: ' +
               MethodUtil.DeviceToName[devid] +
               ', rolling steps: ' + str(rollingStepCount) +
@@ -704,7 +706,7 @@ class DeconflictionPipeline(GridAPPSD):
                                               tapBudget, 16)
       self.Regulators[devid]['minStep'] = max(self.Regulators[devid]['step'] - \
                                               tapBudget, -16)
-      if printAllFlag:
+      if printAllRulesFlag:
         print('RulesForRegulatorsResolution--device: ' +
               MethodUtil.DeviceToName[devid] +
               ', min tap pos: ' + str(self.Regulators[devid]['minStep']) +
@@ -1086,8 +1088,8 @@ class DeconflictionPipeline(GridAPPSD):
     if self.rulesStageFirstFlag:
       print('ProcessSetpointsMessage--applying initial RULES & HEURISTICS ' +
             'stage deconfliction')
-      self.RulesForBatteriesConflict(self.printAllFlag)
-      self.RulesForRegulatorsConflict(self.printAllFlag)
+      self.RulesForBatteriesConflict(self.printAllRulesFlag)
+      self.RulesForRegulatorsConflict(self.printAllRulesFlag)
 
     # Step 3: Deconflictor
     # Step 3.1: Conflict Identification
@@ -1110,8 +1112,10 @@ class DeconflictionPipeline(GridAPPSD):
       if not self.rulesStageFirstFlag:
         print('ProcessSetpointsMessage--applying final RULES & HEURISTICS ' +
               'stage deconfliction')
-        self.RulesForBatteriesResolution(newResolutionVector, self.printAllFlag)
-        self.RulesForRegulatorsResolution(newResolutionVector,self.printAllFlag)
+        self.RulesForBatteriesResolution(newResolutionVector,
+                                         self.printAllRulesFlag)
+        self.RulesForRegulatorsResolution(newResolutionVector,
+                                          self.printAllRulesFlag)
 
       if printAllFlag:
         print('ProcessSetpointsMessage--ResolutionVector (no conflict): ' +
@@ -1261,8 +1265,10 @@ class DeconflictionPipeline(GridAPPSD):
     if not self.rulesStageFirstFlag:
       print('ProcessSetpointsMessage--applying final RULES & HEURISTICS ' +
             'stage deconfliction')
-      self.RulesForBatteriesResolution(newResolutionVector, self.printAllFlag)
-      self.RulesForRegulatorsResolution(newResolutionVector, self.printAllFlag)
+      self.RulesForBatteriesResolution(newResolutionVector,
+                                       self.printAllRulesFlag)
+      self.RulesForRegulatorsResolution(newResolutionVector,
+                                        self.printAllRulesFlag)
 
     # Step 4: Setpoint Validator -- not implemented yet
     # Step 5: Device Dispatcher
@@ -1378,6 +1384,7 @@ class DeconflictionPipeline(GridAPPSD):
 
     # verbose logging control
     self.printAllFlag = False
+    self.printAllRulesFlag = False
 
     # controls whether rules stage deconfliction is done as the first stage
     # using the ConflictMatrix or deferred until the last stage before device
