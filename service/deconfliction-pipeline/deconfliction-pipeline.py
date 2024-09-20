@@ -717,7 +717,7 @@ class DeconflictionPipeline(GridAPPSD):
                 str(newResolutionVector[device][1]))
 
 
-  def OptimizationDeconflict(self, app_name, timestamp, ConflictMatrix):
+  def Optimization(self, app_name, timestamp, ConflictMatrix):
     ResolutionVector = {}
 
     for device in ConflictMatrix:
@@ -1028,6 +1028,9 @@ class DeconflictionPipeline(GridAPPSD):
         # we were cooperating when a measurement message arrived so need to
         # conclude that cooperation before processing the new message
 
+        # Published IEEE Access Foundational Paper Reference:
+        #   Step 3.2--Deconfliction Solution
+        #   Step 3.3--Resolution
         # OPTIMIZATION stage deconfliction
         print('ProcessSetpointsMessage--applying OPTIMIZATION stage ' +
              'deconfliction to minimum conflict matrix for running cooperation')
@@ -1037,9 +1040,11 @@ class DeconflictionPipeline(GridAPPSD):
         self.CooperationWeightsUpdate(timestamp, self.MinConflictMatrix,
                                       self.TargetResolutionVector)
 
-        newResolutionVector = self.OptimizationDeconflict(app_name, timestamp,
-                                                         self.MinConflictMatrix)
+        newResolutionVector = self.Optimization(app_name, timestamp,
+                                                self.MinConflictMatrix)
 
+        # Published IEEE Access Foundational Paper Reference:
+        #   Step 3.2--Deconfliction Solution
         # RULES & HEURISTICS stage deconfliction done last
         if not self.rulesStageFirstFlag:
           print('ProcessSetpointsMessage--applying final RULES & HEURISTICS ' +
@@ -1049,8 +1054,10 @@ class DeconflictionPipeline(GridAPPSD):
           self.RulesForRegulatorsResolution(newResolutionVector,
                                             self.printAllRulesFlag)
 
-        # Published Paper Ref: Step 4--Setpoint Validator (not implemented yet)
-        # Published Paper Ref: Step 5--Device Dispatcher
+        # Published IEEE Access Foundational Paper Reference:
+        #   Step 4--Setpoint Validator (not implemented yet)
+        # Published IEEE Access Foundational Paper Reference:
+        #   Step 5--Device Dispatcher
         dispatchCount = self.DeviceDispatcher(timestamp, newResolutionVector,
                                               self.printAllDispatchesFlag)
         print('ProcessSetpointsMessage--invoked device dispatch for ' +
@@ -1071,15 +1078,19 @@ class DeconflictionPipeline(GridAPPSD):
     # message with keys of object, attribute, and value
     set_points = message['forward_differences']
 
-    # Published Paper Ref: Step 1--Setpoint Processor
+    # Published IEEE Access Foundational Paper Reference:
+    #   Step 1--Setpoint Processor
     print('ProcessSetpointsMessage--invoking setpoint processor')
     self.SetpointProcessor(app_name, timestamp, set_points,
                            printAllConflictsResolutionsFlag)
 
-    # Published Paper Ref: Step 2--Feasibility Maintainer
+    # Published IEEE Access Foundational Paper Reference:
+    #   Step 2--Feasibility Maintainer
     self.FeasibilityForBatteries(self.printAllFeasibilityFlag)
     self.FeasibilityForRegulators(self.printAllFeasibilityFlag)
 
+    # Published IEEE Access Foundational Paper Reference:
+    #   Step 3.2--Deconfliction Solution
     # RULES & HEURISTICS stage deconfliction done first
     if self.rulesStageFirstFlag:
       print('ProcessSetpointsMessage--applying initial RULES & HEURISTICS ' +
@@ -1087,8 +1098,10 @@ class DeconflictionPipeline(GridAPPSD):
       self.RulesForBatteriesConflict(self.printAllRulesFlag)
       self.RulesForRegulatorsConflict(self.printAllRulesFlag)
 
-    # Published Paper Ref: Step 3--Deconflictor
-    # Published Paper Ref: Step 3.1--Conflict Identification
+    # Published IEEE Access Foundational Paper Reference:
+    #   Step 3--Deconflictor
+    # Published IEEE Access Foundational Paper Reference:
+    #   Step 3.1--Conflict Identification
     print('ProcessSetpointsMessage--invoking conflict identification')
     conflictFlag = self.ConflictIdentification(app_name, timestamp, set_points)
 
@@ -1104,6 +1117,8 @@ class DeconflictionPipeline(GridAPPSD):
       for point in set_points:
         newResolutionVector[point['object']] = (timestamp, point['value'])
 
+      # Published IEEE Access Foundational Paper Reference:
+      #   Step 3.2--Deconfliction Solution
       # RULES & HEURISTICS stage deconfliction done last
       if not self.rulesStageFirstFlag:
         print('ProcessSetpointsMessage--applying final RULES & HEURISTICS ' +
@@ -1129,8 +1144,10 @@ class DeconflictionPipeline(GridAPPSD):
           print('~TEST: ResolutionVector (no conflict) does not contain ' +
                 self.testDeviceName)
 
-      # Published Paper Ref: Step 4--Setpoint Validator (not implemented yet)
-      # Published Paper Ref: Step 5--Device Dispatcher
+      # Published IEEE Access Foundational Paper Reference:
+      #   Step 4--Setpoint Validator (not implemented yet)
+      # Published IEEE Access Foundational Paper Reference:
+      #   Step 5--Device Dispatcher
       dispatchCount = self.DeviceDispatcher(timestamp, newResolutionVector,
                                             self.printAllDispatchesFlag)
       print('ProcessSetpointsMessage--invoked device dispatch, # devices ' +
@@ -1157,6 +1174,8 @@ class DeconflictionPipeline(GridAPPSD):
     # conflict identified logic
     print('ProcessSetpointsMessage--YES conflict found in conflict matrix')
     if meas_msg_flag:
+      # Published IEEE Access Foundational Paper Reference:
+      #   Step 3.2--Deconfliction Solution
       # COOPERATION stage deconfliction
       print('ProcessSetpointsMessage--applying COOPERATION stage ' +
             'deconfliction for meas message')
@@ -1171,7 +1190,7 @@ class DeconflictionPipeline(GridAPPSD):
 
       # start with a "target" resolution vector using the optimization code
       # that computes a centroid/target per device
-      self.TargetResolutionVector = self.OptimizationDeconflict(app_name,
+      self.TargetResolutionVector = self.Optimization(app_name,
                                                  timestamp, self.ConflictMatrix)
 
       # need to insure there is always a minimum conflict matrix as soon as the
@@ -1264,8 +1283,8 @@ class DeconflictionPipeline(GridAPPSD):
 
       # start with a "target" resolution vector using the optimization code
       # that computes a weighted centroid per device
-      newTargetResolutionVector = self.OptimizationDeconflict(app_name,
-                                                 timestamp, self.ConflictMatrix)
+      newTargetResolutionVector = self.Optimization(app_name, timestamp,
+                                                    self.ConflictMatrix)
 
       # publish this target resolution vector to the cooperation topic for
       # competing apps that support cooperation to respond to
@@ -1291,6 +1310,9 @@ class DeconflictionPipeline(GridAPPSD):
             '% change met, concluding cooperation with % change: ' +
             str(perConflictDelta) + ', iteration: ' + str(self.coopIter))
 
+    # Published IEEE Access Foundational Paper Reference:
+    #   Step 3.2--Deconfliction Solution
+    #   Step 3.3--Resolution
     # OPTIMIZATION stage deconfliction
     print('ProcessSetpointsMessage--applying OPTIMIZATION stage ' +
           'deconfliction to minimum conflict matrix')
@@ -1299,9 +1321,11 @@ class DeconflictionPipeline(GridAPPSD):
     self.CooperationWeightsUpdate(timestamp, self.MinConflictMatrix,
                                   self.TargetResolutionVector)
 
-    newResolutionVector = self.OptimizationDeconflict(app_name, timestamp,
-                                                      self.MinConflictMatrix)
+    newResolutionVector = self.Optimization(app_name, timestamp,
+                                            self.MinConflictMatrix)
 
+    # Published IEEE Access Foundational Paper Reference:
+    #   Step 3.2--Deconfliction Solution
     # RULES & HEURISTICS stage deconfliction done last
     if not self.rulesStageFirstFlag:
       print('ProcessSetpointsMessage--applying final RULES & HEURISTICS ' +
@@ -1311,8 +1335,10 @@ class DeconflictionPipeline(GridAPPSD):
       self.RulesForRegulatorsResolution(newResolutionVector,
                                         self.printAllRulesFlag)
 
-    # Published Paper Ref: Step 4--Setpoint Validator (not implemented yet)
-    # Published Paper Ref: Step 5--Device Dispatcher
+    # Published IEEE Access Foundational Paper Reference:
+    #   Step 4--Setpoint Validator (not implemented yet)
+    # Published IEEE Access Foundational Paper Reference:
+    #   Step 5--Device Dispatcher
     dispatchCount = self.DeviceDispatcher(timestamp, newResolutionVector,
                                           self.printAllDispatchesFlag)
     print('ProcessSetpointsMessage--invoked device dispatch, # devices ' +
