@@ -1064,8 +1064,17 @@ class DeconflictionPipeline(GridAPPSD):
         newResolutionVector = self.OptimizationDeconflict(app_name, timestamp,
                                                           self.ConflictMatrix)
 
-        # Step 4: Setpoint Validator -- not implemented yet
-        # Step 5: Device Dispatcher
+        # RULES & HEURISTICS stage deconfliction done last
+        if not self.rulesStageFirstFlag:
+          print('ProcessSetpointsMessage--applying final RULES & HEURISTICS ' +
+                'stage deconfliction for running cooperation')
+          self.RulesForBatteriesResolution(newResolutionVector,
+                                           self.printAllRulesFlag)
+          self.RulesForRegulatorsResolution(newResolutionVector,
+                                            self.printAllRulesFlag)
+
+        # Paper Reference Step 4: Setpoint Validator -- not implemented yet
+        # Paper Reference Step 5: Device Dispatcher
         dispatchCount = self.DeviceDispatcher(timestamp, newResolutionVector,
                                               self.printAllDispatchesFlag)
         print('ProcessSetpointsMessage--invoked device dispatch for ' +
@@ -1084,12 +1093,12 @@ class DeconflictionPipeline(GridAPPSD):
     # message with keys of object, attribute, and value
     set_points = message['forward_differences']
 
-    # Step 1: Setpoint Processor
+    # Paper Reference Step 1: Setpoint Processor
     print('ProcessSetpointsMessage--invoking setpoint processor')
     self.SetpointProcessor(app_name, timestamp, set_points,
                            printAllConflictsResolutionsFlag)
 
-    # Step 2: Feasibility Maintainer -- not implemented yet
+    # Paper Reference Step 2: Feasibility Maintainer -- not implemented yet
 
     # RULES & HEURISTICS stage deconfliction done first
     if self.rulesStageFirstFlag:
@@ -1098,8 +1107,8 @@ class DeconflictionPipeline(GridAPPSD):
       self.RulesForBatteriesConflict(self.printAllRulesFlag)
       self.RulesForRegulatorsConflict(self.printAllRulesFlag)
 
-    # Step 3: Deconflictor
-    # Step 3.1: Conflict Identification
+    # Paper Reference Step 3: Deconflictor
+    # Paper Reference Step 3.1: Conflict Identification
     print('ProcessSetpointsMessage--invoking conflict identification')
     conflictFlag = self.ConflictIdentification(app_name, timestamp, set_points)
 
@@ -1140,8 +1149,8 @@ class DeconflictionPipeline(GridAPPSD):
           print('~TEST: ResolutionVector (no conflict) does not contain ' +
                 self.testDeviceName)
 
-      # Step 4: Setpoint Validator -- not implemented yet
-      # Step 5: Device Dispatcher
+      # Paper Reference Step 4: Setpoint Validator -- not implemented yet
+      # Paper Reference Step 5: Device Dispatcher
       dispatchCount = self.DeviceDispatcher(timestamp, newResolutionVector,
                                             self.printAllDispatchesFlag)
       print('ProcessSetpointsMessage--invoked device dispatch, # devices ' +
@@ -1283,8 +1292,8 @@ class DeconflictionPipeline(GridAPPSD):
       self.RulesForRegulatorsResolution(newResolutionVector,
                                         self.printAllRulesFlag)
 
-    # Step 4: Setpoint Validator -- not implemented yet
-    # Step 5: Device Dispatcher
+    # Paper Reference Step 4: Setpoint Validator -- not implemented yet
+    # Paper Reference Step 5: Device Dispatcher
     dispatchCount = self.DeviceDispatcher(timestamp, newResolutionVector,
                                           self.printAllDispatchesFlag)
     print('ProcessSetpointsMessage--invoked device dispatch, # devices ' +
