@@ -414,7 +414,7 @@ class DeconflictionPipeline(GridAPPSD):
                   'pos: ' + str(self.ConflictMatrix[device][app][1]))
 
           elif self.ConflictMatrix[device][app][1] < -16:
-            print('FeasibilityMaintainerForRegulators--device: ' + name
+            print('FeasibilityMaintainerForRegulators--device: ' + name +
                   ', app: ' + app + '--tap pos setpoint below min feasible ' +
                   'pos: ' + str(self.ConflictMatrix[device][app][1]))
             self.ConflictMatrix[device][app] = \
@@ -517,7 +517,7 @@ class DeconflictionPipeline(GridAPPSD):
                 'pos: ' + str(newResolutionVector[device][1]))
 
         elif newResolutionVector[device][1] < -16:
-          print('SetpointValidatorForRegulators--device: ' + name
+          print('SetpointValidatorForRegulators--device: ' + name +
                 ', app: ' + app + '--tap pos setpoint below min feasible ' +
                 'pos: ' + str(newResolutionVector[device][1]))
           newResolutionVector[device] = (newResolutionVector[device][0], -16)
