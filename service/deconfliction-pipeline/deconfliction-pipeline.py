@@ -320,7 +320,7 @@ class DeconflictionPipeline(GridAPPSD):
     return False
 
 
-  def FeasibilityForBatteries(self, printAllFeasibilityFlag=False):
+  def FeasibilityMaintainerForBatteries(self, printAllFeasibilityFlag=False):
     # find the maximum P_batt charge and discharge values per battery to
     # prevent overcharging or undercharging
     for devid in self.Batteries:
@@ -329,7 +329,7 @@ class DeconflictionPipeline(GridAPPSD):
                          (chargeSoCMax*self.Batteries[devid]['ratedE']) / \
                          (self.Batteries[devid]['eff_c']*self.deltaT)
       if printAllFeasibilityFlag:
-        print('FeasibilityForBatteries--device: ' +
+        print('FeasibilityMaintainerForBatteries--device: ' +
               MethodUtil.DeviceToName[devid] +
               ', max charge SoC contribution: ' + str(chargeSoCMax) +
               ', max charge P_batt: ' +
@@ -340,7 +340,7 @@ class DeconflictionPipeline(GridAPPSD):
                            (dischargeSoCMax*self.Batteries[devid]['ratedE']) / \
                            (1/self.Batteries[devid]['eff_d']*self.deltaT)
       if printAllFeasibilityFlag:
-        print('FeasibilityForBatteries--device: ' +
+        print('FeasibilityMaintainerForBatteries--device: ' +
               MethodUtil.DeviceToName[devid] +
               ', max discharge SoC contribution: ' + str(dischargeSoCMax) +
               ', max discharge P_batt: ' +
@@ -355,9 +355,9 @@ class DeconflictionPipeline(GridAPPSD):
           # check vs. battery rated power
           if abs(self.ConflictMatrix[device][app][1]) > \
              self.Batteries[device]['prated']:
-            print('FeasibilityForBatteries--device: ' + name + ', app: ' +
-                  app + ', P_batt setpoint exceeds battery rated power: ' +
-                  str(self.ConflictMatrix[device][app][1]))
+            print('FeasibilityMaintainerForBatteries--device: ' + name +
+                  ', app: ' + app + ', P_batt setpoint exceeds battery rated ' +
+                  'power: ' + str(self.ConflictMatrix[device][app][1]))
             if self.ConflictMatrix[device][app][1] > 0:
               self.ConflictMatrix[device][app] = \
                                          (self.ConflictMatrix[device][app][0],
@@ -366,37 +366,37 @@ class DeconflictionPipeline(GridAPPSD):
               self.ConflictMatrix[device][app] = \
                                          (self.ConflictMatrix[device][app][0],
                                           -self.Batteries[device]['prated'])
-            print('FeasibilityForBatteries--device: ' + name + ', app: ' +
-                  app + ', P_batt setpoint reset to battery rated power: ' +
-                  str(self.ConflictMatrix[device][app][1]))
+            print('FeasibilityMaintainerForBatteries--device: ' + name +
+                  ', app: ' + app + ', P_batt setpoint reset to battery rated '+
+                  'power: ' + str(self.ConflictMatrix[device][app][1]))
 
           # check vs. battery SoC limits
           if self.ConflictMatrix[device][app][1] > \
              self.Batteries[device]['P_batt_charge_max']:
-            print('FeasibilityForBatteries--device: ' + name + ', app: ' +
-                  app + ', P_batt setpoint above max charge P_batt: ' +
-                  str(self.ConflictMatrix[device][app][1]))
+            print('FeasibilityMaintainerForBatteries--device: ' + name +
+                  ', app: ' + app + ', P_batt setpoint above max charge ' +
+                  'P_batt: ' + str(self.ConflictMatrix[device][app][1]))
             self.ConflictMatrix[device][app] = \
                                (self.ConflictMatrix[device][app][0],
                                 self.Batteries[device]['P_batt_charge_max'])
-            print('FeasibilityForBatteries--device: ' + name + ', app: ' +
-                  app + ', P_batt setpoint reset to max charge P_batt: ' +
-                  str(self.ConflictMatrix[device][app][1]))
+            print('FeasibilityMaintainerForBatteries--device: ' + name +
+                  ', app: ' + app + ', P_batt setpoint reset to max charge ' +
+                  'P_batt: ' + str(self.ConflictMatrix[device][app][1]))
 
           elif self.ConflictMatrix[device][app][1] < \
              self.Batteries[device]['P_batt_discharge_max']:
-            print('FeasibilityForBatteries--device: ' + name + ', app ' +
-                  app + ', P_batt setpoint below max discharge P_batt: ' +
-                  str(self.ConflictMatrix[device][app][1]))
+            print('FeasibilityMaintainerForBatteries--device: ' + name +
+                  ', app: ' + app + ', P_batt setpoint below max discharge ' +
+                  'P_batt: ' + str(self.ConflictMatrix[device][app][1]))
             self.ConflictMatrix[device][app]= \
                                (self.ConflictMatrix[device][app][0],
                                 self.Batteries[device]['P_batt_discharge_max'])
-            print('FeasibilityForBatteries--device: ' + name + ', app: ' +
-                  app + ', P_batt setpoint reset to max discharge P_batt: ' +
-                  str(self.ConflictMatrix[device][app][1]))
+            print('FeasibilityMaintainerForBatteries--device: ' + name +
+                  ', app: ' + app + ', P_batt setpoint reset to max discharge '+
+                  'P_batt: ' + str(self.ConflictMatrix[device][app][1]))
 
 
-  def FeasibilityForRegulators(self, printAllFeasibilityFlag=False):
+  def FeasibilityMaintainerForRegulators(self, printAllFeasibilityFlag=False):
     # iterate over all regulator tap setpoints in ConflictMatrix to make sure
     # they fall within the feasible +16/-16 range
     for device in self.ConflictMatrix:
@@ -404,24 +404,24 @@ class DeconflictionPipeline(GridAPPSD):
       if name.startswith('RatioTapChanger.'):
         for app in self.ConflictMatrix[device]:
           if self.ConflictMatrix[device][app][1] > 16:
-            print('FeasibilityForRegulators--device: ' + name + ', app: ' +
-                  app + '--tap pos setpoint above max feasible pos: ' +
-                  str(self.ConflictMatrix[device][app][1]))
+            print('FeasibilityMaintainerForRegulators--device: ' + name +
+                  ', app: ' + app + '--tap pos setpoint above max feasible ' +
+                  'pos: ' + str(self.ConflictMatrix[device][app][1]))
             self.ConflictMatrix[device][app] = \
                                (self.ConflictMatrix[device][app][0], 16)
-            print('FeasibilityForRegulators--device: ' + name + ', app: ' +
-                  app + '--tap pos setpoint reset to max feasible pos: ' +
-                  str(self.ConflictMatrix[device][app][1]))
+            print('FeasibilityMaintainerForRegulators--device: ' + name +
+                  ', app: ' + app + '--tap pos setpoint reset to max feasible '+
+                  'pos: ' + str(self.ConflictMatrix[device][app][1]))
 
           elif self.ConflictMatrix[device][app][1] < -16:
-            print('FeasibilityForRegulators--device: ' + name + ', app: ' +
-                  app + '--tap pos setpoint below min feasible pos: ' +
-                  str(self.ConflictMatrix[device][app][1]))
+            print('FeasibilityMaintainerForRegulators--device: ' + name
+                  ', app: ' + app + '--tap pos setpoint below min feasible ' +
+                  'pos: ' + str(self.ConflictMatrix[device][app][1]))
             self.ConflictMatrix[device][app] = \
                                (self.ConflictMatrix[device][app][0], -16)
-            print('FeasibilityForRegulators--device: ' + name + ', app: ' +
-                  app + '--tap pos setpoint reset to min feasible pos: ' +
-                  str(self.ConflictMatrix[device][app][1]))
+            print('FeasibilityMaintainerForRegulators--device: ' + name +
+                  ', app: ' + app + '--tap pos setpoint reset to min feasible '+
+                  'pos: ' + str(self.ConflictMatrix[device][app][1]))
 
 
   def RulesForBatteriesConflict(self, printAllRulesFlag=False):
@@ -1086,8 +1086,8 @@ class DeconflictionPipeline(GridAPPSD):
 
     # Published IEEE Access Foundational Paper Reference:
     #   Step 2--Feasibility Maintainer
-    self.FeasibilityForBatteries(self.printAllFeasibilityFlag)
-    self.FeasibilityForRegulators(self.printAllFeasibilityFlag)
+    self.FeasibilityMaintainerForBatteries(self.printAllFeasibilityFlag)
+    self.FeasibilityMaintainerForRegulators(self.printAllFeasibilityFlag)
 
     # Published IEEE Access Foundational Paper Reference:
     #   Step 3.2--Deconfliction Solution
