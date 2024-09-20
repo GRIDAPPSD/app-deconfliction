@@ -424,6 +424,108 @@ class DeconflictionPipeline(GridAPPSD):
                   'pos: ' + str(self.ConflictMatrix[device][app][1]))
 
 
+  def SetpointValidatorForBatteries(self, newResolutionVector,
+                                    printAllValidatorFlag=False):
+    # find the maximum P_batt charge and discharge values per battery to
+    # prevent overcharging or undercharging
+    for devid in self.Batteries:
+      chargeSoCMax = 0.9 - self.Batteries[devid]['SoC']
+      self.Batteries[devid]['P_batt_charge_max'] = \
+                         (chargeSoCMax*self.Batteries[devid]['ratedE']) / \
+                         (self.Batteries[devid]['eff_c']*self.deltaT)
+      if printAllValidatorFlag:
+        print('SetpointValidatorForBatteries--device: ' +
+              MethodUtil.DeviceToName[devid] +
+              ', max charge SoC contribution: ' + str(chargeSoCMax) +
+              ', max charge P_batt: ' +
+              str(self.Batteries[devid]['P_batt_charge_max']))
+
+      dischargeSoCMax = 0.2 - self.Batteries[devid]['SoC']
+      self.Batteries[devid]['P_batt_discharge_max'] = \
+                           (dischargeSoCMax*self.Batteries[devid]['ratedE']) / \
+                           (1/self.Batteries[devid]['eff_d']*self.deltaT)
+      if printAllValidatorFlag:
+        print('SetpointValidatorForBatteries--device: ' +
+              MethodUtil.DeviceToName[devid] +
+              ', max discharge SoC contribution: ' + str(dischargeSoCMax) +
+              ', max discharge P_batt: ' +
+              str(self.Batteries[devid]['P_batt_discharge_max']))
+
+    # iterate over all battery setpoints in ResolutionVector to make sure they
+    # fall within the acceptable P_batt range and set them to max values if not
+    for device in newResolutionVector:
+      name = MethodUtil.DeviceToName[device]
+      if name.startswith('BatteryUnit.'):
+        # check vs. battery rated power
+        if abs(newResolutionVector[device][1]) > \
+           self.Batteries[device]['prated']:
+          print('SetpointValidatorForBatteries--device: ' + name +
+                ', app: ' + app + ', P_batt setpoint exceeds battery rated ' +
+                'power: ' + str(newResolutionVector[device][1]))
+          if newResolutionVector[device][1] > 0:
+            newResolutionVector[device] = \
+                                       (newResolutionVector[device][0],
+                                        self.Batteries[device]['prated'])
+          else:
+            newResolutionVector[device] = \
+                                       (newResolutionVector[device][0],
+                                        -self.Batteries[device]['prated'])
+          print('SetpointValidatorForBatteries--device: ' + name +
+                ', app: ' + app + ', P_batt setpoint reset to battery rated '+
+                'power: ' + str(newResolutionVector[device][1]))
+
+        # check vs. battery SoC limits
+        if newResolutionVector[device][1] > \
+           self.Batteries[device]['P_batt_charge_max']:
+          print('SetpointValidatorForBatteries--device: ' + name +
+                ', app: ' + app + ', P_batt setpoint above max charge ' +
+                'P_batt: ' + str(newResolutionVector[device][1]))
+          newResolutionVector[device] = \
+                             (newResolutionVector[device][0],
+                              self.Batteries[device]['P_batt_charge_max'])
+          print('SetpointValidatorForBatteries--device: ' + name +
+                ', app: ' + app + ', P_batt setpoint reset to max charge ' +
+                'P_batt: ' + str(newResolutionVector[device][1]))
+
+        elif newResolutionVector[device][1] < \
+           self.Batteries[device]['P_batt_discharge_max']:
+          print('SetpointValidatorForBatteries--device: ' + name +
+                ', app: ' + app + ', P_batt setpoint below max discharge ' +
+                'P_batt: ' + str(newResolutionVector[device][1]))
+          newResolutionVector[device] = \
+                             (newResolutionVector[device][0],
+                              self.Batteries[device]['P_batt_discharge_max'])
+          print('SetpointValidatorForBatteries--device: ' + name +
+                ', app: ' + app + ', P_batt setpoint reset to max discharge '+
+                'P_batt: ' + str(newResolutionVector[device][1]))
+
+
+  def SetpointValidatorForRegulators(self, newResolutionVector,
+                                     printAllValidatorFlag=False):
+    # iterate over all regulator tap setpoints in ResolutionVector to make sure
+    # they fall within the feasible +16/-16 range
+    for device in newResolutionVector:
+      name = MethodUtil.DeviceToName[device]
+      if name.startswith('RatioTapChanger.'):
+        if newResolutionVector[device][1] > 16:
+          print('SetpointValidatorForRegulators--device: ' + name +
+                ', app: ' + app + '--tap pos setpoint above max feasible ' +
+                'pos: ' + str(newResolutionVector[device][1]))
+          newResolutionVector[device] = (newResolutionVector[device][0], 16)
+          print('SetpointValidatorForRegulators--device: ' + name +
+                ', app: ' + app + '--tap pos setpoint reset to max feasible '+
+                'pos: ' + str(newResolutionVector[device][1]))
+
+        elif newResolutionVector[device][1] < -16:
+          print('SetpointValidatorForRegulators--device: ' + name
+                ', app: ' + app + '--tap pos setpoint below min feasible ' +
+                'pos: ' + str(newResolutionVector[device][1]))
+          newResolutionVector[device] = (newResolutionVector[device][0], -16)
+          print('SetpointValidatorForRegulators--device: ' + name +
+                ', app: ' + app + '--tap pos setpoint reset to min feasible '+
+                'pos: ' + str(newResolutionVector[device][1]))
+
+
   def RulesForBatteriesConflict(self, printAllRulesFlag=False):
     rollingTimeInterval = 60
     # number of changes between charging and discharging, and vice versa,
@@ -1055,7 +1157,12 @@ class DeconflictionPipeline(GridAPPSD):
                                             self.printAllRulesFlag)
 
         # Published IEEE Access Foundational Paper Reference:
-        #   Step 4--Setpoint Validator (not implemented yet)
+        #   Step 4--Setpoint Validator
+        self.SetpointValidatorForBatteries(newResolutionVector,
+                                           self.printAllValidatorFlag)
+        self.SetpointValidatorForRegulators(newResolutionVector,
+                                            self.printAllValidatorFlag)
+
         # Published IEEE Access Foundational Paper Reference:
         #   Step 5--Device Dispatcher
         dispatchCount = self.DeviceDispatcher(timestamp, newResolutionVector,
@@ -1145,7 +1252,12 @@ class DeconflictionPipeline(GridAPPSD):
                 self.testDeviceName)
 
       # Published IEEE Access Foundational Paper Reference:
-      #   Step 4--Setpoint Validator (not implemented yet)
+      #   Step 4--Setpoint Validator
+      self.SetpointValidatorForBatteries(newResolutionVector,
+                                         self.printAllValidatorFlag)
+      self.SetpointValidatorForRegulators(newResolutionVector,
+                                          self.printAllValidatorFlag)
+
       # Published IEEE Access Foundational Paper Reference:
       #   Step 5--Device Dispatcher
       dispatchCount = self.DeviceDispatcher(timestamp, newResolutionVector,
@@ -1336,7 +1448,12 @@ class DeconflictionPipeline(GridAPPSD):
                                         self.printAllRulesFlag)
 
     # Published IEEE Access Foundational Paper Reference:
-    #   Step 4--Setpoint Validator (not implemented yet)
+    #   Step 4--Setpoint Validator
+    self.SetpointValidatorForBatteries(newResolutionVector,
+                                       self.printAllValidatorFlag)
+    self.SetpointValidatorForRegulators(newResolutionVector,
+                                        self.printAllValidatorFlag)
+
     # Published IEEE Access Foundational Paper Reference:
     #   Step 5--Device Dispatcher
     dispatchCount = self.DeviceDispatcher(timestamp, newResolutionVector,
@@ -1467,6 +1584,7 @@ class DeconflictionPipeline(GridAPPSD):
     # verbose logging control for various deconfliction pipeline aspects
     self.printAllMessagesFlag = False
     self.printAllFeasibilityFlag = False
+    self.printAllValidatorFlag = False
     self.printAllRulesFlag = False
     self.printAllDispatchesFlag = False
     self.printAllMetricsFlag = False
