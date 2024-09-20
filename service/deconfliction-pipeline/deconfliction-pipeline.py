@@ -1094,6 +1094,8 @@ class DeconflictionPipeline(GridAPPSD):
         # reset running minimums for conflict metric and matrix
         self.minConflictMetric = 1.0
         self.MinConflictMatrix.clear()
+        # reset running counts for cooperation messages
+        self.AppCoopCount.clear()
 
     # set_points are the forward_differences part of the DifferenceBuilder
     # message with keys of object, attribute, and value
@@ -1173,6 +1175,8 @@ class DeconflictionPipeline(GridAPPSD):
       # reset running minimums for conflict metric and matrix
       self.minConflictMetric = 1.0
       self.MinConflictMatrix.clear()
+      # reset running counts for cooperation messages
+      self.AppCoopCount.clear()
       print('ProcessSetpointsMessage--finished processing, timestamp: ' +
             str(timestamp) + ', app: ' + app_name + ', meas_msg_flag: ' +
             str(meas_msg_flag) + ', coop_id: ' + str(coop_id))
@@ -1227,6 +1231,13 @@ class DeconflictionPipeline(GridAPPSD):
 
     self.coopIter += 1
 
+    # increment cooperation message counter for app that is one of the criteria
+    # for ending cooperation
+    if app_name in self.AppCoopCount:
+      self.AppCoopCount[app_name] += 1
+    else:
+      self.AppCoopCount[app_name] = 1
+
     # save the previous conflict metric for comparison
     prevConflictMetric = self.conflictMetric
 
@@ -1251,13 +1262,20 @@ class DeconflictionPipeline(GridAPPSD):
           ', iteration: ' + str(self.coopIter))
 
     # check for NOT meeting thresholds
+    # first, loop over all apps to check if that criteria is met
+    maxCoopMessageFlag = False
+    for app in self.AppCoopCount:
+      if self.AppCoopCount[app] > 10:
+        maxCoopMessageFlag = True
+        break
+
     # thresholds for ending cooperation are either a conflict metric value
     # below 0.2 or a (nonnegative) % conflict change between 0 and 2%.
     # the 0.2 conflict metric seems to be a sweet spot based on test apps which
     # never seem to drop much below that, never to 0.1 or even 0.15.
     # the 2% change is more arbitrary as 1% seems to work decently as well,
     # but can result in a lot more cooperation iterations for not much gain.
-    if self.conflictMetric>0.2 and \
+    if not maxCoopMessageFlag and self.conflictMetric>0.2 and \
        (perConflictDelta>2.0 or perConflictDelta<0.0):
       # initiate further cooperation
       print('ProcessSetpointsMessage--NO thresholds met, initiating ' +
@@ -1283,8 +1301,17 @@ class DeconflictionPipeline(GridAPPSD):
       return
 
     # thresholds for ending cooperation have been met to get here
-    print('ProcessSetpointsMessage---YES thresholds met, concluding ' +
-          'cooperation at iteration: ' + str(self.coopIter))
+    if maxCoopMessageFlag:
+      print('ProcessSetpointsMessage---YES threshold for max iterations met, ' +
+            'concluding cooperation with counts: ' + str(self.AppCoopCount))
+    elif self.conflictMetric <= 0.2:
+      print('ProcessSetpointsMessage---YES threshold for conflict metric ' +
+            'value met, concluding cooperation with conflict metric: ' +
+            str(self.conflictMetric) + ', iteration: ' + str(self.coopIter))
+    else:
+      print('ProcessSetpointsMessage---YES threshold for conflict metric ' +
+            '% change met, concluding cooperation with % change: ' +
+            str(perConflictDelta) + ', iteration: ' + str(self.coopIter))
 
     # OPTIMIZATION stage deconfliction
     print('ProcessSetpointsMessage--applying OPTIMIZATION stage ' +
@@ -1324,6 +1351,8 @@ class DeconflictionPipeline(GridAPPSD):
     # reset running minimums for conflict metric and matrix
     self.minConflictMetric = 1.0
     self.MinConflictMatrix.clear()
+    # reset running counts for cooperation messages
+    self.AppCoopCount.clear()
     print('ProcessSetpointsMessage--finished processing, timestamp: ' +
           str(timestamp) + ', app: ' + app_name + ', meas_msg_flag: ' +
           str(meas_msg_flag) + ', coop_id: ' + str(coop_id))
@@ -1421,6 +1450,7 @@ class DeconflictionPipeline(GridAPPSD):
     # initialize running cooperation minimums for conflict metric and matrix
     self.minConflictMetric = 1.0
     self.MinConflictMatrix = {}
+    self.AppCoopCount = {}
     # initialize counter used to uniquely identify cooperation messages
     self.coopCounter = 0
     self.coopIdentifier = None
