@@ -1060,9 +1060,15 @@ class DeconflictionPipeline(GridAPPSD):
 
         # OPTIMIZATION stage deconfliction
         print('ProcessSetpointsMessage--applying OPTIMIZATION stage ' +
-              'deconfliction for running cooperation')
+             'deconfliction to minimum conflict matrix for running cooperation')
+
+        # update incentive weights using minimum conflict matrix before final
+        # optimization stage and device dispatch
+        self.CooperationWeightsUpdate(timestamp, self.MinConflictMatrix,
+                                      self.TargetResolutionVector)
+
         newResolutionVector = self.OptimizationDeconflict(app_name, timestamp,
-                                                          self.ConflictMatrix)
+                                                         self.MinConflictMatrix)
 
         # RULES & HEURISTICS stage deconfliction done last
         if not self.rulesStageFirstFlag:
@@ -1085,9 +1091,9 @@ class DeconflictionPipeline(GridAPPSD):
         self.ResolutionVector.clear()
         self.ResolutionVector = newResolutionVector
 
-    # copy conflict matrix before updating since I need this if cooperation
-    # iteration results in an increased conflict metric
-    previousConflictMatrix = copy.deepcopy(self.ConflictMatrix)
+        # reset running minimums for conflict metric and matrix
+        self.minConflictMetric = 1.0
+        self.MinConflictMatrix.clear()
 
     # set_points are the forward_differences part of the DifferenceBuilder
     # message with keys of object, attribute, and value
@@ -1164,6 +1170,9 @@ class DeconflictionPipeline(GridAPPSD):
       # zero the cooperation timestamp to indicate no active cooperation
       self.coopTimestamp = 0
       self.coopIdentifier = None
+      # reset running minimums for conflict metric and matrix
+      self.minConflictMetric = 1.0
+      self.MinConflictMatrix.clear()
       print('ProcessSetpointsMessage--finished processing, timestamp: ' +
             str(timestamp) + ', app: ' + app_name + ', meas_msg_flag: ' +
             str(meas_msg_flag) + ', coop_id: ' + str(coop_id))
@@ -1188,6 +1197,11 @@ class DeconflictionPipeline(GridAPPSD):
       # that computes a centroid/target per device
       self.TargetResolutionVector = self.OptimizationDeconflict(app_name,
                                                  timestamp, self.ConflictMatrix)
+
+      # need to insure there is always a minimum conflict matrix as soon as the
+      # target resolution vector is set in case we never hit the code before
+      # the threshold check that normally sets it
+      self.MinConflictMatrix = copy.deepcopy(self.ConflictMatrix)
 
       # publish this target resolution vector to the cooperation topic for
       # competing apps that support cooperation to respond to
@@ -1219,6 +1233,12 @@ class DeconflictionPipeline(GridAPPSD):
     self.conflictMetric = self.ConflictMetricComputation(timestamp,
                                                        self.printAllMetricsFlag)
 
+    # save the running minimum conflict metric and associated conflict matrix
+    # during a cooperation phase as the one to use when cooperation concludes
+    if self.conflictMetric <= self.minConflictMetric:
+      self.minConflictMetric = self.conflictMetric
+      self.MinConflictMatrix = copy.deepcopy(self.ConflictMatrix)
+
     perConflictDelta = 100.0 # for no previous conflict metric value
     if prevConflictMetric > 0.0:
       perConflictDelta = 100.0 * (prevConflictMetric - self.conflictMetric)/ \
@@ -1227,12 +1247,18 @@ class DeconflictionPipeline(GridAPPSD):
     print('ProcessSetpointsMessage--thresholds, previous conflict metric: ' +
           str(prevConflictMetric) + ', new conflict metric: ' +
           str(self.conflictMetric) + ', % change: ' + str(perConflictDelta) +
+          ', min conflict metric: ' + str(self.minConflictMetric) +
           ', iteration: ' + str(self.coopIter))
 
-    # thresholds for ending cooperation are either a conflict metric value
-    # below 0.2 or a % conflict change less than 2%
     # check for NOT meeting thresholds
-    if self.conflictMetric>0.2 and perConflictDelta>2.0:
+    # thresholds for ending cooperation are either a conflict metric value
+    # below 0.2 or a (nonnegative) % conflict change between 0 and 2%.
+    # the 0.2 conflict metric seems to be a sweet spot based on test apps which
+    # never seem to drop much below that, never to 0.1 or even 0.15.
+    # the 2% change is more arbitrary as 1% seems to work decently as well,
+    # but can result in a lot more cooperation iterations for not much gain.
+    if self.conflictMetric>0.2 and \
+       (perConflictDelta>2.0 or perConflictDelta<0.0):
       # initiate further cooperation
       print('ProcessSetpointsMessage--NO thresholds met, initiating ' +
             'further cooperation at iteration: ' + str(self.coopIter))
@@ -1261,27 +1287,15 @@ class DeconflictionPipeline(GridAPPSD):
           'cooperation at iteration: ' + str(self.coopIter))
 
     # OPTIMIZATION stage deconfliction
-    if perConflictDelta < 0.0:
-      print('ProcessSetpointsMessage--applying OPTIMIZATION stage ' +
-            'deconfliction to previous conflict matrix due to increased ' +
-            'conflict metric')
-      # update incentive weights using previous conflict metric before final
-      # optimization stage and device dispatch
-      self.CooperationWeightsUpdate(timestamp, previousConflictMatrix,
-                                    self.TargetResolutionVector)
+    print('ProcessSetpointsMessage--applying OPTIMIZATION stage ' +
+          'deconfliction to minimum conflict matrix')
+    # update incentive weights using minimum conflict matrix before final
+    # optimization stage and device dispatch
+    self.CooperationWeightsUpdate(timestamp, self.MinConflictMatrix,
+                                  self.TargetResolutionVector)
 
-      newResolutionVector = self.OptimizationDeconflict(app_name, timestamp,
-                                                        previousConflictMatrix)
-    else:
-      print('ProcessSetpointsMessage--applying OPTIMIZATION stage ' +
-            'deconfliction')
-      # update incentive weights using current conflict metric before final
-      # optimization stage and device dispatch
-      self.CooperationWeightsUpdate(timestamp, self.ConflictMatrix,
-                                    self.TargetResolutionVector)
-
-      newResolutionVector = self.OptimizationDeconflict(app_name, timestamp,
-                                                        self.ConflictMatrix)
+    newResolutionVector = self.OptimizationDeconflict(app_name, timestamp,
+                                                      self.MinConflictMatrix)
 
     # RULES & HEURISTICS stage deconfliction done last
     if not self.rulesStageFirstFlag:
@@ -1307,6 +1321,9 @@ class DeconflictionPipeline(GridAPPSD):
     # zero the cooperation timestamp to indicate no active cooperation
     self.coopTimestamp = 0
     self.coopIdentifier = None
+    # reset running minimums for conflict metric and matrix
+    self.minConflictMetric = 1.0
+    self.MinConflictMatrix.clear()
     print('ProcessSetpointsMessage--finished processing, timestamp: ' +
           str(timestamp) + ', app: ' + app_name + ', meas_msg_flag: ' +
           str(meas_msg_flag) + ', coop_id: ' + str(coop_id))
@@ -1401,6 +1418,9 @@ class DeconflictionPipeline(GridAPPSD):
     # initialize combination cooperation timestamp and control flag
     self.coopTimestamp = 0
     self.coopIter = 0
+    # initialize running cooperation minimums for conflict metric and matrix
+    self.minConflictMetric = 1.0
+    self.MinConflictMatrix = {}
     # initialize counter used to uniquely identify cooperation messages
     self.coopCounter = 0
     self.coopIdentifier = None
