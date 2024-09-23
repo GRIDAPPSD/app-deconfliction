@@ -51,7 +51,7 @@
 """
 Created: March 8, 2023
 FY23 Prototype: August 14, 2023
-FY24 Service: September 20, 2024
+FY24 Service: September 23, 2024
 
 @author: Gary Black
 """""
@@ -1584,11 +1584,11 @@ class DeconflictionPipeline(GridAPPSD):
     # verbose logging control for various deconfliction pipeline aspects
     self.printAllMessagesFlag = False
     self.printAllFeasibilityFlag = False
-    self.printAllValidatorFlag = False
     self.printAllRulesFlag = False
-    self.printAllDispatchesFlag = False
     self.printAllMetricsFlag = False
     self.printAllConflictsResolutionsFlag = False
+    self.printAllValidatorFlag = False
+    self.printAllDispatchesFlag = False
 
     # controls whether rules stage deconfliction is done as the first stage
     # using the ConflictMatrix or deferred until the last stage before device
