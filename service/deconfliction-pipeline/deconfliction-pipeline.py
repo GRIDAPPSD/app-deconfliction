@@ -51,7 +51,7 @@
 """
 Created: March 8, 2023
 FY23 Prototype: August 14, 2023
-FY24 Service: September 23, 2024
+FY24 Service: September 24, 2024
 
 @author: Gary Black
 """""
@@ -460,8 +460,8 @@ class DeconflictionPipeline(GridAPPSD):
         if abs(newResolutionVector[device][1]) > \
            self.Batteries[device]['prated']:
           print('SetpointValidatorForBatteries--device: ' + name +
-                ', app: ' + app + ', P_batt setpoint exceeds battery rated ' +
-                'power: ' + str(newResolutionVector[device][1]))
+                ', P_batt setpoint exceeds battery rated power: ' +
+                str(newResolutionVector[device][1]))
           if newResolutionVector[device][1] > 0:
             newResolutionVector[device] = \
                                        (newResolutionVector[device][0],
@@ -471,33 +471,33 @@ class DeconflictionPipeline(GridAPPSD):
                                        (newResolutionVector[device][0],
                                         -self.Batteries[device]['prated'])
           print('SetpointValidatorForBatteries--device: ' + name +
-                ', app: ' + app + ', P_batt setpoint reset to battery rated '+
-                'power: ' + str(newResolutionVector[device][1]))
+                ', P_batt setpoint reset to battery rated power: '+
+                str(newResolutionVector[device][1]))
 
         # check vs. battery SoC limits
         if newResolutionVector[device][1] > \
            self.Batteries[device]['P_batt_charge_max']:
           print('SetpointValidatorForBatteries--device: ' + name +
-                ', app: ' + app + ', P_batt setpoint above max charge ' +
-                'P_batt: ' + str(newResolutionVector[device][1]))
+                ', P_batt setpoint above max charge P_batt: ' +
+                str(newResolutionVector[device][1]))
           newResolutionVector[device] = \
                              (newResolutionVector[device][0],
                               self.Batteries[device]['P_batt_charge_max'])
           print('SetpointValidatorForBatteries--device: ' + name +
-                ', app: ' + app + ', P_batt setpoint reset to max charge ' +
-                'P_batt: ' + str(newResolutionVector[device][1]))
+                ', P_batt setpoint reset to max charge P_batt: ' +
+                str(newResolutionVector[device][1]))
 
         elif newResolutionVector[device][1] < \
            self.Batteries[device]['P_batt_discharge_max']:
           print('SetpointValidatorForBatteries--device: ' + name +
-                ', app: ' + app + ', P_batt setpoint below max discharge ' +
-                'P_batt: ' + str(newResolutionVector[device][1]))
+                ', P_batt setpoint below max discharge P_batt: ' +
+                str(newResolutionVector[device][1]))
           newResolutionVector[device] = \
                              (newResolutionVector[device][0],
                               self.Batteries[device]['P_batt_discharge_max'])
           print('SetpointValidatorForBatteries--device: ' + name +
-                ', app: ' + app + ', P_batt setpoint reset to max discharge '+
-                'P_batt: ' + str(newResolutionVector[device][1]))
+                ', P_batt setpoint reset to max discharge P_batt: '+
+                str(newResolutionVector[device][1]))
 
 
   def SetpointValidatorForRegulators(self, newResolutionVector,
@@ -509,21 +509,21 @@ class DeconflictionPipeline(GridAPPSD):
       if name.startswith('RatioTapChanger.'):
         if newResolutionVector[device][1] > 16:
           print('SetpointValidatorForRegulators--device: ' + name +
-                ', app: ' + app + '--tap pos setpoint above max feasible ' +
-                'pos: ' + str(newResolutionVector[device][1]))
+                '--tap pos setpoint above max feasible pos: ' +
+                str(newResolutionVector[device][1]))
           newResolutionVector[device] = (newResolutionVector[device][0], 16)
           print('SetpointValidatorForRegulators--device: ' + name +
-                ', app: ' + app + '--tap pos setpoint reset to max feasible '+
-                'pos: ' + str(newResolutionVector[device][1]))
+                '--tap pos setpoint reset to max feasible pos: '+
+                str(newResolutionVector[device][1]))
 
         elif newResolutionVector[device][1] < -16:
           print('SetpointValidatorForRegulators--device: ' + name +
-                ', app: ' + app + '--tap pos setpoint below min feasible ' +
-                'pos: ' + str(newResolutionVector[device][1]))
+                '--tap pos setpoint below min feasible pos: ' +
+                str(newResolutionVector[device][1]))
           newResolutionVector[device] = (newResolutionVector[device][0], -16)
           print('SetpointValidatorForRegulators--device: ' + name +
-                ', app: ' + app + '--tap pos setpoint reset to min feasible '+
-                'pos: ' + str(newResolutionVector[device][1]))
+                '--tap pos setpoint reset to min feasible pos: '+
+                str(newResolutionVector[device][1]))
 
 
   def RulesForBatteriesConflict(self, printAllRulesFlag=False):
@@ -1130,6 +1130,10 @@ class DeconflictionPipeline(GridAPPSD):
         # we were cooperating when a measurement message arrived so need to
         # conclude that cooperation before processing the new message
 
+        # replace running ConflictMatrix with the minimum conflict version and
+        # we'll roll with that from this point on
+        self.ConflictMatrix = copy.deepcopy(self.MinConflictMatrix)
+
         # Published IEEE Access Foundational Paper Reference:
         #   Step 3.2--Deconfliction Solution
         #   Step 3.3--Resolution
@@ -1139,11 +1143,11 @@ class DeconflictionPipeline(GridAPPSD):
 
         # update incentive weights using minimum conflict matrix before final
         # optimization stage and device dispatch
-        self.CooperationWeightsUpdate(timestamp, self.MinConflictMatrix,
+        self.CooperationWeightsUpdate(timestamp, self.ConflictMatrix,
                                       self.TargetResolutionVector)
 
         newResolutionVector = self.Optimization(app_name, timestamp,
-                                                self.MinConflictMatrix)
+                                                self.ConflictMatrix)
 
         # Published IEEE Access Foundational Paper Reference:
         #   Step 3.2--Deconfliction Solution
@@ -1177,7 +1181,6 @@ class DeconflictionPipeline(GridAPPSD):
 
         # reset running minimums for conflict metric and matrix
         self.minConflictMetric = 1.0
-        self.MinConflictMatrix.clear()
         # reset running counts for cooperation messages
         self.AppCoopCount.clear()
 
@@ -1275,7 +1278,6 @@ class DeconflictionPipeline(GridAPPSD):
       self.coopIdentifier = None
       # reset running minimums for conflict metric and matrix
       self.minConflictMetric = 1.0
-      self.MinConflictMatrix.clear()
       # reset running counts for cooperation messages
       self.AppCoopCount.clear()
       print('ProcessSetpointsMessage--finished processing, timestamp: ' +
@@ -1422,19 +1424,23 @@ class DeconflictionPipeline(GridAPPSD):
             '% change met, concluding cooperation with % change: ' +
             str(perConflictDelta) + ', iteration: ' + str(self.coopIter))
 
+    # replace running ConflictMatrix with the minimum conflict version and
+    # we'll roll with that from this point on
+    self.ConflictMatrix = copy.deepcopy(self.MinConflictMatrix)
+
     # Published IEEE Access Foundational Paper Reference:
     #   Step 3.2--Deconfliction Solution
     #   Step 3.3--Resolution
     # OPTIMIZATION stage deconfliction
     print('ProcessSetpointsMessage--applying OPTIMIZATION stage ' +
-          'deconfliction to minimum conflict matrix')
+          'deconfliction to minimum conflict ConflictMatrix')
     # update incentive weights using minimum conflict matrix before final
     # optimization stage and device dispatch
-    self.CooperationWeightsUpdate(timestamp, self.MinConflictMatrix,
+    self.CooperationWeightsUpdate(timestamp, self.ConflictMatrix,
                                   self.TargetResolutionVector)
 
     newResolutionVector = self.Optimization(app_name, timestamp,
-                                            self.MinConflictMatrix)
+                                            self.ConflictMatrix)
 
     # Published IEEE Access Foundational Paper Reference:
     #   Step 3.2--Deconfliction Solution
@@ -1469,9 +1475,8 @@ class DeconflictionPipeline(GridAPPSD):
     # zero the cooperation timestamp to indicate no active cooperation
     self.coopTimestamp = 0
     self.coopIdentifier = None
-    # reset running minimums for conflict metric and matrix
+    # reset running minimum for conflict metric
     self.minConflictMetric = 1.0
-    self.MinConflictMatrix.clear()
     # reset running counts for cooperation messages
     self.AppCoopCount.clear()
     print('ProcessSetpointsMessage--finished processing, timestamp: ' +
