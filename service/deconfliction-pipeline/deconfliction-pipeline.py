@@ -965,7 +965,7 @@ class DeconflictionPipeline(GridAPPSD):
                   str(self.Batteries[devid]['P_batt_inv']) + switchStr)
 
         elif printAllDispatchesFlag:
-          print('DeviceDispatcher--NO DISPATCH needed, battery device: ' +
+          print('DeviceDispatcher--DISPATCH NOT needed, battery device: ' +
                 name + ', timestamp: ' + str(timestamp) +
                 ', same value: ' + str(value[1]))
 
@@ -991,7 +991,7 @@ class DeconflictionPipeline(GridAPPSD):
                     str(self.Regulators[devid]['step']))
 
         elif printAllDispatchesFlag:
-          print('DeviceDispatcher--NO DISPATCH needed, regulator device: ' +
+          print('DeviceDispatcher--DISPATCH NOT needed, regulator device: ' +
                 name + ', timestamp: ' + str(timestamp) +
                 ', same value: ' + str(value[1]))
 
@@ -1306,7 +1306,8 @@ class DeconflictionPipeline(GridAPPSD):
     conflictFlag = self.ConflictIdentification(app_name, timestamp, set_points)
 
     if not conflictFlag:
-      print('>>> ProcessSetpointsMessage--NO conflict found in conflict matrix')
+      print('>>> ProcessSetpointsMessage--conflict NOT found in conflict ' +
+            'matrix')
       # zero conflict metric since by definition there is none
       self.conflictMetric = 0.0
 
@@ -1375,7 +1376,7 @@ class DeconflictionPipeline(GridAPPSD):
       return
 
     # conflict identified logic
-    print('ProcessSetpointsMessage--YES conflict found in conflict matrix')
+    print('ProcessSetpointsMessage--conflict YES found in conflict matrix')
     if meas_msg_flag:
       # Published IEEE Access Foundational Paper Reference:
       #   Step 3.2--Deconfliction Solution
@@ -1476,7 +1477,7 @@ class DeconflictionPipeline(GridAPPSD):
        self.conflictMetric>self.conflictValueThreshold and \
        (perConflictDelta>self.conflictPercentThreshold or perConflictDelta<0.0):
       # initiate further cooperation
-      print('>>> ProcessSetpointsMessage--NO thresholds met, initiating ' +
+      print('>>> ProcessSetpointsMessage--thresholds NOT met, initiating ' +
             'further cooperation at response: ' + str(self.coopResponseCounter))
 
       # update incentive weights for every cooperation response
@@ -1499,17 +1500,17 @@ class DeconflictionPipeline(GridAPPSD):
 
     # thresholds for ending cooperation have been met to get here
     if coopMaxMessageFlag:
-      print('>>> ProcessSetpointsMessage---YES threshold for max cooperation ' +
-            'responses by an app met, concluding cooperation with app ' +
-            'response counts: ' + str(self.AppCoopCount))
+      print('>>> ProcessSetpointsMessage---threshold YES met for max ' +
+            'cooperation responses by an app, concluding cooperation with ' +
+            'app response counts: ' + str(self.AppCoopCount))
     elif self.conflictMetric <= self.conflictValueThreshold:
-      print('>>> ProcessSetpointsMessage---YES threshold for conflict metric ' +
-            'value met, concluding cooperation with conflict metric: ' +
+      print('>>> ProcessSetpointsMessage---threshold YES met for conflict ' +
+            'metric value met, concluding cooperation with conflict metric: ' +
             str(self.conflictMetric) + ', responses: ' +
             str(self.coopResponseCounter))
     else:
-      print('>>> ProcessSetpointsMessage---YES threshold for conflict metric ' +
-            '% change met, concluding cooperation with % change: ' +
+      print('>>> ProcessSetpointsMessage---threshold YES met for conflict ' +
+            'metric % change met, concluding cooperation with % change: ' +
             str(perConflictDelta) + ', responses: ' +
             str(self.coopResponseCounter))
 
