@@ -91,8 +91,8 @@ from sparql import SPARQLManager
 
 class DeconflictionPipeline(GridAPPSD):
 
-  def SetpointProcessor(self, app_name, timestamp, set_points,
-                        printAllConflictsResolutionsFlag=False):
+  def SetpointProcessorMeas(self, app_name, timestamp, set_points,
+                            printAllConflictsResolutionsFlag=False):
     # Update ConflictMatrix with newly provided set-points
 
     # delete any existing matches for app_name so there are no stragglers
@@ -113,7 +113,66 @@ class DeconflictionPipeline(GridAPPSD):
       self.ConflictMatrix[device][app_name] = (timestamp, value)
 
     if printAllConflictsResolutionsFlag:
-      print('SetpointProcessor--ConflictMatrix: ' + str(self.ConflictMatrix))
+      print('SetpointProcessorMeas--ConflictMatrix: ' +str(self.ConflictMatrix))
+
+    if self.testDeviceName:
+      devid = MethodUtil.NameToDevice[self.testDeviceName]
+      if devid in set_points:
+        print('~TEST: set-points message with ' + self.testDeviceName +
+              ' set-point: ' + str(set_points[devid]) +
+              ', app: ' + app_name + ', timestamp: ' + str(timestamp))
+        print('~TEST: ConflictMatrix for ' + self.testDeviceName + ': ' +
+              str(self.ConflictMatrix[devid]))
+      else:
+        print('~TEST: set-points message does not contain ' +
+              self.testDeviceName)
+
+
+  def SetpointProcessorCoop(self, app_name, timestamp, set_points,
+                            printAllConflictsResolutionsFlag=False):
+    # Update ConflictMatrix with newly provided set-points
+
+    MinSetpoints = {}
+    MaxSetpoints = {}
+
+    # find the min/max setpoints for each device to make sure new
+    # setpoints fall in that range
+    for device in self.ConflictMatrix:
+      for app in self.ConflictMatrix[device]:
+        if device not in MinSetpoints:
+          MinSetpoints[device] = self.ConflictMatrix[device][app][1]
+          MaxSetpoints[device] = self.ConflictMatrix[device][app][1]
+        else:
+          MinSetpoints[device] = min(MinSetpoints[device],
+                                     self.ConflictMatrix[device][app][1])
+          MaxSetpoints[device] = max(MaxSetpoints[device],
+                                     self.ConflictMatrix[device][app][1])
+
+      # delete any existing matches for app_name so there are no stragglers
+      # from past timestamps
+      if app_name in self.ConflictMatrix[device]:
+        self.ConflictMatrix[device].pop(app_name)
+
+    # now add the new set-points for app_name
+    for point in set_points:
+      device = point['object']
+      #attribute = point['attribute']
+      value = point['value']
+
+      if device not in self.ConflictMatrix:
+        self.ConflictMatrix[device] = {}
+
+      # make sure value falls in the min/max range
+      if device in MinSetpoints:
+        if value < MinSetpoints[device]:
+          value = MinSetpoints[device]
+        elif value > MaxSetpoints[device]:
+          value = MaxSetpoints[device]
+
+      self.ConflictMatrix[device][app_name] = (timestamp, value)
+
+    if printAllConflictsResolutionsFlag:
+      print('SetpointProcessorCoop--ConflictMatrix: ' +str(self.ConflictMatrix))
 
     if self.testDeviceName:
       devid = MethodUtil.NameToDevice[self.testDeviceName]
@@ -1188,25 +1247,38 @@ class DeconflictionPipeline(GridAPPSD):
     # message with keys of object, attribute, and value
     set_points = message['forward_differences']
 
-    # Published IEEE Access Foundational Paper Reference:
-    #   Step 1--Setpoint Processor
-    print('ProcessSetpointsMessage--invoking setpoint processor')
-    self.SetpointProcessor(app_name, timestamp, set_points,
-                           printAllConflictsResolutionsFlag)
+    if meas_msg_flag:
+      # Published IEEE Access Foundational Paper Reference:
+      #   Step 1--Setpoint Processor
+      print('ProcessSetpointsMessage--invoking meas setpoint processor')
+      self.SetpointProcessorMeas(app_name, timestamp, set_points,
+                                 printAllConflictsResolutionsFlag)
 
-    # Published IEEE Access Foundational Paper Reference:
-    #   Step 2--Feasibility Maintainer
-    self.FeasibilityMaintainerForBatteries(self.printAllFeasibilityFlag)
-    self.FeasibilityMaintainerForRegulators(self.printAllFeasibilityFlag)
+      # Published IEEE Access Foundational Paper Reference:
+      #   Step 2--Feasibility Maintainer
+      self.FeasibilityMaintainerForBatteries(self.printAllFeasibilityFlag)
+      self.FeasibilityMaintainerForRegulators(self.printAllFeasibilityFlag)
 
-    # Published IEEE Access Foundational Paper Reference:
-    #   Step 3.2--Deconfliction Solution
-    # RULES & HEURISTICS stage deconfliction done first
-    if self.rulesStageFirstFlag:
-      print('ProcessSetpointsMessage--applying initial RULES & HEURISTICS ' +
-            'stage deconfliction')
-      self.RulesForBatteriesConflict(self.printAllRulesFlag)
-      self.RulesForRegulatorsConflict(self.printAllRulesFlag)
+      # Published IEEE Access Foundational Paper Reference:
+      #   Step 3.2--Deconfliction Solution
+      # RULES & HEURISTICS stage deconfliction done first
+      if self.rulesStageFirstFlag:
+        print('ProcessSetpointsMessage--applying initial RULES & HEURISTICS ' +
+              'stage deconfliction')
+        self.RulesForBatteriesConflict(self.printAllRulesFlag)
+        self.RulesForRegulatorsConflict(self.printAllRulesFlag)
+
+    else:
+      # Published IEEE Access Foundational Paper Reference:
+      #   Step 1--Setpoint Processor
+      print('ProcessSetpointsMessage--invoking coop setpoint processor')
+      self.SetpointProcessorCoop(app_name, timestamp, set_points,
+                                 printAllConflictsResolutionsFlag)
+
+      # no need to invoke Feasibility Maintainer or Rules stage because
+      # the cooperation version of SetpointProcessor insures there is no
+      # backtracking of setpoints from what was already processed by the
+      # Feasibility Maintainer and Rules stage
 
     # Published IEEE Access Foundational Paper Reference:
     #   Step 3--Deconflictor
