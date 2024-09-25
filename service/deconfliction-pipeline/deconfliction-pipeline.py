@@ -1505,12 +1505,12 @@ class DeconflictionPipeline(GridAPPSD):
             'app response counts: ' + str(self.AppCoopCount))
     elif self.conflictMetric <= self.conflictValueThreshold:
       print('>>> ProcessSetpointsMessage---threshold YES met for conflict ' +
-            'metric value met, concluding cooperation with conflict metric: ' +
+            'metric value, concluding cooperation with conflict metric: ' +
             str(self.conflictMetric) + ', responses: ' +
             str(self.coopResponseCounter))
     else:
       print('>>> ProcessSetpointsMessage---threshold YES met for conflict ' +
-            'metric % change met, concluding cooperation with % change: ' +
+            'metric % change, concluding cooperation with % change: ' +
             str(perConflictDelta) + ', responses: ' +
             str(self.coopResponseCounter))
 
