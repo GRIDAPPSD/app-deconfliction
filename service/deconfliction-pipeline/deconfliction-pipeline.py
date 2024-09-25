@@ -51,7 +51,7 @@
 """
 Created: March 8, 2023
 FY23 Prototype: August 14, 2023
-FY24 Service: September 24, 2024
+FY24 Service: September 25, 2024
 
 @author: Gary Black
 """""
@@ -165,9 +165,25 @@ class DeconflictionPipeline(GridAPPSD):
       # make sure value falls in the min/max range
       if device in MinSetpoints:
         if value < MinSetpoints[device]:
+          print('SetpointProcessorCoop--app: ' + app_name + ', device: ' +
+                MethodUtil.DeviceToName[device] +
+                '--setpoint request below min allowable to prevent ' +
+                'backtracking: ' + str(value))
           value = MinSetpoints[device]
+          print('SetpointProcessorCoop--app: ' + app_name + ', device: ' +
+                MethodUtil.DeviceToName[device] +
+                '--setpoint reset to min allowable to prevent backtracking: ' +
+                str(value))
         elif value > MaxSetpoints[device]:
+          print('SetpointProcessorCoop--app: ' + app_name + ', device: ' +
+                MethodUtil.DeviceToName[device] +
+                '--setpoint request above max allowable to prevent ' +
+                'backtracking: ' + str(value))
           value = MaxSetpoints[device]
+          print('SetpointProcessorCoop--app: ' + app_name + ', device: ' +
+                MethodUtil.DeviceToName[device] +
+                '--setpoint reset to max allowable to prevent backtracking: ' +
+                str(value))
 
       self.ConflictMatrix[device][app_name] = (timestamp, value)
 
