@@ -1196,8 +1196,8 @@ class CompetingApp(GridAPPSD):
                'PowerElectronicsConnection.p', -p_batt_coop[idx], None)
 
         dispatch_message = self.difference_builder.get_message()
-        dispatch_message['cooperationIdentifier'] = \
-                         message['cooperationIdentifier']
+        dispatch_message['cooperationPhase'] = \
+                         message['cooperationPhase']
         print('Sending Cooperation DifferenceBuilder message!', flush=True)
         #print('Sending Cooperation DifferenceBuilder message: ' +
         #      json.dumps(dispatch_message), flush=True)

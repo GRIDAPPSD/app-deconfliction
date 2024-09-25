@@ -1165,30 +1165,37 @@ class DeconflictionPipeline(GridAPPSD):
       print('OnCoopSetpointsMessage--received header: ' + str(header))
 
     app_name = self.getAppName(header)
-    self.messageQueue.put((app_name, False, message['cooperationIdentifier'],
+    self.messageQueue.put((app_name, False, message['cooperationPhase'],
                            message['input']['message']))
 
 
-  def ProcessSetpointsMessage(self, message, app_name, meas_msg_flag, coop_id,
-                              printAllConflictsResolutionsFlag):
+  def ProcessSetpointsMessage(self, message, app_name, meas_msg_flag,
+                              coop_phase, printAllConflictsResolutionsFlag):
     timestamp = message['timestamp']
 
     print('\nProcessSetpointsMessage--start processing, timestamp: ' +
           str(timestamp) + ', app: ' + app_name + ', meas_msg_flag: ' +
-          str(meas_msg_flag) + ', coop_id: ' + str(coop_id))
+          str(meas_msg_flag) + ', coop_phase: ' + str(coop_phase))
+    if meas_msg_flag:
+      print('>>> ProcessSetpointsMessage--MEASUREMENT message timestamp: ' +
+            str(timestamp) + ', app: ' + app_name)
+    else:
+      print('>>> ProcessSetpointsMessage--COOPERATION message timestamp: ' +
+            str(timestamp) + ', app: ' + app_name + ', coop phase:' +
+            str(coop_phase))
 
-    if not meas_msg_flag and coop_id!=self.coopIdentifier:
+    if not meas_msg_flag and coop_phase!=self.coopCurrentPhase:
       # discard any cooperation messages when not currently cooperating or
       # when from a previous cooperation phase
       print('ProcessSetpointsMessage--immediate discard of nonmatching coop ' +
-            'message, coop_id: ' + coop_id + ', current coop_id: ' +
-            str(self.coopIdentifier))
+            'message, coop_phase: ' + coop_phase + ', coopCurrentPhase: ' +
+            str(self.coopCurrentPhase))
       print('ProcessSetpointsMessage--finished processing, timestamp: ' +
             str(timestamp) + ', app: ' + app_name + ', meas_msg_flag: ' +
-            str(meas_msg_flag) + ', coop_id: ' + str(coop_id))
+            str(meas_msg_flag) + ', coop_phase: ' + str(coop_phase))
       return
 
-    if meas_msg_flag and self.coopIdentifier!=None:
+    if meas_msg_flag and self.coopCurrentPhase!=None:
       if self.coopTimestamp == timestamp:
         print('ProcessSetpointsMessage--special case skipping device ' +
               'dispatch for meas message with running cooperation initiated ' +
@@ -1363,14 +1370,14 @@ class DeconflictionPipeline(GridAPPSD):
 
       # zero the cooperation timestamp to indicate no active cooperation
       self.coopTimestamp = 0
-      self.coopIdentifier = None
+      self.coopCurrentPhase = None
       # reset running minimums for conflict metric and matrix
       self.minConflictMetric = 1.0
       # reset running counts for cooperation messages
       self.AppCoopCount.clear()
       print('ProcessSetpointsMessage--finished processing, timestamp: ' +
             str(timestamp) + ', app: ' + app_name + ', meas_msg_flag: ' +
-            str(meas_msg_flag) + ', coop_id: ' + str(coop_id))
+            str(meas_msg_flag) + ', coop_phase: ' + str(coop_phase))
       return
 
     # conflict identified logic
@@ -1404,18 +1411,18 @@ class DeconflictionPipeline(GridAPPSD):
       # competing apps that support cooperation to respond to
       self.coopResponseCounter = 0
       self.coopPhaseCounter += 1
-      self.coopIdentifier = 'COOP-' + str(self.coopPhaseCounter)
-      coopMessage = {'cooperationIdentifier': self.coopIdentifier,
+      self.coopCurrentPhase = 'COOP-' + str(self.coopPhaseCounter)
+      coopMessage = {'cooperationPhase': self.coopCurrentPhase,
                      'targetResolutionVector': self.TargetResolutionVector}
       self.gapps.send(self.coop_topic, json.dumps(coopMessage))
       print('ProcessSetpointsMessage--kicked off new cooperation phase, ' +
-            'updated coopIdentifier: ' + self.coopIdentifier)
+            'updated coopCurrentPhase: ' + self.coopCurrentPhase)
 
       # set the cooperation timestamp to indicate when cooperation was initiated
       self.coopTimestamp = timestamp
       print('ProcessSetpointsMessage--finished processing, timestamp: ' +
             str(timestamp) + ', app: ' + app_name + ', meas_msg_flag: ' +
-            str(meas_msg_flag) + ', coop_id: ' + str(coop_id))
+            str(meas_msg_flag) + ', coop_phase: ' + str(coop_phase))
       return
 
     # coop message with conflict to get here
@@ -1490,12 +1497,12 @@ class DeconflictionPipeline(GridAPPSD):
 
       # publish this target resolution vector to the cooperation topic for
       # competing apps that support cooperation to respond to
-      coopMessage = {'cooperationIdentifier': self.coopIdentifier,
+      coopMessage = {'cooperationPhase': self.coopCurrentPhase,
                      'targetResolutionVector': newTargetResolutionVector}
       self.gapps.send(self.coop_topic, json.dumps(coopMessage))
       print('ProcessSetpointsMessage--finished processing, timestamp: ' +
             str(timestamp) + ', app: ' + app_name + ', meas_msg_flag: ' +
-            str(meas_msg_flag) + ', coop_id: ' + str(coop_id))
+            str(meas_msg_flag) + ', coop_phase: ' + str(coop_phase))
       return
 
     # thresholds for ending cooperation have been met to get here
@@ -1564,14 +1571,14 @@ class DeconflictionPipeline(GridAPPSD):
 
     # zero the cooperation timestamp to indicate no active cooperation
     self.coopTimestamp = 0
-    self.coopIdentifier = None
+    self.coopCurrentPhase = None
     # reset running minimum for conflict metric
     self.minConflictMetric = 1.0
     # reset running counts for cooperation messages
     self.AppCoopCount.clear()
     print('ProcessSetpointsMessage--finished processing, timestamp: ' +
           str(timestamp) + ', app: ' + app_name + ', meas_msg_flag: ' +
-          str(meas_msg_flag) + ', coop_id: ' + str(coop_id))
+          str(meas_msg_flag) + ', coop_phase: ' + str(coop_phase))
 
 
   def __init__(self, gapps, feeder_mrid, simulation_id, weights_base, interval):
@@ -1674,7 +1681,7 @@ class DeconflictionPipeline(GridAPPSD):
     self.AppCoopCount = {}
     # initialize counter used to uniquely identify cooperation messages
     self.coopPhaseCounter = 0
-    self.coopIdentifier = None
+    self.coopCurrentPhase = None
 
     # verbose logging control for various deconfliction pipeline aspects
     self.printAllMessagesFlag = False
@@ -1749,7 +1756,7 @@ class DeconflictionPipeline(GridAPPSD):
       # as it would only make sense to discard when there is a newer setpoints
       # message from the same competing app.
       while self.messageQueue.qsize() > 0:
-        app_name, meas_msg_flag, coop_id, message = self.messageQueue.get()
+        app_name, meas_msg_flag, coop_phase, message = self.messageQueue.get()
         if app_name != None:
           break
 
@@ -1757,8 +1764,8 @@ class DeconflictionPipeline(GridAPPSD):
         self.ProcessSimulationMessage(message, self.printAllMessagesFlag)
 
       else:
-        self.ProcessSetpointsMessage(message, app_name, meas_msg_flag, coop_id,
-                                     self.printAllConflictsResolutionsFlag)
+        self.ProcessSetpointsMessage(message, app_name, meas_msg_flag,
+                             coop_phase, self.printAllConflictsResolutionsFlag)
 
     for id in set_id:
       gapps.unsubscribe(set_id[id])
