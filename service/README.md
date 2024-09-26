@@ -115,29 +115,14 @@ Various other Python modules are required to run the different processes that ar
 </li>
 
 <li>
-To test the sim-sim module from a shell currently in the competing-apps directory of the app-deconfliction repo:
+To test a competing app (all apps use the same base code varying only the optimization objective function) from a shell in the service directory:
 
 ```` bash
-$ cd sim-starter
-$ ./run-sim.sh 123
+$ cd optimization-apps
+$ ./run-resilience.sh 123apps standalone
 ````
 
-If you get output starting with "Hit return" after some query output, this demonstrates successful initialization. You may hit return to verify sending a time-series data message and then do a ctrl-C exit. Most errors from running sim-sim are related to your GridAPPS-D platform setup. Missing modules include gridappsd-python (see item above) and matplotlib, which can be installed with:
-
-```` bash
-$ sudo pip install matplotlib
-````
-</li>
-
-<li>
-To test an optimization-based competing app (all optimization apps use the same base code varying only the objective function) assuming you were in the sim-starter directory:
-
-```` bash
-$ cd ../optimization-apps
-$ ./run-resilience.sh 123
-````
-
-If you get output starting with "Initialized resilience optimization competing app" after some query output, this demonstrates successful initialization and you may do a ctrl-C exit. Modules likely to be missing include numpy, tabulate, pulp, and cvxpy. The following may prove helpful based on failed imports:
+Note the final argument of "standalone" must be present to perform a standalone invocation as needed for this test. If you get output starting with "Initialized resilience optimization competing app" after some query output, this demonstrates successful initialization and you may do a ctrl-C exit. Modules likely to be missing include numpy, tabulate, pulp, and cvxpy. The following may prove helpful based on failed imports:
 
 ```` bash
 $ sudo pip install numpy
@@ -147,7 +132,7 @@ $ sudo pip install pulp
 $ sudo pip install cvxpy
 ````
 
-Note that glpk-utils is needed by the PuLP optmization module. There are also workflow-based competing apps in the competing-apps/workflow-apps directory. If an optimization-based app initializes though, it is unlikely a workflow-based app will fail so that test can be skipped.
+Note that glpk-utils is needed by the PuLP optmization module.
 </li>
 
 <li>
@@ -155,10 +140,10 @@ To test the core deconfliction-pipeline process assuming you were in the optimiz
 
 ```` bash
 $ cd ../deconfliction-pipeline
-$ ./run-pipeline.sh 123 ../deconfliction-methods/compromise-rd-method.py
+$ ./run-pipeline.sh 123apps standalone
 ````
 
-If you get output starting with "Initialized deconfliction pipeline" after some query output, this demonstrates successful intialization and you may do a ctrl-C exit. Typically if sim-sim and an optimization competing app both complete initialization, the deconfliction-pipeline will initialize successfully as well.
+Note the final argument of "standalone" must be present to perform a standalone invocation as needed for this test. If you get output starting with "Initialization--finished" after some query output, this demonstrates successful intialization and you may do a ctrl-C exit.
 </li>
 </ol>
 
