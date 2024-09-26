@@ -10,7 +10,7 @@ SIMID=$1
 SIMREQ=$2
 
 # special case invocation to fire off a simulation and run the app standalone
-if [ "$2" = "test" ]; then
+if [ "$2" = "standalone" ]; then
   read -d "\n" SIMID SIMREQ <<< $(../sim-starter/sim-starter.py $1)
 fi
 
