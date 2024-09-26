@@ -5,7 +5,7 @@ Last updated: September 26, 2024
 
 ## Purpose
 
-The service directory of the app-deconflicion repository contains the entirety of the FY24 Centralized Deconfliction Service that includes both the deconfliction service (aka, deconfliction pipeline) and sample competing applications for development, testing, and demonstration. The service/pipeline performs deconfliction using a combined methodology applied in stages that were initially developed independently through work in FY23. These stages are:
+The service directory of the app-deconfliction repository contains the entirety of the FY24 Centralized Deconfliction Service that includes both the deconfliction service (aka, deconfliction pipeline) and sample competing applications for development, testing, and demonstration. The service/pipeline performs deconfliction using a combined methodology applied in stages that were initially developed independently through work in FY23. These stages are:
 <ol>
 <li>Rules & Heuristics
 <li>Cooperation
@@ -16,48 +16,11 @@ While the FY23 prototype used hardwired file-based simulation data to drive the 
 
 ## Overview
 
-The Centralized Deconfliction Service builds on the FY23 prototype following the design described in the project foundational paper published in IEEE Access and is available at <https://ieeexplore.ieee.org/document/10107708>, specifically sections III-B and -C. There are methods in deconfliction-pipeline.py code directly corresponding to subsections in the foundational paper, e.g., SetpointProcessor, ConflictIdentification, and DeviceDispatcher. The service extends what was done in the prototype by applying the combined or staged deconfliction methodology first described in the end of FY23 Deconfliction Alternatives Analysis paper as well as integrating with GridLAB-D simulations.
+The Centralized Deconfliction Service builds on the FY23 prototype following the design described in the project foundational paper published in IEEE Access and available at <https://ieeexplore.ieee.org/document/10107708>, specifically sections III-B and -C. There are methods in deconfliction-pipeline.py code directly corresponding to subsections in the foundational paper, e.g., SetpointProcessor, ConflictIdentification, and DeviceDispatcher. The service extends what was done in the prototype by applying the combined or staged deconfliction methodology first described in the end of FY23 Deconfliction Alternatives Analysis paper as well as integrating with GridLAB-D simulations.
 
-The deconfliction workflow kicks off with GridLAB-D simulation measurement messages that provide updated device setpoints and battery SoC data. Competing apps subscribe to the GridLAB-D messages to carry out their work determining and publishing new device setpoint requests via CIM DifferenceBuilder messages. The deconfliction service intercepts these CIM DifferenceBuilder messages from competings apps to perform the steps described in the Foundational and Alternatives Analysis papers producing deconflicted setpoints dispatched to devices also through CIM DifferenceBuilder messages. The service exchanges messages with competing apps during an iterative stage of deconfliction that incentivizes apps to cooperate. Subsequent GridLAB-D simulation measurement messages reflect these deconflicted setpoints provided by the service and are processed by competing apps thus completing the deconfliction workflow loop.
+The deconfliction workflow kicks off with GridLAB-D simulation measurement messages that provide updated device setpoints and battery SoC data. Competing apps subscribe to the GridLAB-D measurements to carry out their work determining and publishing new device setpoint requests via CIM DifferenceBuilder messages. The deconfliction service intercepts these DifferenceBuilder messages from competings apps to perform the steps described in the Foundational and Alternatives Analysis papers producing deconflicted setpoints dispatched to devices also through CIM DifferenceBuilder messages. The service exchanges messages with competing apps during an iterative stage of deconfliction that incentivizes apps to cooperate in trying to reach consensus setpoint values. Subsequent GridLAB-D simulation measurement messages reflect these deconflicted setpoints requested by the service and are processed by competing apps, thus completing the deconfliction workflow loop.
 
-For details on the combined/staged deconfliction methodology implemented in the FY24 Centralized Deconfliction Service, please see the Functional Specification document for the service at <https://github.com/GRIDAPPSD/gridappsd-training/blob/main/module-content/docs/source/services/app-deconfliction/FY24ServiceFunctionalSpecsFinal.md>
-
-## ConflictMatrix and ResolutionVector structures
-
-Two data structures, ConflictMatrix and ResolutionVector, are central to the deconfliction service design and thus important to a full understanding of how the service functions.
-
-ConflictMatrix is a multi-dimensioned dictionary. The first dimension or key is all the devices, represented by CIM mRID values, for which there are ConflictMatrix entries. Therefore, "for device in ConflictMatrix:" will iterate over all devices. The second dimension is all the apps for which there are ConflictMatrix[device] entries. Therefore, "for app in ConflictMatrix[device]:" would iterate over all apps for a given device and when this for loop is nested under the previous one for devices, it would iterate over all entries of ConflictMatrix.
-
-The value for each ConflictMatrix entry is a tuple containing the timestamp and setpoint value for that device and app combination. I.e., "ConflictMatrix[device][app] = (timestamp, setpoint)" represents both the keys for the ConflictMatrix dictionary and timestamp/setpoint value for that device and app combination. Note that the timestamp will be the same for all devices for a given app as a new setpoint message for an app replaces all previous setpoint requests for that app. I.e., if a device setpoint from a previous request is not present in a new request, that device and app combination is cleared from the ConflictMatrix so only requests from the most recent request remain.
-
-Note that the name ConflictMatrix could be considered a misnomer for what is stored in the dictionary. ConflictMatrix represents the most recent setpoints (and associated timestamps) for an app over all devices for which that app has a setpoint. There may or may not be conflicts (different setpoint values) in ConflictMatrix for any individual device between apps. As the foundational paper established the name for ConflictMatrix, this will be preserved.
-
-To summarize, the following code snippet will iterate over and print all ConflictMatrix entries:
-
-```` bash
-for device in ConflictMatrix:
-  for app in ConflictMatrix[device]:
-    print('ConflictMatrix setpoint for device: ' + device + ', app: ' + app +
-          ', value: ' + str(ConflictMatrix[device][app][1]) +
-          ', timestamp: ' + ConflictMatrix[device][app][0]))
-````
-
-ResolutionVector is single dimension dictionary where the key is the device. The purpose of ResolutionVector is to specify a single deconflicted or resolved setpoint for each device across all apps and therefore there is no app dimension or key. To iterate over all setpoint values in the ResolutionVector, the code would be "for device in ResolutionVector:".
-
-Like ConflictMatrix, the value for each ResolutionVector entry is a tuple containing the timestamp and setpoint value for that device. I.e., "ResolutionVector[device] = (timestamp, setpoint)" represents both the key for the ResolutionVector dictionary and timestamp/setpoint value for that device. The timestamp tuple element represents the most recent timestamp used to determine a deconflicted setpoint over all apps for the device and can therefore be used to determine how "fresh" a resolved set-point is.
-
-To summarize, the following code snippet will iterate over and print all ResolutionVector entries:
-
-```` bash
-for device in ResolutionVector:
-  print('ResolutionVector setpoint for device: ' + device +
-        ', value: ' + str(ResolutionVector[device][1] +
-        ', timestamp: ' + ResolutionVector[device][0]))
-````
-
-Note on timestamps and deconfliction: The ConflictMatrix maintains the timestamps associated with competing app setpoint requests. This could indicate that some requests are "fresh" while others are quite "stale". If an app sends a single setpoint request very early on in a simulation then either crashes, exits, or takes a very long nap, this original request remains in ConflictMatrix for the duration of the run (simulation). Currently the timestamp values in ConflictMatrix are ignored by the combined/staged deconfliction methodology. It is possible that future enhancements will utilize the timestamp such as the service itself discarding "stale" setpoints that have passed an expiration criteria or they will be giving less weight in performing deconfliction than setpoints with more recent timestamps.
-
-On a related note, in addition to timestamps within ConflictMatrix that are old, it's also possible based on the deconfliction service design for there to be newly arriving setpoint requests from apps that are associated with timestamps older than the timestamp for the most recent GridLAB-D measurement message. An app could be very slow to produce a setpoint request causing this situation. Similarly, the deconfliction process may be very slow to produce a ResolutionVector and thus the timestamp associated wih the device dispatch message could also be older than expected. As the implications of discarding them are too significant, in both these cases the deconfliction service considers these messages as valid even though they are not based on the most current GridLAB-D measurements.
+For details on the combined/staged deconfliction methodology implemented in the FY24 Centralized Deconfliction Service, please see the Functional Specification document for the service at <https://github.com/GRIDAPPSD/gridappsd-training/blob/main/module-content/docs/source/services/app-deconfliction/FY24ServiceFunctionalSpecsFinal.md>.
 
 ## Directory layout
 
@@ -116,7 +79,7 @@ If the import returns an error message, see <https://github.com/GRIDAPPSD/gridap
 </li>
 
 <li>
-Various other Python modules are required to run the different processes that are part of the deconfliction pipeline. The recommended approach is to run one-by-one each required deconfliction process through initialization to identify missing modules. Missing modules should be installed until the process successfully initializes at which time the same initialization test can be done for the next process. The following steps walk through running each deconfliction process and cover the most likely missing modules.
+Various other Python modules are required to run the different processes that are part of the deconfliction service. The recommended approach is to run one-by-one each required deconfliction process through initialization to identify missing modules. Missing modules should be installed until the process successfully initializes at which time the same initialization test can be done for the next process. The following steps walk through running each deconfliction process and cover the most likely missing modules.
 </li>
 
 <li>
@@ -127,7 +90,13 @@ $ cd optimization-apps
 $ ./run-resilience.sh 123apps standalone
 ````
 
-Note the final argument of "standalone" must be present to perform a standalone invocation as needed for this test. If you get output starting with "Initialized resilience optimization competing app" after some query output, this demonstrates successful initialization and you may do a ctrl-C exit. Modules likely to be missing include numpy, tabulate, pulp, and cvxpy. The following may prove helpful based on failed imports:
+Note the final argument of "standalone" must be present to perform a standalone invocation as needed for this test. If you get output starting with "Initialized resilience" after some query output, this demonstrates successful initialization and you may do a ctrl-C exit. It is best to test both a PuLP and CVXPY optimization app since each uses some different modules. The test above is for PuLP, but CVXPY can be tested with:
+
+```` bash
+$ ./run-resilience.sh 123apps standalone cvxpy
+````
+
+There is little to be gained from trying the decarbonization or profit objectives in addition to resilience, but they also support the standalone argument. Modules likely to be missing for the competing apps include numpy, tabulate, pulp, and cvxpy. The following may prove helpful based on failed imports:
 
 ```` bash
 $ sudo pip install numpy
@@ -177,7 +146,7 @@ With all of that as background, as example invocations of run-deconfliction.sh, 
 ```` bash
 $ ./run-deconfliction.sh 123apps rd
 $ ./run-deconfliction.sh 123apps rdp
-$ ./run-deconfliction.sh 123apps rdd cvxpy
+$ ./run-deconfliction.sh 123apps rdp cvxpy
 ````
 
 In the first invocation, the resilience and decarbonization competing apps are run with a GridLAB-D simulation for the batteries-included IEEE 123 node model. In the second invocation, the profit CVR app is add in as well. In the third invocation, the CVXPY optimization library is used for the competing apps instead of the default PuLP library.
@@ -186,3 +155,11 @@ The run-deconfliction.sh wrapper script normally only shows diagnostic log outpu
 
 Although the run-deconfliction.sh wrapper script starts a number of processes, some of them as background jobs, there is special logic that "traps" ctrl-C exits from the script and properly terminates all jobs associated with the deconfliction service such as competing apps. Note that in the case of a ctrl-C exit from the wrapper script that a GridLAB-D simulation that has been started will not be terminated and instead run to completion.
 
+## Post FY24 TO-DO
+
+<ul>
+<li>Add commands to prerequisite item 2 for adding measurements to the modified 123apps model allowing it to run simulations.
+<li>Need to get the modified 123apps model added to the default GridAPPS-D platform distribution.
+<li>Design changes to the GOSS-HELICS bridge allowing the deconfliction service to intercept CIM DifferenceBuilder messages sent to the GridLAB-D simulation.
+<li>Support cooperation in competing apps with a modiified objective function given the intended phi function is non-linear/concave.
+</ul>
