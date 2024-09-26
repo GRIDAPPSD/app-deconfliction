@@ -1013,7 +1013,7 @@ class CompetingApp(GridAPPSD):
     self.difference_builder = DifferenceBuilder(simulation_id)
 
     print('\nInitialized ' + opt_type +
-          ' optimization competing app, waiting for messages...\n',
+          ' CVXPY optimization competing app, waiting for messages...\n',
           flush=True)
 
     messageCounter = 0
