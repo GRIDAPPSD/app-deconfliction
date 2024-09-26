@@ -1,5 +1,8 @@
 # app-deconfliction/service
 
+Author: Gary Black
+Last updated: September 26, 2024
+
 ## Purpose
 
 The service directory of the app-deconflicion repository contains the entirety of the FY24 Centralized Deconfliction Service that includes both the deconfliction service (aka, deconfliction pipeline) and sample competing applications for development, testing, and demonstration. The service/pipeline performs deconfliction using a combined methodology applied in stages that were initially developed independently through work in FY23. These stages are:
