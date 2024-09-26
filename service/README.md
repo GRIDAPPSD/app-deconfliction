@@ -17,110 +17,42 @@ The Centralized Deconfliction Service builds on the FY23 prototype following the
 
 The deconfliction workflow kicks off with GridLAB-D simulation measurement messages that provide updated device setpoints and battery SoC data. Competing apps subscribe to the GridLAB-D messages to carry out their work determining and publishing new device setpoint requests via CIM DifferenceBuilder messages. The deconfliction service intercepts these CIM DifferenceBuilder messages from competings apps to perform the steps described in the Foundational and Alternatives Analysis papers producing deconflicted setpoints dispatched to devices also through CIM DifferenceBuilder messages. The service exchanges messages with competing apps during an iterative stage of deconfliction that incentivizes apps to cooperate. Subsequent GridLAB-D simulation measurement messages reflect these deconflicted setpoints provided by the service and are processed by competing apps thus completing the deconfliction workflow loop.
 
-## DeconflictionMethod class interface
+## ConflictMatrix and ResolutionVector structures
 
-Deconfliction methods are implemented within classes named DeconflictionMethod--the filename for defining the class may distinguish the type of method, but the class name must be DeconflictionMethod. The only required methods for DeconflictionMethod are a constructor for initialization and a method named deconflict() that performs deconfliction when called. The class may define other methods or even call other classes or exchange messages with other processes needed to perform deconfliction at the discretion of the method developer, but the pipeline framework uses only \_\_init\_\_() and deconflict(). The pipeline framework imports and directly invokes these methods, so DeconflictionMethod is part of the deconfliction pipeline process as distinguished from competing apps and sim-sim that interface via inter-process messaging over the GridAPPS-D message bus.
+Two data structures, ConflictMatrix and ResolutionVector, are central to the deconfliction service design and thus important to a full understanding of how the service functions.
 
-DeconflictionMethod classes perform deconfliction by taking device set-points across all competing apps given in the ConflictMatrix structure (maintained by the pipeline framework) and putting deconflicted device setpoints in the ResolutionVector structure returned by the deconflict() method.
+ConflictMatrix is a multi-dimensioned dictionary. The first dimension or key is all the devices, represented by CIM mRID values, for which there are ConflictMatrix entries. Therefore, "for device in ConflictMatrix:" will iterate over all devices. The second dimension is all the apps for which there are ConflictMatrix[device] entries. Therefore, "for app in ConflictMatrix[device]:" would iterate over all apps for a given device and when this for loop is nested under the previous one for devices, it would iterate over all entries of ConflictMatrix.
 
-The interface of the pipeline framework and DeconflictionMethod classes consists of:
-<ul>
-<li>Signature of DeconflictionMethod __init__() constructor</li>
-<li>Signature of and return value from DeconflictionMethod deconflict() method</li>
-<li>Descriptions of ConflictMatrix and ResolutionVector structures for exchanging data between the pipeline framework and DeconflictionMethod class</li>
-<li>MethodUtil class members used to provide ancilliary data from the pipeline framework to the DeconflictionMethod class</li>
-</ul>
+The value for each ConflictMatrix entry is a tuple containing the timestamp and setpoint value for that device and app combination. I.e., "ConflictMatrix[device][app] = (timestamp, setpoint)" represents both the keys for the ConflictMatrix dictionary and timestamp/setpoint value for that device and app combination. Note that the timestamp will be the same for all devices for a given app as a new setpoint message for an app replaces all previous setpoint requests for that app. I.e., if a device setpoint from a previous request is not present in a new request, that device and app combination is cleared from the ConflictMatrix so only requests from the most recent request remain.
 
-### DeconflictionMethod \_\_init\_\_() constructor
-
-The signature of the constructor is:
-
-```` bash
-class DeconflictionMethod:
-  def __init__(self, ConflictMatrix):
-````
-
-During pipeline framework initialization the configured DeconflictionMethod class is imported and the constructor called. A reference to the ConflictMatrix is passed in the constructor and typically the implementation will save this away in a class variable for later use in the deconflict() method. This same ConflictMatrix reference can be used throughout the deconfliction pipeline instance even as the ConflictMatrix is being continuously updated. The following snippet shows saving a reference to ConflictMatrix in the constructor:
-
-```` bash
-  def __init__(self, ConflictMatrix):
-    self.ConflictMatrix = ConflictMatrix
-````
-
-### DeconflictionMethod deconflict() method
-
-The signature for the deconflict() method and return value is:
-
-```` bash
-class DeconflictionMethod:
-
-  def deconflict(self, app_name, timestamp):
-    ...
-
-    return ResolutionVector
-````
-
-Every time the pipeline framework receives a competing app set-points message, the framework processes the set-points to determine whether a new conflict has been introduced as a result of the message. If so, the deconflict() method is called to resolve those conflicts. Importantly, this can result in multiple deconflict() calls for a given timestamp or interval before the next sim-sim time-series data message is sent. As a consequence there will be multiple ResolutionVectors computed potentially leading to multiple set-points being dispatched to the same device effectively on top of each other. This is core to the design of the deconfliction pipeline and attempting to come up with a more sophisticated design that synchronizes set-points messages across multiple competing apps to eliminate dispatches on top of each other will not be as robust or timely in performing deconfliction. If each app could be counted on to supply set-points for each time interval this sort of synchronization would be possible, but it is the very nature of the apps being unpredictable in their timing that precludes synchronizing competing apps messages. Note that the pipeline framework only dispatches set-points to devices if that set-point would require an action by the device such as changing a regulator tap position or charging a battery. This means that dispatches on top of each other would only happen to perform a new action, not when the previously resolved set-point still held.
-
-The competing app name and timestamp as provided by the app sending the set-points message that resulted in the call to deconflict() are passed as arguments. The timestamp can serve as a reference to the DeconflictionMethod such as when stepping through ConflictMatrix to determine if a device set-point conflict is a new conflict or one that previously existed.
-
-### ConflictMatrix and ResolutionVector structures
-
-ConflictMatrix is a multi-dimensioned dictionary. The first dimension or key is all the devices for which there are ConflictMatrix entries. Therefore, "for device in ConflictMatrix[device]:" will iterate over all devices. The second dimension is all the apps for which there are ConflictMatrix[device] entries. Therefore, "for app in ConflictMatrix[device]:" would iterate over all apps for a given device and when this for loop is nested under the previous one for devices, it would iterate over all entries of ConflictMatrix.
-
-The value for each ConflictMatrix entry is a tuple containing the timestamp and set-point value for that device and app combination. I.e., "ConflictMatrix[device][app] = (timestamp, setpoint)" represents both the keys for the ConflictMatrix dictionary and timestamp/setpoint value for that device and app combination. Note that the timestamp will be the same for all devices for a given app as a new set-point message for an app replaces all previous set-point requests for that app. I.e., if a device setpoint from a previous request is not present in a new request, that device and app combination is cleared from the ConflictMatrix so only requests from the most recent request remain.
-
-Note that the name ConflictMatrix could be considered a misnomer for what is stored in the dictionary. ConflictMatrix represents the most recent set-points (and associated timestamps) for an app over all devices for which that app has a set-point. There may or may not be conflicts (different set-point values) in ConflictMatrix for any individual device between apps. As the foundational paper established the name for ConflictMatrix, this will be preserved.
+Note that the name ConflictMatrix could be considered a misnomer for what is stored in the dictionary. ConflictMatrix represents the most recent setpoints (and associated timestamps) for an app over all devices for which that app has a setpoint. There may or may not be conflicts (different setpoint values) in ConflictMatrix for any individual device between apps. As the foundational paper established the name for ConflictMatrix, this will be preserved.
 
 To summarize, the following code snippet will iterate over and print all ConflictMatrix entries:
 
 ```` bash
 for device in ConflictMatrix:
   for app in ConflictMatrix[device]:
-    print('ConflictMatrix set-point for device: ' + device + ', app: ' + app +
+    print('ConflictMatrix setpoint for device: ' + device + ', app: ' + app +
           ', value: ' + str(ConflictMatrix[device][app][1]) +
           ', timestamp: ' + ConflictMatrix[device][app][0]))
 ````
 
-ResolutionVector is single dimension dictionary where the key is the device. The purpose of ResolutionVector is to specify a single deconflicted or resolved set-point for each device across all apps and therefore there is no app dimension or key. To iterate over all set-point values in the ResolutionVector, the code would be "for device in ResolutionVector:".
+ResolutionVector is single dimension dictionary where the key is the device. The purpose of ResolutionVector is to specify a single deconflicted or resolved setpoint for each device across all apps and therefore there is no app dimension or key. To iterate over all setpoint values in the ResolutionVector, the code would be "for device in ResolutionVector:".
 
-Like ConflictMatrix, the value for each ResolutionVector entry is a tuple containing the timestamp and set-point value for that device. I.e., "ResolutionVector[device] = (timestamp, setpoint)" represents both the key for the ResolutionVector dictionary and timestamp/setpoint value for that device. The timestamp tuple element represents the most recent timestamp used to determine a deconflicted set-point over all apps for the device and can therefore be used to determine how "fresh" a resolved set-point is.
+Like ConflictMatrix, the value for each ResolutionVector entry is a tuple containing the timestamp and setpoint value for that device. I.e., "ResolutionVector[device] = (timestamp, setpoint)" represents both the key for the ResolutionVector dictionary and timestamp/setpoint value for that device. The timestamp tuple element represents the most recent timestamp used to determine a deconflicted setpoint over all apps for the device and can therefore be used to determine how "fresh" a resolved set-point is.
 
 To summarize, the following code snippet will iterate over and print all ResolutionVector entries:
 
 ```` bash
 for device in ResolutionVector:
-  print('ResolutionVector set-point for device: ' + device +
+  print('ResolutionVector setpoint for device: ' + device +
         ', value: ' + str(ResolutionVector[device][1] +
         ', timestamp: ' + ResolutionVector[device][0]))
 ````
 
-Note on timestamps and deconfliction: The ConflictMatrix maintains the timestamps associated with competing app set-point requests. This could indicate that some requests are "fresh" while others are quite "stale". If an app sends a single set-point request very early on in a simulation then either crashes, exits, or takes a very long nap, this original request remains in ConflictMatrix for the duration of the deconfliction session. Thus if a DeconflictionMethod ignores timestamps completely (all the sample DeconflictionMethod classes in the deconfliction-methods directory do just that!) then that very old request will be given equal weight to any subsequent and even brand new requests. Perhaps in future enhancements to the deconfliction pipeline framework there will be a policy for the framework itself to discard "stale" set-point requests, but currently they are part of ConflictMatrix.
+Note on timestamps and deconfliction: The ConflictMatrix maintains the timestamps associated with competing app setpoint requests. This could indicate that some requests are "fresh" while others are quite "stale". If an app sends a single setpoint request very early on in a simulation then either crashes, exits, or takes a very long nap, this original request remains in ConflictMatrix for the duration of the run (simulation). Currently the timestamp values in ConflictMatrix are ignored by the combined/staged deconfliction methodology. It is possible that future enhancements will utilize the timestamp such as the service itself discarding "stale" setpoints that have passed an expiration criteria or they will be giving less weight in performing deconfliction than setpoints with more recent timestamps.
 
-On a related note, in addition to timestamps within ConflictMatrix that are old, it's also possible based on the deconfliction pipeline design for there to be newly arriving set-point request messages from apps that are associated with timestamps older than the timestamp for the most recent sim-sim time-series data message. An app could be very slow to produce a set-point request causing this situation. Similarly, the DeconflictionMethod class may be very slow to produce a ResolutionVector from a deconflict() method call and thus the timestamp associated wih the device dispatch message could also be older than expected. In both these cases the deconfliction pipeline design considers these messages as valid even though they are not based on the most current time-series data message. The implications of discarding them are too significant to discard them although there may ultimately be some middle ground to give them special consideration rather than either discarding them or considering them equivalent to messages based on current data.
-
-### MethodUtil members
-
-The MethodUtil class contains references to data structures that can optionally be used by DeconflictionMethod classes. These structures are kept up to date by the deconfliction pipeline framework and must be treated as read-only by DeconflictionMethod classes. The data structures are:
-
-DeviceSetpoints: Dictionary containing set-points that were changed over the period since the last sim-sim time-series data message was sent. This does not represent the comprehensive set of current device set-points, but that could easily be generated from this dictionary with code similar to this snippet:
-
-```` bash
-import MethodUtil
-
-class DeconflictionMethod:
-  def __init__(self, ConflictMatrix):
-    self.CurrentDeviceSetpoints = {}
-
-  def deconflict(self, timestamp):
-    # update dictionary of all current set-points
-    for device, value in MethodUtil.DeviceSetpoints.items():
-      self.CurrentDeviceSetpoints[device] = value
-````
-
-BatterySoC: Dictionary containing updated SoC values for all batteries at the time the most recent sim-sim time-series data message was sent. Iterating over all BatterySoC entries can be done with "for device, value in MethodUtil.BatterySoC.items()".
-
-sparql_mgr: Reference to class defining various GridAPPS-D queries that may prove useful to DeconflictionMethod classes.
+On a related note, in addition to timestamps within ConflictMatrix that are old, it's also possible based on the deconfliction service design for there to be newly arriving setpoint requests from apps that are associated with timestamps older than the timestamp for the most recent GridLAB-D measurement message. An app could be very slow to produce a setpoint request causing this situation. Similarly, the deconfliction process may be very slow to produce a ResolutionVector and thus the timestamp associated wih the device dispatch message could also be older than expected. As the implications of discarding them are too significant, in both these cases the deconfliction service considers these messages as valid even though they are not based on the most current GridLAB-D measurements.
 
 ## Directory layout
 
@@ -129,39 +61,26 @@ sparql_mgr: Reference to class defining various GridAPPS-D queries that may prov
 ├── README.md
 ├── run-deconfliction.sh
 ├── sim-starter
-    ├── run-sim.sh
-    ├── sim-sim.py
     ├── sim-starter.py
-    ├── time-series.csv
     ├── ieee123apps.xml
-    ├── 123-config.json
+    ├── 123apps-config.json
     └── ...
 ├── optimization-apps
-    ├── optimization-app-cvxpy.py
     ├── optimization-app-pulp.py
+    ├── optimization-app-cvxpy.py
     ├── run-resilience.sh
     ├── run-decarbonization.sh
     └── run-profit.sh
-├── workflow-apps
-    ├── resilience-app.py
-    ├── run-resilience.sh
-    ├── decarbnonization-app.py
-    └── run-decarbonization.sh
 ├── deconfliction-pipeline
     ├── deconfliction-pipeline.py
     └── run-pipeline.sh
-├── deconfliction-methods
-    ├── compromise-rd-method.py
-    ├── compromise-rdp-method.py
-    ├── exclusivity-r-method.py
-    └── ...
 └── shared
     ├── AppUtil.py
     ├── MethodUtil.py
     └── sparql.py
 ````
 
-Note "..." indicates files similar to the one preceding and there are additional files in the repo that are omitted in the layout above and superfluous to the existing deconfliction workflow.
+Note "..." indicates files similar to the one preceding and there are additional files in the repo that are omitted in the layout above and not important to the understanding of the deconfliction service.
 
 ## Prerequisites
 
