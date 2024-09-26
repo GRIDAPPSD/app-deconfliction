@@ -50,8 +50,8 @@
 # ------------------------------------------------------------------------------
 """
 Created: March 8, 2023
-FY23 Prototype: August 14, 2023
-FY24 Service: September 25, 2024
+FY23 Prototype Last Updated: August 14, 2023
+FY24 Service Last Updated: September 26, 2024
 
 @author: Gary Black
 """""
@@ -91,67 +91,40 @@ from sparql import SPARQLManager
 
 class DeconflictionPipeline(GridAPPSD):
 
-  def SetpointProcessorMeas(self, app_name, timestamp, set_points,
-                            printAllConflictsResolutionsFlag=False):
+  def SetpointProcessor(self, app_name, timestamp, set_points, meas_msg_flag,
+                        printAllConflictsResolutionsFlag=False):
     # Update ConflictMatrix with newly provided set-points
 
-    # delete any existing matches for app_name so there are no stragglers
-    # from past timestamps
-    for device in self.ConflictMatrix:
-      if app_name in self.ConflictMatrix[device]:
-        self.ConflictMatrix[device].pop(app_name)
-
-    # now add the new set-points for app_name
-    for point in set_points:
-      device = point['object']
-      #attribute = point['attribute']
-      value = point['value']
-
-      if device not in self.ConflictMatrix:
-        self.ConflictMatrix[device] = {}
-
-      self.ConflictMatrix[device][app_name] = (timestamp, value)
-
-    if printAllConflictsResolutionsFlag:
-      print('SetpointProcessorMeas--ConflictMatrix: ' +str(self.ConflictMatrix))
-
-    if self.testDeviceName:
-      devid = MethodUtil.NameToDevice[self.testDeviceName]
-      if devid in set_points:
-        print('~TEST: set-points message with ' + self.testDeviceName +
-              ' set-point: ' + str(set_points[devid]) +
-              ', app: ' + app_name + ', timestamp: ' + str(timestamp))
-        print('~TEST: ConflictMatrix for ' + self.testDeviceName + ': ' +
-              str(self.ConflictMatrix[devid]))
-      else:
-        print('~TEST: set-points message does not contain ' +
-              self.testDeviceName)
-
-
-  def SetpointProcessorCoop(self, app_name, timestamp, set_points,
-                            printAllConflictsResolutionsFlag=False):
-    # Update ConflictMatrix with newly provided set-points
-
-    MinSetpoints = {}
-    MaxSetpoints = {}
-
-    # find the min/max setpoints for each device to make sure new
-    # setpoints fall in that range
-    for device in self.ConflictMatrix:
-      for app in self.ConflictMatrix[device]:
-        if device not in MinSetpoints:
-          MinSetpoints[device] = self.ConflictMatrix[device][app][1]
-          MaxSetpoints[device] = self.ConflictMatrix[device][app][1]
-        else:
-          MinSetpoints[device] = min(MinSetpoints[device],
-                                     self.ConflictMatrix[device][app][1])
-          MaxSetpoints[device] = max(MaxSetpoints[device],
-                                     self.ConflictMatrix[device][app][1])
-
+    # meas_msg_flag could be checked within the device loop to make the code
+    # more compact, but better performance by making it a top-level check
+    if meas_msg_flag:
       # delete any existing matches for app_name so there are no stragglers
       # from past timestamps
-      if app_name in self.ConflictMatrix[device]:
-        self.ConflictMatrix[device].pop(app_name)
+      for device in self.ConflictMatrix:
+        if app_name in self.ConflictMatrix[device]:
+          self.ConflictMatrix[device].pop(app_name)
+
+    else:
+      MinSetpoints = {}
+      MaxSetpoints = {}
+
+      # find the min/max setpoints for each device to make sure new
+      # setpoints fall in that range
+      for device in self.ConflictMatrix:
+        for app in self.ConflictMatrix[device]:
+          if device not in MinSetpoints:
+            MinSetpoints[device] = self.ConflictMatrix[device][app][1]
+            MaxSetpoints[device] = self.ConflictMatrix[device][app][1]
+          else:
+            MinSetpoints[device] = min(MinSetpoints[device],
+                                       self.ConflictMatrix[device][app][1])
+            MaxSetpoints[device] = max(MaxSetpoints[device],
+                                       self.ConflictMatrix[device][app][1])
+
+        # delete any existing matches for app_name so there are no stragglers
+        # from past timestamps
+        if app_name in self.ConflictMatrix[device]:
+          self.ConflictMatrix[device].pop(app_name)
 
     # now add the new set-points for app_name
     for point in set_points:
@@ -162,33 +135,33 @@ class DeconflictionPipeline(GridAPPSD):
       if device not in self.ConflictMatrix:
         self.ConflictMatrix[device] = {}
 
-      # make sure value falls in the min/max range
-      if device in MinSetpoints:
+      # for cooperation messages, make sure value falls in the min/max range
+      if not meas_msg_flag and device in MinSetpoints:
         if value < MinSetpoints[device]:
-          print('SetpointProcessorCoop--app: ' + app_name + ', device: ' +
-                MethodUtil.DeviceToName[device] +
+          print('SetpointProcessor--for cooperation, app: ' + app_name +
+                ', device: ' + MethodUtil.DeviceToName[device] +
                 '--setpoint request below min allowable to prevent ' +
                 'backtracking: ' + str(value))
           value = MinSetpoints[device]
-          print('SetpointProcessorCoop--app: ' + app_name + ', device: ' +
-                MethodUtil.DeviceToName[device] +
+          print('SetpointProcessor--for cooperation, app: ' + app_name +
+                ', device: ' + MethodUtil.DeviceToName[device] +
                 '--setpoint reset to min allowable to prevent backtracking: ' +
                 str(value))
         elif value > MaxSetpoints[device]:
-          print('SetpointProcessorCoop--app: ' + app_name + ', device: ' +
-                MethodUtil.DeviceToName[device] +
+          print('SetpointProcessor--for cooperation, app: ' + app_name +
+                ', device: ' + MethodUtil.DeviceToName[device] +
                 '--setpoint request above max allowable to prevent ' +
                 'backtracking: ' + str(value))
           value = MaxSetpoints[device]
-          print('SetpointProcessorCoop--app: ' + app_name + ', device: ' +
-                MethodUtil.DeviceToName[device] +
+          print('SetpointProcessor--for cooperation, app: ' + app_name +
+                ', device: ' + MethodUtil.DeviceToName[device] +
                 '--setpoint reset to max allowable to prevent backtracking: ' +
                 str(value))
 
       self.ConflictMatrix[device][app_name] = (timestamp, value)
 
     if printAllConflictsResolutionsFlag:
-      print('SetpointProcessorCoop--ConflictMatrix: ' +str(self.ConflictMatrix))
+      print('SetpointProcessor--ConflictMatrix: ' +str(self.ConflictMatrix))
 
     if self.testDeviceName:
       devid = MethodUtil.NameToDevice[self.testDeviceName]
@@ -1265,12 +1238,17 @@ class DeconflictionPipeline(GridAPPSD):
     # message with keys of object, attribute, and value
     set_points = message['forward_differences']
 
+    # Published IEEE Access Foundational Paper Reference:
+    #   Step 1--Setpoint Processor
+    print('ProcessSetpointsMessage--invoking setpoint processor')
+    self.SetpointProcessor(app_name, timestamp, set_points, meas_msg_flag,
+                           printAllConflictsResolutionsFlag)
+
     if meas_msg_flag:
-      # Published IEEE Access Foundational Paper Reference:
-      #   Step 1--Setpoint Processor
-      print('ProcessSetpointsMessage--invoking MEAS setpoint processor')
-      self.SetpointProcessorMeas(app_name, timestamp, set_points,
-                                 printAllConflictsResolutionsFlag)
+      # no need to invoke Feasibility Maintainer or Rules stage for cooperation
+      # messages because the SetpointProcessor insures there is no backtracking
+      # of setpoints from what was already processed by the Feasibility
+      # Maintainer and Rules stage
 
       # Published IEEE Access Foundational Paper Reference:
       #   Step 2--Feasibility Maintainer
@@ -1285,18 +1263,6 @@ class DeconflictionPipeline(GridAPPSD):
               'stage deconfliction')
         self.RulesForBatteriesConflict(self.printAllRulesFlag)
         self.RulesForRegulatorsConflict(self.printAllRulesFlag)
-
-    else:
-      # Published IEEE Access Foundational Paper Reference:
-      #   Step 1--Setpoint Processor
-      print('ProcessSetpointsMessage--invoking COOP setpoint processor')
-      self.SetpointProcessorCoop(app_name, timestamp, set_points,
-                                 printAllConflictsResolutionsFlag)
-
-      # no need to invoke Feasibility Maintainer or Rules stage because
-      # the cooperation version of SetpointProcessor insures there is no
-      # backtracking of setpoints from what was already processed by the
-      # Feasibility Maintainer and Rules stage
 
     # Published IEEE Access Foundational Paper Reference:
     #   Step 3--Deconflictor
