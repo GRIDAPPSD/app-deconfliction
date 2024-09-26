@@ -1,7 +1,7 @@
 # app-deconfliction/service
 
-### Author: Gary Black
-### Last updated: September 26, 2024
+Author: Gary Black <br>
+Last updated: September 26, 2024
 
 ## Purpose
 
