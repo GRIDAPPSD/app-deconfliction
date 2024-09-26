@@ -158,7 +158,7 @@ Although the run-deconfliction.sh wrapper script starts a number of processes, s
 ## Post FY24 TO-DO
 
 <ul>
-<li>Include commands to prerequisite item 2 for adding measurements to the modified 123apps model allowing it to run simulations.
+<li>Include commands with prerequisite item 2 for adding measurements to the modified 123apps model allowing it to run simulations.
 <li>Get file-based weights working in combination with automatic cooperation incentive weights.
 <li>Need to get the modified 123apps model added to the default GridAPPS-D platform distribution.
 <li>Design changes to the GOSS-HELICS bridge allowing the deconfliction service to intercept CIM DifferenceBuilder messages sent to the GridLAB-D simulation.
