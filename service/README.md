@@ -2,7 +2,7 @@
 
 ## Purpose
 
-The service directory of the app-deconflicion repository contains the entirety of the FY24 Centralized Deconfliction Service that includes both the deconfliction service (aka, deconfliction pipeline) and sample competing applications for development, testing, and demonstration. The service/pipeline performs deconfliction using a combined methodology applied in stages that were initially developed independently in FY23. These stages are:
+The service directory of the app-deconflicion repository contains the entirety of the FY24 Centralized Deconfliction Service that includes both the deconfliction service (aka, deconfliction pipeline) and sample competing applications for development, testing, and demonstration. The service/pipeline performs deconfliction using a combined methodology applied in stages that were initially developed independently through work in FY23. These stages are:
 <ol>
 <li>Rules & Heuristics
 <li>Cooperation
@@ -13,16 +13,9 @@ While the FY23 prototype used hardwired file-based simulation data to drive the 
 
 ## Overview
 
-The deconfliction pipeline framework follows the design described in the project foundational paper published in IEEE Access and is available at <https://ieeexplore.ieee.org/document/10107708>, specifically sections III-B and -C. There are methods in deconfliction-pipeline.py code directly corresponding to subsections in the foundational paper, e.g., SetpointProcessor, ConflictIdentification, DeconflictionSolution, and DeviceDispatcher.
+The Centralized Deconfliction Service builds on the FY23 prototype following the design described in the project foundational paper published in IEEE Access and is available at <https://ieeexplore.ieee.org/document/10107708>, specifically sections III-B and -C. There are methods in deconfliction-pipeline.py code directly corresponding to subsections in the foundational paper, e.g., SetpointProcessor, ConflictIdentification, and DeviceDispatcher. The service extends what was done in the prototype by applying the combined or staged deconfliction methodology first described in the end of FY23 Deconfliction Alternatives Analysis paper as well as integrating with GridLAB-D simulations.
 
-The current full workflow for deconfliction consists of three components:
-<ol>
-<li>sim-sim or (sim)ulated (sim)ulator</li>
-<li>competing apps, e.g., resilience app and decarbonization app</li>
-<li>deconfliction pipeline</li>
-</ol>
-
-Sim-sim publishes messages containing time-series simulation parameters and updated device set-points and battery SoC. Competing apps subscribe to sim-sim messages to carry out their work determining and publishing new device set-point requests. The deconfliction pipeline subscribes to competing app set-point messages to perform the steps described in the foundational paper producing deconflicted set-points dispatched to devices. Sim-sim is subscribed to deconfliction pipeline device dispatch messages in order to update devices that determine simulation state, completing the workflow loop.
+The deconfliction workflow kicks off with GridLAB-D simulation measurement messages that provide updated device setpoints and battery SoC data. Competing apps subscribe to the GridLAB-D messages to carry out their work determining and publishing new device setpoint requests via CIM DifferenceBuilder messages. The deconfliction service intercepts these CIM DifferenceBuilder messages from competings apps to perform the steps described in the Foundational and Alternatives Analysis papers producing deconflicted setpoints dispatched to devices also through CIM DifferenceBuilder messages. The service exchanges messages with competing apps during an iterative stage of deconfliction that incentivizes apps to cooperate. Subsequent GridLAB-D simulation measurement messages reflect these deconflicted setpoints provided by the service and are processed by competing apps thus completing the deconfliction workflow loop.
 
 ## DeconflictionMethod class interface
 
