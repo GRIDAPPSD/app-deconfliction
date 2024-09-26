@@ -2,11 +2,6 @@
 import math
 import numpy as np
 
-import matplotlib
-from matplotlib import pyplot as plt
-from matplotlib import dates as md
-from datetime import datetime
-
 import MethodUtil
 
 
@@ -242,46 +237,4 @@ class AppUtil:
       EnergySource['nomv'] = float(obj['basev']['value'])
 
     return EnergySource
-
-
-  def contrib_SoC(P_batt, timeDiff, Battery, deltaT):
-    if P_batt >= 0:
-      return Battery['eff_c']*P_batt*timeDiff*deltaT/Battery['ratedE']
-    else:
-      return 1/Battery['eff_d']*P_batt*timeDiff*deltaT/Battery['ratedE']
-
-
-  def to_datetime(time):
-    return datetime(1966, 8, 1, (int(time)-1)//4, 15*((int(time)-1) % 4), 0)
-
-
-  def make_plots(title, prefix, Batteries, t_plot, p_batt_plot, soc_plot):
-    matplotlib.use('agg')
-
-    for devid in Batteries:
-      name = MethodUtil.DeviceToName[devid]
-      batname = name[12:] # extract just the name for tidier plots
-      plt.figure()
-      fig, ax = plt.subplots()
-      plt.title(title + ' P_batt:  ' + batname, pad=15.0)
-      plt.plot(t_plot, p_batt_plot[devid])
-      ax.xaxis.set_major_formatter(md.DateFormatter('%H:%M'))
-      plt.xlim([AppUtil.to_datetime(1), AppUtil.to_datetime(96)])
-      plt.xticks([AppUtil.to_datetime(1), AppUtil.to_datetime(25), AppUtil.to_datetime(49), AppUtil.to_datetime(73), AppUtil.to_datetime(96)])
-      plt.xlabel('Time')
-      plt.ylabel('P_batt  (kW)')
-      plt.savefig('output/' + prefix + '_p_batt_' + batname + '.png')
-      #plot.show()
-
-      plt.figure()
-      fig, ax = plt.subplots()
-      plt.title(title + ' SoC:  ' + batname, pad=15.0)
-      plt.plot(t_plot, soc_plot[devid])
-      ax.xaxis.set_major_formatter(md.DateFormatter('%H:%M'))
-      plt.xlim([AppUtil.to_datetime(1), AppUtil.to_datetime(96)])
-      plt.xticks([AppUtil.to_datetime(1), AppUtil.to_datetime(25), AppUtil.to_datetime(49), AppUtil.to_datetime(73), AppUtil.to_datetime(96)])
-      plt.xlabel('Time')
-      plt.ylabel('Battery SoC')
-      plt.savefig('output/' + prefix + '_soc_' + batname + '.png')
-      #plot.show()
 
