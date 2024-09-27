@@ -1,7 +1,7 @@
 # app-deconfliction/service
 
 Author: Gary Black <br>
-Last updated: September 26, 2024
+Last updated: September 27, 2024
 
 ## Purpose
 
@@ -159,8 +159,9 @@ Although the run-deconfliction.sh wrapper script starts a number of processes, s
 
 <ul>
 <li>Include commands with prerequisite item 2 for adding measurements to the modified 123apps model allowing it to run simulations.
-<li>Get file-based weights working in combination with automatic cooperation incentive weights.
+<li>Get file-based weights working in combination with automatic cooperation incentive weights or toss the file-based weights feature.
 <li>Need to get the modified 123apps model added to the default GridAPPS-D platform distribution.
+<li>Register the deconfliction service as a formal service in teh GridAPPS-D platform.
 <li>Design changes to the GOSS-HELICS bridge allowing the deconfliction service to intercept CIM DifferenceBuilder messages sent to the GridLAB-D simulation.
 <li>Support cooperation in competing apps with a modiified objective function given the intended phi function is non-linear/concave.
 </ul>
