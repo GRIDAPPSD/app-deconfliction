@@ -146,14 +146,12 @@ class CompetingApp(GridAPPSD):
 
           else:
             self.dynamicConstraints.append(sum(self.p_flow_A[idx] \
-                 for idx in self.lines_in[bus_idx]['A']) - \
-               injection_p == sum(self.p_flow_A[idx] \
-                 for idx in self.lines_out[bus_idx]['A']))
+                 for idx in self.lines_in[bus_idx]['A']) - injection_p == \
+               sum(self.p_flow_A[idx] for idx in self.lines_out[bus_idx]['A']))
 
           self.dynamicConstraints.append(sum(self.q_flow_A[idx] \
-               for idx in self.lines_in[bus_idx]['A']) - \
-             injection_q == sum(self.q_flow_A[idx] \
-               for idx in self.lines_out[bus_idx]['A']))
+               for idx in self.lines_in[bus_idx]['A']) - injection_q == \
+             sum(self.q_flow_A[idx] for idx in self.lines_out[bus_idx]['A']))
 
         if '2' in self.bus_info[bus]['phases']:
           injection_p, injection_q = 0, 0
@@ -178,14 +176,12 @@ class CompetingApp(GridAPPSD):
 
           else:
             self.dynamicConstraints.append(sum(self.p_flow_B[idx] \
-                 for idx in self.lines_in[bus_idx]['B']) - \
-               injection_p == sum(self.p_flow_B[idx] \
-                 for idx in self.lines_out[bus_idx]['B']))
+                 for idx in self.lines_in[bus_idx]['B']) - injection_p == \
+               sum(self.p_flow_B[idx] for idx in self.lines_out[bus_idx]['B']))
 
           self.dynamicConstraints.append(sum(self.q_flow_B[idx] \
-               for idx in self.lines_in[bus_idx]['B']) - \
-             injection_q == sum(self.q_flow_B[idx] \
-               for idx in self.lines_out[bus_idx]['B']))
+               for idx in self.lines_in[bus_idx]['B']) - injection_q == \
+             sum(self.q_flow_B[idx] for idx in self.lines_out[bus_idx]['B']))
 
         if '3' in self.bus_info[bus]['phases']:
           injection_p, injection_q = 0, 0
@@ -210,14 +206,12 @@ class CompetingApp(GridAPPSD):
 
           else:
             self.dynamicConstraints.append(sum(self.p_flow_C[idx] \
-                 for idx in self.lines_in[bus_idx]['C']) - \
-               injection_p == sum(self.p_flow_C[idx] \
-                 for idx in self.lines_out[bus_idx]['C']))
+                 for idx in self.lines_in[bus_idx]['C']) - injection_p == \
+               sum(self.p_flow_C[idx] for idx in self.lines_out[bus_idx]['C']))
 
           self.dynamicConstraints.append(sum(self.q_flow_C[idx] \
-               for idx in self.lines_in[bus_idx]['C']) - \
-             injection_q == sum(self.q_flow_C[idx] \
-               for idx in self.lines_out[bus_idx]['C']))
+               for idx in self.lines_in[bus_idx]['C']) - injection_q == \
+             sum(self.q_flow_C[idx] for idx in self.lines_out[bus_idx]['C']))
 
     for mrid in self.Batteries:
       self.Batteries[mrid]['state'] = 'idling'
@@ -242,7 +236,8 @@ class CompetingApp(GridAPPSD):
       self.dynamicConstraints.append(self.p_batt[idx] == \
               self.p_batt_c[idx] + self.p_batt_d[idx])
 
-      self.dynamicConstraints.append(self.lambda_c[idx] + self.lambda_d[idx] <= 1)
+      self.dynamicConstraints.append(self.lambda_c[idx] + self.lambda_d[idx] \
+              <= 1)
 
       # Battery SoC constraints added as Shiva couldn't identify PuLP's
       # equivalent of lb and ub
