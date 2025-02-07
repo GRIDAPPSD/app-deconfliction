@@ -144,20 +144,16 @@ class CompetingApp(GridAPPSD):
                self.p_batt[self.Batteries[mrid]['idx']] - injection_p == \
                sum(self.p_flow_A[idx] for idx in self.lines_out[bus_idx]['A']))
 
-            self.dynamicConstraints.append(sum(self.q_flow_A[idx] \
-                 for idx in self.lines_in[bus_idx]['A']) - \
-               injection_q == sum(self.q_flow_A[idx] \
-                 for idx in self.lines_out[bus_idx]['A']))
           else:
             self.dynamicConstraints.append(sum(self.p_flow_A[idx] \
                  for idx in self.lines_in[bus_idx]['A']) - \
                injection_p == sum(self.p_flow_A[idx] \
                  for idx in self.lines_out[bus_idx]['A']))
 
-            self.dynamicConstraints.append(sum(self.q_flow_A[idx] \
-                 for idx in self.lines_in[bus_idx]['A']) - \
-               injection_q == sum(self.q_flow_A[idx] \
-                 for idx in self.lines_out[bus_idx]['A']))
+          self.dynamicConstraints.append(sum(self.q_flow_A[idx] \
+               for idx in self.lines_in[bus_idx]['A']) - \
+             injection_q == sum(self.q_flow_A[idx] \
+               for idx in self.lines_out[bus_idx]['A']))
 
         if '2' in self.bus_info[bus]['phases']:
           injection_p, injection_q = 0, 0
@@ -180,20 +176,16 @@ class CompetingApp(GridAPPSD):
                self.p_batt[self.Batteries[mrid]['idx']] - injection_p == \
                sum(self.p_flow_B[idx] for idx in self.lines_out[bus_idx]['B']))
 
-            self.dynamicConstraints.append(sum(self.q_flow_B[idx] \
-                 for idx in self.lines_in[bus_idx]['B']) - \
-               injection_q == sum(self.q_flow_B[idx] \
-                 for idx in self.lines_out[bus_idx]['B']))
           else:
             self.dynamicConstraints.append(sum(self.p_flow_B[idx] \
                  for idx in self.lines_in[bus_idx]['B']) - \
                injection_p == sum(self.p_flow_B[idx] \
                  for idx in self.lines_out[bus_idx]['B']))
 
-            self.dynamicConstraints.append(sum(self.q_flow_B[idx] \
-                 for idx in self.lines_in[bus_idx]['B']) - \
-               injection_q == sum(self.q_flow_B[idx] \
-                 for idx in self.lines_out[bus_idx]['B']))
+          self.dynamicConstraints.append(sum(self.q_flow_B[idx] \
+               for idx in self.lines_in[bus_idx]['B']) - \
+             injection_q == sum(self.q_flow_B[idx] \
+               for idx in self.lines_out[bus_idx]['B']))
 
         if '3' in self.bus_info[bus]['phases']:
           injection_p, injection_q = 0, 0
@@ -216,20 +208,16 @@ class CompetingApp(GridAPPSD):
                self.p_batt[self.Batteries[mrid]['idx']] - injection_p == \
                sum(self.p_flow_C[idx] for idx in self.lines_out[bus_idx]['C']))
 
-            self.dynamicConstraints.append(sum(self.q_flow_C[idx] \
-                 for idx in self.lines_in[bus_idx]['C']) - \
-               injection_q == sum(self.q_flow_C[idx] \
-                 for idx in self.lines_out[bus_idx]['C']))
           else:
             self.dynamicConstraints.append(sum(self.p_flow_C[idx] \
                  for idx in self.lines_in[bus_idx]['C']) - \
                injection_p == sum(self.p_flow_C[idx] \
                  for idx in self.lines_out[bus_idx]['C']))
 
-            self.dynamicConstraints.append(sum(self.q_flow_C[idx] \
-                 for idx in self.lines_in[bus_idx]['C']) - \
-               injection_q == sum(self.q_flow_C[idx] \
-                 for idx in self.lines_out[bus_idx]['C']))
+          self.dynamicConstraints.append(sum(self.q_flow_C[idx] \
+               for idx in self.lines_in[bus_idx]['C']) - \
+             injection_q == sum(self.q_flow_C[idx] \
+               for idx in self.lines_out[bus_idx]['C']))
 
     for mrid in self.Batteries:
       self.Batteries[mrid]['state'] = 'idling'
@@ -461,7 +449,6 @@ class CompetingApp(GridAPPSD):
 
   def defineOptimizationVariables(self, len_branch_info, len_bus_info,
                                   len_Batteries, len_Regulators):
-    flow_min, flow_max = -5e6, 5e6
     self.p_flow_A = cp.Variable(len_branch_info, integer=False, name='p_flow_A')
 
     self.p_flow_B = cp.Variable(len_branch_info, integer=False, name='p_flow_B')
