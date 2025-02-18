@@ -32,10 +32,10 @@ fi
 MODEL=$1
 APPS=$2
 
-OPTLIB="pulp"
+#OPTLIB="pulp"
 # GDB 9/11/24: CVXPY will be needed if we add support for doing optimizations
 # for cooperation after the FY24 deliverable
-#OPTLIB="cvxpy"
+OPTLIB="cvxpy"
 INTERVAL=""
 WEIGHTS=""
 # tricky logic to process optional optlib and weights arguments. This could

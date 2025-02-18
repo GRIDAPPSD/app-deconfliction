@@ -90,10 +90,10 @@ $ cd optimization-apps
 $ ./run-resilience.sh 123apps standalone
 ````
 
-Note the final argument of "standalone" must be present to perform a standalone invocation as needed for this test. If you get output starting with "Initialized resilience" after some query output, this demonstrates successful initialization and you may do a ctrl-C exit. It is best to test both a PuLP and CVXPY optimization app since each uses some different modules. The test above is for PuLP, but CVXPY can be tested with:
+Note the final argument of "standalone" must be present to perform a standalone invocation as needed for this test. If you get output starting with "Initialized resilience" after some query output, this demonstrates successful initialization and you may do a ctrl-C exit. It is best to test both a PuLP and CVXPY optimization app since each uses some different modules. The test above is for CVXPY, but PuLP can be tested with:
 
 ```` bash
-$ ./run-resilience.sh 123apps standalone cvxpy
+$ ./run-resilience.sh 123apps standalone pulp
 ````
 
 There is little to be gained from trying the decarbonization or profit objectives in addition to resilience, but they also support the standalone argument. Modules likely to be missing for the competing apps include numpy, tabulate, pulp, and cvxpy. The following may prove helpful based on failed imports:
@@ -135,7 +135,7 @@ where \<MODEL\> is a shorthand used for looking up the full GridAPPS-D simulatio
 
 \<APPS\> is a shorthand code composed of the first letters for each of the competing apps to run. The possible apps are resilience, code "r" or "R"; decarbonization, code "d" or "D", and profit_cvr, code "p" or "P". Thus, "rdp" would run all three apps and "rd" would run resilience and decarbonization without profit_cvr.
 
-\<OPTLIB\> is the optional name of the optimization library to use for competing apps. If the value is either "cvxpy" or "CVXPY", then the CVXPY library will be used. Otherwise, the PuLP library will be used.
+\<OPTLIB\> is the optional name of the optimization library to use for competing apps. If the value is "pulp" then the PuLP library will be used. Otherwise, the CVXPY library will be used.
 
 \<INTERVAL\> is the optional integer value in seconds at which competing apps will perform optimizations and send setpoints requests via CIM DifferenceBuilder messages. The value, if specified, must be a multiple of 3 for compatibility with GridLAB-D simulations. If not specified, the competing apps will use an appropriate default value such as 15 seconds, meaning an optimization will be performed every fifth simulation measurements message from GridLAB-D. A value of 3 corresponds to an optimization for every GridLAB-D measurements message. In cases other than stress testing the deconfliction service it is recommended a multiple of 3 in the range of 9-18 be used. Better yet, omit this optional argument unless there is an important reason for specifying it.
 
@@ -146,10 +146,10 @@ With all of that as background, as example invocations of run-deconfliction.sh, 
 ```` bash
 $ ./run-deconfliction.sh 123apps rd
 $ ./run-deconfliction.sh 123apps rdp
-$ ./run-deconfliction.sh 123apps rdp cvxpy
+$ ./run-deconfliction.sh 123apps rdp pulp
 ````
 
-In the first invocation, the resilience and decarbonization competing apps are run with a GridLAB-D simulation for the batteries-included IEEE 123 node model. In the second invocation, the profit CVR app is add in as well. In the third invocation, the CVXPY optimization library is used for the competing apps instead of the default PuLP library.
+In the first invocation, the resilience and decarbonization competing apps are run with a GridLAB-D simulation for the batteries-included IEEE 123 node model. In the second invocation, the profit CVR app is add in as well. In the third invocation, the PuLP optimization library is used for the competing apps instead of the default CVXPY library.
 
 The run-deconfliction.sh wrapper script normally only shows diagnostic log output for the deconfliction pipeline process in the terminal where the wrapper script is invoked. However, each of the processes produces a log file that can either be viewed during the run (typically via "tail -f") or afterwards. These files are written to a log subdirectory--optimization-apps/log for the competing apps and deconfliction-pipeline/log for the pipeline process. If you are interested in the briefest of workflow progress output such as for a simple demonstration a "grep" for the ">>>" pattern will do the job. For example, to tail this workflow overview during a running simulation, change directory to deconfliction-pipeline/log and issue the command: tail -f deconfliction-pipeline.log | grep ">>>"
 
