@@ -916,7 +916,7 @@ class CompetingApp(GridAPPSD):
           n_line_phase[char] = 0
         n_line_phase[char] += 1
 
-      # Idenytify the line emerging out from the source bus.
+      # Identify the line emerging out from the source bus
       if branch_info[branch]['from_bus'] == self.EnergySource['bus']:
         self.EnergySource['flow_idx'] = branch_info[branch]['idx']
       if branch_info[branch]['to_bus'] == self.EnergySource['bus']:
