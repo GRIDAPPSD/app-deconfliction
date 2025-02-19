@@ -110,7 +110,8 @@ class AppUtil:
 
   def getBatteries(sparql_mgr):
     BatteryMap = {}
-    Batteries = {}
+    BatteriesInfo = {}
+    BatteriesIdx = {}
     bindings = sparql_mgr.battery_query()
     #print('battery_query results bindings: ' + str(bindings), flush=True)
     print('\nCount of Batteries: ' + str(len(bindings)), flush=True)
@@ -120,36 +121,36 @@ class AppUtil:
       eqid = obj['pecid']['value']
       BatteryMap[eqid] = devid
 
-      Batteries[devid] = {}
-      Batteries[devid]['idx'] = idx
+      BatteriesIdx[devid] = idx
+      BatteriesInfo[devid] = {}
       name = 'BatteryUnit.' + obj['name']['value']
-      Batteries[devid]['name'] = name
-      Batteries[devid]['bus'] = obj['bus']['value']
-      Batteries[devid]['phase'] = obj['phases']['value']
-      Batteries[devid]['ratedkW'] = float(obj['ratedS']['value'])/1000.0
-      Batteries[devid]['prated'] = float(obj['ratedS']['value'])
-      Batteries[devid]['ratedE'] = float(obj['ratedE']['value'])
-      Batteries[devid]['SoC'] = float(obj['storedE']['value'])/float(obj['ratedE']['value'])
+      BatteriesInfo[devid]['name'] = name
+      BatteriesInfo[devid]['bus'] = obj['bus']['value']
+      BatteriesInfo[devid]['phase'] = obj['phases']['value']
+      BatteriesInfo[devid]['ratedkW'] = float(obj['ratedS']['value'])/1000.0
+      BatteriesInfo[devid]['prated'] = float(obj['ratedS']['value'])
+      BatteriesInfo[devid]['ratedE'] = float(obj['ratedE']['value'])
+      BatteriesInfo[devid]['SoC'] = float(obj['storedE']['value'])/float(obj['ratedE']['value'])
       # eff_c and eff_d don't come from the query, but they are used throughout
       # and this is a convenient point to assign them along with query results
-      Batteries[devid]['eff'] = 0.975 * 0.86
-      Batteries[devid]['eff_c'] = 0.975 * 0.86
-      Batteries[devid]['eff_d'] = 0.975 * 0.86
-      print('Battery devid: ' + devid + ', name: ' + name + ', ratedE: ' + str(round(Batteries[devid]['ratedE'],4)) + ', SoC: ' + str(round(Batteries[devid]['SoC'],4)), flush=True)
+      BatteriesInfo[devid]['eff'] = 0.975 * 0.86
+      BatteriesInfo[devid]['eff_c'] = 0.975 * 0.86
+      BatteriesInfo[devid]['eff_d'] = 0.975 * 0.86
+      print('Battery devid: ' + devid + ', name: ' + name + ', ratedE: ' + str(round(BatteriesInfo[devid]['ratedE'],4)) + ', SoC: ' + str(round(BatteriesInfo[devid]['SoC'],4)), flush=True)
       idx += 1
       MethodUtil.DeviceToName[devid] = name
       MethodUtil.NameToDevice[name] = devid
 
-    # Add measid key to Batteries for matching sim measurements
+    # Add measid key to BatteriesInfo for matching sim measurements
     objs = sparql_mgr.obj_meas_export('PowerElectronicsConnection')
     for item in objs:
       if item['eqid'] in BatteryMap:
         if item['type'] == 'VA':
-          Batteries[BatteryMap[item['eqid']]]['P_batt_measid'] = item['measid']
+          BatteriesInfo[BatteryMap[item['eqid']]]['P_batt_measid'] = item['measid']
         elif item['type'] == 'SoC':
-          Batteries[BatteryMap[item['eqid']]]['SoC_measid'] = item['measid']
+          BatteriesInfo[BatteryMap[item['eqid']]]['SoC_measid'] = item['measid']
 
-    return Batteries
+    return (BatteriesInfo, BatteriesIdx)
 
 
   def getEnergyConsumers(sparql_mgr):
