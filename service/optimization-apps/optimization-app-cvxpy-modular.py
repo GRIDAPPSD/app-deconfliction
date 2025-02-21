@@ -393,6 +393,12 @@ class CompetingApp(GridAPPSD):
 
     M = 1e9
     for branch in BranchInfo:
+      # TODO NOTE: Feedback from Monish
+      # We will need to define constraints in the case of it being a regulator
+      # branch type, but with includeRegulatorsFlag==False where we have
+      # no constraints at all currently. In this case we will need constraints
+      # that have a constant value based on measurements in place of the
+      # self.reg_taps optimization variable being used now.
       if BranchInfo[branch]['type']=='regulator' and includeRegulatorsFlag:
         if 'A' in BranchInfo[branch]['phases']:
           idx = RegulatorsIdx[branch+'.A']
