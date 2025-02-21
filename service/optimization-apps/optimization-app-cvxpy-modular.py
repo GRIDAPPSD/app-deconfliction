@@ -602,15 +602,11 @@ class CompetingApp(GridAPPSD):
                         sum(-self.v_B[i] for i in bus_idx_batt['B']) + \
                         sum(-self.v_C[i] for i in bus_idx_batt['C'])
 
-    # TODO NOTE: Feedback from Monish
-    # Need to figure out why with CVXPY we aren't able to solve for this
-    # second stage optimization. Might need input from Shiva on this. For
-    # the PuLP code it does do a second stage optimization with some different
-    # settings so that's another clue.
-
-    # problem = cp.Problem(cp.Minimize(objective), self.Constraints)
+    problem = cp.Problem(cp.Minimize(objective), self.Constraints)
     # problem.solve(solver=cp.MOSEK)
-    # print('Optimization Stage II status:', problem.status, flush=True)
+    problem.solve(solver=cp.GLPK_MI, abstol=1e-3, kktsolver='chol',
+                  feastol=1e-3, max_iters=100, verbose=False)
+    print('Optimization Stage II status:', problem.status, flush=True)
 
 
   def reportOptimization(self, includeRegulatorsFlag, includeBatteriesFlag):
