@@ -326,9 +326,11 @@ class CompetingApp(GridAPPSD):
                           sum(-self.v_A[i] for i in bus_idx_batt['A']) + \
                           sum(-self.v_B[i] for i in bus_idx_batt['B']) + \
                           sum(-self.v_C[i] for i in bus_idx_batt['C'])
-      # problem = cp.Problem(cp.Minimize(objective), self.dynamicConstraints)
-      # problem.solve(solver=cp.MOSEK)
-      # print('Optimization State II status:', problem.status, flush=True)
+      problem = cp.Problem(cp.Minimize(objective), self.dynamicConstraints)
+      #problem.solve(solver=cp.MOSEK)
+      problem.solve(solver=cp.GLPK_MI, abstol=1e-3, kktsolver='chol',
+                    feastol=1e-3, max_iters=100, verbose=False)
+      print('Optimization Stage II status:', problem.status, flush=True)
 
     '''
     branch_flow = []
