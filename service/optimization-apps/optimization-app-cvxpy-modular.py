@@ -101,6 +101,13 @@ class CompetingApp(GridAPPSD):
     self.includeQFlowFlag = True
     self.includeVoltagesFlag = True
 
+    # TODO NOTE: Feedback from Monish
+    # We will need something more generic and flexible for supporting different
+    # objectives than the hardwired code I have for the three existing
+    # objectives because we will have a bigger set of objectives that we
+    # will build up. We also likely won't actually perform/solve the
+    # optimization inside the function that defines the objective, but pull
+    # that out.
     self.objectiveResilienceFlag = True
     self.objectiveCVRFlag = False
     self.objectiveDecarbonizationFlag = False
@@ -594,6 +601,13 @@ class CompetingApp(GridAPPSD):
                         sum(-self.v_A[i] for i in bus_idx_batt['A']) + \
                         sum(-self.v_B[i] for i in bus_idx_batt['B']) + \
                         sum(-self.v_C[i] for i in bus_idx_batt['C'])
+
+    # TODO NOTE: Feedback from Monish
+    # Need to figure out why with CVXPY we aren't able to solve for this
+    # second stage optimization. Might need input from Shiva on this. For
+    # the PuLP code it does do a second stage optimization with some different
+    # settings so that's another clue.
+
     # problem = cp.Problem(cp.Minimize(objective), self.Constraints)
     # problem.solve(solver=cp.MOSEK)
     # print('Optimization Stage II status:', problem.status, flush=True)
