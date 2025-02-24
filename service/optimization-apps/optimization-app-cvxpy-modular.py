@@ -89,7 +89,7 @@ import MethodUtil
 
 class CompetingApp(GridAPPSD):
 
-  def fakeMain(self):
+  def optPrelim(self):
     self.includeBatteriesFlag = True
     self.includeRegulatorsFlag = True
 
@@ -135,46 +135,50 @@ class CompetingApp(GridAPPSD):
       self.includePFlowFlag = True
       self.includeQFlowFlag = True
 
-    self.defineOptimizationVariables(includePFlowFlag, includeQFlowFlag,
-               includeVoltagesFlag, includeBatteriesFlag, includeRegulatorsFlag)
+    self.optDefineVariables(self.includePFlowFlag, self.includeQFlowFlag,
+                            self.includeVoltagesFlag, self.includeBatteriesFlag,
+                            self.includeRegulatorsFlag)
 
-    # set optimization constraints
+
+  def optPerform(self):
+    self.Constraints = []
+
     if self.includeBatteriesFlag:
-      self.constraintsDERWithBatteries()
+      self.optConstraintsDERWithBatteries()
 
     if self.includeRegulatorsFlag:
-      self.constraintsDERWithRegulators()
+      self.optConstraintsDERWithRegulators()
 
     if self.includePFlowFlag:
-      self.constraintsNetworkWithPFlow(self.includeBatteriesFlag,
-                                       self.includeEnergyConsumersFlag,
-                                       self.inludeSolarPVsFlag)
+      self.optConstraintsNetworkWithPFlow(self.includeBatteriesFlag,
+                                          self.includeEnergyConsumersFlag,
+                                          self.inludeSolarPVsFlag)
 
     if self.includeQFlowFlag:
-      self.constraintsNetworkWithQFlow(self.includeEnergyConsumersFlag)
+      self.optConstraintsNetworkWithQFlow(self.includeEnergyConsumersFlag)
 
     if self.includeVoltagesFlag:
-      self.constraintsNetworkWithVoltages(self.includeRegulatorsFlag)
+      self.optConstraintsNetworkWithVoltages(self.includeRegulatorsFlag)
 
     if self.objectiveResilienceFlag:
-      objective = self.objectiveForResilience()
+      objective = self.optObjectiveForResilience()
 
     if self.objectiveCVRFlag:
-      objective = self.objectiveForCVR()
+      objective = self.optObjectiveForCVR()
 
     if self.objectiveDecarbonizationFlag:
       # note decarbonization is a two stage optimization and the first stage
       # is run within the objectiveForDecarbonization function
-      objective = self.objectiveForDecarbonization()
+      objective = self.optObjectiveForDecarbonization()
 
-    self.doOptimization(objective)
+    self.optDo(objective)
 
-    self.reportOptimization(self.includeRegulatorsFlag,
-                            self.includeBatteriesFlag)
+    self.optDispatch(self.includeRegulatorsFlag, self.includeBatteriesFlag)
 
 
-  def defineOptimizationVariables(self, includePFlowFlag, includeQFlowFlag,
-            includeVoltagesFlag, includeBatteriesFlag, includeRegulatorsFlag):
+  def optDefineVariables(self, includePFlowFlag, includeQFlowFlag,
+                         includeVoltagesFlag, includeBatteriesFlag,
+                         includeRegulatorsFlag):
     if includePFlowFlag:
       len_BranchInfo = len(self.BranchInfo)
       self.p_flow_A = cp.Variable(len_BranchInfo, integer=False,name='p_flow_A')
@@ -226,7 +230,7 @@ class CompetingApp(GridAPPSD):
       self.Psub_mod = cp.Variable(integer=False, name='P_sub_mod')
 
 
-  def constraintsDERWithBatteries(self):
+  def optConstraintsDERWithBatteries(self):
     for mrid in self.BatteriesInfo:
       self.BatteriesInfo[mrid]['state'] = 'idling'
       idx = self.BatteriesIdx[mrid]
@@ -255,7 +259,7 @@ class CompetingApp(GridAPPSD):
       self.Constraints.append(self.soc[idx] >= 0.2)
 
 
-  def constraintsDERWithRegulators(self):
+  def optConstraintsDERWithRegulators(self):
     for k in range(len(self.RegulatorsInfo)):
       self.Constraints.append(sum(self.reg_taps[(k, tap)] for tap in range(32)) == 1)
 
@@ -264,7 +268,7 @@ class CompetingApp(GridAPPSD):
      self.Constraints.append(self.reg_taps[(0, 16)] == 1)
 
 
-  def constraintsNetworkWithPFlow(self, includeBatteriesFlag,
+  def optConstraintsNetworkWithPFlow(self, includeBatteriesFlag,
                                includeEnergyConsumersFlag, includeSolarPVsFlag):
     for bus in self.BusInfo:
       bus_idx = self.BusInfo[bus]['idx']
@@ -351,7 +355,7 @@ class CompetingApp(GridAPPSD):
                sum(self.p_flow_C[idx] for idx in self.LinesOut[bus_idx]['C']))
 
 
-  def constraintsNetworkWithQFlow(self, includeEnergyConsumersFlag):
+  def optConstraintsNetworkWithQFlow(self, includeEnergyConsumersFlag):
     for bus in self.BusInfo:
       bus_idx = self.BusInfo[bus]['idx']
       if bus_idx not in self.LinesOut:
@@ -389,7 +393,7 @@ class CompetingApp(GridAPPSD):
              sum(self.q_flow_C[idx] for idx in self.LinesOut[bus_idx]['C']))
 
 
-  def constraintsNetworkWithVoltages(self, includeRegulatorsFlag):
+  def optConstraintsNetworkWithVoltages(self, includeRegulatorsFlag):
     v_min, v_max = (0.95 * 2401.77) ** 2, (1.05 * 2401.77) ** 2
     for bus in self.BusInfo:
       bus_idx = self.BusInfo[bus]['idx']
@@ -401,59 +405,59 @@ class CompetingApp(GridAPPSD):
       self.Constraints.append(self.v_C[bus_idx] <= v_max)
 
     M = 1e9
-    for branch in BranchInfo:
+    for branch in self.BranchInfo:
       # TODO NOTE: Feedback from Monish
       # We will need to define constraints in the case of it being a regulator
       # branch type, but with includeRegulatorsFlag==False where we have
       # no constraints at all currently. In this case we will need constraints
       # that have a constant value based on measurements in place of the
       # self.reg_taps optimization variable being used now.
-      if BranchInfo[branch]['type']=='regulator' and includeRegulatorsFlag:
-        if 'A' in BranchInfo[branch]['phases']:
+      if self.BranchInfo[branch]['type']=='regulator' and includeRegulatorsFlag:
+        if 'A' in self.BranchInfo[branch]['phases']:
           idx = RegulatorsIdx[branch+'.A']
 
           for k in range(32):
             self.Constraints.append(
-                 self.v_A[BranchInfo[branch]['to_bus_idx']] - \
-                 self.b_i[k]**2 * self.v_A[BranchInfo[branch]['from_bus_idx']]\
+                 self.v_A[self.BranchInfo[branch]['to_bus_idx']] - \
+                 self.b_i[k]**2 * self.v_A[self.BranchInfo[branch]['from_bus_idx']]\
                  - M * (1 - self.reg_taps[(idx, k)]) <= 0)
 
             self.Constraints.append(
-                 self.v_A[BranchInfo[branch]['to_bus_idx']] - \
-                 self.b_i[k]**2 * self.v_A[BranchInfo[branch]['from_bus_idx']]\
+                 self.v_A[self.BranchInfo[branch]['to_bus_idx']] - \
+                 self.b_i[k]**2 * self.v_A[self.BranchInfo[branch]['from_bus_idx']]\
                  + M * (1 - self.reg_taps[(idx, k)]) >= 0)
 
-        if 'B' in BranchInfo[branch]['phases']:
+        if 'B' in self.BranchInfo[branch]['phases']:
           idx = RegulatorsIdx[branch+'.B']
 
           for k in range(32):
             self.Constraints.append(
-                 self.v_B[BranchInfo[branch]['to_bus_idx']] - \
-                 self.b_i[k]**2 * self.v_B[BranchInfo[branch]['from_bus_idx']]\
+                 self.v_B[self.BranchInfo[branch]['to_bus_idx']] - \
+                 self.b_i[k]**2 * self.v_B[self.BranchInfo[branch]['from_bus_idx']]\
                     - M * (1 - self.reg_taps[(idx, k)]) <= 0)
 
             self.Constraints.append(
-                 self.v_B[BranchInfo[branch]['to_bus_idx']] - \
-                 self.b_i[k]**2 * self.v_B[BranchInfo[branch]['from_bus_idx']]\
+                 self.v_B[self.BranchInfo[branch]['to_bus_idx']] - \
+                 self.b_i[k]**2 * self.v_B[self.BranchInfo[branch]['from_bus_idx']]\
                     + M * (1 - self.reg_taps[(idx, k)]) >= 0)
 
-        if 'C' in BranchInfo[branch]['phases']:
+        if 'C' in self.BranchInfo[branch]['phases']:
           idx = RegulatorsIdx[branch+'.C']
 
           for k in range(32):
             self.Constraints.append(
-                 self.v_C[BranchInfo[branch]['to_bus_idx']] - \
-                 self.b_i[k]**2 * self.v_C[BranchInfo[branch]['from_bus_idx']]\
+                 self.v_C[self.BranchInfo[branch]['to_bus_idx']] - \
+                 self.b_i[k]**2 * self.v_C[self.BranchInfo[branch]['from_bus_idx']]\
                  - M * (1 - self.reg_taps[(idx, k)]) <= 0)
 
             self.Constraints.append(
-                 self.v_C[BranchInfo[branch]['to_bus_idx']] - \
-                 self.b_i[k]**2 * self.v_C[BranchInfo[branch]['from_bus_idx']]\
+                 self.v_C[self.BranchInfo[branch]['to_bus_idx']] - \
+                 self.b_i[k]**2 * self.v_C[self.BranchInfo[branch]['from_bus_idx']]\
                  + M * (1 - self.reg_taps[(idx, k)]) >= 0)
 
-      elif BranchInfo[branch]['type'] != 'regulator':
-        zprim = BranchInfo[branch]['zprim']
-        phases = BranchInfo[branch]['phases']
+      elif self.BranchInfo[branch]['type'] != 'regulator':
+        zprim = self.BranchInfo[branch]['zprim']
+        phases = self.BranchInfo[branch]['phases']
         z_aa = z_bb = z_cc = z_ab = z_ac = z_bc = complex(0.0, 0.0)
 
         if zprim.size == 1:
@@ -496,9 +500,9 @@ class CompetingApp(GridAPPSD):
           print('*** Unrecognized zprim size for branch: ' + branch +
                 ', size: ' + str(zprim.size), flush=True)
 
-        fr_bus_idx = BranchInfo[branch]['from_bus_idx']
-        to_bus_idx = BranchInfo[branch]['to_bus_idx']
-        idx = BranchInfo[branch]['idx']
+        fr_bus_idx = self.BranchInfo[branch]['from_bus_idx']
+        to_bus_idx = self.BranchInfo[branch]['to_bus_idx']
+        idx = self.BranchInfo[branch]['idx']
         hfsqrt3 = math.sqrt(3.0)/2.0
 
         self.Constraints.append(
@@ -534,23 +538,21 @@ class CompetingApp(GridAPPSD):
     self.Constraints.append(self.v_C[self.BusInfo[sourcebus]['idx']] == v_source ** 2)
 
 
-  def objectiveForResilience(self):
+  def optObjectiveForResilience(self):
     # SHIVA magic scaling factor for SoC that causes the optmization to
     # come up with the correct results where -self.soc[i] doesn't.
     # Shiva will be investigating why this happens since we don't want
     # to be dependent on magic
     objective = sum(-100 * self.soc[i] for i in range(len(self.BatteriesInfo)))
-
     return objective
 
 
-  def objectiveForCVR(self):
+  def optObjectiveForCVR(self):
     objective = sum((self.v_A[i] + self.v_B[i] + self.v_C[i]) for i in range(len(self.BusInfo)))
-
     return objective
 
 
-  def objectiveForDecarbonization(self):
+  def optObjectiveForDecarbonization(self):
     # constraints specific to decarbonization
     self.Constraints.append(self.Psub_mod >= self.Psub)
 
@@ -588,11 +590,10 @@ class CompetingApp(GridAPPSD):
                         sum(-self.v_A[i] for i in bus_idx_batt['A']) + \
                         sum(-self.v_B[i] for i in bus_idx_batt['B']) + \
                         sum(-self.v_C[i] for i in bus_idx_batt['C'])
-
     return objective
 
 
-  def doOptimization(self, objective):
+  def optDo(self, objective):
     problem = cp.Problem(cp.Minimize(objective), self.Constraints)
 
     # problem.solve(solver=cp.MOSEK, verbose=True)
@@ -601,7 +602,7 @@ class CompetingApp(GridAPPSD):
     print('Optimization status:', problem.status, flush=True)
 
 
-  def reportOptimization(self, includeRegulatorsFlag, includeBatteriesFlag):
+  def optDispatch(self, includeRegulatorsFlag, includeBatteriesFlag):
     if includeRegulatorsFlag:
       regulator_taps = []
       for reg in self.RegulatorsInfo:
@@ -799,7 +800,7 @@ class CompetingApp(GridAPPSD):
       ybus[int(items[1])-1][int(items[0])-1] = \
                             complex(float(items[2]), float(items[3]))
 
-    BranchInfo = {}
+    self.BranchInfo = {}
 
     bindings = sparql_mgr.lines_connectivity_query()
     print('Count of ACLineSegments: ' + str(len(bindings)), flush=True)
@@ -814,15 +815,15 @@ class CompetingApp(GridAPPSD):
       #print('ACLineSegment name: ' + name + ', bus1: ' + bus1 +
       #      ', bus2: ' + bus2 + ', phases: ' + phases, flush=True)
 
-      BranchInfo[name] = {}
-      BranchInfo[name]['idx'] = idx
-      BranchInfo[name]['phases'] = phases
-      BranchInfo[name]['type'] = 'line'
-      BranchInfo[name]['from_bus'] = bus1
-      BranchInfo[name]['from_bus_idx'] = self.BusInfo[bus1]['idx']
-      BranchInfo[name]['to_bus'] = bus2
-      BranchInfo[name]['to_bus_idx'] = self.BusInfo[bus2]['idx']
-      #print(name + ': ' + str(BranchInfo[name]))
+      self.BranchInfo[name] = {}
+      self.BranchInfo[name]['idx'] = idx
+      self.BranchInfo[name]['phases'] = phases
+      self.BranchInfo[name]['type'] = 'line'
+      self.BranchInfo[name]['from_bus'] = bus1
+      self.BranchInfo[name]['from_bus_idx'] = self.BusInfo[bus1]['idx']
+      self.BranchInfo[name]['to_bus'] = bus2
+      self.BranchInfo[name]['to_bus_idx'] = self.BusInfo[bus2]['idx']
+      #print(name + ': ' + str(self.BranchInfo[name]))
       #print(obj)
       idx += 1
 
@@ -839,22 +840,22 @@ class CompetingApp(GridAPPSD):
       print('PowerTransformer name: ' + name + ', bus: ' + bus, flush=True)
       #print(obj)
 
-      if name not in BranchInfo:
-        BranchInfo[name] = {}
-        BranchInfo[name]['idx'] = idx
-        BranchInfo[name]['phases'] = 'ABC'
+      if name not in self.BranchInfo:
+        self.BranchInfo[name] = {}
+        self.BranchInfo[name]['idx'] = idx
+        self.BranchInfo[name]['phases'] = 'ABC'
 
         if 'RatioTapChanger.'+name in MethodUtil.NameToDevice and \
            MethodUtil.NameToDevice['RatioTapChanger.'+name] in self.RegulatorsInfo:
-          BranchInfo[name]['type'] = 'regulator'
+          self.BranchInfo[name]['type'] = 'regulator'
         else:
-          BranchInfo[name]['type'] = 'transformer'
-        BranchInfo[name]['from_bus'] = bus
-        BranchInfo[name]['from_bus_idx'] = self.BusInfo[bus]['idx']
+          self.BranchInfo[name]['type'] = 'transformer'
+        self.BranchInfo[name]['from_bus'] = bus
+        self.BranchInfo[name]['from_bus_idx'] = self.BusInfo[bus]['idx']
       else:
-        BranchInfo[name]['to_bus'] = bus
-        BranchInfo[name]['to_bus_idx'] = self.BusInfo[bus]['idx']
-        print(name + ': ' + str(BranchInfo[name]))
+        self.BranchInfo[name]['to_bus'] = bus
+        self.BranchInfo[name]['to_bus_idx'] = self.BusInfo[bus]['idx']
+        print(name + ': ' + str(self.BranchInfo[name]))
         idx += 1
 
     bindings = sparql_mgr.tank_transformer_connectivity_query()
@@ -869,20 +870,20 @@ class CompetingApp(GridAPPSD):
 
         mrid = MethodUtil.NameToDevice['RatioTapChanger.'+name]
         pname = self.RegulatorsInfo[mrid]['pname']
-        if pname not in BranchInfo:
-          BranchInfo[pname] = {}
-          BranchInfo[pname]['idx'] = idx
-          BranchInfo[pname]['phases'] = phase
-          BranchInfo[pname]['type'] = 'regulator'
-          BranchInfo[pname]['from_bus'] = bus
-          BranchInfo[pname]['from_bus_idx'] = self.BusInfo[bus]['idx']
+        if pname not in self.BranchInfo:
+          self.BranchInfo[pname] = {}
+          self.BranchInfo[pname]['idx'] = idx
+          self.BranchInfo[pname]['phases'] = phase
+          self.BranchInfo[pname]['type'] = 'regulator'
+          self.BranchInfo[pname]['from_bus'] = bus
+          self.BranchInfo[pname]['from_bus_idx'] = self.BusInfo[bus]['idx']
           idx += 1
-        elif bus != BranchInfo[pname]['from_bus']:
-          if phase not in BranchInfo[pname]['phases']:
-            BranchInfo[pname]['phases'] += phase
-          BranchInfo[pname]['to_bus'] = bus
-          BranchInfo[pname]['to_bus_idx'] = self.BusInfo[bus]['idx']
-          print(pname + ': ' + str(BranchInfo[pname]))
+        elif bus != self.BranchInfo[pname]['from_bus']:
+          if phase not in self.BranchInfo[pname]['phases']:
+            self.BranchInfo[pname]['phases'] += phase
+          self.BranchInfo[pname]['to_bus'] = bus
+          self.BranchInfo[pname]['to_bus_idx'] = self.BusInfo[bus]['idx']
+          print(pname + ': ' + str(self.BranchInfo[pname]))
 
     bindings = sparql_mgr.switch_connectivity_query()
     print('\nCount of Switches: ' + str(len(bindings)), flush=True)
@@ -898,15 +899,15 @@ class CompetingApp(GridAPPSD):
             ', bus2: ' + bus2 + ', phases: ' + phases, flush=True)
 
       if isopen == 'FALSE':
-        BranchInfo[name] = {}
-        BranchInfo[name]['idx'] = idx
-        BranchInfo[name]['phases'] = phases
-        BranchInfo[name]['type'] = 'line'
-        BranchInfo[name]['from_bus'] = bus1
-        BranchInfo[name]['from_bus_idx'] = self.BusInfo[bus1]['idx']
-        BranchInfo[name]['to_bus'] = bus2
-        BranchInfo[name]['to_bus_idx'] = self.BusInfo[bus2]['idx']
-        print(name + ': ' + str(BranchInfo[name]))
+        self.BranchInfo[name] = {}
+        self.BranchInfo[name]['idx'] = idx
+        self.BranchInfo[name]['phases'] = phases
+        self.BranchInfo[name]['type'] = 'line'
+        self.BranchInfo[name]['from_bus'] = bus1
+        self.BranchInfo[name]['from_bus_idx'] = self.BusInfo[bus1]['idx']
+        self.BranchInfo[name]['to_bus'] = bus2
+        self.BranchInfo[name]['to_bus_idx'] = self.BusInfo[bus2]['idx']
+        print(name + ': ' + str(self.BranchInfo[name]))
         #print(obj)
         idx += 1
 
@@ -915,33 +916,33 @@ class CompetingApp(GridAPPSD):
     self.LinesIn = {}
     self.LinesOut = {}
     n_line_phase = {}
-    for branch in BranchInfo:
-      if BranchInfo[branch]['to_bus_idx'] not in self.LinesIn:
-        self.LinesIn[BranchInfo[branch]['to_bus_idx']] = \
+    for branch in self.BranchInfo:
+      if self.BranchInfo[branch]['to_bus_idx'] not in self.LinesIn:
+        self.LinesIn[self.BranchInfo[branch]['to_bus_idx']] = \
                                          {'A': [], 'B': [], 'C': []}
-      if BranchInfo[branch]['from_bus_idx'] not in self.LinesOut:
-        self.LinesOut[BranchInfo[branch]['from_bus_idx']] = \
+      if self.BranchInfo[branch]['from_bus_idx'] not in self.LinesOut:
+        self.LinesOut[self.BranchInfo[branch]['from_bus_idx']] = \
                                          {'A': [], 'B': [], 'C': []}
 
-      phases = BranchInfo[branch]['phases']
+      phases = self.BranchInfo[branch]['phases']
       for char in phases:
-        self.LinesIn[BranchInfo[branch]['to_bus_idx']][char].append(
-                                                     BranchInfo[branch]['idx'])
-        self.LinesOut[BranchInfo[branch]['from_bus_idx']][char].append(
-                                                     BranchInfo[branch]['idx'])
+        self.LinesIn[self.BranchInfo[branch]['to_bus_idx']][char].append(
+                                                 self.BranchInfo[branch]['idx'])
+        self.LinesOut[self.BranchInfo[branch]['from_bus_idx']][char].append(
+                                                 self.BranchInfo[branch]['idx'])
         if char not in n_line_phase:
           n_line_phase[char] = 0
         n_line_phase[char] += 1
 
       # Identify the line emerging out from the source bus
-      if BranchInfo[branch]['from_bus'] == self.EnergySource['bus']:
-        self.EnergySource['flow_idx'] = BranchInfo[branch]['idx']
-      if BranchInfo[branch]['to_bus'] == self.EnergySource['bus']:
-        self.EnergySource['flow_idx'] = BranchInfo[branch]['idx']
+      if self.BranchInfo[branch]['from_bus'] == self.EnergySource['bus']:
+        self.EnergySource['flow_idx'] = self.BranchInfo[branch]['idx']
+      if self.BranchInfo[branch]['to_bus'] == self.EnergySource['bus']:
+        self.EnergySource['flow_idx'] = self.BranchInfo[branch]['idx']
 
-      if BranchInfo[branch]['type'] == 'line':
-        fr_bus = BranchInfo[branch]['from_bus']
-        to_bus = BranchInfo[branch]['to_bus']
+      if self.BranchInfo[branch]['type'] == 'line':
+        fr_bus = self.BranchInfo[branch]['from_bus']
+        to_bus = self.BranchInfo[branch]['to_bus']
         fr_nodes = []
         to_nodes = []
         if 'A' in phases:
@@ -954,13 +955,13 @@ class CompetingApp(GridAPPSD):
           fr_nodes.append(node_name[fr_bus+'.3'])
           to_nodes.append(node_name[to_bus+'.3'])
 
-        BranchInfo[branch]['zprim'] = -1 * \
+        self.BranchInfo[branch]['zprim'] = -1 * \
                             np.linalg.inv(ybus[np.ix_(fr_nodes, to_nodes)])
 
         #print('added line BranchInfo for: ' + branch + ', zprim: ' +
-        #      str(BranchInfo[branch]['zprim']), flush=True)
+        #      str(self.BranchInfo[branch]['zprim']), flush=True)
       else:
-        BranchInfo[branch]['zprim'] = np.zeros((3, 3), dtype=complex)
+        self.BranchInfo[branch]['zprim'] = np.zeros((3, 3), dtype=complex)
         #print('added non-line BranchInfo for: ' + branch + ', zprim: empty',
         #      flush=True)
 
@@ -992,14 +993,14 @@ class CompetingApp(GridAPPSD):
 
     self.b_i = np.arange(0.9, 1.1, 0.00625)
 
-    self.defineOptimizationVariables(len(BranchInfo), len(self.BusInfo),
+    self.defineOptimizationVariables(len(self.BranchInfo), len(self.BusInfo),
                                      len(self.BatteriesInfo), len(self.RegulatorsInfo))
 
     # GDB 8/25/23
     # Defining the part of the optimization problem that doesn't change with
     # each timestamp flies for PuLP, but not CVXPY. Based on how it sets up
     # the problem internally, it all needs to be redone each time.
-    #self.defineOptimizationStaticProblem(BranchInfo, RegulatorsIdx)
+    #self.defineOptimizationStaticProblem(self.BranchInfo, RegulatorsIdx)
 
     # topic for sending out set_points messages
     self.app_name = 'gridappsd-' + self.opt_type + '-app'
@@ -1066,7 +1067,7 @@ class CompetingApp(GridAPPSD):
 
           self.Constraints = []
 
-          self.defineOptimizationStaticProblem(BranchInfo, RegulatorsIdx)
+          self.defineOptimizationStaticProblem(self.BranchInfo, RegulatorsIdx)
 
           self.defineOptimizationDynamicProblem(timestamp)
 
@@ -1096,7 +1097,7 @@ class CompetingApp(GridAPPSD):
         # alternative workflow implementation for supporting cooperation in
         # order to meet the FY24 deconfliction service deliverable
         '''
-        self.defineOptimizationStaticProblem(BranchInfo, RegulatorsIdx)
+        self.defineOptimizationStaticProblem(self.BranchInfo, RegulatorsIdx)
 
         self.defineOptimizationDynamicProblem(timestamp)
 
