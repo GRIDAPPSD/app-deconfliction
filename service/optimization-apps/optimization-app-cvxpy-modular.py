@@ -105,9 +105,7 @@ class CompetingApp(GridAPPSD):
     # We will need something more generic and flexible for supporting different
     # objectives than the hardwired code I have for the three existing
     # objectives because we will have a bigger set of objectives that we
-    # will build up. We also likely won't actually perform/solve the
-    # optimization inside the function that defines the objective, but pull
-    # that out.
+    # will build up.
     self.objectiveResilienceFlag = True
     self.objectiveCVRFlag = False
     self.objectiveDecarbonizationFlag = False
@@ -159,16 +157,20 @@ class CompetingApp(GridAPPSD):
       self.constraintsNetworkWithVoltages(self.includeRegulatorsFlag)
 
     if self.objectiveResilienceFlag:
-      self.objectiveForResilience()
+      objective = self.objectiveForResilience()
 
     if self.objectiveCVRFlag:
-      self.objectiveForCVR()
+      objective = self.objectiveForCVR()
 
     if self.objectiveDecarbonizationFlag:
-      self.objectiveForDecarbonization()
+      # note decarbonization is a two stage optimization and the first stage
+      # is run within the objectiveForDecarbonization function
+      objective = self.objectiveForDecarbonization()
+
+    self.doOptimization(objective)
 
     self.reportOptimization(self.includeRegulatorsFlag,
-                            self.includeBatteriesFlag):
+                            self.includeBatteriesFlag)
 
 
   def defineOptimizationVariables(self, includePFlowFlag, includeQFlowFlag,
@@ -539,23 +541,13 @@ class CompetingApp(GridAPPSD):
     # to be dependent on magic
     objective = sum(-100 * self.soc[i] for i in range(len(self.BatteriesInfo)))
 
-    problem = cp.Problem(cp.Minimize(objective), self.Constraints)
-
-    # problem.solve(solver=cp.MOSEK, verbose=True)
-    problem.solve(solver=cp.GLPK_MI, abstol=1e-3, kktsolver='chol',
-                  feastol=1e-3, max_iters=100, verbose=False)
-    print('Optimization status:', problem.status, flush=True)
+    return objective
 
 
   def objectiveForCVR(self):
     objective = sum((self.v_A[i] + self.v_B[i] + self.v_C[i]) for i in range(len(self.BusInfo)))
 
-    problem = cp.Problem(cp.Minimize(objective), self.Constraints)
-
-    # problem.solve(solver=cp.MOSEK, verbose=True)
-    problem.solve(solver=cp.GLPK_MI, abstol=1e-3, kktsolver='chol',
-                  feastol=1e-3, max_iters=100, verbose=False)
-    print('Optimization status:', problem.status, flush=True)
+    return objective
 
 
   def objectiveForDecarbonization(self):
@@ -577,12 +569,7 @@ class CompetingApp(GridAPPSD):
 
     objective = self.Psub_mod / 1000
 
-    problem = cp.Problem(cp.Minimize(objective), self.Constraints)
-
-    # problem.solve(solver=cp.MOSEK, verbose=True)
-    problem.solve(solver=cp.GLPK_MI, abstol=1e-3, kktsolver='chol',
-                  feastol=1e-3, max_iters=100, verbose=False)
-    print('Optimization status:', problem.status, flush=True)
+    self.doOptimization(objective)
 
     # second stage only needed for decarbonization
     bus_idx_batt = {'A': [], 'B': [], 'C': []}
@@ -602,11 +589,16 @@ class CompetingApp(GridAPPSD):
                         sum(-self.v_B[i] for i in bus_idx_batt['B']) + \
                         sum(-self.v_C[i] for i in bus_idx_batt['C'])
 
+    return objective
+
+
+  def doOptimization(self, objective):
     problem = cp.Problem(cp.Minimize(objective), self.Constraints)
-    # problem.solve(solver=cp.MOSEK)
+
+    # problem.solve(solver=cp.MOSEK, verbose=True)
     problem.solve(solver=cp.GLPK_MI, abstol=1e-3, kktsolver='chol',
                   feastol=1e-3, max_iters=100, verbose=False)
-    print('Optimization Stage II status:', problem.status, flush=True)
+    print('Optimization status:', problem.status, flush=True)
 
 
   def reportOptimization(self, includeRegulatorsFlag, includeBatteriesFlag):
