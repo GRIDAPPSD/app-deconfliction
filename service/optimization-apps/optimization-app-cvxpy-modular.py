@@ -210,7 +210,7 @@ class CompetingApp(GridAPPSD):
       self.p_batt_greedy = [None] * len_BatteriesInfo
 
     if includeRegulatorsFlag:
-    len_RegulatorsInfo = len(self.RegulatorsInfo)
+      len_RegulatorsInfo = len(self.RegulatorsInfo)
       self.reg_taps = cp.Variable((len_RegulatorsInfo, 32), boolean=True,
                                   name='reg_taps')
 
