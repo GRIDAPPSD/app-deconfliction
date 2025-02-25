@@ -263,9 +263,9 @@ class CompetingApp(GridAPPSD):
     for k in range(len(self.RegulatorsInfo)):
       self.Constraints.append(sum(self.reg_taps[(k, tap)] for tap in range(32)) == 1)
 
-     # For some reason CVXPY fails to print the regulator taps unless
-     # substation regulator tap is fixed--for now fixing it to zero position
-     self.Constraints.append(self.reg_taps[(0, 16)] == 1)
+    # For some reason CVXPY fails to print the regulator taps unless
+    # substation regulator tap is fixed--for now fixing it to zero position
+    self.Constraints.append(self.reg_taps[(0, 16)] == 1)
 
 
   def optConstraintsNetworkWithPFlow(self, includeBatteriesFlag,
