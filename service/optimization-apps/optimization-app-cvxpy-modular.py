@@ -128,7 +128,7 @@ class CompetingApp(GridAPPSD):
     if self.includeBatteriesFlag:
       self.includePFlowFlag = True
 
-    if self.includeRegulatotorsFlag:
+    if self.includeRegulatorsFlag:
       self.includeVoltagesFlag = True
 
     if self.includeVoltagesFlag:
