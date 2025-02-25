@@ -135,7 +135,8 @@ class CompetingApp(GridAPPSD):
       self.includeVoltagesFlag = True
 
     if self.objectiveDecarbonizationFlag:
-      self.includePFlowFlag = True
+      self.includeBatteriesFlag = True
+      self.includeVoltagesFlag = True
 
     if self.includeBatteriesFlag:
       self.includePFlowFlag = True
@@ -163,29 +164,43 @@ class CompetingApp(GridAPPSD):
                                 self.lambda_c, self.lambda_d)
 
     if self.includeRegulatorsFlag:
-      self.optConstraintsDERWithRegulators()
+      self.optConstraintsDERWithRegulators(self.RegulatorsInfo, self.reg_taps)
 
     if self.includePFlowFlag:
       self.optConstraintsNetworkWithPFlow(self.includeBatteriesFlag,
-                                          self.includeEnergyConsumersFlag,
-                                          self.includeSolarPVsFlag)
+                      self.includeEnergyConsumersFlag, self.includeSolarPVsFlag,
+                      self.BusInfo, self.LinesIn, self.LinesOut,
+                      self.EnergyConsumers, self.SolarPVs,
+                      self.BatteriesObj, self.BatteriesIdx, self.p_batt,
+                      self.p_flow_A, self.p_flow_B, self.p_flow_C)
 
     if self.includeQFlowFlag:
-      self.optConstraintsNetworkWithQFlow(self.includeEnergyConsumersFlag)
+      self.optConstraintsNetworkWithQFlow(self.includeEnergyConsumersFlag,
+              self.BusInfo, self.LinesIn, self.LinesOut, self.EnergyConsumers,
+              self.q_flow_A, self.q_flow_B, self.q_flow_C)
 
     if self.includeVoltagesFlag:
-      self.optConstraintsNetworkWithVoltages(self.includeRegulatorsFlag)
+      self.optConstraintsNetworkWithVoltages(self.includeRegulatorsFlag,
+           self.BusInfo, self.BranchInfo, self.RegulatorsIdx, self.EnergySource,
+           self.b_i, self.reg_taps, self.p_flow_A, self.p_flow_B, self.p_flow_C,
+           self.q_flow_A, self.q_flow_B, self.q_flow_C,
+           self.v_A, self.v_B, self.v_C)
 
     if self.objectiveResilienceFlag:
-      objective = self.optObjectiveForResilience()
+      objective = self.optObjectiveForResilience(self.BatteriesInfo, self.soc)
 
     if self.objectiveCVRFlag:
-      objective = self.optObjectiveForCVR()
+      objective = self.optObjectiveForCVR(self.BusInfo,
+                                          self.v_A, self.v_B, self.v_C)
 
     if self.objectiveDecarbonizationFlag:
       # note decarbonization is a two stage optimization and the first stage
       # is run within the objectiveForDecarbonization function
-      objective = self.optObjectiveForDecarbonization()
+      objective = self.optObjectiveForDecarbonization(self.BusInfo,
+                                    self.BatteriesIdx, self.BatteriesInfo,
+                                    self.EnergySource, self.Psub, self.Psub_mod,
+                                    self.p_flow_A, self.p_flow_B, self.p_flow_C,
+                                    self.p_batt, self.v_A, self.v_B, self.v_C)
 
     self.optDo(objective)
 
@@ -275,205 +290,212 @@ class CompetingApp(GridAPPSD):
       self.Constraints.append(soc[idx] <= 0.9)
 
 
-  def optConstraintsDERWithRegulators(self):
-    for k in range(len(self.RegulatorsInfo)):
-      self.Constraints.append(sum(self.reg_taps[(k, tap)] for tap in range(32)) == 1)
+  def optConstraintsDERWithRegulators(self, RegulatorsInfo, reg_taps):
+    for k in range(len(RegulatorsInfo)):
+      self.Constraints.append(sum(reg_taps[(k, tap)] for tap in range(32)) == 1)
 
     # For some reason CVXPY fails to print the regulator taps unless
     # substation regulator tap is fixed--for now fixing it to zero position
-    self.Constraints.append(self.reg_taps[(0, 16)] == 1)
+    self.Constraints.append(reg_taps[(0, 16)] == 1)
 
 
   def optConstraintsNetworkWithPFlow(self, includeBatteriesFlag,
-                               includeEnergyConsumersFlag, includeSolarPVsFlag):
-    for bus in self.BusInfo:
-      bus_idx = self.BusInfo[bus]['idx']
-      if bus_idx not in self.LinesOut:
-        self.LinesOut[bus_idx] = {'A': [], 'B': [], 'C': []}
+              includeEnergyConsumersFlag, includeSolarPVsFlag,
+              BusInfo, LinesIn, LinesOut, EnergyConsumers, SolarPVs,
+              BatteriesObj, BatteriesIdx, p_batt, p_flow_A, p_flow_B, p_flow_C):
+    for bus in BusInfo:
+      bus_idx = BusInfo[bus]['idx']
+      if bus_idx not in LinesOut:
+        LinesOut[bus_idx] = {'A': [], 'B': [], 'C': []}
 
-      if bus_idx in self.LinesIn: # check for source bus
-        if '1' in self.BusInfo[bus]['phases']:
+      if bus_idx in LinesIn: # check for source bus
+        if '1' in BusInfo[bus]['phases']:
           injection_p = 0
-          if includeEnergyConsumersFlag and bus in self.EnergyConsumers and \
-             'A' in self.EnergyConsumers[bus]['kW']:
-            injection_p = self.EnergyConsumers[bus]['kW']['A']
+          if includeEnergyConsumersFlag and bus in EnergyConsumers and \
+             'A' in EnergyConsumers[bus]['kW']:
+            injection_p = EnergyConsumers[bus]['kW']['A']
 
-          if includeSolarPVsFlag and bus in self.SolarPVs and \
-             'A' in self.SolarPVs[bus]['phase']:
-            injection_p -= self.SolarPVs[bus]['p']
+          if includeSolarPVsFlag and bus in SolarPVs and \
+             'A' in SolarPVs[bus]['phase']:
+            injection_p -= SolarPVs[bus]['p']
             #print('SolarPVs A bus: ' + bus + ', value: ' +
-            #      str(self.SolarPVs[bus]['p']), flush=True)
+            #      str(SolarPVs[bus]['p']), flush=True)
 
-          if includeBatteriesFlag and bus in self.BatteriesObj and \
-             'A' in self.BatteriesObj[bus]['phase']:
+          if includeBatteriesFlag and bus in BatteriesObj and \
+             'A' in BatteriesObj[bus]['phase']:
             #print('Batteries A bus: ' + bus, flush=True)
-            mrid = self.BatteriesObj[bus]['mrid']
-            self.Constraints.append(sum(self.p_flow_A[idx] \
-                 for idx in self.LinesIn[bus_idx]['A']) - \
-               self.p_batt[self.BatteriesIdx[mrid]] - injection_p == \
-               sum(self.p_flow_A[idx] for idx in self.LinesOut[bus_idx]['A']))
+            mrid = BatteriesObj[bus]['mrid']
+            self.Constraints.append(sum(p_flow_A[idx] \
+                 for idx in LinesIn[bus_idx]['A']) - \
+               p_batt[BatteriesIdx[mrid]] - injection_p == \
+               sum(p_flow_A[idx] for idx in LinesOut[bus_idx]['A']))
 
           else:
-            self.Constraints.append(sum(self.p_flow_A[idx] \
-                 for idx in self.LinesIn[bus_idx]['A']) - injection_p == \
-               sum(self.p_flow_A[idx] for idx in self.LinesOut[bus_idx]['A']))
+            self.Constraints.append(sum(p_flow_A[idx] \
+                 for idx in LinesIn[bus_idx]['A']) - injection_p == \
+               sum(p_flow_A[idx] for idx in LinesOut[bus_idx]['A']))
 
-        if '2' in self.BusInfo[bus]['phases']:
+        if '2' in BusInfo[bus]['phases']:
           injection_p = 0
-          if includeEnergyConsumersFlag and bus in self.EnergyConsumers and \
-             'B' in self.EnergyConsumers[bus]['kW']:
-            injection_p = self.EnergyConsumers[bus]['kW']['B']
+          if includeEnergyConsumersFlag and bus in EnergyConsumers and \
+             'B' in EnergyConsumers[bus]['kW']:
+            injection_p = EnergyConsumers[bus]['kW']['B']
 
-          if includeSolarPVsFlag and bus in self.SolarPVs and \
-             'B' in self.SolarPVs[bus]['phase']:
-            injection_p -= self.SolarPVs[bus]['p']
+          if includeSolarPVsFlag and bus in SolarPVs and \
+             'B' in SolarPVs[bus]['phase']:
+            injection_p -= SolarPVs[bus]['p']
             #print('SolarPVs B bus: ' + bus + ', value: ' +
-            #      str(self.SolarPVs[bus]['p']), flush=True)
+            #      str(SolarPVs[bus]['p']), flush=True)
 
-          if includeBatteriesFlag and bus in self.BatteriesObj and \
-             'B' in self.BatteriesObj[bus]['phase']:
+          if includeBatteriesFlag and bus in BatteriesObj and \
+             'B' in BatteriesObj[bus]['phase']:
             #print('Batteries B bus: ' + bus, flush=True)
-            mrid = self.BatteriesObj[bus]['mrid']
-            self.Constraints.append(sum(self.p_flow_B[idx] \
-                 for idx in self.LinesIn[bus_idx]['B']) - \
-               self.p_batt[self.BatteriesIdx[mrid]] - injection_p == \
-               sum(self.p_flow_B[idx] for idx in self.LinesOut[bus_idx]['B']))
+            mrid = BatteriesObj[bus]['mrid']
+            self.Constraints.append(sum(p_flow_B[idx] \
+                 for idx in LinesIn[bus_idx]['B']) - \
+               p_batt[BatteriesIdx[mrid]] - injection_p == \
+               sum(p_flow_B[idx] for idx in LinesOut[bus_idx]['B']))
 
           else:
-            self.Constraints.append(sum(self.p_flow_B[idx] \
-                 for idx in self.LinesIn[bus_idx]['B']) - injection_p == \
-               sum(self.p_flow_B[idx] for idx in self.LinesOut[bus_idx]['B']))
+            self.Constraints.append(sum(p_flow_B[idx] \
+                 for idx in LinesIn[bus_idx]['B']) - injection_p == \
+               sum(p_flow_B[idx] for idx in LinesOut[bus_idx]['B']))
 
-        if '3' in self.BusInfo[bus]['phases']:
+        if '3' in BusInfo[bus]['phases']:
           injection_p = 0
-          if includeEnergyConsumersFlag and bus in self.EnergyConsumers and \
-             'C' in self.EnergyConsumers[bus]['kW']:
-            injection_p = self.EnergyConsumers[bus]['kW']['C']
+          if includeEnergyConsumersFlag and bus in EnergyConsumers and \
+             'C' in EnergyConsumers[bus]['kW']:
+            injection_p = EnergyConsumers[bus]['kW']['C']
 
-          if includeSolarPVsFlag and bus in self.SolarPVs and \
-             'C' in self.SolarPVs[bus]['phase']:
-            injection_p -= self.SolarPVs[bus]['p']
+          if includeSolarPVsFlag and bus in SolarPVs and \
+             'C' in SolarPVs[bus]['phase']:
+            injection_p -= SolarPVs[bus]['p']
             #print('SolarPVs C bus: ' + bus + ', value: ' +
-            #      str(self.SolarPVs[bus]['p']), flush=True)
+            #      str(SolarPVs[bus]['p']), flush=True)
 
-          if includeBatteriesFlag and bus in self.BatteriesObj and \
-             'C' in self.BatteriesObj[bus]['phase']:
+          if includeBatteriesFlag and bus in BatteriesObj and \
+             'C' in BatteriesObj[bus]['phase']:
             #print('Batteries C bus: ' + bus, flush=True)
-            mrid = self.BatteriesObj[bus]['mrid']
-            self.Constraints.append(sum(self.p_flow_C[idx] \
-                 for idx in self.LinesIn[bus_idx]['C']) - \
-               self.p_batt[self.BatteriesIdx[mrid]] - injection_p == \
-               sum(self.p_flow_C[idx] for idx in self.LinesOut[bus_idx]['C']))
+            mrid = BatteriesObj[bus]['mrid']
+            self.Constraints.append(sum(p_flow_C[idx] \
+                 for idx in LinesIn[bus_idx]['C']) - \
+               p_batt[BatteriesIdx[mrid]] - injection_p == \
+               sum(p_flow_C[idx] for idx in LinesOut[bus_idx]['C']))
 
           else:
-            self.Constraints.append(sum(self.p_flow_C[idx] \
-                 for idx in self.LinesIn[bus_idx]['C']) - injection_p == \
-               sum(self.p_flow_C[idx] for idx in self.LinesOut[bus_idx]['C']))
+            self.Constraints.append(sum(p_flow_C[idx] \
+                 for idx in LinesIn[bus_idx]['C']) - injection_p == \
+               sum(p_flow_C[idx] for idx in LinesOut[bus_idx]['C']))
 
 
-  def optConstraintsNetworkWithQFlow(self, includeEnergyConsumersFlag):
-    for bus in self.BusInfo:
-      bus_idx = self.BusInfo[bus]['idx']
-      if bus_idx not in self.LinesOut:
-        self.LinesOut[bus_idx] = {'A': [], 'B': [], 'C': []}
+  def optConstraintsNetworkWithQFlow(self, includeEnergyConsumersFlag,
+                               BusInfo, LinesIn, LinesOut, EnergyConsumers,
+                               q_flow_A, q_flow_B, q_flow_C):
+    for bus in BusInfo:
+      bus_idx = BusInfo[bus]['idx']
+      if bus_idx not in LinesOut:
+        LinesOut[bus_idx] = {'A': [], 'B': [], 'C': []}
 
-      if bus_idx in self.LinesIn: # check for source bus
-        if '1' in self.BusInfo[bus]['phases']:
+      if bus_idx in LinesIn: # check for source bus
+        if '1' in BusInfo[bus]['phases']:
           injection_q = 0
-          if includeEnergyConsumersFlag and bus in self.EnergyConsumers and \
-             'A' in self.EnergyConsumers[bus]['kW']:
-            injection_q = self.EnergyConsumers[bus]['kVar']['A']
+          if includeEnergyConsumersFlag and bus in EnergyConsumers and \
+             'A' in EnergyConsumers[bus]['kW']:
+            injection_q = EnergyConsumers[bus]['kVar']['A']
 
-          self.Constraints.append(sum(self.q_flow_A[idx] \
-               for idx in self.LinesIn[bus_idx]['A']) - injection_q == \
-             sum(self.q_flow_A[idx] for idx in self.LinesOut[bus_idx]['A']))
+          self.Constraints.append(sum(q_flow_A[idx] \
+               for idx in LinesIn[bus_idx]['A']) - injection_q == \
+             sum(q_flow_A[idx] for idx in LinesOut[bus_idx]['A']))
 
-        if '2' in self.BusInfo[bus]['phases']:
+        if '2' in BusInfo[bus]['phases']:
           injection_q = 0
-          if includeEnergyConsumersFlag and bus in self.EnergyConsumers and \
-             'B' in self.EnergyConsumers[bus]['kW']:
-            injection_q = self.EnergyConsumers[bus]['kVar']['B']
+          if includeEnergyConsumersFlag and bus in EnergyConsumers and \
+             'B' in EnergyConsumers[bus]['kW']:
+            injection_q = EnergyConsumers[bus]['kVar']['B']
 
-          self.Constraints.append(sum(self.q_flow_B[idx] \
-               for idx in self.LinesIn[bus_idx]['B']) - injection_q == \
-             sum(self.q_flow_B[idx] for idx in self.LinesOut[bus_idx]['B']))
+          self.Constraints.append(sum(q_flow_B[idx] \
+               for idx in LinesIn[bus_idx]['B']) - injection_q == \
+             sum(q_flow_B[idx] for idx in LinesOut[bus_idx]['B']))
 
-        if '3' in self.BusInfo[bus]['phases']:
+        if '3' in BusInfo[bus]['phases']:
           injection_q = 0
-          if includeEnergyConsumersFlag and bus in self.EnergyConsumers and \
-             'C' in self.EnergyConsumers[bus]['kW']:
-            injection_q = self.EnergyConsumers[bus]['kVar']['C']
+          if includeEnergyConsumersFlag and bus in EnergyConsumers and \
+             'C' in EnergyConsumers[bus]['kW']:
+            injection_q = EnergyConsumers[bus]['kVar']['C']
 
-          self.Constraints.append(sum(self.q_flow_C[idx] \
-               for idx in self.LinesIn[bus_idx]['C']) - injection_q == \
-             sum(self.q_flow_C[idx] for idx in self.LinesOut[bus_idx]['C']))
+          self.Constraints.append(sum(q_flow_C[idx] \
+               for idx in LinesIn[bus_idx]['C']) - injection_q == \
+             sum(q_flow_C[idx] for idx in LinesOut[bus_idx]['C']))
 
 
-  def optConstraintsNetworkWithVoltages(self, includeRegulatorsFlag):
+  def optConstraintsNetworkWithVoltages(self, includeRegulatorsFlag,
+                               BusInfo, BranchInfo, RegulatorsIdx, EnergySource,
+                               b_i, reg_taps, p_flow_A, p_flow_B, p_flow_C,
+                               q_flow_A, q_flow_B, q_flow_C, v_A, v_B, v_C):
     v_min, v_max = (0.95 * 2401.77) ** 2, (1.05 * 2401.77) ** 2
-    for bus in self.BusInfo:
-      bus_idx = self.BusInfo[bus]['idx']
-      self.Constraints.append(self.v_A[bus_idx] >= v_min)
-      self.Constraints.append(self.v_A[bus_idx] <= v_max)
-      self.Constraints.append(self.v_B[bus_idx] >= v_min)
-      self.Constraints.append(self.v_B[bus_idx] <= v_max)
-      self.Constraints.append(self.v_C[bus_idx] >= v_min)
-      self.Constraints.append(self.v_C[bus_idx] <= v_max)
+    for bus in BusInfo:
+      bus_idx = BusInfo[bus]['idx']
+      self.Constraints.append(v_A[bus_idx] >= v_min)
+      self.Constraints.append(v_A[bus_idx] <= v_max)
+      self.Constraints.append(v_B[bus_idx] >= v_min)
+      self.Constraints.append(v_B[bus_idx] <= v_max)
+      self.Constraints.append(v_C[bus_idx] >= v_min)
+      self.Constraints.append(v_C[bus_idx] <= v_max)
 
     M = 1e9
-    for branch in self.BranchInfo:
+    for branch in BranchInfo:
       # TODO NOTE: Feedback from Monish
       # We will need to define constraints in the case of it being a regulator
       # branch type, but with includeRegulatorsFlag==False where we have
       # no constraints at all currently. In this case we will need constraints
       # that have a constant value based on measurements in place of the
-      # self.reg_taps optimization variable being used now.
-      if self.BranchInfo[branch]['type']=='regulator' and includeRegulatorsFlag:
-        if 'A' in self.BranchInfo[branch]['phases']:
-          idx = self.RegulatorsIdx[branch+'.A']
+      # reg_taps optimization variable being used now.
+      if BranchInfo[branch]['type']=='regulator' and includeRegulatorsFlag:
+        if 'A' in BranchInfo[branch]['phases']:
+          idx = RegulatorsIdx[branch+'.A']
 
           for k in range(32):
             self.Constraints.append(
-                 self.v_A[self.BranchInfo[branch]['to_bus_idx']] - \
-                 self.b_i[k]**2 * self.v_A[self.BranchInfo[branch]['from_bus_idx']]\
-                 - M * (1 - self.reg_taps[(idx, k)]) <= 0)
+                 v_A[BranchInfo[branch]['to_bus_idx']] - \
+                 b_i[k]**2 * v_A[BranchInfo[branch]['from_bus_idx']]\
+                 - M * (1 - reg_taps[(idx, k)]) <= 0)
 
             self.Constraints.append(
-                 self.v_A[self.BranchInfo[branch]['to_bus_idx']] - \
-                 self.b_i[k]**2 * self.v_A[self.BranchInfo[branch]['from_bus_idx']]\
-                 + M * (1 - self.reg_taps[(idx, k)]) >= 0)
+                 v_A[BranchInfo[branch]['to_bus_idx']] - \
+                 b_i[k]**2 * v_A[BranchInfo[branch]['from_bus_idx']]\
+                 + M * (1 - reg_taps[(idx, k)]) >= 0)
 
-        if 'B' in self.BranchInfo[branch]['phases']:
-          idx = self.RegulatorsIdx[branch+'.B']
+        if 'B' in BranchInfo[branch]['phases']:
+          idx = RegulatorsIdx[branch+'.B']
 
           for k in range(32):
             self.Constraints.append(
-                 self.v_B[self.BranchInfo[branch]['to_bus_idx']] - \
-                 self.b_i[k]**2 * self.v_B[self.BranchInfo[branch]['from_bus_idx']]\
-                    - M * (1 - self.reg_taps[(idx, k)]) <= 0)
+                 v_B[BranchInfo[branch]['to_bus_idx']] - \
+                 b_i[k]**2 * v_B[BranchInfo[branch]['from_bus_idx']]\
+                    - M * (1 - reg_taps[(idx, k)]) <= 0)
 
             self.Constraints.append(
-                 self.v_B[self.BranchInfo[branch]['to_bus_idx']] - \
-                 self.b_i[k]**2 * self.v_B[self.BranchInfo[branch]['from_bus_idx']]\
-                    + M * (1 - self.reg_taps[(idx, k)]) >= 0)
+                 v_B[BranchInfo[branch]['to_bus_idx']] - \
+                 b_i[k]**2 * v_B[BranchInfo[branch]['from_bus_idx']]\
+                    + M * (1 - reg_taps[(idx, k)]) >= 0)
 
-        if 'C' in self.BranchInfo[branch]['phases']:
-          idx = self.RegulatorsIdx[branch+'.C']
+        if 'C' in BranchInfo[branch]['phases']:
+          idx = RegulatorsIdx[branch+'.C']
 
           for k in range(32):
             self.Constraints.append(
-                 self.v_C[self.BranchInfo[branch]['to_bus_idx']] - \
-                 self.b_i[k]**2 * self.v_C[self.BranchInfo[branch]['from_bus_idx']]\
-                 - M * (1 - self.reg_taps[(idx, k)]) <= 0)
+                 v_C[BranchInfo[branch]['to_bus_idx']] - \
+                 b_i[k]**2 * v_C[BranchInfo[branch]['from_bus_idx']]\
+                 - M * (1 - reg_taps[(idx, k)]) <= 0)
 
             self.Constraints.append(
-                 self.v_C[self.BranchInfo[branch]['to_bus_idx']] - \
-                 self.b_i[k]**2 * self.v_C[self.BranchInfo[branch]['from_bus_idx']]\
-                 + M * (1 - self.reg_taps[(idx, k)]) >= 0)
+                 v_C[BranchInfo[branch]['to_bus_idx']] - \
+                 b_i[k]**2 * v_C[BranchInfo[branch]['from_bus_idx']]\
+                 + M * (1 - reg_taps[(idx, k)]) >= 0)
 
-      elif self.BranchInfo[branch]['type'] != 'regulator':
-        zprim = self.BranchInfo[branch]['zprim']
-        phases = self.BranchInfo[branch]['phases']
+      elif BranchInfo[branch]['type'] != 'regulator':
+        zprim = BranchInfo[branch]['zprim']
+        phases = BranchInfo[branch]['phases']
         z_aa = z_bb = z_cc = z_ab = z_ac = z_bc = complex(0.0, 0.0)
 
         if zprim.size == 1:
@@ -516,96 +538,98 @@ class CompetingApp(GridAPPSD):
           print('*** Unrecognized zprim size for branch: ' + branch +
                 ', size: ' + str(zprim.size), flush=True)
 
-        fr_bus_idx = self.BranchInfo[branch]['from_bus_idx']
-        to_bus_idx = self.BranchInfo[branch]['to_bus_idx']
-        idx = self.BranchInfo[branch]['idx']
+        fr_bus_idx = BranchInfo[branch]['from_bus_idx']
+        to_bus_idx = BranchInfo[branch]['to_bus_idx']
+        idx = BranchInfo[branch]['idx']
         hfsqrt3 = math.sqrt(3.0)/2.0
 
         self.Constraints.append(
-            self.v_A[to_bus_idx] == self.v_A[fr_bus_idx] - \
-            2.0*(self.p_flow_A[idx]*z_aa.real + self.q_flow_A[idx]*z_aa.imag + \
-            self.p_flow_B[idx]*(-0.5*z_ab.real + hfsqrt3*z_ab.imag) + \
-            self.q_flow_B[idx]*(-0.5*z_ab.imag - hfsqrt3*z_ab.real) + \
-            self.p_flow_C[idx]*(-0.5*z_ac.real - hfsqrt3*z_ac.imag) + \
-            self.q_flow_C[idx]*(-0.5*z_ac.imag + hfsqrt3*z_ac.real)))
+            v_A[to_bus_idx] == v_A[fr_bus_idx] - \
+            2.0*(p_flow_A[idx]*z_aa.real + q_flow_A[idx]*z_aa.imag + \
+            p_flow_B[idx]*(-0.5*z_ab.real + hfsqrt3*z_ab.imag) + \
+            q_flow_B[idx]*(-0.5*z_ab.imag - hfsqrt3*z_ab.real) + \
+            p_flow_C[idx]*(-0.5*z_ac.real - hfsqrt3*z_ac.imag) + \
+            q_flow_C[idx]*(-0.5*z_ac.imag + hfsqrt3*z_ac.real)))
 
         self.Constraints.append(
-            self.v_B[to_bus_idx] == self.v_B[fr_bus_idx] - \
-            2.0*(self.p_flow_B[idx]*z_bb.real + self.q_flow_B[idx]*z_bb.imag + \
-            self.p_flow_A[idx]*(-0.5*z_ab.real - hfsqrt3*z_ab.imag) + \
-            self.q_flow_A[idx]*(-0.5*z_ab.imag + hfsqrt3*z_ab.real) + \
-            self.p_flow_C[idx]*(-0.5*z_bc.real + hfsqrt3*z_bc.imag) + \
-            self.q_flow_C[idx]*(-0.5*z_bc.imag - hfsqrt3*z_bc.real)))
+            v_B[to_bus_idx] == v_B[fr_bus_idx] - \
+            2.0*(p_flow_B[idx]*z_bb.real + q_flow_B[idx]*z_bb.imag + \
+            p_flow_A[idx]*(-0.5*z_ab.real - hfsqrt3*z_ab.imag) + \
+            q_flow_A[idx]*(-0.5*z_ab.imag + hfsqrt3*z_ab.real) + \
+            p_flow_C[idx]*(-0.5*z_bc.real + hfsqrt3*z_bc.imag) + \
+            q_flow_C[idx]*(-0.5*z_bc.imag - hfsqrt3*z_bc.real)))
 
         self.Constraints.append(
-            self.v_C[to_bus_idx] == self.v_C[fr_bus_idx] - \
-            2.0*(self.p_flow_C[idx]*z_cc.real + self.q_flow_C[idx]*z_cc.imag + \
-            self.p_flow_A[idx]*(-0.5*z_ac.real + hfsqrt3*z_ac.imag) + \
-            self.q_flow_A[idx]*(-0.5*z_ac.imag - hfsqrt3*z_ac.real) + \
-            self.p_flow_B[idx]*(-0.5*z_bc.real - hfsqrt3*z_bc.imag) + \
-            self.q_flow_B[idx]*(-0.5*z_bc.imag + hfsqrt3*z_bc.real)))
+            v_C[to_bus_idx] == v_C[fr_bus_idx] - \
+            2.0*(p_flow_C[idx]*z_cc.real + q_flow_C[idx]*z_cc.imag + \
+            p_flow_A[idx]*(-0.5*z_ac.real + hfsqrt3*z_ac.imag) + \
+            q_flow_A[idx]*(-0.5*z_ac.imag - hfsqrt3*z_ac.real) + \
+            p_flow_B[idx]*(-0.5*z_bc.real - hfsqrt3*z_bc.imag) + \
+            q_flow_B[idx]*(-0.5*z_bc.imag + hfsqrt3*z_bc.real)))
 
     # fix source bus at 1.0
-    sourcebus = self.EnergySource['bus']
-    v_source = self.EnergySource['basev'] / math.sqrt(3)
+    sourcebus = EnergySource['bus']
+    v_source = EnergySource['basev'] / math.sqrt(3)
 
-    self.Constraints.append(self.v_A[self.BusInfo[sourcebus]['idx']] == v_source ** 2)
-    self.Constraints.append(self.v_B[self.BusInfo[sourcebus]['idx']] == v_source ** 2)
-    self.Constraints.append(self.v_C[self.BusInfo[sourcebus]['idx']] == v_source ** 2)
+    self.Constraints.append(v_A[BusInfo[sourcebus]['idx']] == v_source ** 2)
+    self.Constraints.append(v_B[BusInfo[sourcebus]['idx']] == v_source ** 2)
+    self.Constraints.append(v_C[BusInfo[sourcebus]['idx']] == v_source ** 2)
 
 
-  def optObjectiveForResilience(self):
+  def optObjectiveForResilience(self, BatteriesInfo, soc):
     # SHIVA magic scaling factor for SoC that causes the optmization to
     # come up with the correct results where -self.soc[i] doesn't.
     # Shiva will be investigating why this happens since we don't want
     # to be dependent on magic
-    objective = sum(-100 * self.soc[i] for i in range(len(self.BatteriesInfo)))
+    objective = sum(-100 * soc[i] for i in range(len(BatteriesInfo)))
     return objective
 
 
-  def optObjectiveForCVR(self):
-    objective = sum((self.v_A[i] + self.v_B[i] + self.v_C[i]) for i in range(len(self.BusInfo)))
+  def optObjectiveForCVR(self, BusInfo, v_A, v_B, v_C):
+    objective = sum((v_A[i] + v_B[i] + v_C[i]) for i in range(len(BusInfo)))
     return objective
 
 
-  def optObjectiveForDecarbonization(self):
+  def optObjectiveForDecarbonization(self, BusInfo, BatteriesIdx, BatteriesInfo,
+                                     EnergySource, Psub, Psub_mod,
+                                     p_flow_A, p_flow_B, p_flow_C,
+                                     p_batt, v_A, v_B, v_C):
     # constraints specific to decarbonization
-    self.Constraints.append(self.Psub_mod >= self.Psub)
-
-    self.Constraints.append(self.Psub_mod >= -self.Psub)
+    self.Constraints.append(Psub_mod >= Psub)
+    self.Constraints.append(Psub_mod >= -Psub)
 
     flow_min, flow_max = -5e6, 5e6
-    self.Constraints.append(self.Psub >= flow_min)
-    self.Constraints.append(self.Psub <= flow_max)
-    self.Constraints.append(self.Psub_mod >= flow_min)
-    self.Constraints.append(self.Psub_mod <= flow_max)
+    self.Constraints.append(Psub >= flow_min)
+    self.Constraints.append(Psub <= flow_max)
+    self.Constraints.append(Psub_mod >= flow_min)
+    self.Constraints.append(Psub_mod <= flow_max)
 
-    sub_flow_idx = self.EnergySource['flow_idx']
-    self.Constraints.append(self.Psub == self.p_flow_A[sub_flow_idx] + \
-                                         self.p_flow_B[sub_flow_idx] + \
-                                         self.p_flow_C[sub_flow_idx])
+    sub_flow_idx = EnergySource['flow_idx']
+    self.Constraints.append(Psub == p_flow_A[sub_flow_idx] + \
+                                    p_flow_B[sub_flow_idx] + \
+                                    p_flow_C[sub_flow_idx])
 
-    objective = self.Psub_mod / 1000
+    objective = Psub_mod / 1000
 
     self.optDo(objective)
 
-    # second stage only needed for decarbonization
+    # second stage for decarbonization
     bus_idx_batt = {'A': [], 'B': [], 'C': []}
-    for mrid in self.BatteriesInfo:
-      idx = self.BatteriesIdx[mrid]
-      self.Constraints.append(self.p_batt[idx] == self.p_batt[idx].value)
-      bus = self.BatteriesInfo[mrid]['bus']
-      if 'A' in self.BatteriesInfo[mrid]['phase']:
-        bus_idx_batt['A'].append(self.BusInfo[bus]['idx'])
-      elif 'B' in self.BatteriesInfo[mrid]['phase']:
-        bus_idx_batt['B'].append(self.BusInfo[bus]['idx'])
+    for mrid in BatteriesInfo:
+      idx = BatteriesIdx[mrid]
+      self.Constraints.append(p_batt[idx] == p_batt[idx].value)
+      bus = BatteriesInfo[mrid]['bus']
+      if 'A' in BatteriesInfo[mrid]['phase']:
+        bus_idx_batt['A'].append(BusInfo[bus]['idx'])
+      elif 'B' in BatteriesInfo[mrid]['phase']:
+        bus_idx_batt['B'].append(BusInfo[bus]['idx'])
       else:
-        bus_idx_batt['C'].append(self.BusInfo[bus]['idx'])
+        bus_idx_batt['C'].append(BusInfo[bus]['idx'])
 
-    objective += -self.Psub_mod + \
-                        sum(-self.v_A[i] for i in bus_idx_batt['A']) + \
-                        sum(-self.v_B[i] for i in bus_idx_batt['B']) + \
-                        sum(-self.v_C[i] for i in bus_idx_batt['C'])
+    objective += -Psub_mod + \
+                        sum(-v_A[i] for i in bus_idx_batt['A']) + \
+                        sum(-v_B[i] for i in bus_idx_batt['B']) + \
+                        sum(-v_C[i] for i in bus_idx_batt['C'])
     return objective
 
 
