@@ -106,6 +106,9 @@ class CompetingApp(GridAPPSD):
     # objectives than the hardwired code I have for the three existing
     # objectives because we will have a bigger set of objectives that we
     # will build up.
+    self.objectiveResilienceFlag = False
+    self.objectiveCVRFlag = False
+    self.objectiveDecarbonizationFlag = False
     if self.opt_type == 'resilience':
       self.objectiveResilienceFlag = True
     elif self.opt_type == 'profit_cvr':
