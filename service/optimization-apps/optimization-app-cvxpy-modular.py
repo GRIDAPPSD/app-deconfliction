@@ -157,7 +157,10 @@ class CompetingApp(GridAPPSD):
     self.Constraints = []
 
     if self.includeBatteriesFlag:
-      self.optConstraintsDERWithBatteries()
+      self.optConstraintsDERWithBatteries(self.BatteriesIdx, self.BatteriesInfo,
+                                self.deltaT, self.soc,
+                                self.p_batt, self.p_batt_c, self.p_batt_d,
+                                self.lambda_c, self.lambda_d)
 
     if self.includeRegulatorsFlag:
       self.optConstraintsDERWithRegulators()
@@ -243,33 +246,33 @@ class CompetingApp(GridAPPSD):
       self.Psub_mod = cp.Variable(integer=False, name='P_sub_mod')
 
 
-  def optConstraintsDERWithBatteries(self):
-    for mrid in self.BatteriesInfo:
-      self.BatteriesInfo[mrid]['state'] = 'idling'
-      idx = self.BatteriesIdx[mrid]
+  def optConstraintsDERWithBatteries(self, BatteriesIdx, BatteriesInfo, deltaT,
+                           soc, p_batt, p_batt_c, p_batt_d, lambda_c, lambda_d):
+    for mrid in BatteriesInfo:
+      BatteriesInfo[mrid]['state'] = 'idling'
+      idx = BatteriesIdx[mrid]
       self.Constraints.append(
-              self.soc[idx] == self.BatteriesInfo[mrid]['SoC'] + \
-              self.BatteriesInfo[mrid]['eff'] * self.p_batt_c[idx] * \
-              self.deltaT / self.BatteriesInfo[mrid]['ratedE'] + \
-              1 / self.BatteriesInfo[mrid]['eff'] * self.p_batt_d[idx] * \
-              self.deltaT / self.BatteriesInfo[mrid]['ratedE'])
+              soc[idx] == BatteriesInfo[mrid]['SoC'] + \
+              BatteriesInfo[mrid]['eff'] * p_batt_c[idx] * \
+              deltaT / BatteriesInfo[mrid]['ratedE'] + \
+              1 / BatteriesInfo[mrid]['eff'] * p_batt_d[idx] * \
+              deltaT / BatteriesInfo[mrid]['ratedE'])
 
-      self.Constraints.append(self.p_batt_c[idx] >= 0)
-      self.Constraints.append(self.p_batt_c[idx] <= \
-              self.lambda_c[idx] * self.BatteriesInfo[mrid]['prated'])
+      self.Constraints.append(p_batt_c[idx] >= 0)
+      self.Constraints.append(p_batt_c[idx] <= \
+              lambda_c[idx] * BatteriesInfo[mrid]['prated'])
 
-      self.Constraints.append(self.p_batt_d[idx] <= 0)
-      self.Constraints.append(self.p_batt_d[idx] >= \
-              -self.lambda_d[idx] * self.BatteriesInfo[mrid]['prated'])
+      self.Constraints.append(p_batt_d[idx] <= 0)
+      self.Constraints.append(p_batt_d[idx] >= \
+              -lambda_d[idx] * BatteriesInfo[mrid]['prated'])
 
-      self.Constraints.append(self.p_batt[idx] == \
-              self.p_batt_c[idx] + self.p_batt_d[idx])
-      self.Constraints.append(self.lambda_c[idx] + self.lambda_d[idx] <= 1)
+      self.Constraints.append(p_batt[idx] == p_batt_c[idx] + p_batt_d[idx])
+      self.Constraints.append(lambda_c[idx] + lambda_d[idx] <= 1)
 
       # Battery SoC constraints added as Shiva couldn't identify CVXPY's
       # equivalent to PuLP's lb and ub
-      self.Constraints.append(self.soc[idx] <= 0.9)
-      self.Constraints.append(self.soc[idx] >= 0.2)
+      self.Constraints.append(soc[idx] >= 0.2)
+      self.Constraints.append(soc[idx] <= 0.9)
 
 
   def optConstraintsDERWithRegulators(self):
