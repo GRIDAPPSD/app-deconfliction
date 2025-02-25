@@ -25,9 +25,9 @@ if [ "$#" -gt 3 ]; then
 fi
 
 mkdir -p log
-if [ "$OPTLIB" = "cvxpy" ] || [ "$OPTLIB" = "CVXPY" ]; then
-  python3 optimization-app-cvxpy.py decarbonization $SIMID "$SIMREQ" $INTERVAL 2>&1 | tee log/decarbonization-app.log
-else
+if [ "$OPTLIB" = "pulp" ] || [ "$OPTLIB" = "PuLP" ] || [ "$OPTLIB" = "PULP" ]; then
   python3 optimization-app-pulp.py decarbonization $SIMID "$SIMREQ" $INTERVAL 2>&1 | tee log/decarbonization-app.log
+else
+  python3 optimization-app-cvxpy.py decarbonization $SIMID "$SIMREQ" $INTERVAL 2>&1 | tee log/decarbonization-app.log
 fi
 
