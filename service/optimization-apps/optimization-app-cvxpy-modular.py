@@ -415,7 +415,7 @@ class CompetingApp(GridAPPSD):
       # self.reg_taps optimization variable being used now.
       if self.BranchInfo[branch]['type']=='regulator' and includeRegulatorsFlag:
         if 'A' in self.BranchInfo[branch]['phases']:
-          idx = RegulatorsIdx[branch+'.A']
+          idx = self.RegulatorsIdx[branch+'.A']
 
           for k in range(32):
             self.Constraints.append(
@@ -429,7 +429,7 @@ class CompetingApp(GridAPPSD):
                  + M * (1 - self.reg_taps[(idx, k)]) >= 0)
 
         if 'B' in self.BranchInfo[branch]['phases']:
-          idx = RegulatorsIdx[branch+'.B']
+          idx = self.RegulatorsIdx[branch+'.B']
 
           for k in range(32):
             self.Constraints.append(
@@ -443,7 +443,7 @@ class CompetingApp(GridAPPSD):
                     + M * (1 - self.reg_taps[(idx, k)]) >= 0)
 
         if 'C' in self.BranchInfo[branch]['phases']:
-          idx = RegulatorsIdx[branch+'.C']
+          idx = self.RegulatorsIdx[branch+'.C']
 
           for k in range(32):
             self.Constraints.append(
@@ -828,10 +828,10 @@ class CompetingApp(GridAPPSD):
       #print(obj)
       idx += 1
 
-    self.RegulatorsInfo, RegulatorsIdx = AppUtil.getCombineRegulators(sparql_mgr)
+    self.RegulatorsInfo, self.RegulatorsIdx = AppUtil.getCombineRegulators(sparql_mgr)
 
     print('RegulatorsInfo: ' + str(self.RegulatorsInfo), flush=True)
-    print('RegulatorsIdx: ' + str(RegulatorsIdx), flush=True)
+    print('RegulatorsIdx: ' + str(self.RegulatorsIdx), flush=True)
 
     bindings = sparql_mgr.power_transformer_connectivity_query()
     print('\nCount of PowerTransformers: ' + str(len(bindings)), flush=True)
