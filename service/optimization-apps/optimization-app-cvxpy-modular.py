@@ -1006,7 +1006,7 @@ class CompetingApp(GridAPPSD):
     # create DifferenceBuilder once and reuse it throughout the simulation
     self.difference_builder = DifferenceBuilder(simulation_id)
 
-    print('\nInitialized ' + opt_type +
+    print('\nInitialized modularized ' + opt_type +
           ' CVXPY optimization competing app, waiting for messages...\n',
           flush=True)
 
