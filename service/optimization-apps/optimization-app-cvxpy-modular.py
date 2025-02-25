@@ -137,7 +137,8 @@ class CompetingApp(GridAPPSD):
 
     self.optDefineVariables(self.includePFlowFlag, self.includeQFlowFlag,
                             self.includeVoltagesFlag, self.includeBatteriesFlag,
-                            self.includeRegulatorsFlag)
+                            self.includeRegulatorsFlag,
+                            self.objectiveDecarbonizationFlag)
 
 
   def optPerform(self):
@@ -178,7 +179,7 @@ class CompetingApp(GridAPPSD):
 
   def optDefineVariables(self, includePFlowFlag, includeQFlowFlag,
                          includeVoltagesFlag, includeBatteriesFlag,
-                         includeRegulatorsFlag):
+                         includeRegulatorsFlag, objectiveDecarbonizationFlag):
     if includePFlowFlag:
       len_BranchInfo = len(self.BranchInfo)
       self.p_flow_A = cp.Variable(len_BranchInfo, integer=False,name='p_flow_A')
