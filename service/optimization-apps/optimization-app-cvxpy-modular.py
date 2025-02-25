@@ -993,14 +993,7 @@ class CompetingApp(GridAPPSD):
 
     self.b_i = np.arange(0.9, 1.1, 0.00625)
 
-    self.defineOptimizationVariables(len(self.BranchInfo), len(self.BusInfo),
-                                     len(self.BatteriesInfo), len(self.RegulatorsInfo))
-
-    # GDB 8/25/23
-    # Defining the part of the optimization problem that doesn't change with
-    # each timestamp flies for PuLP, but not CVXPY. Based on how it sets up
-    # the problem internally, it all needs to be redone each time.
-    #self.defineOptimizationStaticProblem(self.BranchInfo, RegulatorsIdx)
+    self.optPrelim()
 
     # topic for sending out set_points messages
     self.app_name = 'gridappsd-' + self.opt_type + '-app'
@@ -1062,16 +1055,7 @@ class CompetingApp(GridAPPSD):
           print('Simulation timestamp for optimization: ' + str(timestamp),
                 flush=True)
 
-          # Need to define the full optimization problem each time anything
-          # changes for CVXPY to be happy
-
-          self.Constraints = []
-
-          self.defineOptimizationStaticProblem(self.BranchInfo, RegulatorsIdx)
-
-          self.defineOptimizationDynamicProblem(timestamp)
-
-          self.doOptimization(timestamp, False)
+          self.optPerform()
 
       else: # this is a cooperation message from deconflictor
         # message consists of a target ResolutionVector that is a dictionary
@@ -1097,11 +1081,7 @@ class CompetingApp(GridAPPSD):
         # alternative workflow implementation for supporting cooperation in
         # order to meet the FY24 deconfliction service deliverable
         '''
-        self.defineOptimizationStaticProblem(self.BranchInfo, RegulatorsIdx)
-
-        self.defineOptimizationDynamicProblem(timestamp)
-
-        self.doOptimization(timestamp, True)
+        self.optPerform()
         '''
 
         print('DECONFLICTOR COOPERATE p_batt_greedy: ' + str(self.p_batt_greedy), flush=True)
