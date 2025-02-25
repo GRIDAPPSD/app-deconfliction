@@ -14,7 +14,7 @@ if [ "$2" = "standalone" ]; then
   read -d "\n" SIMID SIMREQ <<< $(../sim-starter/sim-starter.py $1)
 fi
 
-OPTLIB="pulp"
+OPTLIB="cvxpy"
 if [ "$#" -gt 2 ]; then
   OPTLIB=$3
 fi
