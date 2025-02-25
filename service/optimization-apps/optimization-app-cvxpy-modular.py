@@ -578,7 +578,7 @@ class CompetingApp(GridAPPSD):
 
     objective = self.Psub_mod / 1000
 
-    self.doOptimization(objective)
+    self.optDo(objective)
 
     # second stage only needed for decarbonization
     bus_idx_batt = {'A': [], 'B': [], 'C': []}
