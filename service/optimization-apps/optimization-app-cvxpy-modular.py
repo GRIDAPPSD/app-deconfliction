@@ -131,6 +131,12 @@ class CompetingApp(GridAPPSD):
     if self.objectiveResilienceFlag:
       self.includeBatteriesFlag = True
 
+    if self.objectiveCVRFlag:
+      self.includeVoltagesFlag = True
+
+    if self.objectiveDecarbonizationFlag:
+      self.includePFlowFlag = True
+
     if self.includeBatteriesFlag:
       self.includePFlowFlag = True
 
