@@ -153,7 +153,7 @@ class CompetingApp(GridAPPSD):
     if self.includePFlowFlag:
       self.optConstraintsNetworkWithPFlow(self.includeBatteriesFlag,
                                           self.includeEnergyConsumersFlag,
-                                          self.inludeSolarPVsFlag)
+                                          self.includeSolarPVsFlag)
 
     if self.includeQFlowFlag:
       self.optConstraintsNetworkWithQFlow(self.includeEnergyConsumersFlag)
