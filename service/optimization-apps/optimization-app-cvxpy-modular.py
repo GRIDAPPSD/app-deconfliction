@@ -680,6 +680,18 @@ class CompetingApp(GridAPPSD):
       print(tabulate(p_batt_setpoints, headers=['Battery', 'P_batt (kW)',
                      'Target SoC'], tablefmt='psql'), flush=True)
 
+    '''
+    if self.includePFlowFlag:
+      if self.objectiveDecarbonizationFlag:
+        print('')
+        print('Psub: ' + str(self.Psub.value), flush=True)
+        print('Psub_mod: ' + str(self.Psub_mod.value), flush=True)
+      print('')
+      for i in range(len(self.BranchInfo)):
+        print('p_flow[' + str(i) + '] A: ' + str(self.p_flow_A[i].value) + ', B: ' + str(self.p_flow_B[i].value) + ', C: ' + str(self.p_flow_C[i].value), flush=True)
+      print('')
+    '''
+
     if includeRegulatorsFlag or includeBatteriesFlag:
       dispatch_message = self.difference_builder.get_message()
       print('Sending Measurements DifferenceBuilder message!', flush=True)
