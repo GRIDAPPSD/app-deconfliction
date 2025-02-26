@@ -306,8 +306,6 @@ class CompetingApp(GridAPPSD):
                   feastol=1e-3, max_iters=100, verbose=False)
     print('Optimization status:', problem.status, flush=True)
 
-    objval = problem.value
-
     # Second stage for the decarbonization app
     if self.opt_type == 'decarbonization':
       bus_idx_batt = {'A': [], 'B': [], 'C': []}
@@ -403,6 +401,16 @@ class CompetingApp(GridAPPSD):
     print(tabulate(p_batt_setpoints, headers=['Battery', 'P_batt (kW)',
                    'Target SoC'], tablefmt='psql'), flush=True)
 
+    '''
+    print('')
+    print('Psub: ' + str(self.Psub.value), flush=True)
+    print('Psub_mod: ' + str(self.Psub_mod.value), flush=True)
+    print('')
+    for i in range(self.len_branch_info):
+      print('p_flow[' + str(i) + '] A: ' + str(self.p_flow_A[i].value) + ', B: ' + str(self.p_flow_B[i].value) + ', C: ' + str(self.p_flow_C[i].value), flush=True)
+    print('')
+    '''
+
     # set p_batt_greedy/reg_greedy with every optimization based on measurements
     if not coopFlag:
       for mrid in self.BatteriesInfo:
@@ -446,6 +454,12 @@ class CompetingApp(GridAPPSD):
 
   def defineOptimizationVariables(self, len_branch_info, len_bus_info,
                                   len_Batteries, len_Regulators):
+    '''
+    # this is only used for printing p_flow values so comment it out when
+    # not doing that
+    self.len_branch_info = len_branch_info
+    '''
+
     self.p_flow_A = cp.Variable(len_branch_info, integer=False, name='p_flow_A')
 
     self.p_flow_B = cp.Variable(len_branch_info, integer=False, name='p_flow_B')
