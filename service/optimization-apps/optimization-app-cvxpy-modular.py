@@ -578,7 +578,7 @@ class CompetingApp(GridAPPSD):
 
   def optObjectiveForResilience(self, BatteriesInfo, soc):
     # SHIVA magic scaling factor for SoC that causes the optmization to
-    # come up with the correct results where -self.soc[i] doesn't.
+    # come up with the correct results where -soc[i] doesn't.
     # Shiva will be investigating why this happens since we don't want
     # to be dependent on magic
     objective = sum(-100 * soc[i] for i in range(len(BatteriesInfo)))
