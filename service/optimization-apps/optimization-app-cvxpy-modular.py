@@ -180,9 +180,16 @@ class CompetingApp(GridAPPSD):
               self.q_flow_A, self.q_flow_B, self.q_flow_C)
 
     if self.includeVoltagesFlag:
-      self.optConstraintsNetworkWithVoltages(self.includeRegulatorsFlag,
-           self.BusInfo, self.BranchInfo, self.RegulatorsIdx, self.EnergySource,
-           self.b_i, self.reg_taps, self.p_flow_A, self.p_flow_B, self.p_flow_C,
+      if self.includeRegulatorsFlag:
+        self.optConstraintsNetworkWithVoltages(self.BusInfo, self.BranchInfo,
+           self.RegulatorsIdx, self.EnergySource, self.b_i, self.reg_taps,
+           self.p_flow_A, self.p_flow_B, self.p_flow_C,
+           self.q_flow_A, self.q_flow_B, self.q_flow_C,
+           self.v_A, self.v_B, self.v_C)
+      else:
+        self.optConstraintsNetworkWithVoltages(self.BusInfo, self.BranchInfo,
+           self.RegulatorsIdx, self.EnergySource, self.b_i, self.meas_reg_taps,
+           self.p_flow_A, self.p_flow_B, self.p_flow_C,
            self.q_flow_A, self.q_flow_B, self.q_flow_C,
            self.v_A, self.v_B, self.v_C)
 
@@ -248,13 +255,16 @@ class CompetingApp(GridAPPSD):
       len_RegulatorsInfo = len(self.RegulatorsInfo)
       self.reg_taps = cp.Variable((len_RegulatorsInfo, 32), boolean=True,
                                   name='reg_taps')
-
       # cooperation variables
       # since these are held constant, I don't need to define them with
       # cp.Variable calls, but as fixed length vectors. It's still convenient
       # though to define them along with the other optimization variables.
       self.reg_proposed = [None] * len_RegulatorsInfo
       self.reg_greedy = [None] * len_RegulatorsInfo
+    else:
+      # if not including regulators in optimization problem then we need a
+      # dictionary to track the current tap position from measurements
+      self.meas_reg_taps = {}
 
     if objectiveDecarbonizationFlag:
       self.Psub = cp.Variable(integer=False, name='P_sub')
@@ -428,9 +438,9 @@ class CompetingApp(GridAPPSD):
              sum(q_flow_C[idx] for idx in LinesOut[bus_idx]['C']))
 
 
-  def optConstraintsNetworkWithVoltages(self, includeRegulatorsFlag,
-                               BusInfo, BranchInfo, RegulatorsIdx, EnergySource,
-                               b_i, reg_taps, p_flow_A, p_flow_B, p_flow_C,
+  def optConstraintsNetworkWithVoltages(self, BusInfo, BranchInfo,
+                               RegulatorsIdx, EnergySource, b_i, reg_taps,
+                               p_flow_A, p_flow_B, p_flow_C,
                                q_flow_A, q_flow_B, q_flow_C, v_A, v_B, v_C):
     v_min, v_max = (0.95 * 2401.77) ** 2, (1.05 * 2401.77) ** 2
     for bus in BusInfo:
@@ -450,7 +460,7 @@ class CompetingApp(GridAPPSD):
       # no constraints at all currently. In this case we will need constraints
       # that have a constant value based on measurements in place of the
       # reg_taps optimization variable being used now.
-      if BranchInfo[branch]['type']=='regulator' and includeRegulatorsFlag:
+      if BranchInfo[branch]['type']=='regulator':
         if 'A' in BranchInfo[branch]['phases']:
           idx = RegulatorsIdx[branch+'.A']
 
@@ -756,6 +766,23 @@ class CompetingApp(GridAPPSD):
         print('Updated SoC for ' + self.BatteriesInfo[mrid]['name'] + ': ' + str(self.BatteriesInfo[mrid]['SoC']), flush=True)
 
 
+  def updateRegulatorTaps(self, measurements):
+    for mrid in self.RegulatorsInfo:
+      measid = self.RegulatorsInfo[mrid]['measid']
+      if measid in measurements:
+        # find the index associated with the regulator
+        idx = self.RegulatorsInfo[mrid]['idx']
+        # zero out all the 32 positions and then update to the one set
+        for k in range(32):
+          self.meas_reg_taps[(idx, k)] = 0
+
+        pos = int(measurements[measid]['value'])
+        # measurement tap position is -16 to +15 so need to offset by 16 for
+        # the proper position index for the optimization problem
+        self.meas_reg_taps[(idx, pos+16)] = 1
+        print('Updated Tap for ' + self.RegulatorsInfo[mrid]['name'] + ': ' + str(pos), flush=True)
+
+
   def __init__(self, gapps, opt_type, feeder_mrid, simulation_id, interval):
 
     self.gapps = gapps
@@ -880,6 +907,13 @@ class CompetingApp(GridAPPSD):
       idx += 1
 
     self.RegulatorsInfo, self.RegulatorsIdx = AppUtil.getCombineRegulators(sparql_mgr)
+
+    # Need a way to map from a measid to the mrid for regulators in order
+    # to process tap position changes in new measurements
+    RegsForMeasID = AppUtil.getRegulators(sparql_mgr)
+    for mrid in self.RegulatorsInfo:
+      if mrid in RegsForMeasID:
+        self.RegulatorsInfo[mrid]['measid'] = RegsForMeasID[mrid]['measid']
 
     print('RegulatorsInfo: ' + str(self.RegulatorsInfo), flush=True)
     print('RegulatorsIdx: ' + str(self.RegulatorsIdx), flush=True)
@@ -1095,6 +1129,11 @@ class CompetingApp(GridAPPSD):
         if self.includeBatteriesFlag:
           self.updateBatterySoC(message['measurements'])
           #print('Updated BatterySoC #' + str(messageCounter) + ': ' + json.dumps(self.BatteriesInfo, indent=2), flush=True)
+
+        # tap positions only need to be tracked when not solving for the
+        # positions as part of the optimization problem
+        if not self.includeRegulatorsFlag:
+          self.updateRegulatorTaps(message['measurements'])
 
         timestamp = int(message['timestamp'])
 
