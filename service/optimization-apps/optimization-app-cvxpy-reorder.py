@@ -126,6 +126,7 @@ class CompetingApp(GridAPPSD):
       self.Constraints.append(self.soc[idx] <= 0.9)
       self.Constraints.append(self.soc[idx] >= 0.2)
 
+    #'''
     # second are regulator constraints...
     for k in range(len(self.RegulatorsInfo)):
       self.Constraints.append(sum(self.reg_taps[(k, tap)] for tap in range(32)) == 1)
@@ -133,6 +134,7 @@ class CompetingApp(GridAPPSD):
     # TODO: For some reason CVXPY fails to print the regulator taps unless
     #  substation regulator tap is fixed. For now fixing it to zero position
     self.Constraints.append(self.reg_taps[(0, 16)] == 1)
+    #'''
 
     # third are PFlow...
     for bus in self.BusInfo:
@@ -217,6 +219,7 @@ class CompetingApp(GridAPPSD):
                  for idx in self.LinesIn[bus_idx]['C']) - injection_p == \
                sum(self.p_flow_C[idx] for idx in self.LinesOut[bus_idx]['C']))
 
+    #'''
     # fourth are QFlow...
     for bus in self.BusInfo:
       bus_idx = self.BusInfo[bus]['idx']
@@ -400,6 +403,7 @@ class CompetingApp(GridAPPSD):
     self.Constraints.append(self.v_B[self.BusInfo[sourcebus]['idx']] == v_source ** 2)
 
     self.Constraints.append(self.v_C[self.BusInfo[sourcebus]['idx']] == v_source ** 2)
+    #'''
 
     # seventh are decarb specific constraints...
     if self.opt_type == 'decarbonization':
@@ -544,6 +548,7 @@ class CompetingApp(GridAPPSD):
                    tablefmt='psql'))
     '''
 
+    #'''
     regulator_taps = []
     for reg in self.RegulatorsInfo:
       idx = self.RegulatorsInfo[reg]['idx']
@@ -557,6 +562,7 @@ class CompetingApp(GridAPPSD):
 
     print(tabulate(regulator_taps, headers=['Regulator', 'Tap', 'b_i'],
                    tablefmt='psql'), '\n', flush=True)
+    #'''
 
     p_batt_setpoints = []
     for mrid in self.BatteriesInfo:
@@ -589,12 +595,14 @@ class CompetingApp(GridAPPSD):
         idx = self.BatteriesIdx[mrid]
         self.p_batt_greedy[idx] = self.p_batt[idx].value
 
+      #'''
       for reg in self.RegulatorsInfo:
         idx = self.RegulatorsInfo[reg]['idx']
         for k in range(32):
           if self.reg_taps[(idx, k)].value:
             self.reg_greedy[idx] = k-16
             break # assume this will only happen once per regulator
+      #'''
 
     dispatch_message = self.difference_builder.get_message()
     print('Sending Measurements DifferenceBuilder message!', flush=True)
@@ -638,6 +646,7 @@ class CompetingApp(GridAPPSD):
 
     self.p_flow_C = cp.Variable(len_branch_info, integer=False, name='p_flow_C')
 
+    #'''
     self.q_flow_A = cp.Variable(len_branch_info, integer=False, name='q_flow_A')
 
     self.q_flow_B = cp.Variable(len_branch_info, integer=False, name='q_flow_B')
@@ -647,6 +656,7 @@ class CompetingApp(GridAPPSD):
     self.Psub = cp.Variable(integer=False, name='P_sub')
 
     self.Psub_mod = cp.Variable(integer=False, name='P_sub_mod')
+    #'''
 
     self.p_batt = cp.Variable(len_Batteries, integer=False, name='p_batt')
 
@@ -660,6 +670,7 @@ class CompetingApp(GridAPPSD):
 
     self.lambda_d = cp.Variable(len_Batteries, boolean=True, name='lambda_d')
 
+    #'''
     self.v_A = cp.Variable(len_bus_info, integer=False, name='v_A')
 
     self.v_B = cp.Variable(len_bus_info, integer=False, name='v_B')
@@ -668,6 +679,7 @@ class CompetingApp(GridAPPSD):
 
     self.reg_taps = cp.Variable((len_Regulators, 32), boolean=True,
                                 name='reg_taps')
+    #'''
 
     # cooperation variables
     # since these are held constant, I don't need to define them with
