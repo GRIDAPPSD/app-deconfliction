@@ -180,6 +180,10 @@ class CompetingApp(GridAPPSD):
               self.q_flow_A, self.q_flow_B, self.q_flow_C)
 
     if self.includeVoltagesFlag:
+      # depending on whether solving for regulator tap positions is part of the
+      # optimization, either pass in CVXPY self.reg_taps variable to specify
+      # voltage constraints or pass in the self.meas_reg_taps dictionary that
+      # holds the current tap positions set from simulation measurements
       if self.includeRegulatorsFlag:
         self.optConstraintsNetworkWithVoltages(self.BusInfo, self.BranchInfo,
            self.RegulatorsIdx, self.EnergySource, self.b_i, self.reg_taps,
