@@ -623,7 +623,13 @@ class CompetingApp(GridAPPSD):
                                     p_flow_B[sub_flow_idx] + \
                                     p_flow_C[sub_flow_idx])
 
-    objective = Psub_mod / 1000
+    # originally Psub_mod was scaled by 1000 to solve an "unbounded" error
+    # with some version of CVXPY, but now I'm seeing it run fine without that
+    # scaling and I don't like the mismatch with Psub_mod on the second stage
+    # optmization so I'm going to go back to no scaling. The PuLP version
+    # never had scaling.
+    #objective = Psub_mod / 1000
+    objective = Psub_mod
 
     self.optDo(objective)
 
