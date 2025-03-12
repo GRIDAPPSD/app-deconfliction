@@ -1590,8 +1590,15 @@ class DeconflictionPipeline(GridAPPSD):
 
     self.messageQueue = queue.Queue()
 
-    # must enumerate all possible apps since I need separate topics for each
-    # to distinguish them via message header
+    # subscribe to simulation log and output messages
+    self.keepLoopingFlag = True
+    out_id = gapps.subscribe(simulation_output_topic(simulation_id),
+                             self.OnSimMessage)
+    log_id = gapps.subscribe(simulation_log_topic(simulation_id),
+                             self.OnSimMessage)
+
+    # must enumerate all possible apps even if not all are running since I need
+    # separate topics for each to distinguish them via message header
     competing_apps = ['gridappsd-resilience-app',
                       'gridappsd-decarbonization-app',
                       'gridappsd-profit_cvr-app']
@@ -1602,13 +1609,6 @@ class DeconflictionPipeline(GridAPPSD):
                                  simulation_id), self.OnMeasSetpointsMessage)
       set_id[app+':coop'] = gapps.subscribe(service_output_topic(app + ':coop',
                                  simulation_id), self.OnCoopSetpointsMessage)
-
-    # subscribe to simulation log and output messages
-    self.keepLoopingFlag = True
-    out_id = gapps.subscribe(simulation_output_topic(simulation_id),
-                             self.OnSimMessage)
-    log_id = gapps.subscribe(simulation_log_topic(simulation_id),
-                             self.OnSimMessage)
 
     # simulation topic for sending DifferenceBuilder messages
     self.publish_topic = simulation_input_topic(simulation_id)
