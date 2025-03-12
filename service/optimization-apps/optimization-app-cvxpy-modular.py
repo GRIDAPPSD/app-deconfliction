@@ -61,7 +61,8 @@ import cvxpy as cp
 
 from gridappsd import GridAPPSD
 from gridappsd import DifferenceBuilder
-from gridappsd.topics import simulation_output_topic, simulation_log_topic, service_output_topic
+from gridappsd.topics import simulation_input_topic, simulation_output_topic
+from gridappsd.topics import simulation_log_topic, service_output_topic
 
 from datetime import datetime
 from tabulate import tabulate
@@ -718,6 +719,10 @@ class CompetingApp(GridAPPSD):
       #print('Sending Measurements DifferenceBuilder message: ' +
       #      json.dumps(dispatch_message), flush=True)
       self.gapps.send(self.meas_publish_topic, json.dumps(dispatch_message))
+
+      if self.sendToSimFlag:
+        self.gapps.send(self.sim_publish_topic, json.dumps(dispatch_message))
+
       self.difference_builder.clear()
 
 
@@ -1091,12 +1096,16 @@ class CompetingApp(GridAPPSD):
 
     self.optPrelim()
 
-    # topic for sending out set_points messages
+    # topics for sending out set_points messages
     self.app_name = 'gridappsd-' + self.opt_type + '-app'
     self.meas_publish_topic = service_output_topic(self.app_name+':meas',
                                                    simulation_id)
     self.coop_publish_topic = service_output_topic(self.app_name+':coop',
                                                    simulation_id)
+
+    # for bypassing deconfliction pipeline and sending directly to simulation
+    self.sendToSimFlag = True
+    self.sim_publish_topic = simulation_input_topic(simulation_id)
 
     # create DifferenceBuilder once and reuse it throughout the simulation
     self.difference_builder = DifferenceBuilder(simulation_id)
