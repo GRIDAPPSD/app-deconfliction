@@ -127,6 +127,13 @@ class DeconflictionPipeline(GridAPPSD):
         if app_name in self.ConflictMatrix[device]:
           self.ConflictMatrix[device].pop(app_name)
 
+    self.plt_file.write(app_name)
+    self.plt_file.write(',')
+    diff = (datetime.now() - self.plt_tzero).total_seconds()
+    self.plt_file.write(str(diff))
+    self.plt_file.write(',')
+    self.plt_file.write(str(timestamp))
+
     # now add the new set-points for app_name
     for point in set_points:
       device = point['object']
@@ -160,6 +167,14 @@ class DeconflictionPipeline(GridAPPSD):
                 str(value))
 
       self.ConflictMatrix[device][app_name] = (timestamp, value)
+
+      self.plt_file.write(',')
+      self.plt_file.write(MethodUtil.DeviceToName[device])
+      self.plt_file.write(',')
+      self.plt_file.write(str(value))
+
+    self.plt_file.write('\n')
+    self.plt_file.flush()
 
     if printAllConflictsResolutionsFlag:
       print('SetpointProcessor--ConflictMatrix: ' +str(self.ConflictMatrix))
@@ -1025,7 +1040,7 @@ class DeconflictionPipeline(GridAPPSD):
 
 
   def ProcessSimulationMessage(self, message, printAllMessagesFlag=False):
-    self.plt_file.write('sim,')
+    self.plt_file.write('SIMULATION,')
     if self.plt_tzero == None:
       self.plt_tzero = datetime.now()
       diff = 0.0
@@ -1171,16 +1186,6 @@ class DeconflictionPipeline(GridAPPSD):
   def ProcessSetpointsMessage(self, message, app_name, meas_msg_flag,
                               coop_phase, printAllConflictsResolutionsFlag):
     timestamp = message['timestamp']
-
-    self.plt_file.write(app_name)
-    self.plt_file.write(',')
-    diff = (datetime.now() - self.plt_tzero).total_seconds()
-    self.plt_file.write(str(diff))
-    self.plt_file.write(',')
-    self.plt_file.write(str(timestamp))
-
-    self.plt_file.write('\n')
-    self.plt_file.flush()
 
     if meas_msg_flag:
       print('>>>\n>>> ProcessSetpointsMessage--MEAS message timestamp: ' +
