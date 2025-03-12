@@ -15,17 +15,17 @@ if [ "$2" = "standalone" ]; then
   read -d "\n" SIMID SIMREQ <<< $(../sim-starter/sim-starter.py $1)
 fi
 
-WEIGHTS=""
+INTERVAL=""
 if [ "$#" -gt 2 ]; then
-  WEIGHTS="--weights=""$3"
+  INTERVAL="--interval=""$3"
 fi
 
-INTERVAL=""
+WEIGHTS=""
 if [ "$#" -gt 3 ]; then
-  INTERVAL="--interval=""$4"
+  WEIGHTS="--weights=""$4"
 fi
 
 mkdir -p log
-#python3 deconfliction-pipeline.py $SIMID "$SIMREQ" $WEIGHTS $INTERVAL 2>&1 | tee log/deconfliction-pipeline.log
-python3 deconfliction-pipeline-plot.py $SIMID "$SIMREQ" $WEIGHTS $INTERVAL 2>&1 | tee log/deconfliction-pipeline.log
+#python3 deconfliction-pipeline.py $SIMID "$SIMREQ" $INTERVAL $WEIGHTS 2>&1 | tee log/deconfliction-pipeline.log
+python3 deconfliction-pipeline-plot.py $SIMID "$SIMREQ" $INTERVAL $WEIGHTS 2>&1 | tee log/deconfliction-pipeline.log
 

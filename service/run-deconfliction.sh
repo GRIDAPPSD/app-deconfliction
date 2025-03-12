@@ -10,7 +10,7 @@
 #       <OPTLIB> = optional optimization library used for competing apps
 #       <INTERVAL> = optional interval in seconds at which competing apps
 #                    perform optimizations and send setpoints requests to
-#                    the pipeline process. Must be a a multiple of 3 for
+#                    the pipeline process. Must be a multiple of 3 for
 #                    GridLAB-D simulation compatability.
 #       <WEIGHTS> = optional base filename for optimization stage deconfliction
 #                   application/device weighting factors. Application filename
@@ -94,6 +94,6 @@ if [[ $APPS == *"p"* || $APPS == *"P"* ]]; then
 fi
 
 cd ../deconfliction-pipeline
-./run-pipeline.sh $SIMID "$SIMREQ" $WEIGHTS $INTERVAL
+./run-pipeline.sh $SIMID "$SIMREQ" $INTERVAL $WEIGHTS
 
 trap - SIGINT SIGTERM EXIT
