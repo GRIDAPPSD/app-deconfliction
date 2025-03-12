@@ -36,6 +36,10 @@ APPS=$2
 # GDB 9/11/24: CVXPY will be needed if we add support for doing optimizations
 # for cooperation after the FY24 deliverable
 OPTLIB="cvxpy"
+# GDB 3/12/25: If no interval is specified here or passed in then the apps
+# default to 15 or every 5th simulation timestamp. Another good value is 9
+# or every 3rd simulation timestamp.
+#INTERVAL="9"
 INTERVAL=""
 WEIGHTS=""
 # tricky logic to process optional optlib and weights arguments. This could
