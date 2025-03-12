@@ -1285,6 +1285,9 @@ class DeconflictionPipeline(GridAPPSD):
     self.SetpointProcessor(app_name, timestamp, set_points, meas_msg_flag,
                            printAllConflictsResolutionsFlag)
 
+    if self.abortDeconflictionFlag:
+      return
+
     if meas_msg_flag:
       # no need to invoke Feasibility Maintainer or Rules stage for cooperation
       # messages because the SetpointProcessor insures there is no backtracking
@@ -1739,6 +1742,7 @@ class DeconflictionPipeline(GridAPPSD):
 
     self.plt_file = open('log/plot_data.csv', 'w')
     self.plt_tzero = None
+    self.abortDeconflictionFlag = True
 
     print('\nInitialization--finished, waiting for messages...\n')
 
