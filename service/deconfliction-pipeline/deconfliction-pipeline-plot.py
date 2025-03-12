@@ -1172,6 +1172,16 @@ class DeconflictionPipeline(GridAPPSD):
                               coop_phase, printAllConflictsResolutionsFlag):
     timestamp = message['timestamp']
 
+    self.plt_file.write(app_name)
+    self.plt_file.write(',')
+    diff = (datetime.now() - self.plt_tzero).total_seconds()
+    self.plt_file.write(str(diff))
+    self.plt_file.write(',')
+    self.plt_file.write(str(timestamp))
+
+    self.plt_file.write('\n')
+    self.plt_file.flush()
+
     if meas_msg_flag:
       print('>>>\n>>> ProcessSetpointsMessage--MEAS message timestamp: ' +
             str(timestamp) + ', app: ' + app_name)
