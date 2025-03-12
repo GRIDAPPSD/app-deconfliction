@@ -1026,8 +1026,12 @@ class DeconflictionPipeline(GridAPPSD):
 
   def ProcessSimulationMessage(self, message, printAllMessagesFlag=False):
     self.plt_file.write('sim,')
-    diff = datetime.now() - self.plt_tzero
-    self.plt_file.write(str(diff.total_seconds()))
+    if self.plt_tzero == None:
+      self.plt_tzero = datetime.now()
+      diff = 0.0
+    else:
+      diff = (datetime.now() - self.plt_tzero).total_seconds()
+    self.plt_file.write(str(diff))
     self.plt_file.write(',')
     self.plt_file.write(str(message['timestamp']))
 
@@ -1719,7 +1723,7 @@ class DeconflictionPipeline(GridAPPSD):
             'applied')
 
     self.plt_file = open('log/plot_data.csv', 'w')
-    self.plt_tzero = datetime.now()
+    self.plt_tzero = None
 
     print('\nInitialization--finished, waiting for messages...\n')
 
