@@ -68,8 +68,8 @@ from datetime import datetime
 
 from gridappsd import GridAPPSD
 from gridappsd import DifferenceBuilder
-from gridappsd.topics import simulation_output_topic, simulation_log_topic
 from gridappsd.topics import simulation_input_topic, service_output_topic
+from gridappsd.topics import simulation_log_topic
 
 # magic so all print statements flush without having to add flush=True
 import functools
@@ -1285,7 +1285,9 @@ class DeconflictionPipeline(GridAPPSD):
     self.SetpointProcessor(app_name, timestamp, set_points, meas_msg_flag,
                            printAllConflictsResolutionsFlag)
 
-    if self.abortDeconflictionFlag:
+    if self.bypassDeconflictionFlag:
+      # App code modified to also send message to the simulation so nothing
+      # left to do here to bypass deconfliction other than stop processing
       return
 
     if meas_msg_flag:
@@ -1742,7 +1744,7 @@ class DeconflictionPipeline(GridAPPSD):
 
     self.plt_file = open('log/plot_data.csv', 'w')
     self.plt_tzero = None
-    self.abortDeconflictionFlag = True
+    self.bypassDeconflictionFlag = True
 
     print('\nInitialization--finished, waiting for messages...\n')
 
