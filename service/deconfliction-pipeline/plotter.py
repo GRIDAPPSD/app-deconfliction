@@ -51,6 +51,7 @@
 import matplotlib
 from matplotlib import pyplot as plt
 from matplotlib import dates as md
+from matplotlib.ticker import MaxNLocator
 from datetime import datetime
 
 
@@ -92,25 +93,44 @@ def make_soc_plots(title, prefix, Batteries, t_plot, soc_plot):
     plt.close()
 
 
+def make_reg_plots(title, prefix, Regulators, t_plot, reg_plot):
+  for name in Regulators:
+    regname = name[16:] # extract just the name for tidier plots
+    plt.figure()
+    #fig, ax = plt.subplots()
+    plt.title(title + ' Tap Pos:  ' + regname, pad=15.0)
+    plt.plot(t_plot, reg_plot[name])
+    #ax.yaxis.set_major_locator(MaxNLocator(integer=True))
+    #ax.xaxis.set_major_formatter(md.DateFormatter('%H:%M'))
+    #plt.xlim([AppUtil.to_datetime(1), AppUtil.to_datetime(96)])
+    #plt.xticks([AppUtil.to_datetime(1), AppUtil.to_datetime(25), AppUtil.to_datetime(49), AppUtil.to_datetime(73), AppUtil.to_datetime(96)])
+    plt.xlabel('Time')
+    plt.ylabel('Regulator Tap Pos')
+    plt.savefig('log/' + prefix + '_tap_' + regname + '.png')
+    #plot.show()
+    plt.close()
+
+
 def _main():
   print('Starting plotter...')
 
   matplotlib.use('agg')
 
-  Batteries = {}
-  Batteries['BatteryUnit.battery1'] = True
-  Batteries['BatteryUnit.battery2'] = True
-  Batteries['BatteryUnit.battery3'] = True
-  Batteries['BatteryUnit.battery4'] = True
-  Batteries['BatteryUnit.battery5'] = True
+  Batteries = ['BatteryUnit.battery1','BatteryUnit.battery2','BatteryUnit.battery3','BatteryUnit.battery4','BatteryUnit.battery5']
+
+  Regulators = ['RatioTapChanger.reg1a','RatioTapChanger.reg2a','RatioTapChanger.reg3a','RatioTapChanger.reg3c','RatioTapChanger.reg4a','RatioTapChanger.reg4b','RatioTapChanger.reg4c']
 
   t_plot = []
   p_batt_plot = {}
   soc_plot = {}
+  reg_plot = {}
 
   for batt in Batteries:
     p_batt_plot[batt] = []
     soc_plot[batt] = []
+
+  for reg in Regulators:
+    reg_plot[reg] = []
 
   app = 'SIMULATION'
   prefix = 'sim'
@@ -128,10 +148,15 @@ def _main():
           p_batt_plot[batt].append(float(tokens[it+1]))
           soc_plot[batt].append(float(tokens[it+2]))
 
+        for it in range(18, 32, 2):
+          reg = tokens[it]
+          reg_plot[reg].append(int(tokens[it+1]))
+
   print(app + ' hits: ' + str(hits))
 
   make_p_batt_plots(app, prefix, Batteries, t_plot, p_batt_plot)
   make_soc_plots(app, prefix, Batteries, t_plot, soc_plot)
+  make_reg_plots(app, prefix, Regulators, t_plot, reg_plot)
 
   t_plot.clear()
 
@@ -139,11 +164,11 @@ def _main():
     p_batt_plot[batt].clear()
     soc_plot[batt].clear()
 
+  for reg in Regulators:
+    reg_plot[reg].clear()
+
   app_list = ['gridappsd-resilience-app', 'gridappsd-decarbonization-app', 'gridappsd-profit_cvr-app']
   prefix_list = ['resil', 'decarb', 'cvr']
-
-  #numdev = 27
-  #gridappsd-resilience-app,25.029853,1741818224,RatioTapChanger.reg1a,0,RatioTapChanger.reg2a,-4,RatioTapChanger.reg3a,-3,RatioTapChanger.reg3c,-3,RatioTapChanger.reg4a,15,RatioTapChanger.reg4b,-5,RatioTapChanger.reg4c,-3,BatteryUnit.battery1,-125000.0,BatteryUnit.battery2,-200000.0,BatteryUnit.battery3,-100000.0,BatteryUnit.battery4,-150000.0,BatteryUnit.battery5,-242440.07344492286
 
   for iapp in range(len(app_list)):
     hits = 0
@@ -156,18 +181,24 @@ def _main():
 
           numdev = len(tokens)
           for it in range(3, numdev, 2):
-            batt = tokens[it]
-            if batt.startswith('BatteryUnit.'):
-              p_batt_plot[batt].append(float(tokens[it+1]))
+            dev = tokens[it]
+            if dev.startswith('BatteryUnit.'):
+              p_batt_plot[dev].append(float(tokens[it+1]))
+            else:
+              reg_plot[dev].append(int(tokens[it+1]))
 
     print(app_list[iapp] + ' hits: ' + str(hits))
 
     make_p_batt_plots(app_list[iapp], prefix_list[iapp], Batteries, t_plot, p_batt_plot)
+    make_reg_plots(app_list[iapp], prefix_list[iapp], Regulators, t_plot, reg_plot)
 
     t_plot.clear()
 
     for batt in Batteries:
       p_batt_plot[batt].clear()
+
+    for reg in Regulators:
+      reg_plot[reg].clear()
 
   print('Goodbye!')
 
