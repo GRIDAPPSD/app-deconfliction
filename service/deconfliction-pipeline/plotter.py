@@ -58,13 +58,11 @@ def to_datetime(time):
   return datetime(1966, 8, 1, (int(time)-1)//4, 15*((int(time)-1) % 4), 0)
 
 
-def make_plots(title, prefix, Batteries, t_plot, p_batt_plot, soc_plot):
-  matplotlib.use('agg')
-
+def make_p_batt_plots(title, prefix, Batteries, t_plot, p_batt_plot):
   for name in Batteries:
     batname = name[12:] # extract just the name for tidier plots
     plt.figure()
-    fig, ax = plt.subplots()
+    #fig, ax = plt.subplots()
     plt.title(title + ' P_batt:  ' + batname, pad=15.0)
     plt.plot(t_plot, p_batt_plot[name])
     #ax.xaxis.set_major_formatter(md.DateFormatter('%H:%M'))
@@ -74,9 +72,14 @@ def make_plots(title, prefix, Batteries, t_plot, p_batt_plot, soc_plot):
     plt.ylabel('P_batt  (kW)')
     plt.savefig('log/' + prefix + '_p_batt_' + batname + '.png')
     #plot.show()
+    plt.close()
 
+
+def make_soc_plots(title, prefix, Batteries, t_plot, soc_plot):
+  for name in Batteries:
+    batname = name[12:] # extract just the name for tidier plots
     plt.figure()
-    fig, ax = plt.subplots()
+    #fig, ax = plt.subplots()
     plt.title(title + ' SoC:  ' + batname, pad=15.0)
     plt.plot(t_plot, soc_plot[name])
     #ax.xaxis.set_major_formatter(md.DateFormatter('%H:%M'))
@@ -86,14 +89,13 @@ def make_plots(title, prefix, Batteries, t_plot, p_batt_plot, soc_plot):
     plt.ylabel('Battery SoC')
     plt.savefig('log/' + prefix + '_soc_' + batname + '.png')
     #plot.show()
+    plt.close()
 
 
 def _main():
   print('Starting plotter...')
 
-
-  app = 'SIMULATION'
-  prefix = 'sim'
+  matplotlib.use('agg')
 
   Batteries = {}
   Batteries['BatteryUnit.battery1'] = True
@@ -110,6 +112,9 @@ def _main():
     p_batt_plot[batt] = []
     soc_plot[batt] = []
 
+  app = 'SIMULATION'
+  prefix = 'sim'
+
   hits = 0
   with open('log/hour_plot_data.csv', 'r') as file:
     for line in file:
@@ -123,9 +128,46 @@ def _main():
           p_batt_plot[batt].append(float(tokens[it+1]))
           soc_plot[batt].append(float(tokens[it+2]))
 
-  print('Hits: ' + str(hits))
+  print(app + ' hits: ' + str(hits))
 
-  make_plots(app, prefix, Batteries, t_plot, p_batt_plot, soc_plot)
+  make_p_batt_plots(app, prefix, Batteries, t_plot, p_batt_plot)
+  make_soc_plots(app, prefix, Batteries, t_plot, soc_plot)
+
+  t_plot.clear()
+
+  for batt in Batteries:
+    p_batt_plot[batt].clear()
+    soc_plot[batt].clear()
+
+  app_list = ['gridappsd-resilience-app', 'gridappsd-decarbonization-app', 'gridappsd-profit_cvr-app']
+  prefix_list = ['resil', 'decarb', 'cvr']
+
+  #numdev = 27
+  #gridappsd-resilience-app,25.029853,1741818224,RatioTapChanger.reg1a,0,RatioTapChanger.reg2a,-4,RatioTapChanger.reg3a,-3,RatioTapChanger.reg3c,-3,RatioTapChanger.reg4a,15,RatioTapChanger.reg4b,-5,RatioTapChanger.reg4c,-3,BatteryUnit.battery1,-125000.0,BatteryUnit.battery2,-200000.0,BatteryUnit.battery3,-100000.0,BatteryUnit.battery4,-150000.0,BatteryUnit.battery5,-242440.07344492286
+
+  for iapp in range(len(app_list)):
+    hits = 0
+    with open('log/hour_plot_data.csv', 'r') as file:
+      for line in file:
+        tokens = line.split(',')
+        if tokens[0] == app_list[iapp]:
+          hits += 1
+          t_plot.append(float(tokens[1]))
+
+          numdev = len(tokens)
+          for it in range(3, numdev, 2):
+            batt = tokens[it]
+            if batt.startswith('BatteryUnit.'):
+              p_batt_plot[batt].append(float(tokens[it+1]))
+
+    print(app_list[iapp] + ' hits: ' + str(hits))
+
+    make_p_batt_plots(app_list[iapp], prefix_list[iapp], Batteries, t_plot, p_batt_plot)
+
+    t_plot.clear()
+
+    for batt in Batteries:
+      p_batt_plot[batt].clear()
 
   print('Goodbye!')
 
