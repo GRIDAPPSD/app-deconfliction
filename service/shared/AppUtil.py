@@ -201,31 +201,35 @@ class AppUtil:
 
 
   def getSolarPVs(sparql_mgr):
-    SolarPVs = {}
+    SolarPVsIdx = {}
+    SolarPVsInfo = {}
     bindings = sparql_mgr.pv_query()
     print('\nCount of SolarPV: ' + str(len(bindings)), flush=True)
+    idx = 0
     for obj in bindings:
       name = obj['name']['value']
       bus = obj['bus']['value'].upper()
       ratedS = float(obj['ratedS']['value'])
       #ratedU = float(obj['ratedU']['value'])
-      SolarPVs[bus] = {}
-      SolarPVs[bus]['kW'] = float(obj['p']['value'])/1000.0
-      SolarPVs[bus]['kVar'] = float(obj['q']['value'])/1000.0
-      SolarPVs[bus]['p'] = float(obj['p']['value'])
-      SolarPVs[bus]['phase'] = obj['phases']['value']
-      SolarPVs[bus]['ratedS'] = float(obj['ratedS']['value'])
-      #print('SolarPV name: ' + name + ', kW: ' + str(SolarPVs[name]['kW']) + ', kVar: ' + str(SolarPVs[name]['kVar']), flush=True)
+      SolarPVsIdx[bus] = idx
+      SolarPVsInfo[bus] = {}
+      SolarPVsInfo[bus]['kW'] = float(obj['p']['value'])/1000.0
+      SolarPVsInfo[bus]['kVar'] = float(obj['q']['value'])/1000.0
+      SolarPVsInfo[bus]['p'] = float(obj['p']['value'])
+      SolarPVsInfo[bus]['phase'] = obj['phases']['value']
+      SolarPVsInfo[bus]['ratedS'] = float(obj['ratedS']['value'])
+      #print('SolarPV name: ' + name + ', kW: ' + str(SolarPVsInfo[name]['kW']) + ', kVar: ' + str(SolarPVsInfo[name]['kVar']), flush=True)
+      idx += 1
 
-    # Add measid key to SolarPVs for matching sim measurements
+    # Add measid key to SolarPVsInfo for matching sim measurements
     objs = sparql_mgr.obj_meas_export('PowerElectronicsConnection')
     print('Count of PowerElectronicsConnections Meas: ' + str(len(objs)),
           flush=True)
     for item in objs:
-      if item['type']=='VA' and item['bus'] in SolarPVs:
-        SolarPVs[item['bus']]['measid'] = item['measid']
+      if item['type']=='VA' and item['bus'] in SolarPVsInfo:
+        SolarPVsInfo[item['bus']]['measid'] = item['measid']
 
-    return SolarPVs
+    return (SolarPVsInfo, SolarPVsIdx)
 
 
   def getEnergySource(sparql_mgr):
