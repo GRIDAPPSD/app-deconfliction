@@ -30,5 +30,6 @@ if [ "$OPTLIB" = "pulp" ] || [ "$OPTLIB" = "PuLP" ] || [ "$OPTLIB" = "PULP" ]; t
 else
   #python3 optimization-app-cvxpy.py profit_cvr $SIMID "$SIMREQ" $INTERVAL 2>&1 | tee log/profit_cvr-app.log
   python3 optimization-app-cvxpy-modular.py profit_cvr $SIMID "$SIMREQ" $INTERVAL 2>&1 | tee log/profit_cvr-app.log
+  #python3 optimization-app-cvxpy-noreact.py profit_cvr $SIMID "$SIMREQ" $INTERVAL 2>&1 | tee log/profit_cvr-app.log
 fi
 
