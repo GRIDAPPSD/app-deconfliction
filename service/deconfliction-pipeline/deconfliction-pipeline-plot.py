@@ -105,6 +105,13 @@ class DeconflictionPipeline(GridAPPSD):
         if app_name in self.ConflictMatrix[device]:
           self.ConflictMatrix[device].pop(app_name)
 
+      self.plt_file.write(app_name)
+      self.plt_file.write(',')
+      diff = (datetime.now() - self.plt_tzero).total_seconds()
+      self.plt_file.write(str(diff))
+      self.plt_file.write(',')
+      self.plt_file.write(str(timestamp))
+
     else:
       MinSetpoints = {}
       MaxSetpoints = {}
@@ -126,13 +133,6 @@ class DeconflictionPipeline(GridAPPSD):
         # from past timestamps
         if app_name in self.ConflictMatrix[device]:
           self.ConflictMatrix[device].pop(app_name)
-
-    self.plt_file.write(app_name)
-    self.plt_file.write(',')
-    diff = (datetime.now() - self.plt_tzero).total_seconds()
-    self.plt_file.write(str(diff))
-    self.plt_file.write(',')
-    self.plt_file.write(str(timestamp))
 
     # now add the new set-points for app_name
     for point in set_points:
@@ -168,13 +168,15 @@ class DeconflictionPipeline(GridAPPSD):
 
       self.ConflictMatrix[device][app_name] = (timestamp, value)
 
-      self.plt_file.write(',')
-      self.plt_file.write(MethodUtil.DeviceToName[device])
-      self.plt_file.write(',')
-      self.plt_file.write(str(value))
+      if meas_msg_flag:
+        self.plt_file.write(',')
+        self.plt_file.write(MethodUtil.DeviceToName[device])
+        self.plt_file.write(',')
+        self.plt_file.write(str(value))
 
-    self.plt_file.write('\n')
-    self.plt_file.flush()
+    if meas_msg_flag:
+      self.plt_file.write('\n')
+      self.plt_file.flush()
 
     if printAllConflictsResolutionsFlag:
       print('SetpointProcessor--ConflictMatrix: ' +str(self.ConflictMatrix))
