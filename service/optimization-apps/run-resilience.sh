@@ -29,7 +29,7 @@ if [ "$OPTLIB" = "pulp" ] || [ "$OPTLIB" = "PuLP" ] || [ "$OPTLIB" = "PULP" ]; t
   python3 optimization-app-pulp.py resilience $SIMID "$SIMREQ" $INTERVAL 2>&1 | tee log/resilience-app.log
 else
   #python3 optimization-app-cvxpy.py resilience $SIMID "$SIMREQ" $INTERVAL 2>&1 | tee log/resilience-app.log
-  python3 optimization-app-cvxpy-modular.py resilience $SIMID "$SIMREQ" $INTERVAL 2>&1 | tee log/resilience-app.log
-  #python3 optimization-app-cvxpy-noreact.py resilience $SIMID "$SIMREQ" $INTERVAL 2>&1 | tee log/resilience-app.log
+  #python3 optimization-app-cvxpy-modular.py resilience $SIMID "$SIMREQ" $INTERVAL 2>&1 | tee log/resilience-app.log
+  python3 optimization-app-cvxpy-noreact.py resilience $SIMID "$SIMREQ" $INTERVAL 2>&1 | tee log/resilience-app.log
 fi
 
