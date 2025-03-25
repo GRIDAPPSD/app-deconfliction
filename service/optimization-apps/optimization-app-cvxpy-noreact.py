@@ -1226,12 +1226,17 @@ class CompetingApp(GridAPPSD):
           # sorts in place
           p_batt_sort.sort()
 
-          coopCount = max(1, len(p_batt_sort)//2) # integer "floor" division
+          # GDB 3/25/25: Handle the case of only proposed == greedy
+          diffMax = 0
+          if len(p_batt_sort) > 0:
+            coopCount = max(1, len(p_batt_sort)//2) # integer "floor" division
 
-          # find the value associated with the last "cooperating" battery
-          diffMax = p_batt_sort[coopCount-1]
+            # find the value associated with the last "cooperating" battery
+            diffMax = p_batt_sort[coopCount-1]
 
-          print('DECONFLICTOR COOPERATE batteries coopCount: ' + str(coopCount) + ', diffMax: ' + str(diffMax), flush=True)
+            print('DECONFLICTOR COOPERATE batteries coopCount: ' + str(coopCount) + ', diffMax: ' + str(diffMax), flush=True)
+          else:
+            print('DECONFLICTOR COOPERATE batteries coopCount: ALL, diffMax: ' + str(diffMax), flush=True)
 
           # start with assuming no cooperation by copying p_batt_greedy
           p_batt_coop = self.p_batt_greedy.copy()
@@ -1273,13 +1278,18 @@ class CompetingApp(GridAPPSD):
           # sorts in place
           reg_sort.sort()
 
-          # determine the number of regulators that will "cooperate"
-          coopCount = max(1, len(reg_sort)//2) # integer "floor" division
+          # GDB 3/25/25: Handle the case of only proposed == greedy
+          diffMax = 0
+          if len(reg_sort) > 0:
+            # determine the number of regulators that will "cooperate"
+            coopCount = max(1, len(reg_sort)//2) # integer "floor" division
 
-          # find the value associated with the last "cooperating" regulator
-          diffMax = reg_sort[coopCount-1]
+            # find the value associated with the last "cooperating" regulator
+            diffMax = reg_sort[coopCount-1]
 
-          print('DECONFLICTOR COOPERATE regulators coopCount: ' + str(coopCount) + ', diffMax: ' + str(diffMax), flush=True)
+            print('DECONFLICTOR COOPERATE regulators coopCount: ' + str(coopCount) + ', diffMax: ' + str(diffMax), flush=True)
+          else:
+            print('DECONFLICTOR COOPERATE regulators coopCount: ALL, diffMax: ' + str(diffMax), flush=True)
 
           # start with assuming no cooperation by copying p_batt_greedy
           reg_coop = self.reg_greedy.copy()
