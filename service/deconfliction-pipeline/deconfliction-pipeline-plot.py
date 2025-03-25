@@ -1746,7 +1746,7 @@ class DeconflictionPipeline(GridAPPSD):
 
     self.plt_file = open('log/plot_data.csv', 'w')
     self.plt_tzero = None
-    self.bypassDeconflictionFlag = True
+    self.bypassDeconflictionFlag = False
 
     print('\nInitialization--finished, waiting for messages...\n')
 
