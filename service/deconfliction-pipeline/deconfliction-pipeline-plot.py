@@ -1293,6 +1293,8 @@ class DeconflictionPipeline(GridAPPSD):
       return
 
     if meas_msg_flag:
+      self.startConflictMetric = self.ConflictMetricComputation(timestamp)
+
       # no need to invoke Feasibility Maintainer or Rules stage for cooperation
       # messages because the SetpointProcessor insures there is no backtracking
       # of setpoints from what was already processed by the Feasibility
@@ -1311,6 +1313,8 @@ class DeconflictionPipeline(GridAPPSD):
               'stage deconfliction')
         self.RulesForBatteriesConflict(self.printAllRulesFlag)
         self.RulesForRegulatorsConflict(self.printAllRulesFlag)
+
+        self.rulesConflictMetric = self.ConflictMetricComputation(timestamp)
 
     # Published IEEE Access Foundational Paper Reference:
     #   Step 3--Deconflictor
@@ -1564,6 +1568,21 @@ class DeconflictionPipeline(GridAPPSD):
     self.SetpointValidatorForRegulators(newResolutionVector,
                                         self.printAllValidatorFlag)
 
+    self.plt_file.write('conflict_metric,')
+    diff = (datetime.now() - self.plt_tzero).total_seconds()
+    self.plt_file.write(str(diff))
+    self.plt_file.write(',')
+    self.plt_file.write(str(timestamp))
+    self.plt_file.write(',')
+    self.plt_file.write(str(self.startConflictMetric))
+    self.plt_file.write(',')
+    self.plt_file.write(str(self.rulesConflictMetric))
+    self.plt_file.write(',')
+    self.plt_file.write(str(self.conflictMetric))
+    self.plt_file.write(',')
+    self.plt_file.write(str(self.coopResponseCounter))
+    self.plt_file.write('\n')
+
     # Published IEEE Access Foundational Paper Reference:
     #   Step 5--Device Dispatcher
     dispatchCount = self.DeviceDispatcher(timestamp, newResolutionVector,
@@ -1673,8 +1692,10 @@ class DeconflictionPipeline(GridAPPSD):
 
     # thresholds for concluding cooperation phases
     self.coopMessagesThreshold = 10
-    self.conflictValueThreshold = 0.2
-    self.conflictPercentThreshold = 2.0
+    #self.conflictValueThreshold = 0.2
+    self.conflictValueThreshold = 0.15
+    #self.conflictPercentThreshold = 2.0
+    self.conflictPercentThreshold = 0.1
 
     # initialize conflict metric
     self.conflictMetric = 0.0
