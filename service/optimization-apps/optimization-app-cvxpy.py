@@ -1124,7 +1124,7 @@ class CompetingApp(GridAPPSD):
         # GDB 3/25/25: Handle the case of only proposed == greedy
         diffMax = 0
         if len(p_batt_sort) > 0:
-          coopCount = max(1, len(p_batt_sort)//2) # integer "floor" division
+          coopCount = max(1, -(len(p_batt_sort)//-2)) # integer "ceiling" division
 
           # find the value associated with the last "cooperating" battery
           diffMax = p_batt_sort[coopCount-1]
@@ -1133,16 +1133,13 @@ class CompetingApp(GridAPPSD):
         else:
           print('DECONFLICTOR COOPERATE batteries coopCount: ALL, diffMax: ' + str(diffMax), flush=True)
 
-        # start with assuming no cooperation by copying p_batt_greedy
-        p_batt_coop = self.p_batt_greedy.copy()
-
         for i in range(len_Batteries):
           # check if this is a "cooperating" battery
           if p_batt_diff[i] <= diffMax:
-            # if so, set it to the proposed value
-            p_batt_coop[i] = self.p_batt_proposed[i]
+            # if so, set the greedy value to the proposed value
+            self.p_batt_greedy[i] = self.p_batt_proposed[i]
 
-        print('DECONFLICTOR COOPERATE p_batt_coop: ' + str(p_batt_coop), flush=True)
+        print('DECONFLICTOR COOPERATE p_batt_coop: ' + str(self.p_batt_greedy), flush=True)
 
         # now do the same for regulators
         print('DECONFLICTOR COOPERATE reg_greedy: ' + str(self.reg_greedy), flush=True)
@@ -1168,7 +1165,7 @@ class CompetingApp(GridAPPSD):
         diffMax = 0
         if len(reg_sort) > 0:
           # determine the number of regulators that will "cooperate"
-          coopCount = max(1, len(reg_sort)//2) # integer "floor" division
+          coopCount = max(1, -(len(reg_sort)//-2)) # integer "ceiling" division
 
           # find the value associated with the last "cooperating" regulator
           diffMax = reg_sort[coopCount-1]
@@ -1177,23 +1174,20 @@ class CompetingApp(GridAPPSD):
         else:
           print('DECONFLICTOR COOPERATE regulators coopCount: ALL, diffMax: ' + str(diffMax), flush=True)
 
-        # start with assuming no cooperation by copying p_batt_greedy
-        reg_coop = self.reg_greedy.copy()
-
         for i in range(len_Regulators):
           # check if this is a "cooperating" regulator
           if reg_diff[i] <= diffMax:
-            # if so, set it to the proposed value
-            reg_coop[i] = self.reg_proposed[i]
+            # if so, set the greedy value to the proposed value
+            self.reg_greedy[i] = self.reg_proposed[i]
 
-        print('DECONFLICTOR COOPERATE reg_coop: ' + str(reg_coop), flush=True)
+        print('DECONFLICTOR COOPERATE reg_coop: ' + str(self.reg_greedy), flush=True)
 
         # finally, send out the cooperation setpoints via DifferenceBuilder msg
         for reg in self.RegulatorsInfo:
           idx = self.RegulatorsInfo[reg]['idx']
           # new value before old value for DifferenceBuilder
           self.difference_builder.add_difference(reg, 'TapChanger.step',
-                                                 reg_coop[idx], None)
+                                                 self.reg_greedy[idx], None)
 
         for mrid in self.BatteriesInfo:
           idx = self.BatteriesIdx[mrid]
@@ -1201,7 +1195,7 @@ class CompetingApp(GridAPPSD):
           # note the p_batt value is negated for the GridLAB-D
           # DifferenceBuilder message
           self.difference_builder.add_difference(mrid,
-               'PowerElectronicsConnection.p', -p_batt_coop[idx], None)
+               'PowerElectronicsConnection.p', -self.p_batt_greedy[idx], None)
 
         dispatch_message = self.difference_builder.get_message()
         dispatch_message['cooperationPhase'] = \
