@@ -169,7 +169,8 @@ class CompetingApp(GridAPPSD):
 
     if self.includeSolarPVsFlag:
       self.optConstraintsDERWithSolarPVs(self.SolarPVsIdx, self.SolarPVsInfo,
-                                         self.p_pv_A, self.p_pv_B, self.p_pv_C)
+                                         self.p_pv_A, self.p_pv_B, self.p_pv_C,
+                                         self.q_pv_A, self.q_pv_B, self.q_pv_C)
 
     if self.includePFlowFlag:
       self.optConstraintsNetworkWithPFlow(self.includeBatteriesFlag,
@@ -221,7 +222,8 @@ class CompetingApp(GridAPPSD):
 
     self.optDo(objective)
 
-    self.optDispatch(self.includeRegulatorsFlag, self.includeBatteriesFlag)
+    self.optDispatch(self.includeRegulatorsFlag, self.includeBatteriesFlag,
+                     self.includeSolarPVsFlag)
 
 
   def optDefineVariables(self, includePFlowFlag, includeQFlowFlag,
@@ -282,6 +284,9 @@ class CompetingApp(GridAPPSD):
       self.p_pv_A = cp.Variable(len_SolarPVsInfo, integer=False,name='p_pv_A')
       self.p_pv_B = cp.Variable(len_SolarPVsInfo, integer=False,name='p_pv_B')
       self.p_pv_C = cp.Variable(len_SolarPVsInfo, integer=False,name='p_pv_C')
+      self.q_pv_A = cp.Variable(len_SolarPVsInfo, integer=False,name='q_pv_A')
+      self.q_pv_B = cp.Variable(len_SolarPVsInfo, integer=False,name='q_pv_B')
+      self.q_pv_C = cp.Variable(len_SolarPVsInfo, integer=False,name='q_pv_C')
 
     if objectiveDecarbonizationFlag:
       self.Psub = cp.Variable(integer=False, name='P_sub')
@@ -327,18 +332,55 @@ class CompetingApp(GridAPPSD):
 
 
   def optConstraintsDERWithSolarPVs(self, SolarPVsIdx, SolarPVsInfo,
-                                    p_pv_A, p_pv_B, p_pv_C):
+                                    p_pv_A, p_pv_B, p_pv_C,
+                                    q_pv_A, q_pv_B, q_pv_C):
     for bus in SolarPVsInfo:
       idx = SolarPVsIdx[bus]
+
+      numphases = len(SolarPVsInfo[bus]['phase'])
+      if 'N' in SolarPVsInfo[bus]['phase']:
+        numphases -= 1
+
+      ratedS = SolarPVsInfo[bus]['ratedS']/numphases
+      ratedP = SolarPVsInfo[bus]['p']/numphases
+
+      coeff = math.sqrt(2) - 1
+
       if 'A' in SolarPVsInfo[bus]['phase']:
-        self.Constraints.append(p_pv_A[idx] <= SolarPVsInfo[bus]['p'])
+        self.Constraints.append(p_pv_A[idx] <= ratedP)
         self.Constraints.append(p_pv_A[idx] >= 0)
+
+        self.Constraints.append(q_pv_A[idx] <=  ratedS)
+        self.Constraints.append(q_pv_A[idx] >= -ratedS)
+
+        self.Constraints.append(coeff*p_pv_A[idx] + q_pv_A[idx] <= ratedS)
+        self.Constraints.append(coeff*p_pv_A[idx] - q_pv_A[idx] <= ratedS)
+        self.Constraints.append(p_pv_A[idx] + coeff*q_pv_A[idx] <= ratedS)
+        self.Constraints.append(p_pv_A[idx] - coeff*q_pv_A[idx] <= ratedS)
+
       if 'B' in SolarPVsInfo[bus]['phase']:
-        self.Constraints.append(p_pv_B[idx] <= SolarPVsInfo[bus]['p'])
+        self.Constraints.append(p_pv_B[idx] <= ratedP)
         self.Constraints.append(p_pv_B[idx] >= 0)
+
+        self.Constraints.append(q_pv_B[idx] <=  ratedS)
+        self.Constraints.append(q_pv_B[idx] >= -ratedS)
+
+        self.Constraints.append(coeff*p_pv_B[idx] + q_pv_B[idx] <= ratedS)
+        self.Constraints.append(coeff*p_pv_B[idx] - q_pv_B[idx] <= ratedS)
+        self.Constraints.append(p_pv_B[idx] + coeff*q_pv_B[idx] <= ratedS)
+        self.Constraints.append(p_pv_B[idx] - coeff*q_pv_B[idx] <= ratedS)
+
       if 'C' in SolarPVsInfo[bus]['phase']:
-        self.Constraints.append(p_pv_C[idx] <= SolarPVsInfo[bus]['p'])
+        self.Constraints.append(p_pv_C[idx] <= ratedP)
         self.Constraints.append(p_pv_C[idx] >= 0)
+
+        self.Constraints.append(q_pv_C[idx] <=  ratedS)
+        self.Constraints.append(q_pv_C[idx] >= -ratedS)
+
+        self.Constraints.append(coeff*p_pv_C[idx] + q_pv_C[idx] <= ratedS)
+        self.Constraints.append(coeff*p_pv_C[idx] - q_pv_C[idx] <= ratedS)
+        self.Constraints.append(p_pv_C[idx] + coeff*q_pv_C[idx] <= ratedS)
+        self.Constraints.append(p_pv_C[idx] - coeff*q_pv_C[idx] <= ratedS)
 
 
   def optConstraintsNetworkWithPFlow(self, includeBatteriesFlag,
@@ -695,7 +737,8 @@ class CompetingApp(GridAPPSD):
     print('Optimization status:', problem.status, flush=True)
 
 
-  def optDispatch(self, includeRegulatorsFlag, includeBatteriesFlag):
+  def optDispatch(self, includeRegulatorsFlag, includeBatteriesFlag,
+                  includeSolarPVsFlag):
     if includeRegulatorsFlag:
       regulator_taps = []
       for reg in self.RegulatorsInfo:
@@ -732,6 +775,24 @@ class CompetingApp(GridAPPSD):
 
       print(tabulate(p_batt_setpoints, headers=['Battery', 'P_batt (kW)',
                      'Target SoC'], tablefmt='psql'), flush=True)
+
+    if includeSolarPVsFlag:
+      p_pv_setpoints = []
+      q_pv_setpoints = []
+      for bus in self.SolarPVsInfo:
+        idx = self.SolarPVsIdx[bus]
+        p_pv_setpoints.append([bus, self.p_pv_A[idx].value/1000,
+                                    self.p_pv_B[idx].value/1000,
+                                    self.p_pv_C[idx].value/1000])
+        q_pv_setpoints.append([bus, self.q_pv_A[idx].value/1000,
+                                    self.q_pv_B[idx].value/1000,
+                                    self.q_pv_C[idx].value/1000])
+
+      print(tabulate(p_pv_setpoints, headers=['p_pv_bus', 'p_pv_A (kW)',
+                     'p_pv_B (kW)', 'p_pv_C (kW)'], tablefmt='psql'),flush=True)
+
+      print(tabulate(q_pv_setpoints, headers=['q_pv_bus', 'q_pv_A (kW)',
+                     'q_pv_B (kW)', 'q_pv_C (kW)'], tablefmt='psql'),flush=True)
 
     '''
     if self.includePFlowFlag:
