@@ -1569,6 +1569,8 @@ class DeconflictionPipeline(GridAPPSD):
       self.RulesForRegulatorsResolution(newResolutionVector,
                                         self.printAllRulesFlag)
 
+      self.rulesConflictMetric = self.ConflictMetricComputation(timestamp)
+
     # Published IEEE Access Foundational Paper Reference:
     #   Step 4--Setpoint Validator
     self.SetpointValidatorForBatteries(newResolutionVector,
@@ -1584,10 +1586,14 @@ class DeconflictionPipeline(GridAPPSD):
     self.plt_file.write(',')
     self.plt_file.write(str(self.startConflictMetric))
     self.plt_file.write(',')
-    self.plt_file.write(str(self.rulesConflictMetric))
-    self.plt_file.write(',')
+    if self.rulesStageFirstFlag:
+      self.plt_file.write(str(self.rulesConflictMetric))
+      self.plt_file.write(',')
     self.plt_file.write(str(self.conflictMetric))
     self.plt_file.write(',')
+    if not self.rulesStageFirstFlag:
+      self.plt_file.write(str(self.rulesConflictMetric))
+      self.plt_file.write(',')
     self.plt_file.write(str(self.coopResponseCounter))
     self.plt_file.write('\n')
 
@@ -1730,7 +1736,8 @@ class DeconflictionPipeline(GridAPPSD):
     # controls whether rules stage deconfliction is done as the first stage
     # using the ConflictMatrix or deferred until the last stage before device
     # dispatch using the ResolutionVector
-    self.rulesStageFirstFlag = True
+    #self.rulesStageFirstFlag = True
+    self.rulesStageFirstFlag = False
 
     # for SHIVA conflict metric testing
     #self.TimeConflictMatrix = {}
