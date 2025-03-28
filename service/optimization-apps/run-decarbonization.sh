@@ -29,7 +29,7 @@ if [ "$OPTLIB" = "pulp" ] || [ "$OPTLIB" = "PuLP" ] || [ "$OPTLIB" = "PULP" ]; t
   python3 optimization-app-pulp.py decarbonization $SIMID "$SIMREQ" $INTERVAL 2>&1 | tee log/decarbonization-app.log
 else
   #python3 optimization-app-cvxpy.py decarbonization $SIMID "$SIMREQ" $INTERVAL 2>&1 | tee log/decarbonization-app.log
-  #python3 optimization-app-cvxpy-modular.py decarbonization $SIMID "$SIMREQ" $INTERVAL 2>&1 | tee log/decarbonization-app.log
-  python3 optimization-app-cvxpy-noreact.py decarbonization $SIMID "$SIMREQ" $INTERVAL 2>&1 | tee log/decarbonization-app.log
+  python3 optimization-app-cvxpy-modular.py decarbonization $SIMID "$SIMREQ" $INTERVAL 2>&1 | tee log/decarbonization-app.log
+  #python3 optimization-app-cvxpy-noreact.py decarbonization $SIMID "$SIMREQ" $INTERVAL 2>&1 | tee log/decarbonization-app.log
 fi
 
