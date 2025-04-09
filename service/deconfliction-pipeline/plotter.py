@@ -167,8 +167,10 @@ def _main():
   for reg in Regulators:
     reg_plot[reg].clear()
 
-  app_list = ['gridappsd-resilience-app', 'gridappsd-decarbonization-app', 'gridappsd-profit_cvr-app']
-  prefix_list = ['resil', 'decarb', 'cvr']
+  #app_list = ['gridappsd-resilience-app', 'gridappsd-decarbonization-app', 'gridappsd-profit_cvr-app']
+  app_list = ['gridappsd-resilience-app', 'gridappsd-decarbonization-app']
+  #prefix_list = ['resil', 'decarb', 'cvr']
+  prefix_list = ['resil', 'decarb']
 
   for iapp in range(len(app_list)):
     hits = 0
