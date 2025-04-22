@@ -1104,7 +1104,7 @@ class CompetingApp(GridAPPSD):
                                                    simulation_id)
 
     # for bypassing deconfliction pipeline and sending directly to simulation
-    self.sendToSimFlag = True
+    self.sendToSimFlag = False
     self.sim_publish_topic = simulation_input_topic(simulation_id)
 
     # create DifferenceBuilder once and reuse it throughout the simulation
