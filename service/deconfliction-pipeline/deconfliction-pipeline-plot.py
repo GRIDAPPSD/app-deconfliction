@@ -594,8 +594,9 @@ class DeconflictionPipeline(GridAPPSD):
 
   def RulesForBatteriesConflict(self, printAllRulesFlag=False):
     # GDB RULE_TWEAK
-    #rollingTimeInterval = 60 # for short simulations
-    rollingTimeInterval = 60*30 # for long simulations
+    #rollingTimeInterval = 60 # for short simulations, every minute
+    #rollingTimeInterval = 60*30 # for long simulations, every 30 minutes
+    rollingTimeInterval = 60*15 # for long simulations, every 15 minutes
     # number of changes between charging and discharging, and vice versa,
     # allowed in the rolling time interval
     rollingSwitchesAllowed = 1
@@ -657,8 +658,9 @@ class DeconflictionPipeline(GridAPPSD):
   def RulesForBatteriesResolution(self, newResolutionVector,
                                   printAllRulesFlag=False):
     # GDB RULE_TWEAK
-    #rollingTimeInterval = 60 # for short simulations
-    rollingTimeInterval = 60*30 # for long simulations
+    #rollingTimeInterval = 60 # for short simulations, every minute
+    #rollingTimeInterval = 60*30 # for long simulations, every 30 minutes
+    rollingTimeInterval = 60*15 # for long simulations, every 15 minutes
     # number of changes between charging and discharging, and vice versa,
     # allowed in the rolling time interval
     rollingSwitchesAllowed = 1
@@ -720,10 +722,10 @@ class DeconflictionPipeline(GridAPPSD):
     #timestampTapBudget = 3
 
     # GDB RULE_TWEAK
-    #rollingTimeInterval = 60 # for short simulations
-    rollingTimeInterval = 60*30 # for long simulations
-    #rollingStepsAllowed = 6 # picked to trigger the rule a reasonable # of times
-    rollingStepsAllowed = 4 # picked to trigger the rule a reasonable # of times
+    #rollingTimeInterval = 60 # for short simulations, every minute
+    #rollingTimeInterval = 60*30 # for long simulations, every 30 minutes
+    rollingTimeInterval = 60*15 # for long simulations, every 15 minutes
+    rollingStepsAllowed = 6 # picked to trigger the rule a reasonable # of times
 
     # set max/min allowable tap positions based on current position
     for devid in self.Regulators:
@@ -855,10 +857,10 @@ class DeconflictionPipeline(GridAPPSD):
     #timestampTapBudget = 3
 
     # GDB RULE_TWEAK
-    #rollingTimeInterval = 60 # for short simulations
-    rollingTimeInterval = 60*30 # for long simulations
-    #rollingStepsAllowed = 6 # picked to trigger the rule a reasonable # of times
-    rollingStepsAllowed = 4 # picked to trigger the rule a reasonable # of times
+    #rollingTimeInterval = 60 # for short simulations, every minute
+    #rollingTimeInterval = 60*30 # for long simulations, every 30 minutes
+    rollingTimeInterval = 60*15 # for long simulations, every 15 minutes
+    rollingStepsAllowed = 6 # picked to trigger the rule a reasonable # of times
 
     # set max/min allowable tap positions based on current position
     for devid in self.Regulators:
