@@ -730,12 +730,10 @@ class DeconflictionPipeline(GridAPPSD):
     # set max/min allowable tap positions based on current position
     for devid in self.Regulators:
       histList = self.RegulatorHistory[devid]
-      '''
       if printAllRulesFlag:
         print('RulesForRegulatorsConflict--device: ' +
               MethodUtil.DeviceToName[devid] +
               ', RegulatorHistory: ' + str(histList))
-      '''
       if MethodUtil.DeviceToName[devid] == 'RatioTapChanger.reg4b':
         print('REG4B RulesForRegulatorsConflict--device: ' +
               MethodUtil.DeviceToName[devid] +
@@ -753,14 +751,12 @@ class DeconflictionPipeline(GridAPPSD):
         previousStep = hist[1]
 
       rollingTapBudget = max(0, rollingStepsAllowed - rollingStepCount)
-      '''
       if printAllRulesFlag:
         print('RulesForRegulatorsConflict--device: ' +
               MethodUtil.DeviceToName[devid] +
               ', rolling steps: ' + str(rollingStepCount) +
               ', vs. allowed: ' + str(rollingStepsAllowed) +
               ', rolling budget: ' + str(rollingTapBudget))
-      '''
       if MethodUtil.DeviceToName[devid] == 'RatioTapChanger.reg4b':
         print('REG4B RulesForRegulatorsConflict--device: ' +
               MethodUtil.DeviceToName[devid] +
@@ -784,13 +780,11 @@ class DeconflictionPipeline(GridAPPSD):
                                               tapBudget, 16)
       self.Regulators[devid]['minStep'] = max(self.Regulators[devid]['step'] - \
                                               tapBudget, -16)
-      '''
       if printAllRulesFlag:
         print('RulesForRegulatorsConflict--device: ' +
               MethodUtil.DeviceToName[devid] +
               ', min tap pos: ' + str(self.Regulators[devid]['minStep']) +
               ', max tap pos: ' + str(self.Regulators[devid]['maxStep']))
-      '''
       if MethodUtil.DeviceToName[devid] == 'RatioTapChanger.reg4b':
         print('REG4B RulesForRegulatorsConflict--device: ' +
               MethodUtil.DeviceToName[devid] +
@@ -805,13 +799,11 @@ class DeconflictionPipeline(GridAPPSD):
         for app in self.ConflictMatrix[device]:
           if self.ConflictMatrix[device][app][1] > \
              self.Regulators[device]['maxStep']:
-            '''
             print('RulesForRegulatorsConflict--device: ' + name +
                   ', app: ' + app + '--tap pos setpoint: ' +
                   str(self.ConflictMatrix[device][app][1]) +
                   ', above max allowable asset health pos, reset to: ' +
                   str(self.Regulators[device]['maxStep']))
-            '''
             if name == 'RatioTapChanger.reg4b':
               print('REG4B RulesForRegulatorsConflict--device: ' + name +
                     ', app: ' + app + '--tap pos setpoint: ' +
@@ -824,13 +816,11 @@ class DeconflictionPipeline(GridAPPSD):
 
           elif self.ConflictMatrix[device][app][1] < \
                self.Regulators[device]['minStep']:
-            '''
             print('RulesForRegulatorsConflict--device: ' + name +
                   ', app: ' + app + '--tap pos setpoint: ' +
                   str(self.ConflictMatrix[device][app][1]) +
                   ', below min allowable asset health pos, reset to: ' +
                   str(self.Regulators[device]['minStep']))
-            '''
             if name == 'RatioTapChanger.reg4b':
               print('REG4B RulesForRegulatorsConflict--device: ' + name +
                     ', app: ' + app + '--tap pos setpoint: ' +
