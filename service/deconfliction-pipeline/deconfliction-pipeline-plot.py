@@ -725,7 +725,7 @@ class DeconflictionPipeline(GridAPPSD):
     #rollingTimeInterval = 60 # for short simulations, every minute
     #rollingTimeInterval = 60*30 # for long simulations, every 30 minutes
     rollingTimeInterval = 60*15 # for long simulations, every 15 minutes
-    rollingStepsAllowed = 6 # picked to trigger the rule a reasonable # of times
+    rollingStepsAllowed = 8 # picked to trigger the rule a reasonable # of times
 
     # set max/min allowable tap positions based on current position
     for devid in self.Regulators:
@@ -744,6 +744,8 @@ class DeconflictionPipeline(GridAPPSD):
       rollingStartTime = self.Regulators[devid]['timestamp'] - \
                          rollingTimeInterval
       previousStep = self.Regulators[devid]['step']
+      if 'theoryStep' in self.Regulators[devid]:
+        previousStep = self.Regulators[devid]['theoryStep']
       for hist in reversed(histList):
         if hist[0] < rollingStartTime:
           break
@@ -850,7 +852,7 @@ class DeconflictionPipeline(GridAPPSD):
     #rollingTimeInterval = 60 # for short simulations, every minute
     #rollingTimeInterval = 60*30 # for long simulations, every 30 minutes
     rollingTimeInterval = 60*15 # for long simulations, every 15 minutes
-    rollingStepsAllowed = 6 # picked to trigger the rule a reasonable # of times
+    rollingStepsAllowed = 8 # picked to trigger the rule a reasonable # of times
 
     # set max/min allowable tap positions based on current position
     for devid in self.Regulators:
@@ -1044,6 +1046,7 @@ class DeconflictionPipeline(GridAPPSD):
         # current tap position
         if value[1] != self.Regulators[devid]['step']:
           # new value before old value for DifferenceBuilder
+          self.Regulators[devid]['theoryStep'] = value[1]
           self.difference_builder.add_difference(devid,
                    'TapChanger.step', value[1], self.Regulators[devid]['step'])
           diffCount += 1
