@@ -871,6 +871,8 @@ class DeconflictionPipeline(GridAPPSD):
       rollingStartTime = self.Regulators[devid]['timestamp'] - \
                          rollingTimeInterval
       previousStep = self.Regulators[devid]['step']
+      if 'theoryStep' in self.Regulators[devid]:
+        previousStep = self.Regulators[devid]['theoryStep']
       #if devname == 'RatioTapChanger.reg4b':
       if False:
         print('RulesForRegulatorsResolution--device: ' +
@@ -1817,7 +1819,8 @@ class DeconflictionPipeline(GridAPPSD):
     # controls whether rules stage deconfliction is done as the first stage
     # using the ConflictMatrix or deferred until the last stage before device
     # dispatch using the ResolutionVector
-    self.rulesStageFirstFlag = True
+    #self.rulesStageFirstFlag = True
+    self.rulesStageFirstFlag = False
 
     # for SHIVA conflict metric testing
     #self.TimeConflictMatrix = {}
