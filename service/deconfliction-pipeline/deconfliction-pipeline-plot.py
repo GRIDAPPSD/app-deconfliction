@@ -725,7 +725,8 @@ class DeconflictionPipeline(GridAPPSD):
     #rollingTimeInterval = 60 # for short simulations, every minute
     #rollingTimeInterval = 60*30 # for long simulations, every 30 minutes
     rollingTimeInterval = 60*15 # for long simulations, every 15 minutes
-    rollingStepsAllowed = 8 # picked to trigger the rule a reasonable # of times
+    #rollingStepsAllowed = 8 # picked to trigger the rule a reasonable # of times
+    rollingStepsAllowed = 4 # picked to trigger the rule a reasonable # of times
 
     # set max/min allowable tap positions based on current position
     for devid in self.Regulators:
@@ -852,7 +853,8 @@ class DeconflictionPipeline(GridAPPSD):
     #rollingTimeInterval = 60 # for short simulations, every minute
     #rollingTimeInterval = 60*30 # for long simulations, every 30 minutes
     rollingTimeInterval = 60*15 # for long simulations, every 15 minutes
-    rollingStepsAllowed = 8 # picked to trigger the rule a reasonable # of times
+    #rollingStepsAllowed = 8 # picked to trigger the rule a reasonable # of times
+    rollingStepsAllowed = 4 # picked to trigger the rule a reasonable # of times
 
     # set max/min allowable tap positions based on current position
     for devid in self.Regulators:
