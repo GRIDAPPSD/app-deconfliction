@@ -786,11 +786,13 @@ class DeconflictionPipeline(GridAPPSD):
       if printAllRulesFlag:
         print('RulesForRegulatorsConflict--device: ' +
               MethodUtil.DeviceToName[devid] +
+              ', current tap pos: ' + str(self.Regulators[devid]['step']) +
               ', min tap pos: ' + str(self.Regulators[devid]['minStep']) +
               ', max tap pos: ' + str(self.Regulators[devid]['maxStep']))
       if MethodUtil.DeviceToName[devid] == 'RatioTapChanger.reg4b':
         print('REG4B RulesForRegulatorsConflict--device: ' +
               MethodUtil.DeviceToName[devid] +
+              ', current tap pos: ' + str(self.Regulators[devid]['step']) +
               ', min tap pos: ' + str(self.Regulators[devid]['minStep']) +
               ', max tap pos: ' + str(self.Regulators[devid]['maxStep']))
 
@@ -860,9 +862,12 @@ class DeconflictionPipeline(GridAPPSD):
     for devid in self.Regulators:
       devname = MethodUtil.DeviceToName[devid]
       histList = self.RegulatorHistory[devid]
-      #if devname == 'RatioTapChanger.reg4b':
       if printAllRulesFlag:
         print('RulesForRegulatorsResolution--device: ' +
+              MethodUtil.DeviceToName[devid] +
+              ', RegulatorHistory: ' + str(histList))
+      if MethodUtil.DeviceToName[devid] == 'RatioTapChanger.reg4b':
+        print('REG4B RulesForRegulatorsResolution--device: ' +
               MethodUtil.DeviceToName[devid] +
               ', RegulatorHistory: ' + str(histList))
 
@@ -900,9 +905,14 @@ class DeconflictionPipeline(GridAPPSD):
                 ', history step: ' + str(hist[1]) + ', rollingStepCount: ' + str(rollingStepCount))
 
       rollingTapBudget = max(0, rollingStepsAllowed - rollingStepCount)
-      #if devname == 'RatioTapChanger.reg4b':
       if printAllRulesFlag:
         print('RulesForRegulatorsResolution--device: ' +
+              MethodUtil.DeviceToName[devid] +
+              ', rolling steps: ' + str(rollingStepCount) +
+              ', vs. allowed: ' + str(rollingStepsAllowed) +
+              ', rolling budget: ' + str(rollingTapBudget))
+      if MethodUtil.DeviceToName[devid] == 'RatioTapChanger.reg4b':
+        print('REG4B RulesForRegulatorsResolution--device: ' +
               MethodUtil.DeviceToName[devid] +
               ', rolling steps: ' + str(rollingStepCount) +
               ', vs. allowed: ' + str(rollingStepsAllowed) +
@@ -924,9 +934,15 @@ class DeconflictionPipeline(GridAPPSD):
                                               tapBudget, 16)
       self.Regulators[devid]['minStep'] = max(self.Regulators[devid]['step'] - \
                                               tapBudget, -16)
-      #if devname == 'RatioTapChanger.reg4b':
+
       if printAllRulesFlag:
         print('RulesForRegulatorsResolution--device: ' +
+              MethodUtil.DeviceToName[devid] +
+              ', current tap pos: ' + str(self.Regulators[devid]['step']) +
+              ', min tap pos: ' + str(self.Regulators[devid]['minStep']) +
+              ', max tap pos: ' + str(self.Regulators[devid]['maxStep']))
+      if MethodUtil.DeviceToName[devid] == 'RatioTapChanger.reg4b':
+        print('REG4B RulesForRegulatorsResolution--device: ' +
               MethodUtil.DeviceToName[devid] +
               ', current tap pos: ' + str(self.Regulators[devid]['step']) +
               ', min tap pos: ' + str(self.Regulators[devid]['minStep']) +
@@ -937,37 +953,47 @@ class DeconflictionPipeline(GridAPPSD):
     for device in newResolutionVector:
       name = MethodUtil.DeviceToName[device]
       if name.startswith('RatioTapChanger.'):
-        if newResolutionVector[device][1] > \
-           self.Regulators[device]['maxStep']:
-          #if name == 'RatioTapChanger.reg4b':
-          if True:
-            print('RulesForRegulatorsResolution--device: ' + name +
-                  ', tap pos setpoint above max allowable asset health pos: ' +
-                  str(newResolutionVector[device][1]))
+        if newResolutionVector[device][1] > self.Regulators[device]['maxStep']:
+          print('RulesForRegulatorsResolution--device: ' + name +
+                ', tap pos setpoint: ' +
+                str(newResolutionVector[device][1]) +
+                ', above max allowable asset health pos, reset to: ' +
+                str(self.Regulators[device]['maxStep']))
+          if name == 'RatioTapChanger.reg4b':
+            print('REG4B RulesForRegulatorsResolution--device: ' + name +
+                  ', tap pos setpoint: ' +
+                  str(newResolutionVector[device][1]) +
+                  ', above max allowable asset health pos, reset to: ' +
+                  str(self.Regulators[device]['maxStep']))
           newResolutionVector[device] = \
                              (newResolutionVector[device][0],
                               self.Regulators[device]['maxStep'])
-          #if devname == 'RatioTapChanger.reg4b':
-          if True:
-            print('RulesForRegulatorsResolution--device: ' + name +
-                  ', tap pos setpoint reset to max allowable asset health pos: ' +
-                  str(newResolutionVector[device][1]))
 
         elif newResolutionVector[device][1] < \
              self.Regulators[device]['minStep']:
-          #if name == 'RatioTapChanger.reg4b':
-          if True:
-            print('RulesForRegulatorsResolution--device: ' + name +
-                  ', tap pos setpoint below min allowable asset health pos: ' +
-                  str(newResolutionVector[device][1]))
+          print('RulesForRegulatorsResolution--device: ' + name +
+                ', tap pos setpoint: ' +
+                str(newResolutionVector[device][1]) +
+                ', below min allowable asset health pos, reset to: ' +
+                str(self.Regulators[device]['minStep']))
+          if name == 'RatioTapChanger.reg4b':
+            print('REG4B RulesForRegulatorsResolution--device: ' + name +
+                  ', tap pos setpoint: ' +
+                  str(newResolutionVector[device][1]) +
+                  ', below min allowable asset health pos, reset to: ' +
+                  str(self.Regulators[device]['minStep']))
           newResolutionVector[device] = \
                              (newResolutionVector[device][0],
                               self.Regulators[device]['minStep'])
-          #if name == 'RatioTapChanger.reg4b':
-          if True:
-            print('RulesForRegulatorsResolution--device: ' + name +
-                  ', tap pos setpoint reset to min allowable asset health pos: ' +
-                  str(newResolutionVector[device][1]))
+
+        else:
+          if name == 'RatioTapChanger.reg4b':
+            print('REG4B RulesForRegulatorsResolution--device: ' + name +
+                  ', tap pos setpoint: ' +
+                  str(newResolutionVector[device][1]) +
+                  ', in range of min: ' +
+                  str(self.Regulators[device]['minStep']) + ', max: ' +
+                  str(self.Regulators[device]['maxStep']))
 
 
   def Optimization(self, app_name, timestamp, ConflictMatrix):
