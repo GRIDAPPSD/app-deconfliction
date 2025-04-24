@@ -1220,6 +1220,16 @@ class DeconflictionPipeline(GridAPPSD):
                   self.BatteriesInfo[devid]['name'] +
                   ', history: ' + str(self.BatteryHistory[devid]))
 
+        # I think for BatteryHistory there is no need to get a starting point
+        # like there is for regulators since we are just tracking changes from
+        # charge to discharge and vice versa and not all changes
+        #elif len(self.BatteryHistory[devid]) == 0:
+        #  self.BatteryHistory[devid].append((message['timestamp'],
+        #                                     meas_P_batt_inv))
+        #  print('ProcessSimulationMessage--BatteryHistory initialize, device: '+
+        #        self.BatteriesInfo[devid]['name'] +
+        #        ', history: ' + str(self.BatteryHistory[devid]))
+
         self.BatteriesInfo[devid]['P_batt_inv'] = meas_P_batt_inv
         MethodUtil.BatteryP_batt_inv[devid] = meas_P_batt_inv
         if printAllMessagesFlag:
