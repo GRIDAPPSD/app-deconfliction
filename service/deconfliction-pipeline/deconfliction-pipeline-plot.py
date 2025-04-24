@@ -1087,11 +1087,22 @@ class DeconflictionPipeline(GridAPPSD):
                   str(value[1]) + ', old value: ' +
                   str(self.Regulators[devid]['step']))
 
+          if name == 'RatioTapChanger.reg4b':
+            print('REG4B DeviceDispatcher--regulator device: ' + name +
+                  ', timestamp: ' + str(timestamp) + ', new value: ' +
+                  str(value[1]) + ', old value: ' +
+                  str(self.Regulators[devid]['step']))
+
           if self.testDeviceName and name==self.testDeviceName:
               print('~TEST: Dispatching to regulator id: ' + devid +
                     ', device: ' + name + ', timestamp: ' + str(timetstamp) +
                     ', new value: ' + str(value[1]) + ', old value: ' +
                     str(self.Regulators[devid]['step']))
+
+        elif name == 'RatioTapChanger.reg4b':
+          print('REG4B DeviceDispatcher--DISPATCH NOT needed, regulator ' +
+                'device: ' + name + ', timestamp: ' + str(timestamp) +
+                ', same value: ' + str(value[1]))
 
         elif printAllDispatchesFlag:
           print('DeviceDispatcher--DISPATCH NOT needed, regulator device: ' +
@@ -1249,6 +1260,11 @@ class DeconflictionPipeline(GridAPPSD):
                   str(message['timestamp']) + ', device: ' +
                   self.Regulators[devid]['name'] + ', tap position: ' +
                   str(self.Regulators[devid]['step']))
+
+        elif len(self.RegulatorHistory[devid]) == 0:
+          # need to get a starting history data point at the current timestamp
+          self.RegulatorHistory[devid].append((message['timestamp'],
+                                               self.Regulators[devid]['step']))
 
         self.plt_file.write(',')
         self.plt_file.write(self.Regulators[devid]['name'])
