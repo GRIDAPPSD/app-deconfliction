@@ -1281,6 +1281,15 @@ class DeconflictionPipeline(GridAPPSD):
         self.plt_file.write(',')
         self.plt_file.write(str(self.Regulators[devid]['step']))
 
+    # for the app scalability task
+    for bus in self.SolarPVsInfo:
+      measid = self.SolarPVsInfo[bus]['measid']
+      if measid in measurements:
+        self.plt_file.write(',')
+        self.plt_file.write(self.SolarPVsInfo[bus]['name'])
+        self.plt_file.write(',')
+        self.plt_file.write(str(measurements[measid]['value']))
+
     self.plt_file.write('\n')
     self.plt_file.flush()
 
@@ -1821,6 +1830,10 @@ class DeconflictionPipeline(GridAPPSD):
     self.RegulatorHistory = {}
     for devid in self.Regulators:
       self.RegulatorHistory[devid] = []
+
+    # for the app scalability task
+    self.SolarPVsInfo, self.SolarPVsIdx = \
+                       AppUtil.getSolarPVs(MethodUtil.sparql_mgr)
 
     # deltaT is time between timesteps as fractional hours
     # optimization interval seconds is the number of simulation seconds

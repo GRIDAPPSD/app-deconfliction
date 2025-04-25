@@ -781,6 +781,17 @@ class CompetingApp(GridAPPSD):
       q_pv_setpoints = []
       for bus in self.SolarPVsInfo:
         idx = self.SolarPVsIdx[bus]
+        mrid = self.SolarPVsInfo[bus]['mrid']
+
+        total_p = self.p_pv_A[idx].value + self.p_pv_B[idx].value + \
+                  self.p_pv_C[idx].value
+        self.difference_builder.add_difference(mrid,
+             'PowerElectronicsConnection.p', total_p, None)
+        total_q = self.q_pv_A[idx].value + self.q_pv_B[idx].value + \
+                  self.q_pv_C[idx].value
+        self.difference_builder.add_difference(mrid,
+             'PowerElectronicsConnection.q', total_q, None)
+
         p_pv_setpoints.append([bus, self.p_pv_A[idx].value/1000,
                                     self.p_pv_B[idx].value/1000,
                                     self.p_pv_C[idx].value/1000])
