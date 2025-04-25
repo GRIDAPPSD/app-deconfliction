@@ -1289,10 +1289,15 @@ class DeconflictionPipeline(GridAPPSD):
     for bus in self.SolarPVsInfo:
       measid = self.SolarPVsInfo[bus]['measid']
       if measid in measurements:
+        p, q = self.pol2cart(measurements[measid]['magnitude'],
+                             measurements[measid]['angle'])
+
         self.plt_file.write(',')
         self.plt_file.write(self.SolarPVsInfo[bus]['name'])
         self.plt_file.write(',')
-        self.plt_file.write(str(measurements[measid]['value']))
+        self.plt_file.write(str(p))
+        self.plt_file.write(',')
+        self.plt_file.write(str(q))
 
     self.plt_file.write('\n')
     self.plt_file.flush()
