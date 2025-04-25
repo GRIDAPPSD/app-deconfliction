@@ -14,7 +14,7 @@
     "orig_start_time": "1704207000",
     "shiva_orig_start_time": "1744196455",
     "shiva_new_start_time": "1744196457",
-    "duration": "120",
+    "duration": "1000",
     "hour_duration": "3600",
     "simulator": "GridLAB-D",
     "timestep_frequency": 1000,
