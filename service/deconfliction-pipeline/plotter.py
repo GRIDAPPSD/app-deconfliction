@@ -188,7 +188,7 @@ def _main():
             dev = tokens[it]
             if dev.startswith('BatteryUnit.'):
               p_batt_plot[dev].append(float(tokens[it+1]))
-            else:
+            elif dev.startswith('RatioTapChanger.'):
               reg_plot[dev].append(int(tokens[it+1]))
 
     print(app_list[iapp] + ' hits: ' + str(hits))
