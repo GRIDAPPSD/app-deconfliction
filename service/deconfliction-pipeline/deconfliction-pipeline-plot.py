@@ -745,8 +745,8 @@ class DeconflictionPipeline(GridAPPSD):
       rollingStartTime = self.Regulators[devid]['timestamp'] - \
                          rollingTimeInterval
       previousStep = self.Regulators[devid]['step']
-      if 'theoryStep' in self.Regulators[devid]:
-        previousStep = self.Regulators[devid]['theoryStep']
+      #if 'theoryStep' in self.Regulators[devid]:
+      #  previousStep = self.Regulators[devid]['theoryStep']
       for hist in reversed(histList):
         if hist[0] < rollingStartTime:
           break
@@ -876,8 +876,8 @@ class DeconflictionPipeline(GridAPPSD):
       rollingStartTime = self.Regulators[devid]['timestamp'] - \
                          rollingTimeInterval
       previousStep = self.Regulators[devid]['step']
-      if 'theoryStep' in self.Regulators[devid]:
-        previousStep = self.Regulators[devid]['theoryStep']
+      #if 'theoryStep' in self.Regulators[devid]:
+      #  previousStep = self.Regulators[devid]['theoryStep']
       #if devname == 'RatioTapChanger.reg4b':
       if False:
         print('RulesForRegulatorsResolution--device: ' +
@@ -1076,7 +1076,7 @@ class DeconflictionPipeline(GridAPPSD):
         # current tap position
         if value[1] != self.Regulators[devid]['step']:
           # new value before old value for DifferenceBuilder
-          self.Regulators[devid]['theoryStep'] = value[1]
+          #self.Regulators[devid]['theoryStep'] = value[1]
           self.difference_builder.add_difference(devid,
                    'TapChanger.step', value[1], self.Regulators[devid]['step'])
           diffCount += 1
@@ -1137,6 +1137,8 @@ class DeconflictionPipeline(GridAPPSD):
       self.gapps.send(self.publish_topic, json.dumps(dispatch_message))
       self.difference_builder.clear()
 
+      self.simMeasCounter = 0
+
     return diffCount
 
 
@@ -1177,6 +1179,8 @@ class DeconflictionPipeline(GridAPPSD):
 
     if not printAllMessagesFlag:
       print('ProcessSimulationMessage--timestamp: ' + str(message['timestamp']))
+
+    self.simMeasCounter += 1
 
     measurements = message['measurements']
     for devid in self.BatteriesInfo:
@@ -1439,7 +1443,7 @@ class DeconflictionPipeline(GridAPPSD):
     self.SetpointProcessor(app_name, timestamp, set_points, meas_msg_flag,
                            printAllConflictsResolutionsFlag)
 
-    if self.bypassDeconflictionFlag:
+    if self.bypassDeconflictionFlag or self.simMeasCounter<2:
       # App code modified to also send message to the simulation so nothing
       # left to do here to bypass deconfliction other than stop processing
       return
@@ -1526,8 +1530,8 @@ class DeconflictionPipeline(GridAPPSD):
       #   Step 5--Device Dispatcher
       dispatchCount = self.DeviceDispatcher(timestamp, newResolutionVector,
                                             self.printAllDispatchesFlag)
-      print('>>> ProcessSetpointsMessage--invoked device dispatch, # devices ' +
-            'dispatched: ' +str(dispatchCount))
+      print('>>> ProcessSetpointsMessage--invoked device dispatch, # ' +
+            'devices dispatched: ' +str(dispatchCount))
 
       # update the current resolution to the new resolution to be ready for the
       # next dispatch
@@ -1745,8 +1749,8 @@ class DeconflictionPipeline(GridAPPSD):
     #   Step 5--Device Dispatcher
     dispatchCount = self.DeviceDispatcher(timestamp, newResolutionVector,
                                           self.printAllDispatchesFlag)
-    print('>>> ProcessSetpointsMessage--invoked device dispatch, # devices ' +
-          'dispatched: ' +str(dispatchCount))
+    print('>>> ProcessSetpointsMessage--invoked device dispatch, # ' +
+          'devices dispatched: ' +str(dispatchCount))
 
     # update the current resolution to the new resolution to be ready for the
     # next dispatch
@@ -1871,6 +1875,8 @@ class DeconflictionPipeline(GridAPPSD):
     # initialize counter used to uniquely identify cooperation messages
     self.coopPhaseCounter = 0
     self.coopCurrentPhase = None
+
+    self.simMeasCounter = 0
 
     # verbose logging control for various deconfliction pipeline aspects
     self.printAllMessagesFlag = False
