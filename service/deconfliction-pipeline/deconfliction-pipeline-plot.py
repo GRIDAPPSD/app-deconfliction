@@ -745,8 +745,6 @@ class DeconflictionPipeline(GridAPPSD):
       rollingStartTime = self.Regulators[devid]['timestamp'] - \
                          rollingTimeInterval
       previousStep = self.Regulators[devid]['step']
-      #if 'theoryStep' in self.Regulators[devid]:
-      #  previousStep = self.Regulators[devid]['theoryStep']
       for hist in reversed(histList):
         if hist[0] < rollingStartTime:
           break
@@ -876,8 +874,6 @@ class DeconflictionPipeline(GridAPPSD):
       rollingStartTime = self.Regulators[devid]['timestamp'] - \
                          rollingTimeInterval
       previousStep = self.Regulators[devid]['step']
-      #if 'theoryStep' in self.Regulators[devid]:
-      #  previousStep = self.Regulators[devid]['theoryStep']
       #if devname == 'RatioTapChanger.reg4b':
       if False:
         print('RulesForRegulatorsResolution--device: ' +
@@ -1076,7 +1072,6 @@ class DeconflictionPipeline(GridAPPSD):
         # current tap position
         if value[1] != self.Regulators[devid]['step']:
           # new value before old value for DifferenceBuilder
-          #self.Regulators[devid]['theoryStep'] = value[1]
           self.difference_builder.add_difference(devid,
                    'TapChanger.step', value[1], self.Regulators[devid]['step'])
           diffCount += 1
@@ -1448,6 +1443,11 @@ class DeconflictionPipeline(GridAPPSD):
     self.SetpointProcessor(app_name, timestamp, set_points, meas_msg_flag,
                            printAllConflictsResolutionsFlag)
 
+    # GDB 4/25/25: bypass deconfliction if there haven't been a couple
+    # measurement messages from the simulation since the most recent "device
+    # dispatch" of new setpoints. This keeps new setpoints from being
+    # dispatched before simulation measurements reflect the previously
+    # dispatched setpoints.
     if self.bypassDeconflictionFlag or self.simMeasCounter<2:
       # App code modified to also send message to the simulation so nothing
       # left to do here to bypass deconfliction other than stop processing
