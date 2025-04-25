@@ -136,8 +136,8 @@ def _main():
   prefix = 'sim'
 
   hits = 0
-  #with open('log/hour_plot_data.csv', 'r') as file:
-  with open('log/plot_data.csv', 'r') as file:
+  with open('log/hour_plot_data.csv', 'r') as file:
+  #with open('log/plot_data.csv', 'r') as file:
     for line in file:
       tokens = line.split(',')
       if tokens[0] == app:
@@ -175,8 +175,8 @@ def _main():
 
   for iapp in range(len(app_list)):
     hits = 0
-    #with open('log/hour_plot_data.csv', 'r') as file:
-    with open('log/plot_data.csv', 'r') as file:
+    with open('log/hour_plot_data.csv', 'r') as file:
+    #with open('log/plot_data.csv', 'r') as file:
       for line in file:
         tokens = line.split(',')
         if tokens[0] == app_list[iapp]:
