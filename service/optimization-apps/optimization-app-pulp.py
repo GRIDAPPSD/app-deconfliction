@@ -671,7 +671,7 @@ class CompetingApp(GridAPPSD):
     self.EnergyConsumers = AppUtil.getEnergyConsumers(sparql_mgr)
     #print('Starting EnergyConsumers: ' + json.dumps(self.EnergyConsumers, indent=2), flush=True)
 
-    self.SolarPVs = AppUtil.getSolarPVs(sparql_mgr)
+    self.SolarPVs, SolarPVsIdx = AppUtil.getSolarPVs(sparql_mgr)
     #print('Starting SolarPVs: ' + json.dumps(self.SolarPVs, indent=2), flush=True)
 
     self.BatteriesInfo, self.BatteriesIdx = AppUtil.getBatteries(sparql_mgr)
