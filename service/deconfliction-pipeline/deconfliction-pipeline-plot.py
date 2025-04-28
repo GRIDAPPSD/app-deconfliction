@@ -105,12 +105,13 @@ class DeconflictionPipeline(GridAPPSD):
         if app_name in self.ConflictMatrix[device]:
           self.ConflictMatrix[device].pop(app_name)
 
-      self.plt_file.write(app_name)
-      self.plt_file.write(',')
-      diff = (datetime.now() - self.plt_tzero).total_seconds()
-      self.plt_file.write(str(diff))
-      self.plt_file.write(',')
-      self.plt_file.write(str(timestamp))
+      if self.pltFlag:
+        self.pltFile.write(app_name)
+        self.pltFile.write(',')
+        diff = (datetime.now() - self.pltTZero).total_seconds()
+        self.pltFile.write(str(diff))
+        self.pltFile.write(',')
+        self.pltFile.write(str(timestamp))
 
     else:
       MinSetpoints = {}
@@ -168,15 +169,15 @@ class DeconflictionPipeline(GridAPPSD):
 
       self.ConflictMatrix[device][app_name] = (timestamp, value)
 
-      if meas_msg_flag:
-        self.plt_file.write(',')
-        self.plt_file.write(MethodUtil.DeviceToName[device])
-        self.plt_file.write(',')
-        self.plt_file.write(str(value))
+      if meas_msg_flag and self.pltFlag:
+        self.pltFile.write(',')
+        self.pltFile.write(MethodUtil.DeviceToName[device])
+        self.pltFile.write(',')
+        self.pltFile.write(str(value))
 
-    if meas_msg_flag:
-      self.plt_file.write('\n')
-      self.plt_file.flush()
+    if meas_msg_flag and self.pltFlag:
+      self.pltFile.write('\n')
+      self.pltFile.flush()
 
     if printAllConflictsResolutionsFlag:
       print('SetpointProcessor--ConflictMatrix: ' +str(self.ConflictMatrix))
@@ -1132,7 +1133,7 @@ class DeconflictionPipeline(GridAPPSD):
       self.gapps.send(self.publish_topic, json.dumps(dispatch_message))
       self.difference_builder.clear()
 
-      self.simMeasCounter = 0
+      self.simMessageCounter = 0
 
     return diffCount
 
@@ -1162,20 +1163,21 @@ class DeconflictionPipeline(GridAPPSD):
 
 
   def ProcessSimulationMessage(self, message, printAllMessagesFlag=False):
-    self.plt_file.write('SIMULATION,')
-    if self.plt_tzero == None:
-      self.plt_tzero = datetime.now()
-      diff = 0.0
-    else:
-      diff = (datetime.now() - self.plt_tzero).total_seconds()
-    self.plt_file.write(str(diff))
-    self.plt_file.write(',')
-    self.plt_file.write(str(message['timestamp']))
+    if self.pltFlag:
+      self.pltFile.write('SIMULATION,')
+      if self.pltTZero == None:
+        self.pltTZero = datetime.now()
+        diff = 0.0
+      else:
+        diff = (datetime.now() - self.pltTZero).total_seconds()
+      self.pltFile.write(str(diff))
+      self.pltFile.write(',')
+      self.pltFile.write(str(message['timestamp']))
 
     if not printAllMessagesFlag:
       print('ProcessSimulationMessage--timestamp: ' + str(message['timestamp']))
 
-    self.simMeasCounter += 1
+    self.simMessageCounter += 1
 
     measurements = message['measurements']
     for devid in self.BatteriesInfo:
@@ -1238,12 +1240,13 @@ class DeconflictionPipeline(GridAPPSD):
                 str(self.BatteriesInfo[devid]['P_batt_inv']) + ', SoC: ' +
                 str(self.BatteriesInfo[devid]['SoC']))
 
-        self.plt_file.write(',')
-        self.plt_file.write(self.BatteriesInfo[devid]['name'])
-        self.plt_file.write(',')
-        self.plt_file.write(str(self.BatteriesInfo[devid]['P_batt_inv']))
-        self.plt_file.write(',')
-        self.plt_file.write(str(self.BatteriesInfo[devid]['SoC']))
+        if self.pltFlag:
+          self.pltFile.write(',')
+          self.pltFile.write(self.BatteriesInfo[devid]['name'])
+          self.pltFile.write(',')
+          self.pltFile.write(str(self.BatteriesInfo[devid]['P_batt_inv']))
+          self.pltFile.write(',')
+          self.pltFile.write(str(self.BatteriesInfo[devid]['SoC']))
 
     for devid in self.Regulators:
       measid = self.Regulators[devid]['measid']
@@ -1275,10 +1278,11 @@ class DeconflictionPipeline(GridAPPSD):
           self.RegulatorHistory[devid].append((message['timestamp'],
                                                self.Regulators[devid]['step']))
 
-        self.plt_file.write(',')
-        self.plt_file.write(self.Regulators[devid]['name'])
-        self.plt_file.write(',')
-        self.plt_file.write(str(self.Regulators[devid]['step']))
+        if self.pltFlag:
+          self.pltFile.write(',')
+          self.pltFile.write(self.Regulators[devid]['name'])
+          self.pltFile.write(',')
+          self.pltFile.write(str(self.Regulators[devid]['step']))
 
     # for the app scalability task
     for bus in self.SolarPVsInfo:
@@ -1287,15 +1291,17 @@ class DeconflictionPipeline(GridAPPSD):
         p, q = self.pol2cart(measurements[measid]['magnitude'],
                              measurements[measid]['angle'])
 
-        self.plt_file.write(',')
-        self.plt_file.write(self.SolarPVsInfo[bus]['name'])
-        self.plt_file.write(',')
-        self.plt_file.write(str(p))
-        self.plt_file.write(',')
-        self.plt_file.write(str(q))
+        if self.pltFlag:
+          self.pltFile.write(',')
+          self.pltFile.write(self.SolarPVsInfo[bus]['name'])
+          self.pltFile.write(',')
+          self.pltFile.write(str(p))
+          self.pltFile.write(',')
+          self.pltFile.write(str(q))
 
-    self.plt_file.write('\n')
-    self.plt_file.flush()
+    if self.pltFlag:
+      self.pltFile.write('\n')
+      self.pltFile.flush()
 
     if self.testDeviceName:
       devid = MethodUtil.NametoDevice[self.testDeviceName]
@@ -1448,7 +1454,7 @@ class DeconflictionPipeline(GridAPPSD):
     # dispatch" of new setpoints. This keeps new setpoints from being
     # dispatched before simulation measurements reflect the previously
     # dispatched setpoints.
-    if self.bypassDeconflictionFlag or self.simMeasCounter<2:
+    if self.bypassDeconflictionFlag or self.simMessageCounter<2:
       # App code modified to also send message to the simulation so nothing
       # left to do here to bypass deconfliction other than stop processing
       return
@@ -1731,24 +1737,25 @@ class DeconflictionPipeline(GridAPPSD):
     self.SetpointValidatorForRegulators(newResolutionVector,
                                         self.printAllValidatorFlag)
 
-    self.plt_file.write('conflict_metric,')
-    diff = (datetime.now() - self.plt_tzero).total_seconds()
-    self.plt_file.write(str(diff))
-    self.plt_file.write(',')
-    self.plt_file.write(str(timestamp))
-    self.plt_file.write(',')
-    self.plt_file.write(str(self.startConflictMetric))
-    self.plt_file.write(',')
-    if self.rulesStageFirstFlag:
-      self.plt_file.write(str(self.rulesConflictMetric))
-      self.plt_file.write(',')
-    self.plt_file.write(str(self.conflictMetric))
-    self.plt_file.write(',')
-    if not self.rulesStageFirstFlag:
-      self.plt_file.write(str(self.rulesConflictMetric))
-      self.plt_file.write(',')
-    self.plt_file.write(str(self.coopResponseCounter))
-    self.plt_file.write('\n')
+    if self.pltFlag:
+      self.pltFile.write('conflict_metric,')
+      diff = (datetime.now() - self.pltTZero).total_seconds()
+      self.pltFile.write(str(diff))
+      self.pltFile.write(',')
+      self.pltFile.write(str(timestamp))
+      self.pltFile.write(',')
+      self.pltFile.write(str(self.startConflictMetric))
+      self.pltFile.write(',')
+      if self.rulesStageFirstFlag:
+        self.pltFile.write(str(self.rulesConflictMetric))
+        self.pltFile.write(',')
+      self.pltFile.write(str(self.conflictMetric))
+      self.pltFile.write(',')
+      if not self.rulesStageFirstFlag:
+        self.pltFile.write(str(self.rulesConflictMetric))
+        self.pltFile.write(',')
+      self.pltFile.write(str(self.coopResponseCounter))
+      self.pltFile.write('\n')
 
     # Published IEEE Access Foundational Paper Reference:
     #   Step 5--Device Dispatcher
@@ -1881,7 +1888,7 @@ class DeconflictionPipeline(GridAPPSD):
     self.coopPhaseCounter = 0
     self.coopCurrentPhase = None
 
-    self.simMeasCounter = 0
+    self.simMessageCounter = 0
 
     # verbose logging control for various deconfliction pipeline aspects
     self.printAllMessagesFlag = False
@@ -1939,8 +1946,11 @@ class DeconflictionPipeline(GridAPPSD):
       print('\nInitialization--no file-based optimization weighting factors ' +
             'applied')
 
-    self.plt_file = open('log/plot_data.csv', 'w')
-    self.plt_tzero = None
+    self.pltFlag = True
+    if self.pltFlag:
+      self.pltFile = open('log/plot_data.csv', 'w')
+      self.pltTZero = None
+
     self.bypassDeconflictionFlag = False
 
     print('\nInitialization--finished, waiting for messages...\n')
@@ -1972,7 +1982,8 @@ class DeconflictionPipeline(GridAPPSD):
         self.ProcessSetpointsMessage(message, app_name, meas_msg_flag,
                              coop_phase, self.printAllConflictsResolutionsFlag)
 
-    self.plt_file.close()
+    if self.pltFlag:
+      self.pltFile.close()
 
     for id in set_id:
       gapps.unsubscribe(set_id[id])
