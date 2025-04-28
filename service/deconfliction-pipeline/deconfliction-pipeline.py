@@ -583,6 +583,19 @@ class DeconflictionPipeline(GridAPPSD):
                 '--tap pos setpoint reset to max feasible pos: '+
                 str(newResolutionVector[device][1]))
 
+          # enforce the tap budget rule
+          if 'maxStep' in self.Regulators[device]:
+            if newResolutionVector[device][1] > \
+               self.Regulators[devid]['maxStep']:
+              print('SetpointValidatorForRegulators--device: ' + name +
+                    '--tap pos setpoint above max rules pos: ' +
+                    str(newResolutionVector[device][1]))
+              newResolutionVector[device] = (newResolutionVector[device][0],
+                                             self.Regulators[devid]['maxStep'])
+              print('SetpointValidatorForRegulators--device: ' + name +
+                    '--tap pos setpoint reset to max rules pos: '+
+                    str(self.Regulators[devid]['maxStep']))
+
         elif newResolutionVector[device][1] < -16:
           print('SetpointValidatorForRegulators--device: ' + name +
                 '--tap pos setpoint below min feasible pos: ' +
@@ -591,6 +604,19 @@ class DeconflictionPipeline(GridAPPSD):
           print('SetpointValidatorForRegulators--device: ' + name +
                 '--tap pos setpoint reset to min feasible pos: '+
                 str(newResolutionVector[device][1]))
+
+          # enforce the tap budget rule
+          if 'minStep' in self.Regulators[device]:
+            if newResolutionVector[device][1] < \
+               self.Regulators[devid]['minStep']:
+              print('SetpointValidatorForRegulators--device: ' + name +
+                    '--tap pos setpoint above min rules pos: ' +
+                    str(newResolutionVector[device][1]))
+              newResolutionVector[device] = (newResolutionVector[device][0],
+                                             self.Regulators[devid]['minStep'])
+              print('SetpointValidatorForRegulators--device: ' + name +
+                    '--tap pos setpoint reset to min rules pos: '+
+                    str(self.Regulators[devid]['minStep']))
 
 
   def RulesForBatteriesConflict(self, printAllRulesFlag=False):
@@ -745,12 +771,10 @@ class DeconflictionPipeline(GridAPPSD):
       rollingStepCount = 0
       rollingStartTime = self.Regulators[devid]['timestamp'] - \
                          rollingTimeInterval
-      previousStep = self.Regulators[devid]['step']
-      for hist in reversed(histList):
-        if hist[0] < rollingStartTime:
+      for it in range(len(histList)-1, 0, -1):
+        if histList[it][0] < rollingStartTime:
           break
-        rollingStepCount += abs(previousStep - hist[1])
-        previousStep = hist[1]
+        rollingStepCount += abs(histList[it][1] - histList[it-1][1])
 
       rollingTapBudget = max(0, rollingStepsAllowed - rollingStepCount)
       if printAllRulesFlag:
@@ -865,7 +889,7 @@ class DeconflictionPipeline(GridAPPSD):
         print('RulesForRegulatorsResolution--device: ' +
               MethodUtil.DeviceToName[devid] +
               ', RegulatorHistory: ' + str(histList))
-      if MethodUtil.DeviceToName[devid] == 'RatioTapChanger.reg4b':
+      if devname == 'RatioTapChanger.reg4b':
         print('REG4B RulesForRegulatorsResolution--device: ' +
               MethodUtil.DeviceToName[devid] +
               ', RegulatorHistory: ' + str(histList))
@@ -874,32 +898,30 @@ class DeconflictionPipeline(GridAPPSD):
       rollingStepCount = 0
       rollingStartTime = self.Regulators[devid]['timestamp'] - \
                          rollingTimeInterval
-      previousStep = self.Regulators[devid]['step']
-      #if devname == 'RatioTapChanger.reg4b':
-      if False:
-        print('RulesForRegulatorsResolution--device: ' +
+      if devname == 'RatioTapChanger.reg4b':
+      #if False:
+        print('REG4B RulesForRegulatorsResolution--device: ' +
               MethodUtil.DeviceToName[devid] +
               ', current device timestamp: ' + str(self.Regulators[devid]['timestamp']) + ', rollingStartTime: ' + str(rollingStartTime))
-      for hist in reversed(histList):
-        #if devname == 'RatioTapChanger.reg4b':
-        if False:
-          print('RulesForRegulatorsResolution--device: ' +
+      for it in range(len(histList)-1, 0, -1):
+        if devname == 'RatioTapChanger.reg4b':
+        #if False:
+          print('REG4B RulesForRegulatorsResolution--device: ' +
                 MethodUtil.DeviceToName[devid] +
-                ', checking history timestamp: ' + str(hist[0]))
-        if hist[0] < rollingStartTime:
-          #if devname == 'RatioTapChanger.reg4b':
-          if False:
-            print('RulesForRegulatorsResolution--device: ' +
+                ', checking history timestamp: ' + str(histList[it][0]))
+        if histList[it][0] < rollingStartTime:
+          if devname == 'RatioTapChanger.reg4b':
+          #if False:
+            print('REG4B RulesForRegulatorsResolution--device: ' +
                   MethodUtil.DeviceToName[devid] +
                   ', BREAK due to history timestamp before rollingStartTime')
           break
-        rollingStepCount += abs(previousStep - hist[1])
-        previousStep = hist[1]
-        #if devname == 'RatioTapChanger.reg4b':
-        if False:
-          print('RulesForRegulatorsResolution--device: ' +
+        rollingStepCount += abs(histList[it][1] - histList[it-1][1])
+        if devname == 'RatioTapChanger.reg4b':
+        #if False:
+          print('REG4B RulesForRegulatorsResolution--device: ' +
                 MethodUtil.DeviceToName[devid] +
-                ', history step: ' + str(hist[1]) + ', rollingStepCount: ' + str(rollingStepCount))
+                ', history step: ' + str(histList[it][1]) + ', rollingStepCount: ' + str(rollingStepCount))
 
       rollingTapBudget = max(0, rollingStepsAllowed - rollingStepCount)
       if printAllRulesFlag:
@@ -1366,7 +1388,7 @@ class DeconflictionPipeline(GridAPPSD):
             str(self.coopCurrentPhase))
       print('ProcessSetpointsMessage--finished processing, timestamp: ' +
             str(timestamp) + ', app: ' + app_name)
-      return
+      return False
 
     if meas_msg_flag and self.coopCurrentPhase!=None:
       if self.coopTimestamp == timestamp:
@@ -1449,15 +1471,12 @@ class DeconflictionPipeline(GridAPPSD):
     self.SetpointProcessor(app_name, timestamp, set_points, meas_msg_flag,
                            printAllConflictsResolutionsFlag)
 
-    # GDB 4/25/25: bypass deconfliction if there haven't been a couple
-    # measurement messages from the simulation since the most recent "device
-    # dispatch" of new setpoints. This keeps new setpoints from being
-    # dispatched before simulation measurements reflect the previously
-    # dispatched setpoints.
-    if self.bypassDeconflictionFlag or self.simMessageCounter<2:
-      # App code modified to also send message to the simulation so nothing
-      # left to do here to bypass deconfliction other than stop processing
-      return
+    return True
+
+
+  def DeconflictSetpoints(self, message, app_name, meas_msg_flag,
+                          printAllConflictsResolutionsFlag):
+    timestamp = message['timestamp']
 
     if meas_msg_flag:
       self.startConflictMetric = self.ConflictMetricComputation(timestamp)
@@ -1476,7 +1495,7 @@ class DeconflictionPipeline(GridAPPSD):
       #   Step 3.2--Deconfliction Solution
       # RULES & HEURISTICS stage deconfliction done first
       if self.rulesStageFirstFlag:
-        print('ProcessSetpointsMessage--applying initial RULES & HEURISTICS ' +
+        print('DeconflictSetpoints--applying initial RULES & HEURISTICS ' +
               'stage deconfliction')
         self.RulesForBatteriesConflict(self.printAllRulesFlag)
         self.RulesForRegulatorsConflict(self.printAllRulesFlag)
@@ -1487,11 +1506,16 @@ class DeconflictionPipeline(GridAPPSD):
     #   Step 3--Deconflictor
     # Published IEEE Access Foundational Paper Reference:
     #   Step 3.1--Conflict Identification
-    print('ProcessSetpointsMessage--invoking conflict identification')
+
+    # set_points are the forward_differences part of the DifferenceBuilder
+    # message with keys of object, attribute, and value
+    set_points = message['forward_differences']
+
+    print('DeconflictSetpoints--invoking conflict identification')
     conflictFlag = self.ConflictIdentification(app_name, timestamp, set_points)
 
     if not conflictFlag:
-      print('>>> ProcessSetpointsMessage--conflict NOT found in conflict ' +
+      print('>>> DeconflictSetpoints--conflict NOT found in conflict ' +
             'matrix')
       # zero conflict metric since by definition there is none
       self.conflictMetric = 0.0
@@ -1507,7 +1531,7 @@ class DeconflictionPipeline(GridAPPSD):
       #   Step 3.2--Deconfliction Solution
       # RULES & HEURISTICS stage deconfliction done last
       if not self.rulesStageFirstFlag:
-        print('ProcessSetpointsMessage--applying final RULES & HEURISTICS ' +
+        print('DeconflictSetpoints--applying final RULES & HEURISTICS ' +
               'stage deconfliction')
         self.RulesForBatteriesResolution(newResolutionVector,
                                          self.printAllRulesFlag)
@@ -1515,7 +1539,7 @@ class DeconflictionPipeline(GridAPPSD):
                                           self.printAllRulesFlag)
 
       if printAllConflictsResolutionsFlag:
-        print('ProcessSetpointsMessage--ResolutionVector (no conflict): ' +
+        print('DeconflictSetpoints--ResolutionVector (no conflict): ' +
               str(newResolutionVector))
 
       if self.testDeviceName:
@@ -1541,7 +1565,7 @@ class DeconflictionPipeline(GridAPPSD):
       #   Step 5--Device Dispatcher
       dispatchCount = self.DeviceDispatcher(timestamp, newResolutionVector,
                                             self.printAllDispatchesFlag)
-      print('>>> ProcessSetpointsMessage--invoked device dispatch, # ' +
+      print('>>> DeconflictSetpoints--invoked device dispatch, # ' +
             'devices dispatched: ' +str(dispatchCount))
 
       # update the current resolution to the new resolution to be ready for the
@@ -1556,17 +1580,17 @@ class DeconflictionPipeline(GridAPPSD):
       self.minConflictMetric = 1.0
       # reset running counts for cooperation messages
       self.AppCoopCount.clear()
-      print('ProcessSetpointsMessage--finished processing, timestamp: ' +
+      print('DeconflictSetpoints--finished processing, timestamp: ' +
             str(timestamp) + ', app: ' + app_name)
       return
 
     # conflict identified logic
-    print('ProcessSetpointsMessage--conflict YES found in conflict matrix')
+    print('DeconflictSetpoints--conflict YES found in conflict matrix')
     if meas_msg_flag:
       # Published IEEE Access Foundational Paper Reference:
       #   Step 3.2--Deconfliction Solution
       # COOPERATION stage deconfliction
-      print('ProcessSetpointsMessage--applying COOPERATION stage ' +
+      print('DeconflictSetpoints--applying COOPERATION stage ' +
             'deconfliction for meas message')
 
       # compute conflict metric for later comparison during later cooperation
@@ -1595,17 +1619,17 @@ class DeconflictionPipeline(GridAPPSD):
       coopMessage = {'cooperationPhase': self.coopCurrentPhase,
                      'targetResolutionVector': self.TargetResolutionVector}
       self.gapps.send(self.coop_topic, json.dumps(coopMessage))
-      print('>>> ProcessSetpointsMessage--kicked off new cooperation phase, ' +
+      print('>>> DeconflictSetpoints--kicked off new cooperation phase, ' +
             'updated current phase: ' + self.coopCurrentPhase)
 
       # set the cooperation timestamp to indicate when cooperation was initiated
       self.coopTimestamp = timestamp
-      print('ProcessSetpointsMessage--finished processing, timestamp: ' +
+      print('DeconflictSetpoints--finished processing, timestamp: ' +
             str(timestamp) + ', app: ' + app_name)
       return
 
     # coop message with conflict to get here
-    print('ProcessSetpointsMessage--conflict found with with COOP ' +
+    print('DeconflictSetpoints--conflict found with with COOP ' +
           'message, checking thresholds')
 
     self.coopResponseCounter += 1
@@ -1634,7 +1658,7 @@ class DeconflictionPipeline(GridAPPSD):
       perConflictDelta = 100.0 * (prevConflictMetric - self.conflictMetric)/ \
                                  prevConflictMetric
 
-    print('>>> ProcessSetpointsMessage--thresholds, prev conflict metric: ' +
+    print('>>> DeconflictSetpoints--thresholds, prev conflict metric: ' +
           str(prevConflictMetric) + ', new metric: ' + str(self.conflictMetric)+
           ', % change: ' + str(perConflictDelta) +
           ', min metric: ' + str(self.minConflictMetric) +
@@ -1662,7 +1686,7 @@ class DeconflictionPipeline(GridAPPSD):
        self.conflictMetric>self.conflictValueThreshold and \
        (perConflictDelta>self.conflictPercentThreshold or perConflictDelta<0.0):
       # initiate further cooperation
-      print('>>> ProcessSetpointsMessage--thresholds NOT met, initiating ' +
+      print('>>> DeconflictSetpoints--thresholds NOT met, initiating ' +
             'further cooperation at response: ' + str(self.coopResponseCounter))
 
       # update incentive weights for every cooperation response
@@ -1679,22 +1703,22 @@ class DeconflictionPipeline(GridAPPSD):
       coopMessage = {'cooperationPhase': self.coopCurrentPhase,
                      'targetResolutionVector': newTargetResolutionVector}
       self.gapps.send(self.coop_topic, json.dumps(coopMessage))
-      print('ProcessSetpointsMessage--finished processing, timestamp: ' +
+      print('DeconflictSetpoints--finished processing, timestamp: ' +
             str(timestamp) + ', app: ' + app_name)
       return
 
     # thresholds for ending cooperation have been met to get here
     if coopMaxMessageFlag:
-      print('>>> ProcessSetpointsMessage---threshold YES met for max ' +
+      print('>>> DeconflictSetpoints---threshold YES met for max ' +
             'cooperation responses by an app, concluding cooperation with ' +
             'app response counts: ' + str(self.AppCoopCount))
     elif self.conflictMetric <= self.conflictValueThreshold:
-      print('>>> ProcessSetpointsMessage---threshold YES met for conflict ' +
+      print('>>> DeconflictSetpoints---threshold YES met for conflict ' +
             'metric value, concluding cooperation with conflict metric: ' +
             str(self.conflictMetric) + ', responses: ' +
             str(self.coopResponseCounter))
     else:
-      print('>>> ProcessSetpointsMessage---threshold YES met for conflict ' +
+      print('>>> DeconflictSetpoints---threshold YES met for conflict ' +
             'metric % change, concluding cooperation with % change: ' +
             str(perConflictDelta) + ', responses: ' +
             str(self.coopResponseCounter))
@@ -1707,7 +1731,7 @@ class DeconflictionPipeline(GridAPPSD):
     #   Step 3.2--Deconfliction Solution
     #   Step 3.3--Resolution
     # OPTIMIZATION stage deconfliction
-    print('ProcessSetpointsMessage--applying OPTIMIZATION stage ' +
+    print('DeconflictSetpoints--applying OPTIMIZATION stage ' +
           'deconfliction to minimum conflict ConflictMatrix')
     # update incentive weights using minimum conflict matrix before final
     # optimization stage and device dispatch
@@ -1721,7 +1745,7 @@ class DeconflictionPipeline(GridAPPSD):
     #   Step 3.2--Deconfliction Solution
     # RULES & HEURISTICS stage deconfliction done last
     if not self.rulesStageFirstFlag:
-      print('ProcessSetpointsMessage--applying final RULES & HEURISTICS ' +
+      print('DeconflictSetpoints--applying final RULES & HEURISTICS ' +
             'stage deconfliction')
       self.RulesForBatteriesResolution(newResolutionVector,
                                        self.printAllRulesFlag)
@@ -1761,7 +1785,7 @@ class DeconflictionPipeline(GridAPPSD):
     #   Step 5--Device Dispatcher
     dispatchCount = self.DeviceDispatcher(timestamp, newResolutionVector,
                                           self.printAllDispatchesFlag)
-    print('>>> ProcessSetpointsMessage--invoked device dispatch, # ' +
+    print('>>> DeconflictSetpoints--invoked device dispatch, # ' +
           'devices dispatched: ' +str(dispatchCount))
 
     # update the current resolution to the new resolution to be ready for the
@@ -1776,7 +1800,7 @@ class DeconflictionPipeline(GridAPPSD):
     self.minConflictMetric = 1.0
     # reset running counts for cooperation messages
     self.AppCoopCount.clear()
-    print('ProcessSetpointsMessage--finished processing, timestamp: ' +
+    print('DeconflictSetpoints--finished processing, timestamp: ' +
           str(timestamp) + ', app: ' + app_name)
 
 
@@ -1972,15 +1996,23 @@ class DeconflictionPipeline(GridAPPSD):
       # message from the same competing app.
       while self.messageQueue.qsize() > 0:
         app_name, meas_msg_flag, coop_phase, message = self.messageQueue.get()
-        if app_name != None:
-          break
 
-      if app_name == None:
-        self.ProcessSimulationMessage(message, self.printAllMessagesFlag)
+        if app_name == None:
+          self.ProcessSimulationMessage(message, self.printAllMessagesFlag)
 
-      else:
-        self.ProcessSetpointsMessage(message, app_name, meas_msg_flag,
-                             coop_phase, self.printAllConflictsResolutionsFlag)
+        else:
+          deconflictFlag = self.ProcessSetpointsMessage(message, app_name,
+               meas_msg_flag, coop_phase, self.printAllConflictsResolutionsFlag)
+
+          # GDB 4/25/25: skip deconfliction if there haven't been a couple
+          # measurement messages from the simulation since the most recent
+          # "device dispatch" of new setpoints. This keeps new setpoints from
+          # being dispatched before simulation measurements reflect the
+          # previously dispatched setpoints.
+          if deconflictFlag and self.simMessageCounter>1 and \
+             (not self.bypassDeconflictionFlag):
+            self.DeconflictSetpoints(message, app_name, meas_msg_flag,
+                                     self.printAllConflictsResolutionsFlag)
 
     if self.pltFlag:
       self.pltFile.close()
