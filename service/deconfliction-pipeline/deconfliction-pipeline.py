@@ -183,13 +183,13 @@ class DeconflictionPipeline(GridAPPSD):
       print('SetpointProcessor--ConflictMatrix: ' +str(self.ConflictMatrix))
 
     if self.testDeviceName:
-      devid = MethodUtil.NameToDevice[self.testDeviceName]
-      if devid in set_points:
+      device = MethodUtil.NameToDevice[self.testDeviceName]
+      if device in set_points:
         print('~TEST: set-points message with ' + self.testDeviceName +
-              ' set-point: ' + str(set_points[devid]) +
+              ' set-point: ' + str(set_points[device]) +
               ', app: ' + app_name + ', timestamp: ' + str(timestamp))
         print('~TEST: ConflictMatrix for ' + self.testDeviceName + ': ' +
-              str(self.ConflictMatrix[devid]))
+              str(self.ConflictMatrix[device]))
       else:
         print('~TEST: set-points message does not contain ' +
               self.testDeviceName)
@@ -390,28 +390,28 @@ class DeconflictionPipeline(GridAPPSD):
   def FeasibilityMaintainerForBatteries(self, printAllFeasibilityFlag=False):
     # find the maximum P_batt charge and discharge values per battery to
     # prevent overcharging or undercharging
-    for devid in self.BatteriesInfo:
-      chargeSoCMax = 0.9 - self.BatteriesInfo[devid]['SoC']
-      self.BatteriesInfo[devid]['P_batt_charge_max'] = \
-                         (chargeSoCMax*self.BatteriesInfo[devid]['ratedE']) / \
-                         (self.BatteriesInfo[devid]['eff_c']*self.deltaT)
+    for device in self.BatteriesInfo:
+      chargeSoCMax = 0.9 - self.BatteriesInfo[device]['SoC']
+      self.BatteriesInfo[device]['P_batt_charge_max'] = \
+                         (chargeSoCMax*self.BatteriesInfo[device]['ratedE']) / \
+                         (self.BatteriesInfo[device]['eff_c']*self.deltaT)
       if printAllFeasibilityFlag:
         print('FeasibilityMaintainerForBatteries--device: ' +
-              MethodUtil.DeviceToName[devid] +
+              MethodUtil.DeviceToName[device] +
               ', max charge SoC contribution: ' + str(chargeSoCMax) +
               ', max charge P_batt: ' +
-              str(self.BatteriesInfo[devid]['P_batt_charge_max']))
+              str(self.BatteriesInfo[device]['P_batt_charge_max']))
 
-      dischargeSoCMax = 0.2 - self.BatteriesInfo[devid]['SoC']
-      self.BatteriesInfo[devid]['P_batt_discharge_max'] = \
-                           (dischargeSoCMax*self.BatteriesInfo[devid]['ratedE']) / \
-                           (1/self.BatteriesInfo[devid]['eff_d']*self.deltaT)
+      dischargeSoCMax = 0.2 - self.BatteriesInfo[device]['SoC']
+      self.BatteriesInfo[device]['P_batt_discharge_max'] = \
+                      (dischargeSoCMax*self.BatteriesInfo[device]['ratedE']) / \
+                      (1/self.BatteriesInfo[device]['eff_d']*self.deltaT)
       if printAllFeasibilityFlag:
         print('FeasibilityMaintainerForBatteries--device: ' +
-              MethodUtil.DeviceToName[devid] +
+              MethodUtil.DeviceToName[device] +
               ', max discharge SoC contribution: ' + str(dischargeSoCMax) +
               ', max discharge P_batt: ' +
-              str(self.BatteriesInfo[devid]['P_batt_discharge_max']))
+              str(self.BatteriesInfo[device]['P_batt_discharge_max']))
 
     # iterate over all battery setpoints in ConflictMatrix to make sure they
     # fall within the acceptable P_batt range and set them to max values if not
@@ -495,28 +495,28 @@ class DeconflictionPipeline(GridAPPSD):
                                     printAllValidatorFlag=False):
     # find the maximum P_batt charge and discharge values per battery to
     # prevent overcharging or undercharging
-    for devid in self.BatteriesInfo:
-      chargeSoCMax = 0.9 - self.BatteriesInfo[devid]['SoC']
-      self.BatteriesInfo[devid]['P_batt_charge_max'] = \
-                         (chargeSoCMax*self.BatteriesInfo[devid]['ratedE']) / \
-                         (self.BatteriesInfo[devid]['eff_c']*self.deltaT)
+    for device in self.BatteriesInfo:
+      chargeSoCMax = 0.9 - self.BatteriesInfo[device]['SoC']
+      self.BatteriesInfo[device]['P_batt_charge_max'] = \
+                         (chargeSoCMax*self.BatteriesInfo[device]['ratedE']) / \
+                         (self.BatteriesInfo[device]['eff_c']*self.deltaT)
       if printAllValidatorFlag:
         print('SetpointValidatorForBatteries--device: ' +
-              MethodUtil.DeviceToName[devid] +
+              MethodUtil.DeviceToName[device] +
               ', max charge SoC contribution: ' + str(chargeSoCMax) +
               ', max charge P_batt: ' +
-              str(self.BatteriesInfo[devid]['P_batt_charge_max']))
+              str(self.BatteriesInfo[device]['P_batt_charge_max']))
 
-      dischargeSoCMax = 0.2 - self.BatteriesInfo[devid]['SoC']
-      self.BatteriesInfo[devid]['P_batt_discharge_max'] = \
-                           (dischargeSoCMax*self.BatteriesInfo[devid]['ratedE']) / \
-                           (1/self.BatteriesInfo[devid]['eff_d']*self.deltaT)
+      dischargeSoCMax = 0.2 - self.BatteriesInfo[device]['SoC']
+      self.BatteriesInfo[device]['P_batt_discharge_max'] = \
+                      (dischargeSoCMax*self.BatteriesInfo[device]['ratedE']) / \
+                      (1/self.BatteriesInfo[device]['eff_d']*self.deltaT)
       if printAllValidatorFlag:
         print('SetpointValidatorForBatteries--device: ' +
-              MethodUtil.DeviceToName[devid] +
+              MethodUtil.DeviceToName[device] +
               ', max discharge SoC contribution: ' + str(dischargeSoCMax) +
               ', max discharge P_batt: ' +
-              str(self.BatteriesInfo[devid]['P_batt_discharge_max']))
+              str(self.BatteriesInfo[device]['P_batt_discharge_max']))
 
     # iterate over all battery setpoints in ResolutionVector to make sure they
     # fall within the acceptable P_batt range and set them to max values if not
@@ -626,16 +626,16 @@ class DeconflictionPipeline(GridAPPSD):
     # allowed in the rolling time interval
     rollingSwitchesAllowed = 1
 
-    for devid in self.BatteriesInfo:
-      histList = self.BatteryHistory[devid]
+    for device in self.BatteriesInfo:
+      histList = self.BatteryHistory[device]
       if printAllRulesFlag:
         print('RulesForBatteriesConflict--device: ' +
-              MethodUtil.DeviceToName[devid] + ', BatteryHistory: ' +
+              MethodUtil.DeviceToName[device] + ', BatteryHistory: ' +
               str(histList))
 
       # iterate backwards through histList counting switches
       rollingSwitchCount = 0
-      rollingStartTime = self.BatteriesInfo[devid]['timestamp'] - \
+      rollingStartTime = self.BatteriesInfo[device]['timestamp'] - \
                          rollingTimeInterval
       for hist in reversed(histList):
         if hist[0] < rollingStartTime:
@@ -644,17 +644,17 @@ class DeconflictionPipeline(GridAPPSD):
 
       if printAllRulesFlag:
         print('RulesForBatteriesConflict--device: ' +
-              MethodUtil.DeviceToName[devid] +
+              MethodUtil.DeviceToName[device] +
               ', rolling charge/discharge switches: ' + str(rollingSwitchCount)+
               ', vs. allowed: ' + str(rollingSwitchesAllowed))
 
       if rollingSwitchCount >= rollingSwitchesAllowed:
         # save the final P_batt_inv in the history list since we need to make
         # sure not to allow the opposite direction in any setpoint requests
-        self.BatteriesInfo[devid]['switch_P_batt_inv'] = \
-                              self.BatteryHistory[devid][-1][1]
+        self.BatteriesInfo[device]['switch_P_batt_inv'] = \
+                              self.BatteryHistory[device][-1][1]
       else:
-        self.BatteriesInfo[devid]['switch_P_batt_inv'] = None
+        self.BatteriesInfo[device]['switch_P_batt_inv'] = None
 
     # iterate over all battery setpoints in ConflictMatrix to make sure they
     # fall within the acceptable P_batt range and set them to max values if not
@@ -690,16 +690,16 @@ class DeconflictionPipeline(GridAPPSD):
     # allowed in the rolling time interval
     rollingSwitchesAllowed = 1
 
-    for devid in self.BatteriesInfo:
-      histList = self.BatteryHistory[devid]
+    for device in self.BatteriesInfo:
+      histList = self.BatteryHistory[device]
       if printAllRulesFlag:
         print('RulesForBatteriesResolution--device: ' +
-              MethodUtil.DeviceToName[devid] + ', BatteryHistory: ' +
+              MethodUtil.DeviceToName[device] + ', BatteryHistory: ' +
               str(histList))
 
       # iterate backwards through histList counting switches
       rollingSwitchCount = 0
-      rollingStartTime = self.BatteriesInfo[devid]['timestamp'] - \
+      rollingStartTime = self.BatteriesInfo[device]['timestamp'] - \
                          rollingTimeInterval
       for hist in reversed(histList):
         if hist[0] < rollingStartTime:
@@ -708,17 +708,17 @@ class DeconflictionPipeline(GridAPPSD):
 
       if printAllRulesFlag:
         print('RulesForBatteriesResolution--device: ' +
-              MethodUtil.DeviceToName[devid] +
+              MethodUtil.DeviceToName[device] +
               ', rolling charge/discharge switches: ' + str(rollingSwitchCount)+
               ', vs. allowed: ' + str(rollingSwitchesAllowed))
 
       if rollingSwitchCount >= rollingSwitchesAllowed:
         # save the final P_batt_inv in the history list since we need to make
         # sure not to allow the opposite direction in any setpoint requests
-        self.BatteriesInfo[devid]['switch_P_batt_inv'] = \
-                              self.BatteryHistory[devid][-1][1]
+        self.BatteriesInfo[devicdevice]['switch_P_batt_inv'] = \
+                              self.BatteryHistory[device][-1][1]
       else:
-        self.BatteriesInfo[devid]['switch_P_batt_inv'] = None
+        self.BatteriesInfo[device]['switch_P_batt_inv'] = None
 
     # iterate over all battery setpoints in newResolutionVector to insure they
     # fall within the acceptable P_batt range and set them to max values if not
@@ -1014,33 +1014,33 @@ class DeconflictionPipeline(GridAPPSD):
     # different values
     diffCount = 0
 
-    for devid, value in newResolutionVector.items():
-      name = MethodUtil.DeviceToName[devid]
+    for device, value in newResolutionVector.items():
+      name = MethodUtil.DeviceToName[device]
       if name.startswith('BatteryUnit.'):
-        if value[1] != self.BatteriesInfo[devid]['P_batt_inv']:
+        if value[1] != self.BatteriesInfo[device]['P_batt_inv']:
           #new value before old value for DifferenceBuilder
-          self.difference_builder.add_difference(devid,
+          self.difference_builder.add_difference(device,
                                        'PowerElectronicsConnection.p', value[1],
-                                       self.BatteriesInfo[devid]['P_batt_inv'])
+                                       self.BatteriesInfo[device]['P_batt_inv'])
           diffCount += 1
 
           switchStr = ''
-          if value[1]>0 and self.BatteriesInfo[devid]['P_batt_inv']<0:
+          if value[1]>0 and self.BatteriesInfo[device]['P_batt_inv']<0:
             switchStr = ' (SWITCH from discharging to charging)'
-          elif value[1]<0 and self.BatteriesInfo[devid]['P_batt_inv']>0:
+          elif value[1]<0 and self.BatteriesInfo[device]['P_batt_inv']>0:
             switchStr = ' (SWITCH from charging to discharging)'
 
           if printAllDispatchesFlag:
             print('DeviceDispatcher--battery device: ' + name +
                   ', timestamp: ' + str(timestamp) + ', new value: ' +
                   str(value[1]) + ', old value: ' +
-                  str(self.BatteriesInfo[devid]['P_batt_inv']) + switchStr)
+                  str(self.BatteriesInfo[device]['P_batt_inv']) + switchStr)
 
           if self.testDeviceName and name==self.testDeviceName:
-            print('~TEST: Dispatching to battery id: ' + devid +
+            print('~TEST: Dispatching to battery id: ' + device +
                   ', device: ' + name + ', timestamp: ' + str(timestamp) +
                   ', new value: ' + str(value[1]) + ', old value: ' +
-                  str(self.BatteriesInfo[devid]['P_batt_inv']) + switchStr)
+                  str(self.BatteriesInfo[device]['P_batt_inv']) + switchStr)
 
         elif printAllDispatchesFlag:
           print('DeviceDispatcher--DISPATCH NOT needed, battery device: ' +
@@ -1050,16 +1050,16 @@ class DeconflictionPipeline(GridAPPSD):
       elif name.startswith('RatioTapChanger.'):
         # Dispatch regulator tap positions whenever they are different from the
         # current tap position
-        if value[1] != self.Regulators[devid]['step']:
+        if value[1] != self.Regulators[device]['step']:
           # new value before old value for DifferenceBuilder
           # TODO DEBUG TIED REG4 ISSUE
           if name!='RatioTapChanger.reg4a' and name!='RatioTapChanger.reg4c':
-            self.difference_builder.add_difference(devid,
-                   'TapChanger.step', value[1], self.Regulators[devid]['step'])
+            self.difference_builder.add_difference(device,
+                   'TapChanger.step', value[1], self.Regulators[device]['step'])
             diffCount += 1
           '''
-          self.difference_builder.add_difference(devid,
-                   'TapChanger.step', value[1], self.Regulators[devid]['step'])
+          self.difference_builder.add_difference(device,
+                   'TapChanger.step', value[1], self.Regulators[device]['step'])
           diffCount += 1
           '''
 
@@ -1068,7 +1068,7 @@ class DeconflictionPipeline(GridAPPSD):
             print('DeviceDispatcher--regulator device: ' + name +
                   ', timestamp: ' + str(timestamp) + ', new value: ' +
                   str(value[1]) + ', old value: ' +
-                  str(self.Regulators[devid]['step']))
+                  str(self.Regulators[device]['step']))
 
           # TODO DEBUG TIED REG4 ISSUE
           #if name == 'RatioTapChanger.reg4b':
@@ -1076,13 +1076,13 @@ class DeconflictionPipeline(GridAPPSD):
             print('REG4B DeviceDispatcher--regulator device: ' + name +
                   ', timestamp: ' + str(timestamp) + ', new value: ' +
                   str(value[1]) + ', old value: ' +
-                  str(self.Regulators[devid]['step']))
+                  str(self.Regulators[device]['step']))
 
           if self.testDeviceName and name==self.testDeviceName:
-              print('~TEST: Dispatching to regulator id: ' + devid +
+              print('~TEST: Dispatching to regulator id: ' + device +
                     ', device: ' + name + ', timestamp: ' + str(timetstamp) +
                     ', new value: ' + str(value[1]) + ', old value: ' +
-                    str(self.Regulators[devid]['step']))
+                    str(self.Regulators[device]['step']))
 
         elif name == 'RatioTapChanger.reg4b':
           print('REG4B DeviceDispatcher--DISPATCH NOT needed, regulator ' +
@@ -1098,16 +1098,16 @@ class DeconflictionPipeline(GridAPPSD):
     # in the new resolution.  In this case it's a "don't care" for the new
     # resolution and the device is left at the previous value with nothing sent
     if len(self.ResolutionVector) > len(newResolutionVector):
-      for devid in self.ResolutionVector:
-        if devid not in newResolutionVector:
+      for device in self.ResolutionVector:
+        if device not in newResolutionVector:
           if printAllDispatchesFlag:
             print('DeviceDispatcher--deleted from resolution, device: ' +
-                  MethodUtil.DeviceToName[devid])
+                  MethodUtil.DeviceToName[device])
 
           if self.testDeviceName and \
-             MethodUtil.DeviceToName[devid]==self.testDeviceName:
-            print('~TEST: deleted from resolution, id: ' + devid +
-                  ', device: ' + MethodUtil.DeviceToName[devid])
+             MethodUtil.DeviceToName[device]==self.testDeviceName:
+            print('~TEST: deleted from resolution, id: ' + device +
+                  ', device: ' + MethodUtil.DeviceToName[device])
 
     if diffCount > 0:
       dispatch_message = self.difference_builder.get_message()
@@ -1169,22 +1169,22 @@ class DeconflictionPipeline(GridAPPSD):
     self.simMessageCounter += 1
 
     measurements = message['measurements']
-    for devid in self.BatteriesInfo:
-      measid = self.BatteriesInfo[devid]['SoC_measid']
+    for device in self.BatteriesInfo:
+      measid = self.BatteriesInfo[device]['SoC_measid']
       if measid in measurements:
-        self.BatteriesInfo[devid]['SoC'] = measurements[measid]['value']/100.0
-        MethodUtil.BatterySoC[devid] = self.BatteriesInfo[devid]['SoC']
+        self.BatteriesInfo[device]['SoC'] = measurements[measid]['value']/100.0
+        MethodUtil.BatterySoC[device] = self.BatteriesInfo[device]['SoC']
         # comment this out and output it below with P_batt_inv to save space
         #if printAllMessagesFlag:
         #  print('ProcessSimulationMessage--timestamp: ' +
         #        str(message['timestamp']) + ', device: ' +
-        #        self.BatteriesInfo[devid]['name'] +
-        #        ', SoC: ' + str(self.BatteriesInfo[devid]['SoC']))
+        #        self.BatteriesInfo[device]['name'] +
+        #        ', SoC: ' + str(self.BatteriesInfo[device]['SoC']))
 
-      measid = self.BatteriesInfo[devid]['P_batt_measid']
+      measid = self.BatteriesInfo[device]['P_batt_measid']
       if measid in measurements:
         # always update timestamp because it's needed for running history rule
-        self.BatteriesInfo[devid]['timestamp'] = message['timestamp']
+        self.BatteriesInfo[device]['timestamp'] = message['timestamp']
 
         p, q = self.pol2cart(measurements[measid]['magnitude'],
                              measurements[measid]['angle'])
@@ -1193,85 +1193,86 @@ class DeconflictionPipeline(GridAPPSD):
         # message
         meas_P_batt_inv = -p
 
-        if 'P_batt_inv' in self.BatteriesInfo[devid] and \
-            meas_P_batt_inv!=self.BatteriesInfo[devid]['P_batt_inv']:
+        if 'P_batt_inv' in self.BatteriesInfo[device] and \
+            meas_P_batt_inv!=self.BatteriesInfo[device]['P_batt_inv']:
           if printAllMessagesFlag:
             print('ProcessSimulationMessage--BatteryHistory candidate,' +
-                  'device: ' + self.BatteriesInfo[devid]['name'] +
-                  ', old: ' + str(self.BatteriesInfo[devid]['P_batt_inv']) +
+                  'device: ' + self.BatteriesInfo[device]['name'] +
+                  ', old: ' + str(self.BatteriesInfo[device]['P_batt_inv']) +
                   ', new: ' + str(meas_P_batt_inv))
           # check if this is a change from charging to discharging or vice versa
-          if (meas_P_batt_inv>0 and self.BatteriesInfo[devid]['P_batt_inv']<0) or \
-             (meas_P_batt_inv<0 and self.BatteriesInfo[devid]['P_batt_inv']>0):
+          if (meas_P_batt_inv>0 and \
+              self.BatteriesInfo[device]['P_batt_inv']<0) or \
+             (meas_P_batt_inv<0 and self.BatteriesInfo[device]['P_batt_inv']>0):
             # append the timestamp, P_batt_inv to the running history
-            self.BatteryHistory[devid].append((message['timestamp'],
+            self.BatteryHistory[device].append((message['timestamp'],
                                                meas_P_batt_inv))
             print('ProcessSimulationMessage--BatteryHistory match, device: ' +
-                  self.BatteriesInfo[devid]['name'] +
-                  ', history: ' + str(self.BatteryHistory[devid]))
+                  self.BatteriesInfo[device]['name'] +
+                  ', history: ' + str(self.BatteryHistory[device]))
 
         # I think for BatteryHistory there is no need to get a starting point
         # like there is for regulators since we are just tracking changes from
         # charge to discharge and vice versa and not all changes
-        #elif len(self.BatteryHistory[devid]) == 0:
-        #  self.BatteryHistory[devid].append((message['timestamp'],
+        #elif len(self.BatteryHistory[device]) == 0:
+        #  self.BatteryHistory[device].append((message['timestamp'],
         #                                     meas_P_batt_inv))
         #  print('ProcessSimulationMessage--BatteryHistory initialize, device: '+
-        #        self.BatteriesInfo[devid]['name'] +
-        #        ', history: ' + str(self.BatteryHistory[devid]))
+        #        self.BatteriesInfo[device]['name'] +
+        #        ', history: ' + str(self.BatteryHistory[device]))
 
-        self.BatteriesInfo[devid]['P_batt_inv'] = meas_P_batt_inv
-        MethodUtil.BatteryP_batt_inv[devid] = meas_P_batt_inv
+        self.BatteriesInfo[device]['P_batt_inv'] = meas_P_batt_inv
+        MethodUtil.BatteryP_batt_inv[device] = meas_P_batt_inv
         if printAllMessagesFlag:
           print('ProcessSimulationMessage--timestamp: ' +
                 str(message['timestamp']) + ', device: ' +
-                self.BatteriesInfo[devid]['name'] + ', P_batt_inv: ' +
-                str(self.BatteriesInfo[devid]['P_batt_inv']) + ', SoC: ' +
-                str(self.BatteriesInfo[devid]['SoC']))
+                self.BatteriesInfo[device]['name'] + ', P_batt_inv: ' +
+                str(self.BatteriesInfo[device]['P_batt_inv']) + ', SoC: ' +
+                str(self.BatteriesInfo[device]['SoC']))
 
         if self.pltFlag:
           self.pltFile.write(',')
-          self.pltFile.write(self.BatteriesInfo[devid]['name'])
+          self.pltFile.write(self.BatteriesInfo[device]['name'])
           self.pltFile.write(',')
-          self.pltFile.write(str(self.BatteriesInfo[devid]['P_batt_inv']))
+          self.pltFile.write(str(self.BatteriesInfo[device]['P_batt_inv']))
           self.pltFile.write(',')
-          self.pltFile.write(str(self.BatteriesInfo[devid]['SoC']))
+          self.pltFile.write(str(self.BatteriesInfo[device]['SoC']))
 
-    for devid in self.Regulators:
-      measid = self.Regulators[devid]['measid']
+    for device in self.Regulators:
+      measid = self.Regulators[device]['measid']
       if measid in measurements:
         # always update timestamp because it's needed for running history rule
-        self.Regulators[devid]['timestamp'] = message['timestamp']
+        self.Regulators[device]['timestamp'] = message['timestamp']
 
         # only update the rest if there is a value change
-        if measurements[measid]['value'] != self.Regulators[devid]['step']:
-          self.Regulators[devid]['step'] = measurements[measid]['value']
-          MethodUtil.RegulatorPos[devid] = self.Regulators[devid]['step']
+        if measurements[measid]['value'] != self.Regulators[device]['step']:
+          self.Regulators[device]['step'] = measurements[measid]['value']
+          MethodUtil.RegulatorPos[device] = self.Regulators[device]['step']
           if printAllMessagesFlag:
             print('ProcessSimulationMessage--timestamp: ' +
                   str(message['timestamp']) + ', device: ' +
-                  self.Regulators[devid]['name'] + ', tap position: ' +
-                  str(self.Regulators[devid]['step']))
+                  self.Regulators[device]['name'] + ', tap position: ' +
+                  str(self.Regulators[device]['step']))
 
           # append the timestamp, step to the running history
-          self.RegulatorHistory[devid].append((message['timestamp'],
-                                               self.Regulators[devid]['step']))
-          if self.Regulators[devid]['name'] == 'RatioTapChanger.reg4b':
+          self.RegulatorHistory[device].append((message['timestamp'],
+                                               self.Regulators[device]['step']))
+          if self.Regulators[device]['name'] == 'RatioTapChanger.reg4b':
             print('REG4B CHANGE ProcessSimulationMessage--timestamp: ' +
                   str(message['timestamp']) + ', device: ' +
-                  self.Regulators[devid]['name'] + ', tap position: ' +
-                  str(self.Regulators[devid]['step']))
+                  self.Regulators[device]['name'] + ', tap position: ' +
+                  str(self.Regulators[device]['step']))
 
-        elif len(self.RegulatorHistory[devid]) == 0:
+        elif len(self.RegulatorHistory[device]) == 0:
           # need to get a starting history data point at the current timestamp
-          self.RegulatorHistory[devid].append((message['timestamp'],
-                                               self.Regulators[devid]['step']))
+          self.RegulatorHistory[device].append((message['timestamp'],
+                                               self.Regulators[device]['step']))
 
         if self.pltFlag:
           self.pltFile.write(',')
-          self.pltFile.write(self.Regulators[devid]['name'])
+          self.pltFile.write(self.Regulators[device]['name'])
           self.pltFile.write(',')
-          self.pltFile.write(str(self.Regulators[devid]['step']))
+          self.pltFile.write(str(self.Regulators[device]['step']))
 
     # for the app scalability task
     for bus in self.SolarPVsInfo:
@@ -1293,18 +1294,18 @@ class DeconflictionPipeline(GridAPPSD):
       self.pltFile.flush()
 
     if self.testDeviceName:
-      devid = MethodUtil.NametoDevice[self.testDeviceName]
-      if devid in self.BatteriesInfo:
+      device = MethodUtil.NametoDevice[self.testDeviceName]
+      if device in self.BatteriesInfo:
         print('~TEST simulation updated SoC for device name: ' +
               self.testDeviceName + ', timestamp: ' + str(message['timestamp'])+
-              ', SoC: ' + str(self.BatteriesInfo[devid]['SoC']))
+              ', SoC: ' + str(self.BatteriesInfo[device]['SoC']))
         print('~TEST simulation updated P_batt_inv for device name: ' +
               self.testDeviceName + ', timestamp: ' + str(message['timestamp'])+
-              ', P_batt_inv: ' + str(self.BatteriesInfo[devid]['P_batt_inv']))
-      elif devid in self.Regulators:
+              ', P_batt_inv: ' + str(self.BatteriesInfo[device]['P_batt_inv']))
+      elif device in self.Regulators:
         print('~TEST simulation updated tap position for device name: ' +
               self.testDeviceName + ', timestamp: ' + str(message['timestamp'])+
-              ', pos: ' + str(self.Regulators[devid]['step']))
+              ', pos: ' + str(self.Regulators[device]['step']))
 
 
   def getAppName(self, header):
@@ -1510,13 +1511,13 @@ class DeconflictionPipeline(GridAPPSD):
               str(newResolutionVector))
 
       if self.testDeviceName:
-        devid = MethodUtil.NameToDevice[self.testDeviceName]
-        if devid in newResolutionVector:
+        device = MethodUtil.NameToDevice[self.testDeviceName]
+        if device in newResolutionVector:
           print('~TEST: ResolutionVector (no conflict) for ' +
                 self.testDeviceName + ' setpoint: ' +
-                str(newResolutionVector[devid][1]) +
+                str(newResolutionVector[device][1]) +
                 ', timestamp: ' +
-                str(newResolutionVector[devid][0]))
+                str(newResolutionVector[device][0]))
         else:
           print('~TEST: ResolutionVector (no conflict) does not contain ' +
                 self.testDeviceName)
@@ -1823,8 +1824,8 @@ class DeconflictionPipeline(GridAPPSD):
     # I could make this another element in self.BatteriesInfo, but for now I'll
     # promote it as a separate top-level data structure
     self.BatteryHistory = {}
-    for devid in self.BatteriesInfo:
-      self.BatteryHistory[devid] = []
+    for device in self.BatteriesInfo:
+      self.BatteryHistory[device] = []
 
     self.Regulators = AppUtil.getRegulators(MethodUtil.sparql_mgr)
     #print('Initialization--starting Regulators: ' + str(self.Regulators))
@@ -1835,8 +1836,8 @@ class DeconflictionPipeline(GridAPPSD):
     # I could make this another element in self.Regulators, but for now I'll
     # promote it as a separate top-level data structure
     self.RegulatorHistory = {}
-    for devid in self.Regulators:
-      self.RegulatorHistory[devid] = []
+    for device in self.Regulators:
+      self.RegulatorHistory[device] = []
 
     # for the app scalability task
     self.SolarPVsInfo, self.SolarPVsIdx = \
