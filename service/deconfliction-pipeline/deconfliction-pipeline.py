@@ -583,19 +583,6 @@ class DeconflictionPipeline(GridAPPSD):
                 '--tap pos setpoint reset to max feasible pos: '+
                 str(newResolutionVector[device][1]))
 
-          # enforce the tap budget rule
-          if 'maxStep' in self.Regulators[device]:
-            if newResolutionVector[device][1] > \
-               self.Regulators[devid]['maxStep']:
-              print('SetpointValidatorForRegulators--device: ' + name +
-                    '--tap pos setpoint above max rules pos: ' +
-                    str(newResolutionVector[device][1]))
-              newResolutionVector[device] = (newResolutionVector[device][0],
-                                             self.Regulators[devid]['maxStep'])
-              print('SetpointValidatorForRegulators--device: ' + name +
-                    '--tap pos setpoint reset to max rules pos: '+
-                    str(self.Regulators[devid]['maxStep']))
-
         elif newResolutionVector[device][1] < -16:
           print('SetpointValidatorForRegulators--device: ' + name +
                 '--tap pos setpoint below min feasible pos: ' +
@@ -605,18 +592,30 @@ class DeconflictionPipeline(GridAPPSD):
                 '--tap pos setpoint reset to min feasible pos: '+
                 str(newResolutionVector[device][1]))
 
-          # enforce the tap budget rule
-          if 'minStep' in self.Regulators[device]:
-            if newResolutionVector[device][1] < \
-               self.Regulators[devid]['minStep']:
-              print('SetpointValidatorForRegulators--device: ' + name +
-                    '--tap pos setpoint above min rules pos: ' +
-                    str(newResolutionVector[device][1]))
-              newResolutionVector[device] = (newResolutionVector[device][0],
-                                             self.Regulators[devid]['minStep'])
-              print('SetpointValidatorForRegulators--device: ' + name +
-                    '--tap pos setpoint reset to min rules pos: '+
-                    str(self.Regulators[devid]['minStep']))
+        # enforce the tap budget rule
+        if 'maxStep' in self.Regulators[device]:
+          if newResolutionVector[device][1] > \
+             self.Regulators[devid]['maxStep']:
+            print('SetpointValidatorForRegulators--device: ' + name +
+                  '--tap pos setpoint above max rules pos: ' +
+                  str(newResolutionVector[device][1]))
+            newResolutionVector[device] = (newResolutionVector[device][0],
+                                           self.Regulators[devid]['maxStep'])
+            print('SetpointValidatorForRegulators--device: ' + name +
+                  '--tap pos setpoint reset to max rules pos: '+
+                  str(self.Regulators[devid]['maxStep']))
+
+        elif 'minStep' in self.Regulators[device]:
+          if newResolutionVector[device][1] < \
+             self.Regulators[devid]['minStep']:
+            print('SetpointValidatorForRegulators--device: ' + name +
+                  '--tap pos setpoint above min rules pos: ' +
+                  str(newResolutionVector[device][1]))
+            newResolutionVector[device] = (newResolutionVector[device][0],
+                                           self.Regulators[devid]['minStep'])
+            print('SetpointValidatorForRegulators--device: ' + name +
+                  '--tap pos setpoint reset to min rules pos: '+
+                  str(self.Regulators[devid]['minStep']))
 
 
   def RulesForBatteriesConflict(self, printAllRulesFlag=False):
@@ -1926,8 +1925,8 @@ class DeconflictionPipeline(GridAPPSD):
     # controls whether rules stage deconfliction is done as the first stage
     # using the ConflictMatrix or deferred until the last stage before device
     # dispatch using the ResolutionVector
-    #self.rulesStageFirstFlag = True
-    self.rulesStageFirstFlag = False
+    self.rulesStageFirstFlag = True
+    #self.rulesStageFirstFlag = False
 
     # for SHIVA conflict metric testing
     #self.TimeConflictMatrix = {}
