@@ -1093,9 +1093,17 @@ class DeconflictionPipeline(GridAPPSD):
         # current tap position
         if value[1] != self.Regulators[devid]['step']:
           # new value before old value for DifferenceBuilder
+          # TODO DEBUG TIED REG4 ISSUE
+          if name!='RatioTapChanger.reg4a' and name!='RatioTapChanger.reg4c':
+            self.difference_builder.add_difference(devid,
+                   'TapChanger.step', value[1], self.Regulators[devid]['step'])
+            diffCount += 1
+          '''
           self.difference_builder.add_difference(devid,
                    'TapChanger.step', value[1], self.Regulators[devid]['step'])
           diffCount += 1
+          '''
+
 
           if printAllDispatchesFlag:
             print('DeviceDispatcher--regulator device: ' + name +
@@ -1103,7 +1111,9 @@ class DeconflictionPipeline(GridAPPSD):
                   str(value[1]) + ', old value: ' +
                   str(self.Regulators[devid]['step']))
 
-          if name == 'RatioTapChanger.reg4b':
+          # TODO DEBUG TIED REG4 ISSUE
+          #if name == 'RatioTapChanger.reg4b':
+          if name.startswith('RatioTapChanger.reg4'):
             print('REG4B DeviceDispatcher--regulator device: ' + name +
                   ', timestamp: ' + str(timestamp) + ', new value: ' +
                   str(value[1]) + ', old value: ' +
