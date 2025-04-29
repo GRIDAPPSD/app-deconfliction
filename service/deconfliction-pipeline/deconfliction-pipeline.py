@@ -743,9 +743,6 @@ class DeconflictionPipeline(GridAPPSD):
 
 
   def RulesForRegulatorsConflict(self, printAllRulesFlag=False):
-    # comment out to disable per-timestamp limit on tap position changes
-    #timestampTapBudget = 3
-
     # GDB RULE_TWEAK
     #rollingTimeInterval = 60 # for short simulations, every minute
     #rollingTimeInterval = 60*30 # for long simulations, every 30 minutes
@@ -774,30 +771,19 @@ class DeconflictionPipeline(GridAPPSD):
           break
         rollingStepCount += abs(histList[it][1] - histList[it-1][1])
 
-      rollingTapBudget = max(0, rollingStepsAllowed - rollingStepCount)
+      tapBudget = max(0, rollingStepsAllowed - rollingStepCount)
       if printAllRulesFlag:
         print('RulesForRegulatorsConflict--device: ' +
               MethodUtil.DeviceToName[devid] +
               ', rolling steps: ' + str(rollingStepCount) +
               ', vs. allowed: ' + str(rollingStepsAllowed) +
-              ', rolling budget: ' + str(rollingTapBudget))
+              ', tap budget: ' + str(tapBudget))
       if MethodUtil.DeviceToName[devid] == 'RatioTapChanger.reg4b':
         print('REG4B RulesForRegulatorsConflict--device: ' +
               MethodUtil.DeviceToName[devid] +
               ', rolling steps: ' + str(rollingStepCount) +
               ', vs. allowed: ' + str(rollingStepsAllowed) +
-              ', rolling budget: ' + str(rollingTapBudget))
-
-      # comment out next line and uncoment the following on to disable
-      # per-timestamp limit
-      #tapBudget = min(timestampTapBudget, rollingTapBudget)
-      tapBudget = rollingTapBudget
-
-      #print('RulesForRegulatorsConflict--device: ' +
-      #      MethodUtil.DeviceToName[devid] +
-      #      ', per-timestamp tap budget: ' + str(timestampTapBudget) +
-      #      ', rolling tap budget: ' + str(rollingTapBudget) +
-      #      ', final tap budget: ' + str(tapBudget))
+              ', tap budget: ' + str(tapBudget))
 
       # constrain by the overall tap budget and physical device limits
       self.Regulators[devid]['maxStep'] = min(self.Regulators[devid]['step'] + \
@@ -869,9 +855,6 @@ class DeconflictionPipeline(GridAPPSD):
 
   def RulesForRegulatorsResolution(self,newResolutionVector,
                                    printAllRulesFlag=False):
-    # comment out to disable per-timestamp limit on tap position changes
-    #timestampTapBudget = 3
-
     # GDB RULE_TWEAK
     #rollingTimeInterval = 60 # for short simulations, every minute
     #rollingTimeInterval = 60*30 # for long simulations, every 30 minutes
@@ -921,30 +904,19 @@ class DeconflictionPipeline(GridAPPSD):
                 MethodUtil.DeviceToName[devid] +
                 ', history step: ' + str(histList[it][1]) + ', rollingStepCount: ' + str(rollingStepCount))
 
-      rollingTapBudget = max(0, rollingStepsAllowed - rollingStepCount)
+      tapBudget = max(0, rollingStepsAllowed - rollingStepCount)
       if printAllRulesFlag:
         print('RulesForRegulatorsResolution--device: ' +
               MethodUtil.DeviceToName[devid] +
               ', rolling steps: ' + str(rollingStepCount) +
               ', vs. allowed: ' + str(rollingStepsAllowed) +
-              ', rolling budget: ' + str(rollingTapBudget))
+              ', tap budget: ' + str(tapBudget))
       if MethodUtil.DeviceToName[devid] == 'RatioTapChanger.reg4b':
         print('REG4B RulesForRegulatorsResolution--device: ' +
               MethodUtil.DeviceToName[devid] +
               ', rolling steps: ' + str(rollingStepCount) +
               ', vs. allowed: ' + str(rollingStepsAllowed) +
-              ', rolling budget: ' + str(rollingTapBudget))
-
-      # comment out next line and uncoment the following on to disable
-      # per-timestamp limit
-      #tapBudget = min(timestampTapBudget, rollingTapBudget)
-      tapBudget = rollingTapBudget
-
-      #print('RulesForRegulatorsResolution--device: ' +
-      #      MethodUtil.DeviceToName[devid] +
-      #      ', per-timestamp tap budget: ' + str(timestampTapBudget) +
-      #      ', rolling tap budget: ' + str(rollingTapBudget) +
-      #      ', final tap budget: ' + str(tapBudget))
+              ', tap budget: ' + str(tapBudget))
 
       # constrain by the overall tap budget and physical device limits
       self.Regulators[devid]['maxStep'] = min(self.Regulators[devid]['step'] + \
