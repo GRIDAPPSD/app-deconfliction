@@ -774,7 +774,7 @@ class DeconflictionPipeline(GridAPPSD):
             ', vs. allowed: ' + str(rollingStepsAllowed) +
             ', tap budget: ' + str(tapBudget))
     if name == 'RatioTapChanger.reg4b':
-      print('REG4B RulesForRegulatorsBudget--interval: ' +
+      print('REG4B DEBUG RulesForRegulatorsBudget--interval: ' +
             str(rollingTimeInterval) + ', device: ' + name +
             ', rolling steps: ' + str(rollingStepCount) +
             ', vs. allowed: ' + str(rollingStepsAllowed) +
@@ -791,7 +791,7 @@ class DeconflictionPipeline(GridAPPSD):
     #outerRollingStepsAllowed = 8 # picked to trigger the rule a reasonable # of times
     outerRollingStepsAllowed = 4 # picked to trigger the rule a reasonable # of times
 
-    innerRollingTimeInterval = 60
+    innerRollingTimeInterval = 30
     innerRollingStepsAllowed = 1
 
     # iterate over all regulator tap setpoints in ConflictMatrix to make sure
@@ -887,7 +887,7 @@ class DeconflictionPipeline(GridAPPSD):
     #outerRollingStepsAllowed = 8 # picked to trigger the rule a reasonable # of times
     outerRollingStepsAllowed = 4 # picked to trigger the rule a reasonable # of times
 
-    innerRollingTimeInterval = 60
+    innerRollingTimeInterval = 30
     innerRollingStepsAllowed = 1
 
     # iterate over all regulator tap setpoints in newResolutionVector to insure
@@ -1893,8 +1893,8 @@ class DeconflictionPipeline(GridAPPSD):
     # controls whether rules stage deconfliction is done as the first stage
     # using the ConflictMatrix or deferred until the last stage before device
     # dispatch using the ResolutionVector
-    self.rulesStageFirstFlag = True
-    #self.rulesStageFirstFlag = False
+    #self.rulesStageFirstFlag = True
+    self.rulesStageFirstFlag = False
 
     # for SHIVA conflict metric testing
     #self.TimeConflictMatrix = {}
