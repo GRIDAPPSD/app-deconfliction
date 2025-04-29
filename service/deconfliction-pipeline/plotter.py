@@ -61,11 +61,13 @@ def to_datetime(time):
 
 def make_p_batt_plots(title, prefix, Batteries, t_plot, p_batt_plot):
   for name in Batteries:
+    if len(t_plot) != len(p_batt_plot[name]):
+      print('*** Mismatched data points for plot ' + title + ' P_batt ' + name + ', time len: ' + str(len(t_plot)) + ', p_batt len: ' + str(len(p_batt_plot[name])), flush=True)
     batname = name[12:] # extract just the name for tidier plots
     plt.figure()
     #fig, ax = plt.subplots()
     plt.title(title + ' P_batt:  ' + batname, pad=15.0)
-    plt.plot(t_plot, p_batt_plot[name])
+    plt.plot(t_plot[:len(p_batt_plot[name])], p_batt_plot[name])
     #ax.xaxis.set_major_formatter(md.DateFormatter('%H:%M'))
     #plt.xlim([AppUtil.to_datetime(1), AppUtil.to_datetime(96)])
     #plt.xticks([AppUtil.to_datetime(1), AppUtil.to_datetime(25), AppUtil.to_datetime(49), AppUtil.to_datetime(73), AppUtil.to_datetime(96)])
@@ -78,11 +80,13 @@ def make_p_batt_plots(title, prefix, Batteries, t_plot, p_batt_plot):
 
 def make_soc_plots(title, prefix, Batteries, t_plot, soc_plot):
   for name in Batteries:
+    if len(t_plot) != len(soc_plot[name]):
+      print('*** Mismatched data points for plot ' + title + ' SoC ' + name + ', time len: ' + str(len(t_plot)) + ', soc len: ' + str(len(soc_plot[name])), flush=True)
     batname = name[12:] # extract just the name for tidier plots
     plt.figure()
     #fig, ax = plt.subplots()
     plt.title(title + ' SoC:  ' + batname, pad=15.0)
-    plt.plot(t_plot, soc_plot[name])
+    plt.plot(t_plot[:len(soc_plot[name])], soc_plot[name])
     #ax.xaxis.set_major_formatter(md.DateFormatter('%H:%M'))
     #plt.xlim([AppUtil.to_datetime(1), AppUtil.to_datetime(96)])
     #plt.xticks([AppUtil.to_datetime(1), AppUtil.to_datetime(25), AppUtil.to_datetime(49), AppUtil.to_datetime(73), AppUtil.to_datetime(96)])
@@ -95,11 +99,13 @@ def make_soc_plots(title, prefix, Batteries, t_plot, soc_plot):
 
 def make_reg_plots(title, prefix, Regulators, t_plot, reg_plot):
   for name in Regulators:
+    if len(t_plot) != len(reg_plot[name]):
+      print('*** Mismatched data points for plot ' + title + ' ' + name + ', time len: ' + str(len(t_plot)) + ', reg len: ' + str(len(reg_plot[name])), flush=True)
     regname = name[16:] # extract just the name for tidier plots
     plt.figure()
     #fig, ax = plt.subplots()
     plt.title(title + ' Tap Pos:  ' + regname, pad=15.0)
-    plt.plot(t_plot, reg_plot[name])
+    plt.plot(t_plot[:len(reg_plot[name])], reg_plot[name])
     #ax.yaxis.set_major_locator(MaxNLocator(integer=True))
     #ax.xaxis.set_major_formatter(md.DateFormatter('%H:%M'))
     #plt.xlim([AppUtil.to_datetime(1), AppUtil.to_datetime(96)])
@@ -112,7 +118,7 @@ def make_reg_plots(title, prefix, Regulators, t_plot, reg_plot):
 
 
 def _main():
-  print('Starting plotter...')
+  print('Starting plotter...', flush=True)
 
   matplotlib.use('agg')
 
@@ -153,7 +159,7 @@ def _main():
           reg = tokens[it]
           reg_plot[reg].append(int(tokens[it+1]))
 
-  print(app + ' hits: ' + str(hits))
+  print(app + ' hits: ' + str(hits), flush=True)
 
   make_p_batt_plots(app, prefix, Batteries, t_plot, p_batt_plot)
   make_soc_plots(app, prefix, Batteries, t_plot, soc_plot)
@@ -191,7 +197,7 @@ def _main():
             elif dev.startswith('RatioTapChanger.'):
               reg_plot[dev].append(int(tokens[it+1]))
 
-    print(app_list[iapp] + ' hits: ' + str(hits))
+    print(app_list[iapp] + ' hits: ' + str(hits), flush=True)
 
     make_p_batt_plots(app_list[iapp], prefix_list[iapp], Batteries, t_plot, p_batt_plot)
     make_reg_plots(app_list[iapp], prefix_list[iapp], Regulators, t_plot, reg_plot)
