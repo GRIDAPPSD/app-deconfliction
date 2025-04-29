@@ -799,7 +799,6 @@ class DeconflictionPipeline(GridAPPSD):
     for device in self.ConflictMatrix:
       name = MethodUtil.DeviceToName[device]
       if name.startswith('RatioTapChanger.'):
-
         outerTapBudget = self.RulesForRegulatorsBudget(device,
                              outerRollingTimeInterval, outerRollingStepsAllowed,
                              printAllRulesFlag)
