@@ -742,72 +742,98 @@ class DeconflictionPipeline(GridAPPSD):
                   ', P_batt setpoint reset to zero')
 
 
+  def RulesForRegulatorsBudget(self, device, rollingTimeInterval,
+                               rollingStepsAllowed, printAllRulesFlag):
+
+    name = MethodUtil.DeviceToName[device]
+    histList = self.RegulatorHistory[device]
+    if printAllRulesFlag:
+      print('RulesForRegulatorsBudget--interval: ' +
+            str(rollingTimeInterval) + ', device: ' + name +
+            ', RegulatorHistory: ' + str(histList))
+    if name == 'RatioTapChanger.reg4b':
+      print('REG4B RulesForRegulatorsBudget--interval: ' +
+            str(rollingTimeInterval) + ', device: ' + name +
+            ', RegulatorHistory: ' + str(histList))
+
+    # iterate backwards through histList counting steps changed
+    rollingStepCount = 0
+    rollingStartTime = self.Regulators[device]['timestamp'] - \
+                       rollingTimeInterval
+    for it in range(len(histList)-1, 0, -1):
+      if histList[it][0] < rollingStartTime:
+        break
+      rollingStepCount += abs(histList[it][1] - histList[it-1][1])
+
+    tapBudget = max(0, rollingStepsAllowed - rollingStepCount)
+
+    if printAllRulesFlag:
+      print('RulesForRegulatorsBudget--interval: ' +
+            str(rollingTimeInterval) + ', device: ' + name +
+            ', rolling steps: ' + str(rollingStepCount) +
+            ', vs. allowed: ' + str(rollingStepsAllowed) +
+            ', tap budget: ' + str(tapBudget))
+    if name == 'RatioTapChanger.reg4b':
+      print('REG4B RulesForRegulatorsBudget--interval: ' +
+            str(rollingTimeInterval) + ', device: ' + name +
+            ', rolling steps: ' + str(rollingStepCount) +
+            ', vs. allowed: ' + str(rollingStepsAllowed) +
+            ', tap budget: ' + str(tapBudget))
+
+    return tapBudget
+
+
   def RulesForRegulatorsConflict(self, printAllRulesFlag=False):
     # GDB RULE_TWEAK
-    #rollingTimeInterval = 60 # for short simulations, every minute
-    #rollingTimeInterval = 60*30 # for long simulations, every 30 minutes
-    rollingTimeInterval = 60*15 # for long simulations, every 15 minutes
-    #rollingStepsAllowed = 8 # picked to trigger the rule a reasonable # of times
-    rollingStepsAllowed = 4 # picked to trigger the rule a reasonable # of times
+    #outerRollingTimeInterval = 60 # for short simulations, every minute
+    #outerRollingTimeInterval = 60*30 # for long simulations, every 30 minutes
+    outerRollingTimeInterval = 60*15 # for long simulations, every 15 minutes
+    #outerRollingStepsAllowed = 8 # picked to trigger the rule a reasonable # of times
+    outerRollingStepsAllowed = 4 # picked to trigger the rule a reasonable # of times
 
-    # set max/min allowable tap positions based on current position
-    for devid in self.Regulators:
-      histList = self.RegulatorHistory[devid]
-      if printAllRulesFlag:
-        print('RulesForRegulatorsConflict--device: ' +
-              MethodUtil.DeviceToName[devid] +
-              ', RegulatorHistory: ' + str(histList))
-      if MethodUtil.DeviceToName[devid] == 'RatioTapChanger.reg4b':
-        print('REG4B RulesForRegulatorsConflict--device: ' +
-              MethodUtil.DeviceToName[devid] +
-              ', RegulatorHistory: ' + str(histList))
-
-      # iterate backwards through histList counting steps changed
-      rollingStepCount = 0
-      rollingStartTime = self.Regulators[devid]['timestamp'] - \
-                         rollingTimeInterval
-      for it in range(len(histList)-1, 0, -1):
-        if histList[it][0] < rollingStartTime:
-          break
-        rollingStepCount += abs(histList[it][1] - histList[it-1][1])
-
-      tapBudget = max(0, rollingStepsAllowed - rollingStepCount)
-      if printAllRulesFlag:
-        print('RulesForRegulatorsConflict--device: ' +
-              MethodUtil.DeviceToName[devid] +
-              ', rolling steps: ' + str(rollingStepCount) +
-              ', vs. allowed: ' + str(rollingStepsAllowed) +
-              ', tap budget: ' + str(tapBudget))
-      if MethodUtil.DeviceToName[devid] == 'RatioTapChanger.reg4b':
-        print('REG4B RulesForRegulatorsConflict--device: ' +
-              MethodUtil.DeviceToName[devid] +
-              ', rolling steps: ' + str(rollingStepCount) +
-              ', vs. allowed: ' + str(rollingStepsAllowed) +
-              ', tap budget: ' + str(tapBudget))
-
-      # constrain by the overall tap budget and physical device limits
-      self.Regulators[devid]['maxStep'] = min(self.Regulators[devid]['step'] + \
-                                              tapBudget, 16)
-      self.Regulators[devid]['minStep'] = max(self.Regulators[devid]['step'] - \
-                                              tapBudget, -16)
-      if printAllRulesFlag:
-        print('RulesForRegulatorsConflict--device: ' +
-              MethodUtil.DeviceToName[devid] +
-              ', current tap pos: ' + str(self.Regulators[devid]['step']) +
-              ', min tap pos: ' + str(self.Regulators[devid]['minStep']) +
-              ', max tap pos: ' + str(self.Regulators[devid]['maxStep']))
-      if MethodUtil.DeviceToName[devid] == 'RatioTapChanger.reg4b':
-        print('REG4B RulesForRegulatorsConflict--device: ' +
-              MethodUtil.DeviceToName[devid] +
-              ', current tap pos: ' + str(self.Regulators[devid]['step']) +
-              ', min tap pos: ' + str(self.Regulators[devid]['minStep']) +
-              ', max tap pos: ' + str(self.Regulators[devid]['maxStep']))
+    innerRollingTimeInterval = 60
+    innerRollingStepsAllowed = 1
 
     # iterate over all regulator tap setpoints in ConflictMatrix to make sure
-    # they fall within the acceptable maxTapBudget range of the current position
+    # they fall within the acceptable tap budget range of the current position
     for device in self.ConflictMatrix:
       name = MethodUtil.DeviceToName[device]
       if name.startswith('RatioTapChanger.'):
+
+        outerTapBudget = self.RulesForRegulatorsBudget(device,
+                             outerRollingTimeInterval, outerRollingStepsAllowed,
+                             printAllRulesFlag)
+
+        innerTapBudget = self.RulesForRegulatorsBudget(device,
+                             innerRollingTimeInterval, innerRollingStepsAllowed,
+                             printAllRulesFlag)
+
+        tapBudget = min(outerTapBudget, innerTapBudget)
+
+        if printAllRulesFlag:
+          print('RulesForRegulatorsConflict--device: ' + name +
+                ', overall tap budget: ' + str(tapBudget))
+        if name == 'RatioTapChanger.reg4b':
+          print('REG4B RulesForRegulatorsConflict--device: ' + name +
+                ', overall tap budget: ' + str(tapBudget))
+
+        # constrain by the overall tap budget and physical device limits
+        self.Regulators[device]['minStep'] = max(
+                               self.Regulators[device]['step'] - tapBudget, -16)
+        self.Regulators[device]['maxStep'] = min(
+                               self.Regulators[device]['step'] + tapBudget, 16)
+
+        if printAllRulesFlag:
+          print('RulesForRegulatorsConflict--device: ' + name +
+                ', current tap pos: ' + str(self.Regulators[device]['step']) +
+                ', min tap pos: ' + str(self.Regulators[device]['minStep']) +
+                ', max tap pos: ' + str(self.Regulators[device]['maxStep']))
+        if name == 'RatioTapChanger.reg4b':
+          print('REG4B RulesForRegulatorsConflict--device: ' + name +
+                ', current tap pos: ' + str(self.Regulators[device]['step']) +
+                ', min tap pos: ' + str(self.Regulators[device]['minStep']) +
+                ', max tap pos: ' + str(self.Regulators[device]['maxStep']))
+
         for app in self.ConflictMatrix[device]:
           if self.ConflictMatrix[device][app][1] > \
              self.Regulators[device]['maxStep']:
@@ -856,92 +882,54 @@ class DeconflictionPipeline(GridAPPSD):
   def RulesForRegulatorsResolution(self,newResolutionVector,
                                    printAllRulesFlag=False):
     # GDB RULE_TWEAK
-    #rollingTimeInterval = 60 # for short simulations, every minute
-    #rollingTimeInterval = 60*30 # for long simulations, every 30 minutes
-    rollingTimeInterval = 60*15 # for long simulations, every 15 minutes
-    #rollingStepsAllowed = 8 # picked to trigger the rule a reasonable # of times
-    rollingStepsAllowed = 4 # picked to trigger the rule a reasonable # of times
+    #outerRollingTimeInterval = 60 # for short simulations, every minute
+    #outerRollingTimeInterval = 60*30 # for long simulations, every 30 minutes
+    outerRollingTimeInterval = 60*15 # for long simulations, every 15 minutes
+    #outerRollingStepsAllowed = 8 # picked to trigger the rule a reasonable # of times
+    outerRollingStepsAllowed = 4 # picked to trigger the rule a reasonable # of times
 
-    # set max/min allowable tap positions based on current position
-    for devid in self.Regulators:
-      devname = MethodUtil.DeviceToName[devid]
-      histList = self.RegulatorHistory[devid]
-      if printAllRulesFlag:
-        print('RulesForRegulatorsResolution--device: ' +
-              MethodUtil.DeviceToName[devid] +
-              ', RegulatorHistory: ' + str(histList))
-      if devname == 'RatioTapChanger.reg4b':
-        print('REG4B RulesForRegulatorsResolution--device: ' +
-              MethodUtil.DeviceToName[devid] +
-              ', RegulatorHistory: ' + str(histList))
-
-      # iterate backwards through histList counting steps changed
-      rollingStepCount = 0
-      rollingStartTime = self.Regulators[devid]['timestamp'] - \
-                         rollingTimeInterval
-      if devname == 'RatioTapChanger.reg4b':
-      #if False:
-        print('REG4B RulesForRegulatorsResolution--device: ' +
-              MethodUtil.DeviceToName[devid] +
-              ', current device timestamp: ' + str(self.Regulators[devid]['timestamp']) + ', rollingStartTime: ' + str(rollingStartTime))
-      for it in range(len(histList)-1, 0, -1):
-        if devname == 'RatioTapChanger.reg4b':
-        #if False:
-          print('REG4B RulesForRegulatorsResolution--device: ' +
-                MethodUtil.DeviceToName[devid] +
-                ', checking history timestamp: ' + str(histList[it][0]))
-        if histList[it][0] < rollingStartTime:
-          if devname == 'RatioTapChanger.reg4b':
-          #if False:
-            print('REG4B RulesForRegulatorsResolution--device: ' +
-                  MethodUtil.DeviceToName[devid] +
-                  ', BREAK due to history timestamp before rollingStartTime')
-          break
-        rollingStepCount += abs(histList[it][1] - histList[it-1][1])
-        if devname == 'RatioTapChanger.reg4b':
-        #if False:
-          print('REG4B RulesForRegulatorsResolution--device: ' +
-                MethodUtil.DeviceToName[devid] +
-                ', history step: ' + str(histList[it][1]) + ', rollingStepCount: ' + str(rollingStepCount))
-
-      tapBudget = max(0, rollingStepsAllowed - rollingStepCount)
-      if printAllRulesFlag:
-        print('RulesForRegulatorsResolution--device: ' +
-              MethodUtil.DeviceToName[devid] +
-              ', rolling steps: ' + str(rollingStepCount) +
-              ', vs. allowed: ' + str(rollingStepsAllowed) +
-              ', tap budget: ' + str(tapBudget))
-      if MethodUtil.DeviceToName[devid] == 'RatioTapChanger.reg4b':
-        print('REG4B RulesForRegulatorsResolution--device: ' +
-              MethodUtil.DeviceToName[devid] +
-              ', rolling steps: ' + str(rollingStepCount) +
-              ', vs. allowed: ' + str(rollingStepsAllowed) +
-              ', tap budget: ' + str(tapBudget))
-
-      # constrain by the overall tap budget and physical device limits
-      self.Regulators[devid]['maxStep'] = min(self.Regulators[devid]['step'] + \
-                                              tapBudget, 16)
-      self.Regulators[devid]['minStep'] = max(self.Regulators[devid]['step'] - \
-                                              tapBudget, -16)
-
-      if printAllRulesFlag:
-        print('RulesForRegulatorsResolution--device: ' +
-              MethodUtil.DeviceToName[devid] +
-              ', current tap pos: ' + str(self.Regulators[devid]['step']) +
-              ', min tap pos: ' + str(self.Regulators[devid]['minStep']) +
-              ', max tap pos: ' + str(self.Regulators[devid]['maxStep']))
-      if MethodUtil.DeviceToName[devid] == 'RatioTapChanger.reg4b':
-        print('REG4B RulesForRegulatorsResolution--device: ' +
-              MethodUtil.DeviceToName[devid] +
-              ', current tap pos: ' + str(self.Regulators[devid]['step']) +
-              ', min tap pos: ' + str(self.Regulators[devid]['minStep']) +
-              ', max tap pos: ' + str(self.Regulators[devid]['maxStep']))
+    innerRollingTimeInterval = 60
+    innerRollingStepsAllowed = 1
 
     # iterate over all regulator tap setpoints in newResolutionVector to insure
-    # they fall within the acceptable maxTapBudget range of the current position
+    # they fall within the acceptable tap budget range of the current position
     for device in newResolutionVector:
       name = MethodUtil.DeviceToName[device]
       if name.startswith('RatioTapChanger.'):
+        outerTapBudget = self.RulesForRegulatorsBudget(device,
+                             outerRollingTimeInterval, outerRollingStepsAllowed,
+                             printAllRulesFlag)
+
+        innerTapBudget = self.RulesForRegulatorsBudget(device,
+                             innerRollingTimeInterval, innerRollingStepsAllowed,
+                             printAllRulesFlag)
+
+        tapBudget = min(outerTapBudget, innerTapBudget)
+
+        if printAllRulesFlag:
+          print('RulesForRegulatorsResolution--device: ' + name +
+                ', overall tap budget: ' + str(tapBudget))
+        if name == 'RatioTapChanger.reg4b':
+          print('REG4B RulesForRegulatorsResolution--device: ' + name +
+                ', overall tap budget: ' + str(tapBudget))
+
+        # constrain by the overall tap budget and physical device limits
+        self.Regulators[device]['minStep'] = max(
+                               self.Regulators[device]['step'] - tapBudget, -16)
+        self.Regulators[device]['maxStep'] = min(
+                               self.Regulators[device]['step'] + tapBudget, 16)
+
+        if printAllRulesFlag:
+          print('RulesForRegulatorsResolution--device: ' + name +
+                ', current tap pos: ' + str(self.Regulators[device]['step']) +
+                ', min tap pos: ' + str(self.Regulators[device]['minStep']) +
+                ', max tap pos: ' + str(self.Regulators[device]['maxStep']))
+        if name == 'RatioTapChanger.reg4b':
+          print('REG4B RulesForRegulatorsResolution--device: ' + name +
+                ', current tap pos: ' + str(self.Regulators[device]['step']) +
+                ', min tap pos: ' + str(self.Regulators[device]['minStep']) +
+                ', max tap pos: ' + str(self.Regulators[device]['maxStep']))
+
         if newResolutionVector[device][1] > self.Regulators[device]['maxStep']:
           print('RulesForRegulatorsResolution--device: ' + name +
                 ', tap pos setpoint: ' +
