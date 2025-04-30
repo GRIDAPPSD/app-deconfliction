@@ -592,8 +592,8 @@ class DeconflictionPipeline(GridAPPSD):
                 '--tap pos setpoint reset to min feasible pos: '+
                 str(newResolutionVector[device][1]))
 
-        # enforce the tap budget rule
-        if 'maxStep' in self.Regulators[device]:
+        # enforce the tap budget rule if the rules weren't applied last
+        if self.rulesStageFirstFlag:
           if newResolutionVector[device][1] > \
              self.Regulators[device]['maxStep']:
             print('SetpointValidatorForRegulators--device: ' + name +
@@ -1903,8 +1903,8 @@ class DeconflictionPipeline(GridAPPSD):
     # controls whether rules stage deconfliction is done as the first stage
     # using the ConflictMatrix or deferred until the last stage before device
     # dispatch using the ResolutionVector
-    #self.rulesStageFirstFlag = True
-    self.rulesStageFirstFlag = False
+    self.rulesStageFirstFlag = True
+    #self.rulesStageFirstFlag = False
 
     # for SHIVA conflict metric testing
     #self.TimeConflictMatrix = {}
