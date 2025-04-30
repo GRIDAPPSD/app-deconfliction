@@ -715,7 +715,7 @@ class DeconflictionPipeline(GridAPPSD):
       if rollingSwitchCount >= rollingSwitchesAllowed:
         # save the final P_batt_inv in the history list since we need to make
         # sure not to allow the opposite direction in any setpoint requests
-        self.BatteriesInfo[devicdevice]['switch_P_batt_inv'] = \
+        self.BatteriesInfo[device]['switch_P_batt_inv'] = \
                               self.BatteryHistory[device][-1][1]
       else:
         self.BatteriesInfo[device]['switch_P_batt_inv'] = None
@@ -752,7 +752,7 @@ class DeconflictionPipeline(GridAPPSD):
             str(rollingTimeInterval) + ', device: ' + name +
             ', RegulatorHistory: ' + str(histList))
     if name == 'RatioTapChanger.reg4b':
-      print('REG4B RulesForRegulatorsBudget--interval: ' +
+      print('REG4B DEBUG RulesForRegulatorsBudget--interval: ' +
             str(rollingTimeInterval) + ', device: ' + name +
             ', RegulatorHistory: ' + str(histList))
 
@@ -760,8 +760,17 @@ class DeconflictionPipeline(GridAPPSD):
     rollingStepCount = 0
     rollingStartTime = self.Regulators[device]['timestamp'] - \
                        rollingTimeInterval
+    if name == 'RatioTapChanger.reg4b':
+      print('REG4B DEBUG RulesForRegulatorsBudget--interval: ' +
+            str(rollingTimeInterval) + ', device: ' + name +
+            ', currentTime: ' + str(self.Regulators[device]['timestamp']),
+            ', rollingStartTime: ' + str(rollingStartTime))
     for it in range(len(histList)-1, 0, -1):
       if histList[it][0] < rollingStartTime:
+        if name == 'RatioTapChanger.reg4b':
+          print('REG4B DEBUG RulesForRegulatorsBudget--interval: ' +
+                str(rollingTimeInterval) + ', device: ' + name +
+                ', BREAK historyTime: ' + str(histList[it-1][0]))
         break
       rollingStepCount += abs(histList[it][1] - histList[it-1][1])
 
