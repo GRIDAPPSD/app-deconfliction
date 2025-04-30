@@ -566,6 +566,22 @@ class DeconflictionPipeline(GridAPPSD):
                 ', P_batt setpoint reset to max discharge P_batt: '+
                 str(newResolutionVector[device][1]))
 
+        # enforce the change of charge/discharge state rule if the rules
+        # weren't applied last
+        if self.rulesStageFirstFlag and \
+           self.BatteriesInfo[device]['switch_P_batt_inv'] != None:
+          prev_P_batt_inv = self.BatteriesInfo[device]['switch_P_batt_inv']
+          if (prev_P_batt_inv>0 and newResolutionVector[device][1]<0) or \
+             (prev_P_batt_inv<0 and newResolutionVector[device][1]>0):
+            print('SetpointValidatorForBatteries--device: ' + name +
+                  ', P_batt setpoint attempt to change charge/discharge ' +
+                  'state: ' + str(newResolutionVector[device][1]) +
+                  ', reset to zero')
+            # force the setpoint request back to zero to avoid a change in
+            # charge/discharge state
+            newResolutionVector[device] = \
+                                (newResolutionVector[device][0], 0.0)
+
 
   def SetpointValidatorForRegulators(self, newResolutionVector,
                                      printAllValidatorFlag=False):
@@ -665,8 +681,8 @@ class DeconflictionPipeline(GridAPPSD):
           # check for switching between charge/discharge if over limit
           if self.BatteriesInfo[device]['switch_P_batt_inv'] != None:
             prev_P_batt_inv = self.BatteriesInfo[device]['switch_P_batt_inv']
-            if prev_P_batt_inv>0 and self.ConflictMatrix[device][app][1]<0 or \
-               prev_P_batt_inv<0 and self.ConflictMatrix[device][app][1]>0:
+            if (prev_P_batt_inv>0 and self.ConflictMatrix[device][app][1]<0) or\
+               (prev_P_batt_inv<0 and self.ConflictMatrix[device][app][1]>0):
               print('RulesForBatteriesConflict--device: ' + name + ', app: ' +
                      app + ', P_batt setpoint attempted to change ' +
                      'charge/discharge state: ' +
@@ -728,14 +744,13 @@ class DeconflictionPipeline(GridAPPSD):
         # check for switching between charge/discharge if over limit
         if self.BatteriesInfo[device]['switch_P_batt_inv'] != None:
           prev_P_batt_inv = self.BatteriesInfo[device]['switch_P_batt_inv']
-          if prev_P_batt_inv>0 and newResolutionVector[device][1]<0 or \
-             prev_P_batt_inv<0 and newResolutionVector[device][1]>0:
+          if (prev_P_batt_inv>0 and newResolutionVector[device][1]<0) or \
+             (prev_P_batt_inv<0 and newResolutionVector[device][1]>0):
             print('RulesForBatteriesResolution--device: ' + name +
               ', P_batt setpoint attempted to change charge/discharge state: ' +
               str(newResolutionVector[device][1]))
-            # this is pretty harsh to force the setpoint request back to zero
-            # to avoid a possible change in charge/discharge state, but no
-            # other choice when the rule is applied before other stages
+            # force the setpoint request back to zero to avoid a change in
+            # charge/discharge state
             newResolutionVector[device] = \
                                 (newResolutionVector[device][0], 0.0)
             print('RulesForBatteriesResolution--device: ' + name +
