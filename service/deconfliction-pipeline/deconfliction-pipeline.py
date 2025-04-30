@@ -1077,6 +1077,7 @@ class DeconflictionPipeline(GridAPPSD):
         if value[1] != self.Regulators[device]['step']:
           # new value before old value for DifferenceBuilder
           # TODO DEBUG TIED REG4 ISSUE
+          '''
           if name!='RatioTapChanger.reg4a' and name!='RatioTapChanger.reg4c':
             self.difference_builder.add_difference(device,
                    'TapChanger.step', value[1], self.Regulators[device]['step'])
@@ -1085,7 +1086,6 @@ class DeconflictionPipeline(GridAPPSD):
           self.difference_builder.add_difference(device,
                    'TapChanger.step', value[1], self.Regulators[device]['step'])
           diffCount += 1
-          '''
 
 
           if printAllDispatchesFlag:
