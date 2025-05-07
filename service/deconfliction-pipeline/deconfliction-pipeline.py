@@ -568,7 +568,7 @@ class DeconflictionPipeline(GridAPPSD):
 
         # enforce the change of charge/discharge state rule if the rules
         # weren't applied last
-        if self.rulesStageFirstFlag and \
+        if not self.rulesStageLastFlag and \
            self.BatteriesInfo[device]['switch_P_batt_inv'] != None:
           prev_P_batt_inv = self.BatteriesInfo[device]['switch_P_batt_inv']
           if (prev_P_batt_inv>0 and newResolutionVector[device][1]<0) or \
@@ -609,7 +609,7 @@ class DeconflictionPipeline(GridAPPSD):
                 str(newResolutionVector[device][1]))
 
         # enforce the tap budget rule if the rules weren't applied last
-        if self.rulesStageFirstFlag:
+        if not self.rulesStageLastFlag:
           if newResolutionVector[device][1] > \
              self.Regulators[device]['maxStep']:
             print('SetpointValidatorForRegulators--device: ' + name +
@@ -1421,7 +1421,7 @@ class DeconflictionPipeline(GridAPPSD):
         # Published IEEE Access Foundational Paper Reference:
         #   Step 3.2--Deconfliction Solution
         # RULES & HEURISTICS stage deconfliction done last
-        if not self.rulesStageFirstFlag:
+        if self.rulesStageLastFlag:
           print('ProcessSetpointsMessage--applying final RULES & HEURISTICS ' +
                 'stage deconfliction for running cooperation')
           self.RulesForBatteriesResolution(newResolutionVector,
@@ -1492,7 +1492,7 @@ class DeconflictionPipeline(GridAPPSD):
         self.RulesForBatteriesConflict(self.printAllRulesFlag)
         self.RulesForRegulatorsConflict(self.printAllRulesFlag)
 
-        self.rulesConflictMetric = self.ConflictMetricComputation(timestamp)
+        self.rulesFirstConflictMetric =self.ConflictMetricComputation(timestamp)
 
     # Published IEEE Access Foundational Paper Reference:
     #   Step 3--Deconflictor
@@ -1522,7 +1522,7 @@ class DeconflictionPipeline(GridAPPSD):
       # Published IEEE Access Foundational Paper Reference:
       #   Step 3.2--Deconfliction Solution
       # RULES & HEURISTICS stage deconfliction done last
-      if not self.rulesStageFirstFlag:
+      if self.rulesStageLastFlag:
         print('DeconflictSetpoints--applying final RULES & HEURISTICS ' +
               'stage deconfliction')
         self.RulesForBatteriesResolution(newResolutionVector,
@@ -1736,7 +1736,7 @@ class DeconflictionPipeline(GridAPPSD):
     # Published IEEE Access Foundational Paper Reference:
     #   Step 3.2--Deconfliction Solution
     # RULES & HEURISTICS stage deconfliction done last
-    if not self.rulesStageFirstFlag:
+    if self.rulesStageLastFlag:
       print('DeconflictSetpoints--applying final RULES & HEURISTICS ' +
             'stage deconfliction')
       self.RulesForBatteriesResolution(newResolutionVector,
@@ -1744,7 +1744,7 @@ class DeconflictionPipeline(GridAPPSD):
       self.RulesForRegulatorsResolution(newResolutionVector,
                                         self.printAllRulesFlag)
 
-      self.rulesConflictMetric = self.ConflictMetricComputation(timestamp)
+      self.rulesLastConflictMetric = self.ConflictMetricComputation(timestamp)
 
     # Published IEEE Access Foundational Paper Reference:
     #   Step 4--Setpoint Validator
@@ -1763,12 +1763,12 @@ class DeconflictionPipeline(GridAPPSD):
       self.pltFile.write(str(self.startConflictMetric))
       self.pltFile.write(',')
       if self.rulesStageFirstFlag:
-        self.pltFile.write(str(self.rulesConflictMetric))
+        self.pltFile.write(str(self.rulesFirstConflictMetric))
         self.pltFile.write(',')
       self.pltFile.write(str(self.conflictMetric))
       self.pltFile.write(',')
-      if not self.rulesStageFirstFlag:
-        self.pltFile.write(str(self.rulesConflictMetric))
+      if self.rulesStageLastFlag:
+        self.pltFile.write(str(self.rulesLastConflictMetric))
         self.pltFile.write(',')
       self.pltFile.write(str(self.coopResponseCounter))
       self.pltFile.write('\n')
@@ -1916,10 +1916,10 @@ class DeconflictionPipeline(GridAPPSD):
     self.printAllDispatchesFlag = False
 
     # controls whether rules stage deconfliction is done as the first stage
-    # using the ConflictMatrix or deferred until the last stage before device
-    # dispatch using the ResolutionVector
+    # using the ConflictMatrix and/or deferred until the last stage before
+    # device dispatch using the ResolutionVector
     self.rulesStageFirstFlag = True
-    #self.rulesStageFirstFlag = False
+    self.rulesStageLastFlag = True
 
     # for SHIVA conflict metric testing
     #self.TimeConflictMatrix = {}
