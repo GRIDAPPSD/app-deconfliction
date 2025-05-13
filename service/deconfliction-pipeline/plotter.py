@@ -176,8 +176,12 @@ def _main():
 
   #app_list = ['gridappsd-resilience-app', 'gridappsd-decarbonization-app', 'gridappsd-profit_cvr-app']
   app_list = ['gridappsd-resilience-app', 'gridappsd-decarbonization-app']
+  #app_list = ['gridappsd-resilience-app']
+  #app_list = ['gridappsd-decarbonization-app']
   #prefix_list = ['resil', 'decarb', 'cvr']
   prefix_list = ['resil', 'decarb']
+  #prefix_list = ['resil']
+  #prefix_list = ['decarb']
 
   for iapp in range(len(app_list)):
     hits = 0
