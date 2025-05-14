@@ -1545,7 +1545,9 @@ class DeconflictionPipeline(GridAPPSD):
       # Published IEEE Access Foundational Paper Reference:
       #   Step 3.2--Deconfliction Solution
       # RULES & HEURISTICS stage deconfliction done last
-      if self.rulesStageLastFlag:
+      # if there is no conflict and rules were just applied, there is no
+      # need to apply them again since the ConflictMatrix has not changed
+      if self.rulesStageLastFlag and not self.rulesStageFirstFlag:
         print('DeconflictSetpoints--applying final RULES & HEURISTICS ' +
               'stage deconfliction')
         self.RulesForBatteriesResolution(newResolutionVector,
