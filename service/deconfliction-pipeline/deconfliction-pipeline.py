@@ -758,7 +758,7 @@ class DeconflictionPipeline(GridAPPSD):
       name = MethodUtil.DeviceToName[device]
       if name == 'RatioTapChanger.reg4b':
         for app in self.ConflictMatrix[device]:
-          print('REG4B ZZZ CONFLICT msg: ' + msg + ', app: ' + app +
+          print('REG4B ZZZ CONFLICT ' + msg + ', app: ' + app +
                 ', setpoint: ' + str(self.ConflictMatrix[device][app][1]))
 
 
@@ -766,7 +766,7 @@ class DeconflictionPipeline(GridAPPSD):
     for device in resolutionVector:
       name = MethodUtil.DeviceToName[device]
       if name == 'RatioTapChanger.reg4b':
-        print('REG4B ZZZ RESOLUTION msg: ' + msg +
+        print('REG4B ZZZ RESOLUTION ' + msg +
               ', setpoint: ' + str(resolutionVector[device][1]))
 
 
@@ -780,7 +780,7 @@ class DeconflictionPipeline(GridAPPSD):
             str(rollingTimeInterval) + ', device: ' + name +
             ', RegulatorHistory: ' + str(histList))
     if name == 'RatioTapChanger.reg4b':
-      print('REG4B DEBUG RulesForRegulatorsBudget--interval: ' +
+      print('REG4B RulesForRegulatorsBudget--interval: ' +
             str(rollingTimeInterval) + ', device: ' + name +
             ', RegulatorHistory: ' + str(histList))
 
@@ -789,14 +789,14 @@ class DeconflictionPipeline(GridAPPSD):
     rollingStartTime = self.Regulators[device]['timestamp'] - \
                        rollingTimeInterval
     if name == 'RatioTapChanger.reg4b':
-      print('REG4B DEBUG RulesForRegulatorsBudget--interval: ' +
+      print('REG4B RulesForRegulatorsBudget--interval: ' +
             str(rollingTimeInterval) + ', device: ' + name +
             ', currentTime: ' + str(self.Regulators[device]['timestamp']),
             ', rollingStartTime: ' + str(rollingStartTime))
     for it in range(len(histList)-1, 0, -1):
       if histList[it][0] < rollingStartTime:
         if name == 'RatioTapChanger.reg4b':
-          print('REG4B DEBUG RulesForRegulatorsBudget--interval: ' +
+          print('REG4B RulesForRegulatorsBudget--interval: ' +
                 str(rollingTimeInterval) + ', device: ' + name +
                 ', BREAK historyTime: ' + str(histList[it-1][0]))
         break
@@ -812,7 +812,7 @@ class DeconflictionPipeline(GridAPPSD):
             ', tap budget: ' + str(tapBudget))
     if name == 'RatioTapChanger.reg4b':
       print('REG4B ZZZ RulesForRegulatorsBudget--interval: ' +
-            str(rollingTimeInterval) + ', device: ' + name +
+            str(rollingTimeInterval) +
             ', rolling steps: ' + str(rollingStepCount) +
             ', vs. allowed: ' + str(rollingStepsAllowed) +
             ', tap budget: ' + str(tapBudget))
@@ -850,8 +850,8 @@ class DeconflictionPipeline(GridAPPSD):
           print('RulesForRegulatorsConflict--device: ' + name +
                 ', overall tap budget: ' + str(tapBudget))
         if name == 'RatioTapChanger.reg4b':
-          print('REG4B ZZZZ RulesForRegulatorsConflict--device: ' + name +
-                ', overall tap budget: ' + str(tapBudget))
+          print('REG4B ZZZZ RulesForRegulatorsConflict--overall tap budget: ' +
+                str(tapBudget))
 
         # constrain by the overall tap budget and physical device limits
         self.Regulators[device]['minStep'] = max(
@@ -865,10 +865,10 @@ class DeconflictionPipeline(GridAPPSD):
                 ', min tap pos: ' + str(self.Regulators[device]['minStep']) +
                 ', max tap pos: ' + str(self.Regulators[device]['maxStep']))
         if name == 'RatioTapChanger.reg4b':
-          print('REG4B ZZZZ RulesForRegulatorsConflict--device: ' + name +
-                ', current tap pos: ' + str(self.Regulators[device]['step']) +
-                ', min tap pos: ' + str(self.Regulators[device]['minStep']) +
-                ', max tap pos: ' + str(self.Regulators[device]['maxStep']))
+          print('REG4B ZZZZ RulesForRegulatorsConflict--' +
+                'current pos: ' + str(self.Regulators[device]['step']) +
+                ', min pos: ' + str(self.Regulators[device]['minStep']) +
+                ', max pos: ' + str(self.Regulators[device]['maxStep']))
 
         for app in self.ConflictMatrix[device]:
           if self.ConflictMatrix[device][app][1] > \
@@ -879,8 +879,8 @@ class DeconflictionPipeline(GridAPPSD):
                   ', above max allowable asset health pos, reset to: ' +
                   str(self.Regulators[device]['maxStep']))
             if name == 'RatioTapChanger.reg4b':
-              print('REG4B RulesForRegulatorsConflict--device: ' + name +
-                    ', app: ' + app + '--tap pos setpoint: ' +
+              print('REG4B RulesForRegulatorsConflict--app: ' + app +
+                    ', tap pos setpoint: ' +
                     str(self.ConflictMatrix[device][app][1]) +
                     ', above max allowable asset health pos, reset to: ' +
                     str(self.Regulators[device]['maxStep']))
@@ -896,8 +896,8 @@ class DeconflictionPipeline(GridAPPSD):
                   ', below min allowable asset health pos, reset to: ' +
                   str(self.Regulators[device]['minStep']))
             if name == 'RatioTapChanger.reg4b':
-              print('REG4B RulesForRegulatorsConflict--device: ' + name +
-                    ', app: ' + app + '--tap pos setpoint: ' +
+              print('REG4B RulesForRegulatorsConflict--app: ' + app +
+                    ', tap pos setpoint: ' +
                     str(self.ConflictMatrix[device][app][1]) +
                     ', below min allowable asset health pos, reset to: ' +
                     str(self.Regulators[device]['minStep']))
@@ -907,8 +907,8 @@ class DeconflictionPipeline(GridAPPSD):
 
           else:
             if name == 'RatioTapChanger.reg4b':
-              print('REG4B RulesForRegulatorsConflict--device: ' + name +
-                    ', app: ' + app + '--tap pos setpoint: ' +
+              print('REG4B RulesForRegulatorsConflict--app: ' + app +
+                    ', tap pos setpoint: ' +
                     str(self.ConflictMatrix[device][app][1]) +
                     ', in range of min: ' +
                     str(self.Regulators[device]['minStep']) + ', max: ' +
@@ -946,8 +946,8 @@ class DeconflictionPipeline(GridAPPSD):
           print('RulesForRegulatorsResolution--device: ' + name +
                 ', overall tap budget: ' + str(tapBudget))
         if name == 'RatioTapChanger.reg4b':
-          print('REG4B ZZZZ RulesForRegulatorsResolution--device: ' + name +
-                ', overall tap budget: ' + str(tapBudget))
+          print('REG4B ZZZZ RulesForRegulatorsResolution--' +
+                'overall tap budget: ' + str(tapBudget))
 
         # constrain by the overall tap budget and physical device limits
         self.Regulators[device]['minStep'] = max(
@@ -961,8 +961,8 @@ class DeconflictionPipeline(GridAPPSD):
                 ', min tap pos: ' + str(self.Regulators[device]['minStep']) +
                 ', max tap pos: ' + str(self.Regulators[device]['maxStep']))
         if name == 'RatioTapChanger.reg4b':
-          print('REG4B ZZZZ RulesForRegulatorsResolution--device: ' + name +
-                ', current tap pos: ' + str(self.Regulators[device]['step']) +
+          print('REG4B ZZZZ RulesForRegulatorsResolution--' +
+                'current tap pos: ' + str(self.Regulators[device]['step']) +
                 ', min tap pos: ' + str(self.Regulators[device]['minStep']) +
                 ', max tap pos: ' + str(self.Regulators[device]['maxStep']))
 
@@ -973,8 +973,8 @@ class DeconflictionPipeline(GridAPPSD):
                 ', above max allowable asset health pos, reset to: ' +
                 str(self.Regulators[device]['maxStep']))
           if name == 'RatioTapChanger.reg4b':
-            print('REG4B RulesForRegulatorsResolution--device: ' + name +
-                  ', tap pos setpoint: ' +
+            print('REG4B RulesForRegulatorsResolution--' +
+                  'tap pos setpoint: ' +
                   str(newResolutionVector[device][1]) +
                   ', above max allowable asset health pos, reset to: ' +
                   str(self.Regulators[device]['maxStep']))
@@ -990,8 +990,8 @@ class DeconflictionPipeline(GridAPPSD):
                 ', below min allowable asset health pos, reset to: ' +
                 str(self.Regulators[device]['minStep']))
           if name == 'RatioTapChanger.reg4b':
-            print('REG4B RulesForRegulatorsResolution--device: ' + name +
-                  ', tap pos setpoint: ' +
+            print('REG4B RulesForRegulatorsResolution--' +
+                  'tap pos setpoint: ' +
                   str(newResolutionVector[device][1]) +
                   ', below min allowable asset health pos, reset to: ' +
                   str(self.Regulators[device]['minStep']))
@@ -1001,8 +1001,8 @@ class DeconflictionPipeline(GridAPPSD):
 
         else:
           if name == 'RatioTapChanger.reg4b':
-            print('REG4B RulesForRegulatorsResolution--device: ' + name +
-                  ', tap pos setpoint: ' +
+            print('REG4B RulesForRegulatorsResolution--' +
+                  'tap pos setpoint: ' +
                   str(newResolutionVector[device][1]) +
                   ', in range of min: ' +
                   str(self.Regulators[device]['minStep']) + ', max: ' +
@@ -1110,7 +1110,7 @@ class DeconflictionPipeline(GridAPPSD):
           # TODO DEBUG TIED REG4 ISSUE
           #if name == 'RatioTapChanger.reg4b':
           if name.startswith('RatioTapChanger.reg4'):
-            print('\nREG4B ZZZZ DeviceDispatcher--regulator device: ' + name +
+            print('REG4B ZZZZ DeviceDispatcher--regulator device: ' + name +
                   ', timestamp: ' + str(timestamp) + ', new value: ' +
                   str(value[1]) + ', old value: ' +
                   str(self.Regulators[device]['step']))
@@ -1122,7 +1122,7 @@ class DeconflictionPipeline(GridAPPSD):
                     str(self.Regulators[device]['step']))
 
         elif name == 'RatioTapChanger.reg4b':
-          print('REG4B ZZZ DeviceDispatcher--DISPATCH NOT needed, regulator ' +
+          print('REG4B ZZZZ DeviceDispatcher--DISPATCH NOT needed, regulator ' +
                 'device: ' + name + ', timestamp: ' + str(timestamp) +
                 ', same value: ' + str(value[1]))
 
@@ -1295,9 +1295,8 @@ class DeconflictionPipeline(GridAPPSD):
           self.RegulatorHistory[device].append((message['timestamp'],
                                                self.Regulators[device]['step']))
           if self.Regulators[device]['name'] == 'RatioTapChanger.reg4b':
-            print('\nREG4B ZZZZ CHANGE ProcessSimulationMessage--timestamp: ' +
-                  str(message['timestamp']) + ', device: ' +
-                  self.Regulators[device]['name'] + ', tap position: ' +
+            print('REG4B ZZZZ CHANGE ProcessSimulationMessage--timestamp: ' +
+                  str(message['timestamp']) + ', tap position: ' +
                   str(self.Regulators[device]['step']) + '\n')
 
         elif len(self.RegulatorHistory[device]) == 0:
@@ -1428,10 +1427,10 @@ class DeconflictionPipeline(GridAPPSD):
         self.CooperationWeightsUpdate(timestamp, self.ConflictMatrix,
                                       self.TargetResolutionVector)
 
-        self.logConflictReg4b('line 1435 before Optimization')
+        self.logConflictReg4b('conclude cooperation before Optimization')
         newResolutionVector = self.Optimization(app_name, timestamp,
                                                 self.ConflictMatrix)
-        self.logResolutionReg4b('line 1438 after Optimization', newResolutionVector)
+        self.logResolutionReg4b('conclude cooperation after Optimization', newResolutionVector)
 
         # Published IEEE Access Foundational Paper Reference:
         #   Step 3.2--Deconfliction Solution
@@ -1441,10 +1440,10 @@ class DeconflictionPipeline(GridAPPSD):
                 'stage deconfliction for running cooperation')
           self.RulesForBatteriesResolution(newResolutionVector,
                                            self.printAllRulesFlag)
-          self.logConflictReg4b('line 1448 before RulesForRegulatorsConflict')
+          self.logConflictReg4b('conclude cooperation before last rules stage')
           self.RulesForRegulatorsResolution(newResolutionVector,
                                             self.printAllRulesFlag)
-          self.logConflictReg4b('line 1451 after RulesForRegulatorsConflict')
+          self.logConflictReg4b('conclude cooperation after last rules stage')
 
         # Published IEEE Access Foundational Paper Reference:
         #   Step 4--Setpoint Validator
@@ -1480,7 +1479,7 @@ class DeconflictionPipeline(GridAPPSD):
     self.SetpointProcessor(app_name, timestamp, set_points, meas_msg_flag,
                            printAllConflictsResolutionsFlag)
 
-    self.logConflictReg4b('line 1487 after SetpointProcessor')
+    self.logConflictReg4b('after SetpointProcessor with new setpoints')
 
     return True
 
@@ -1509,9 +1508,10 @@ class DeconflictionPipeline(GridAPPSD):
         print('DeconflictSetpoints--applying initial RULES & HEURISTICS ' +
               'stage deconfliction')
         self.RulesForBatteriesConflict(self.printAllRulesFlag)
-        self.logConflictReg4b('line 1516 before RulesForRegulatorsConflict')
+
+        self.logConflictReg4b('start deconfliction before first rules stage')
         self.RulesForRegulatorsConflict(self.printAllRulesFlag)
-        self.logConflictReg4b('line 1518 after RulesForRegulatorsConflict')
+        self.logConflictReg4b('start deconfliction after first rules stage')
 
         self.rulesFirstConflictMetric =self.ConflictMetricComputation(timestamp)
 
@@ -1552,10 +1552,10 @@ class DeconflictionPipeline(GridAPPSD):
               'stage deconfliction')
         self.RulesForBatteriesResolution(newResolutionVector,
                                          self.printAllRulesFlag)
-        self.logResolutionReg4b('line 1555 before RulesForRegulatorsResolution', newResolutionVector)
+        self.logResolutionReg4b('no conflict before last rules stage', newResolutionVector)
         self.RulesForRegulatorsResolution(newResolutionVector,
                                           self.printAllRulesFlag)
-        self.logResolutionReg4b('line 1558 after RulesForRegulatorsResolution', newResolutionVector)
+        self.logResolutionReg4b('no conflict after last rules stage', newResolutionVector)
 
       if printAllConflictsResolutionsFlag:
         print('DeconflictSetpoints--ResolutionVector (no conflict): ' +
@@ -1757,10 +1757,10 @@ class DeconflictionPipeline(GridAPPSD):
     self.CooperationWeightsUpdate(timestamp, self.ConflictMatrix,
                                   self.TargetResolutionVector)
 
-    self.logConflictReg4b('line 1760 before Optimization')
+    self.logConflictReg4b('cooperation stage done before Optimization')
     newResolutionVector = self.Optimization(app_name, timestamp,
                                             self.ConflictMatrix)
-    self.logResolutionReg4b('line 1763 after Optimization', newResolutionVector)
+    self.logConflictReg4b('cooperation stage done after Optimization')
 
     # Published IEEE Access Foundational Paper Reference:
     #   Step 3.2--Deconfliction Solution
@@ -1770,10 +1770,11 @@ class DeconflictionPipeline(GridAPPSD):
             'stage deconfliction')
       self.RulesForBatteriesResolution(newResolutionVector,
                                        self.printAllRulesFlag)
-      self.logResolutionReg4b('line 1773 before RulesForRegulatorsResolution', newResolutionVector)
+
+      self.logResolutionReg4b('cooperation and optimizatoin stages done before last rules stage', newResolutionVector)
       self.RulesForRegulatorsResolution(newResolutionVector,
                                         self.printAllRulesFlag)
-      self.logResolutionReg4b('line 1776 after RulesForRegulatorsResolution', newResolutionVector)
+      self.logResolutionReg4b('cooperation and optimizatoin stages done after last rules stage', newResolutionVector)
 
       self.rulesLastConflictMetric = self.ConflictMetricComputation(timestamp)
 
