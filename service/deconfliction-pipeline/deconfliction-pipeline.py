@@ -1641,6 +1641,66 @@ class DeconflictionPipeline(GridAPPSD):
       self.TargetResolutionVector = self.Optimization(app_name,
                                                  timestamp, self.ConflictMatrix)
 
+      # if we are not performing cooperation state deconfliction, use the
+      # target resolution vector as the final one and proceed to dispatch
+      if not self.coopStageFlag:
+        print('>>> DeconflictSetpoints--bypassing cooperation stage')
+
+        # Published IEEE Access Foundational Paper Reference:
+        #   Step 3.2--Deconfliction Solution
+        # RULES & HEURISTICS stage deconfliction done last
+        # if there is no conflict and rules were just applied, there is no
+        # need to apply them again since the ConflictMatrix has not changed
+        if self.rulesStageLastFlag and not self.rulesStageFirstFlag:
+          print('DeconflictSetpoints--bypassing cooperation applying final ' +
+                'RULES & HEURISTICS stage deconfliction')
+          self.RulesForBatteriesResolution(self.TargetResolutionVector,
+                                           self.printAllRulesFlag)
+          self.logResolutionReg4b('bypassing cooperation before last rules stage', self.TargetResolutionVector)
+          self.RulesForRegulatorsResolution(self.TargetResolutionVector,
+                                            self.printAllRulesFlag)
+          self.logResolutionReg4b('bypassing cooperation after last rules stage', self.TargetResolutionVector)
+
+        if printAllConflictsResolutionsFlag:
+          print('DeconflictSetpoints--ResolutionVector (bypassing cooperation): ' +
+                str(self.TargetResolutionVector))
+
+        if self.testDeviceName:
+          device = MethodUtil.NameToDevice[self.testDeviceName]
+          if device in self.TargetResolutionVector:
+            print('~TEST: ResolutionVector (bypassing cooperation) for ' +
+                  self.testDeviceName + ' setpoint: ' +
+                  str(self.TargetResolutionVector[device][1]) +
+                  ', timestamp: ' +
+                  str(self.TargetResolutionVector[device][0]))
+          else:
+            print('~TEST: ResolutionVector (bypassing cooperation) does not contain ' +
+                  self.testDeviceName)
+
+        # Published IEEE Access Foundational Paper Reference:
+        #   Step 4--Setpoint Validator
+        self.SetpointValidatorForBatteries(self.TargetResolutionVector,
+                                           self.printAllValidatorFlag)
+        self.SetpointValidatorForRegulators(self.TargetResolutionVector,
+                                            self.printAllValidatorFlag)
+
+        # Published IEEE Access Foundational Paper Reference:
+        #   Step 5--Device Dispatcher
+        dispatchCount = self.DeviceDispatcher(timestamp,
+                                              self.TargetResolutionVector,
+                                              self.printAllDispatchesFlag)
+        print('>>> DeconflictSetpoints--invoked device dispatch, # ' +
+              'devices dispatched: ' +str(dispatchCount))
+
+        # update the current resolution to the new resolution to be ready for
+        # the next dispatch
+        self.ResolutionVector.clear()
+        self.ResolutionVector = self.TargetResolutionVector
+
+        print('DeconflictSetpoints--finished processing, timestamp: ' +
+              str(timestamp) + ', app: ' + app_name)
+        return
+
       # need to insure there is always a minimum conflict matrix as soon as the
       # target resolution vector is set in case we never hit the code before
       # the threshold check that normally sets it
@@ -1969,6 +2029,7 @@ class DeconflictionPipeline(GridAPPSD):
     self.rulesStageFirstFlag = False
     self.rulesStageLastFlag = False
     self.refCount = 0 # for debug/verification
+    self.coopStageFlag = True
 
     # for SHIVA conflict metric testing
     #self.TimeConflictMatrix = {}
