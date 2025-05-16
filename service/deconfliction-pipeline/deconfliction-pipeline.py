@@ -754,19 +754,23 @@ class DeconflictionPipeline(GridAPPSD):
 
 
   def logConflictReg4b(self, msg):
+    self.refCount += 1
     for device in self.ConflictMatrix:
       name = MethodUtil.DeviceToName[device]
       if name == 'RatioTapChanger.reg4b':
         for app in self.ConflictMatrix[device]:
-          print('REG4B ZZZ CONFLICT ' + msg + ', app: ' + app +
+          print('REG4B ZZZ ConflictMatrix ' + msg + ', app: ' + app +
+                ', ref: ' + str(self.refCount) +
                 ', setpoint: ' + str(self.ConflictMatrix[device][app][1]))
 
 
   def logResolutionReg4b(self, msg, resolutionVector):
+    self.refCount += 1
     for device in resolutionVector:
       name = MethodUtil.DeviceToName[device]
       if name == 'RatioTapChanger.reg4b':
-        print('REG4B ZZZ RESOLUTION ' + msg +
+        print('REG4B ZZZ ResolutionVector ' + msg +
+              ', ref: ' + str(self.refCount) +
               ', setpoint: ' + str(resolutionVector[device][1]))
 
 
@@ -1110,7 +1114,9 @@ class DeconflictionPipeline(GridAPPSD):
           # TODO DEBUG TIED REG4 ISSUE
           #if name == 'RatioTapChanger.reg4b':
           if name.startswith('RatioTapChanger.reg4'):
+            self.refCount += 1
             print('REG4B ZZZZ DeviceDispatcher--regulator device: ' + name +
+                  ', ref: ' + str(self.refCount) +
                   ', timestamp: ' + str(timestamp) + ', new value: ' +
                   str(value[1]) + ', old value: ' +
                   str(self.Regulators[device]['step']))
@@ -1295,9 +1301,11 @@ class DeconflictionPipeline(GridAPPSD):
           self.RegulatorHistory[device].append((message['timestamp'],
                                                self.Regulators[device]['step']))
           if self.Regulators[device]['name'] == 'RatioTapChanger.reg4b':
+            self.refCount += 1
             print('REG4B ZZZZ CHANGE ProcessSimulationMessage--timestamp: ' +
                   str(message['timestamp']) + ', tap position: ' +
-                  str(self.Regulators[device]['step']) + '\n')
+                  str(self.Regulators[device]['step']) +
+                  ', ref: ' + str(self.refCount))
 
         elif len(self.RegulatorHistory[device]) == 0:
           # need to get a starting history data point at the current timestamp
@@ -1427,10 +1435,10 @@ class DeconflictionPipeline(GridAPPSD):
         self.CooperationWeightsUpdate(timestamp, self.ConflictMatrix,
                                       self.TargetResolutionVector)
 
-        self.logConflictReg4b('conclude cooperation before Optimization')
+        self.logConflictReg4b('running cooperation before Optimization')
         newResolutionVector = self.Optimization(app_name, timestamp,
                                                 self.ConflictMatrix)
-        self.logResolutionReg4b('conclude cooperation after Optimization', newResolutionVector)
+        self.logResolutionReg4b('running cooperation after Optimization', newResolutionVector)
 
         # Published IEEE Access Foundational Paper Reference:
         #   Step 3.2--Deconfliction Solution
@@ -1440,10 +1448,10 @@ class DeconflictionPipeline(GridAPPSD):
                 'stage deconfliction for running cooperation')
           self.RulesForBatteriesResolution(newResolutionVector,
                                            self.printAllRulesFlag)
-          self.logConflictReg4b('conclude cooperation before last rules stage')
+          self.logConflictReg4b('running cooperation before last rules stage')
           self.RulesForRegulatorsResolution(newResolutionVector,
                                             self.printAllRulesFlag)
-          self.logConflictReg4b('conclude cooperation after last rules stage')
+          self.logConflictReg4b('running cooperation after last rules stage')
 
         # Published IEEE Access Foundational Paper Reference:
         #   Step 4--Setpoint Validator
@@ -1771,10 +1779,10 @@ class DeconflictionPipeline(GridAPPSD):
       self.RulesForBatteriesResolution(newResolutionVector,
                                        self.printAllRulesFlag)
 
-      self.logResolutionReg4b('cooperation and optimizatoin stages done before last rules stage', newResolutionVector)
+      self.logResolutionReg4b('cooperation and optimization stages done before last rules stage', newResolutionVector)
       self.RulesForRegulatorsResolution(newResolutionVector,
                                         self.printAllRulesFlag)
-      self.logResolutionReg4b('cooperation and optimizatoin stages done after last rules stage', newResolutionVector)
+      self.logResolutionReg4b('cooperation and optimization stages done after last rules stage', newResolutionVector)
 
       self.rulesLastConflictMetric = self.ConflictMetricComputation(timestamp)
 
@@ -1952,6 +1960,7 @@ class DeconflictionPipeline(GridAPPSD):
     # device dispatch using the ResolutionVector
     self.rulesStageFirstFlag = True
     self.rulesStageLastFlag = True
+    self.refCount = 0 # for debug/verification
 
     # for SHIVA conflict metric testing
     #self.TimeConflictMatrix = {}
