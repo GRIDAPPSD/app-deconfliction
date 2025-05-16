@@ -562,6 +562,10 @@ class DeconflictionPipeline(GridAPPSD):
                 ', P_batt setpoint reset to max discharge P_batt: '+
                 str(newResolutionVector[device][1]))
 
+        # bail if rules aren't being applied at all
+        if not (self.rulesStageFirstFlag or self.rulesStageLastFlag):
+          continue
+
         # enforce the change of charge/discharge state rule if the rules
         # weren't applied last
         if not self.rulesStageLastFlag and \
@@ -603,6 +607,10 @@ class DeconflictionPipeline(GridAPPSD):
           print('SetpointValidatorForRegulators--device: ' + name +
                 '--tap pos setpoint reset to min feasible pos: '+
                 str(newResolutionVector[device][1]))
+
+        # bail if rules aren't being applied at all
+        if not (self.rulesStageFirstFlag or self.rulesStageLastFlag):
+          continue
 
         # enforce the tap budget rule if the rules weren't applied last
         if not self.rulesStageLastFlag:
@@ -1958,8 +1966,8 @@ class DeconflictionPipeline(GridAPPSD):
     # controls whether rules stage deconfliction is done as the first stage
     # using the ConflictMatrix and/or deferred until the last stage before
     # device dispatch using the ResolutionVector
-    self.rulesStageFirstFlag = True
-    self.rulesStageLastFlag = True
+    self.rulesStageFirstFlag = False
+    self.rulesStageLastFlag = False
     self.refCount = 0 # for debug/verification
 
     # for SHIVA conflict metric testing
