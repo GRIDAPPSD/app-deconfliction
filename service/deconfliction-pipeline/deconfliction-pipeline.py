@@ -1021,7 +1021,7 @@ class DeconflictionPipeline(GridAPPSD):
                   str(self.Regulators[device]['maxStep']))
 
 
-  def Optimization(self, app_name, timestamp, ConflictMatrix):
+  def Optimization(self, timestamp, ConflictMatrix):
     ResolutionVector = {}
 
     for device in ConflictMatrix:
@@ -1202,7 +1202,8 @@ class DeconflictionPipeline(GridAPPSD):
         return p, q
 
 
-  def ProcessSimulationMessage(self, message, printAllMessagesFlag=False):
+  def ProcessSimulationMessage(self, message, timestamp,
+                               printAllMessagesFlag=False):
     if self.pltFlag:
       self.pltFile.write('SIMULATION,')
       if self.pltTZero == None:
@@ -1212,10 +1213,10 @@ class DeconflictionPipeline(GridAPPSD):
         diff = (datetime.now() - self.pltTZero).total_seconds()
       self.pltFile.write(str(diff))
       self.pltFile.write(',')
-      self.pltFile.write(str(message['timestamp']))
+      self.pltFile.write(str(timestamp))
 
     if not printAllMessagesFlag:
-      print('ProcessSimulationMessage--timestamp: ' + str(message['timestamp']))
+      print('ProcessSimulationMessage--timestamp: ' + str(timestamp))
 
     self.simMessageCounter += 1
 
@@ -1228,14 +1229,14 @@ class DeconflictionPipeline(GridAPPSD):
         # comment this out and output it below with P_batt_inv to save space
         #if printAllMessagesFlag:
         #  print('ProcessSimulationMessage--timestamp: ' +
-        #        str(message['timestamp']) + ', device: ' +
+        #        str(timestamp) + ', device: ' +
         #        self.BatteriesInfo[device]['name'] +
         #        ', SoC: ' + str(self.BatteriesInfo[device]['SoC']))
 
       measid = self.BatteriesInfo[device]['P_batt_measid']
       if measid in measurements:
         # always update timestamp because it's needed for running history rule
-        self.BatteriesInfo[device]['timestamp'] = message['timestamp']
+        self.BatteriesInfo[device]['timestamp'] = timestamp
 
         p, q = self.pol2cart(measurements[measid]['magnitude'],
                              measurements[measid]['angle'])
@@ -1256,8 +1257,7 @@ class DeconflictionPipeline(GridAPPSD):
               self.BatteriesInfo[device]['P_batt_inv']<0) or \
              (meas_P_batt_inv<0 and self.BatteriesInfo[device]['P_batt_inv']>0):
             # append the timestamp, P_batt_inv to the running history
-            self.BatteryHistory[device].append((message['timestamp'],
-                                               meas_P_batt_inv))
+            self.BatteryHistory[device].append((timestamp, meas_P_batt_inv))
             print('ProcessSimulationMessage--BatteryHistory match, device: ' +
                   self.BatteriesInfo[device]['name'] +
                   ', history: ' + str(self.BatteryHistory[device]))
@@ -1266,17 +1266,16 @@ class DeconflictionPipeline(GridAPPSD):
         # like there is for regulators since we are just tracking changes from
         # charge to discharge and vice versa and not all changes
         #elif len(self.BatteryHistory[device]) == 0:
-        #  self.BatteryHistory[device].append((message['timestamp'],
-        #                                     meas_P_batt_inv))
-        #  print('ProcessSimulationMessage--BatteryHistory initialize, device: '+
-        #        self.BatteriesInfo[device]['name'] +
+        #  self.BatteryHistory[device].append((timestamp, meas_P_batt_inv))
+        #  print('ProcessSimulationMessage--BatteryHistory initialize, device: '
+        #        + self.BatteriesInfo[device]['name'] +
         #        ', history: ' + str(self.BatteryHistory[device]))
 
         self.BatteriesInfo[device]['P_batt_inv'] = meas_P_batt_inv
         MethodUtil.BatteryP_batt_inv[device] = meas_P_batt_inv
         if printAllMessagesFlag:
           print('ProcessSimulationMessage--timestamp: ' +
-                str(message['timestamp']) + ', device: ' +
+                str(timestamp) + ', device: ' +
                 self.BatteriesInfo[device]['name'] + ', P_batt_inv: ' +
                 str(self.BatteriesInfo[device]['P_batt_inv']) + ', SoC: ' +
                 str(self.BatteriesInfo[device]['SoC']))
@@ -1293,7 +1292,7 @@ class DeconflictionPipeline(GridAPPSD):
       measid = self.Regulators[device]['measid']
       if measid in measurements:
         # always update timestamp because it's needed for running history rule
-        self.Regulators[device]['timestamp'] = message['timestamp']
+        self.Regulators[device]['timestamp'] = timestamp
 
         # only update the rest if there is a value change
         if measurements[measid]['value'] != self.Regulators[device]['step']:
@@ -1301,23 +1300,23 @@ class DeconflictionPipeline(GridAPPSD):
           MethodUtil.RegulatorPos[device] = self.Regulators[device]['step']
           if printAllMessagesFlag:
             print('ProcessSimulationMessage--timestamp: ' +
-                  str(message['timestamp']) + ', device: ' +
+                  str(timestamp) + ', device: ' +
                   self.Regulators[device]['name'] + ', tap position: ' +
                   str(self.Regulators[device]['step']))
 
           # append the timestamp, step to the running history
-          self.RegulatorHistory[device].append((message['timestamp'],
+          self.RegulatorHistory[device].append((timestamp,
                                                self.Regulators[device]['step']))
           if self.Regulators[device]['name'] == 'RatioTapChanger.reg4b':
             self.refCount += 1
             print('REG4B ZZZZ CHANGE ProcessSimulationMessage--timestamp: ' +
-                  str(message['timestamp']) + ', tap position: ' +
+                  str(timestamp) + ', tap position: ' +
                   str(self.Regulators[device]['step']) +
                   ', ref: ' + str(self.refCount))
 
         elif len(self.RegulatorHistory[device]) == 0:
           # need to get a starting history data point at the current timestamp
-          self.RegulatorHistory[device].append((message['timestamp'],
+          self.RegulatorHistory[device].append((timestamp,
                                                self.Regulators[device]['step']))
 
         if self.pltFlag:
@@ -1349,14 +1348,14 @@ class DeconflictionPipeline(GridAPPSD):
       device = MethodUtil.NametoDevice[self.testDeviceName]
       if device in self.BatteriesInfo:
         print('~TEST simulation updated SoC for device name: ' +
-              self.testDeviceName + ', timestamp: ' + str(message['timestamp'])+
+              self.testDeviceName + ', timestamp: ' + str(timestamp)+
               ', SoC: ' + str(self.BatteriesInfo[device]['SoC']))
         print('~TEST simulation updated P_batt_inv for device name: ' +
-              self.testDeviceName + ', timestamp: ' + str(message['timestamp'])+
+              self.testDeviceName + ', timestamp: ' + str(timestamp)+
               ', P_batt_inv: ' + str(self.BatteriesInfo[device]['P_batt_inv']))
       elif device in self.Regulators:
         print('~TEST simulation updated tap position for device name: ' +
-              self.testDeviceName + ', timestamp: ' + str(message['timestamp'])+
+              self.testDeviceName + ', timestamp: ' + str(timestamp) +
               ', pos: ' + str(self.Regulators[device]['step']))
 
 
@@ -1389,10 +1388,8 @@ class DeconflictionPipeline(GridAPPSD):
                            message['input']['message']))
 
 
-  def ProcessSetpointsMessage(self, message, app_name, meas_msg_flag,
+  def ProcessSetpointsMessage(self, message, timestamp, app_name, meas_msg_flag,
                               coop_phase, printAllConflictsResolutionsFlag):
-    timestamp = message['timestamp']
-
     if meas_msg_flag:
       print('>>>\n>>> ProcessSetpointsMessage--MEAS message timestamp: ' +
             str(timestamp) + ', app: ' + app_name)
@@ -1444,8 +1441,7 @@ class DeconflictionPipeline(GridAPPSD):
                                       self.TargetResolutionVector)
 
         self.logConflictReg4b('running cooperation before Optimization')
-        newResolutionVector = self.Optimization(app_name, timestamp,
-                                                self.ConflictMatrix)
+        newResolutionVector = self.Optimization(timestamp, self.ConflictMatrix)
         self.logResolutionReg4b('running cooperation after Optimization', newResolutionVector)
 
         # Published IEEE Access Foundational Paper Reference:
@@ -1500,10 +1496,8 @@ class DeconflictionPipeline(GridAPPSD):
     return True
 
 
-  def DeconflictSetpoints(self, message, app_name, meas_msg_flag,
+  def DeconflictSetpoints(self, timestamp, app_names, meas_msg_flag,
                           printAllConflictsResolutionsFlag):
-    timestamp = message['timestamp']
-
     if meas_msg_flag:
       self.startConflictMetric = self.ConflictMetricComputation(timestamp)
 
@@ -1616,7 +1610,7 @@ class DeconflictionPipeline(GridAPPSD):
       # reset running counts for cooperation messages
       self.AppCoopCount.clear()
       print('DeconflictSetpoints--finished processing, timestamp: ' +
-            str(timestamp) + ', app: ' + app_name)
+            str(timestamp))
       return
 
     # conflict identified logic
@@ -1638,8 +1632,8 @@ class DeconflictionPipeline(GridAPPSD):
 
       # start with a "target" resolution vector using the optimization code
       # that computes a centroid/target per device
-      self.TargetResolutionVector = self.Optimization(app_name,
-                                                 timestamp, self.ConflictMatrix)
+      self.TargetResolutionVector = self.Optimization(timestamp,
+                                                      self.ConflictMatrix)
 
       # if we are not performing cooperation state deconfliction, use the
       # target resolution vector as the final one and proceed to dispatch
@@ -1698,7 +1692,7 @@ class DeconflictionPipeline(GridAPPSD):
         self.ResolutionVector = self.TargetResolutionVector
 
         print('DeconflictSetpoints--finished processing, timestamp: ' +
-              str(timestamp) + ', app: ' + app_name)
+              str(timestamp))
         return
 
       # need to insure there is always a minimum conflict matrix as soon as the
@@ -1720,7 +1714,7 @@ class DeconflictionPipeline(GridAPPSD):
       # set the cooperation timestamp to indicate when cooperation was initiated
       self.coopTimestamp = timestamp
       print('DeconflictSetpoints--finished processing, timestamp: ' +
-            str(timestamp) + ', app: ' + app_name)
+            str(timestamp))
       return
 
     # coop message with conflict to get here
@@ -1729,12 +1723,13 @@ class DeconflictionPipeline(GridAPPSD):
 
     self.coopResponseCounter += 1
 
-    # increment cooperation message counter for app that is one of the criteria
+    # increment cooperation message counter for apps as one of the criteria
     # for ending cooperation
-    if app_name in self.AppCoopCount:
-      self.AppCoopCount[app_name] += 1
-    else:
-      self.AppCoopCount[app_name] = 1
+    for app_name in app_names:
+      if app_name in self.AppCoopCount:
+        self.AppCoopCount[app_name] += 1
+      else:
+        self.AppCoopCount[app_name] = 1
 
     # save the previous conflict metric for comparison
     prevConflictMetric = self.conflictMetric
@@ -1790,7 +1785,7 @@ class DeconflictionPipeline(GridAPPSD):
 
       # start with a "target" resolution vector using the optimization code
       # that computes a weighted centroid per device
-      newTargetResolutionVector = self.Optimization(app_name, timestamp,
+      newTargetResolutionVector = self.Optimization(timestamp,
                                                     self.ConflictMatrix)
 
       # publish this target resolution vector to the cooperation topic for
@@ -1799,7 +1794,7 @@ class DeconflictionPipeline(GridAPPSD):
                      'targetResolutionVector': newTargetResolutionVector}
       self.gapps.send(self.coop_topic, json.dumps(coopMessage))
       print('DeconflictSetpoints--finished processing, timestamp: ' +
-            str(timestamp) + ', app: ' + app_name)
+            str(timestamp))
       return
 
     # thresholds for ending cooperation have been met to get here
@@ -1834,8 +1829,7 @@ class DeconflictionPipeline(GridAPPSD):
                                   self.TargetResolutionVector)
 
     self.logConflictReg4b('cooperation stage done before Optimization')
-    newResolutionVector = self.Optimization(app_name, timestamp,
-                                            self.ConflictMatrix)
+    newResolutionVector = self.Optimization(timestamp, self.ConflictMatrix)
     self.logConflictReg4b('cooperation stage done after Optimization')
 
     # Published IEEE Access Foundational Paper Reference:
@@ -1901,7 +1895,7 @@ class DeconflictionPipeline(GridAPPSD):
     # reset running counts for cooperation messages
     self.AppCoopCount.clear()
     print('DeconflictSetpoints--finished processing, timestamp: ' +
-          str(timestamp) + ', app: ' + app_name)
+          str(timestamp))
 
 
   def __init__(self, gapps, feeder_mrid, simulation_id, weights_base, interval):
@@ -2081,40 +2075,57 @@ class DeconflictionPipeline(GridAPPSD):
 
     print('\nInitialization--finished, waiting for messages...\n')
 
+    pendingDeconflictFlag = False
+    pendingMeasMsgFlag = False
+
     while self.keepLoopingFlag:
       if self.messageQueue.qsize() == 0:
         time.sleep(0.1)
         continue
 
-      # GDB 5/20/24: Queue draining for the pipeline can't be done the same
-      # way as the competing apps because the queue isn't all just simulation
-      # messages, but also setpoints messages. Only drain messages if they are
-      # simulation messages.
-      # This will need to be revisited if the pipeline starts falling behind
-      # as more sophisticated deconfliction is implemented and new simulation
-      # messages arriving every 3 seconds. In that case it seems as if older
-      # setpoints messages could be discarded, but it's not straightforward
-      # as it would only make sense to discard when there is a newer setpoints
-      # message from the same competing app.
+      # GDB 5/21/25: This is an "enhanced queue draining" design. It keeps
+      # up with messages by doing the minimal work needed to take in new
+      # simulation measurements and app setpoint requests, but then defers
+      # initiating deconfliction until all all the queue is empty with all
+      # messages processed. The enhanced aspect is that it also uses a counter
+      # for the number of simulation measurement messages to determine whether
+      # to initiate deconfliction because it takes potentially multiple
+      # simulation measurements for any DifferenceBuilder messages that change
+      # device setpoints to be reflected in measurements and performing
+      # deconfliction before then could lead to making new requests based on
+      # old data.
+      app_names = set()
       while self.messageQueue.qsize() > 0:
         app_name, meas_msg_flag, coop_phase, message = self.messageQueue.get()
+        timestamp = message['timestamp']
 
         if app_name == None:
-          self.ProcessSimulationMessage(message, self.printAllMessagesFlag)
+          self.ProcessSimulationMessage(message, timestamp,
+                                        self.printAllMessagesFlag)
 
         else:
-          deconflictFlag = self.ProcessSetpointsMessage(message, app_name,
-               meas_msg_flag, coop_phase, self.printAllConflictsResolutionsFlag)
+          deconflictFlag = self.ProcessSetpointsMessage(message, timestamp,
+                                          app_name, meas_msg_flag, coop_phase,
+                                          self.printAllConflictsResolutionsFlag)
 
-          # GDB 4/25/25: skip deconfliction if there haven't been a couple
-          # measurement messages from the simulation since the most recent
-          # "device dispatch" of new setpoints. This keeps new setpoints from
-          # being dispatched before simulation measurements reflect the
-          # previously dispatched setpoints.
-          if deconflictFlag and self.simMessageCounter>1 and \
-             (not self.bypassDeconflictionFlag):
-            self.DeconflictSetpoints(message, app_name, meas_msg_flag,
-                                     self.printAllConflictsResolutionsFlag)
+          if deconflictFlag and not self.bypassDeconflictionFlag:
+            # set the flag indicating there is pending deconfliction needed
+            # since we need to drain the message queue before initiating that
+            pendingDeconflictFlag = True
+            app_names.add(app_name)
+            if meas_msg_flag:
+              pendingMeasMsgFlag = True
+
+      # GDB 4/25/25: skip deconfliction if there haven't been a couple
+      # measurement messages from the simulation since the most recent
+      # "device dispatch" of new setpoints. This keeps new setpoints from
+      # being dispatched before simulation measurements reflect the
+      # previously dispatched setpoints.
+      if pendingDeconflictFlag and self.simMessageCounter>1:
+        self.DeconflictSetpoints(timestamp, app_names, pendingMeasMsgFlag,
+                                 self.printAllConflictsResolutionsFlag)
+        pendingDeconflictFlag = False
+        pendingMeasMsgFlag = False
 
     if self.pltFlag:
       self.pltFile.close()
