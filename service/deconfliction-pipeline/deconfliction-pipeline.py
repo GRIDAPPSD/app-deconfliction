@@ -563,7 +563,8 @@ class DeconflictionPipeline(GridAPPSD):
                 str(newResolutionVector[device][1]))
 
         # bail if rules aren't being applied at all
-        if not (self.rulesStageFirstFlag or self.rulesStageLastFlag):
+        if self.noValidatorRulesFlag or \
+           not (self.rulesStageFirstFlag or self.rulesStageLastFlag):
           continue
 
         # enforce the change of charge/discharge state rule if the rules
@@ -609,7 +610,8 @@ class DeconflictionPipeline(GridAPPSD):
                 str(newResolutionVector[device][1]))
 
         # bail if rules aren't being applied at all
-        if not (self.rulesStageFirstFlag or self.rulesStageLastFlag):
+        if self.noValidatorRulesFlag or \
+           not (self.rulesStageFirstFlag or self.rulesStageLastFlag):
           continue
 
         # enforce the tap budget rule if the rules weren't applied last
@@ -628,7 +630,7 @@ class DeconflictionPipeline(GridAPPSD):
           elif newResolutionVector[device][1] < \
              self.Regulators[device]['minStep']:
             print('SetpointValidatorForRegulators--device: ' + name +
-                  '--tap pos setpoint above min rules pos: ' +
+                  '--tap pos setpoint below min rules pos: ' +
                   str(newResolutionVector[device][1]))
             newResolutionVector[device] = (newResolutionVector[device][0],
                                            self.Regulators[device]['minStep'])
@@ -2021,8 +2023,9 @@ class DeconflictionPipeline(GridAPPSD):
     # controls whether rules stage deconfliction is done as the first stage
     # using the ConflictMatrix and/or deferred until the last stage before
     # device dispatch using the ResolutionVector
-    self.rulesStageFirstFlag = False
+    self.rulesStageFirstFlag = True
     self.rulesStageLastFlag = False
+    self.noValidatorRulesFlag = False
     self.refCount = 0 # for debug/verification
     self.coopStageFlag = True
 
