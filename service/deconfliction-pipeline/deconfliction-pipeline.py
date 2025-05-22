@@ -1093,6 +1093,10 @@ class DeconflictionPipeline(GridAPPSD):
                   ', new value: ' + str(value[1]) + ', old value: ' +
                   str(self.BatteriesInfo[device]['P_batt_inv']) + switchStr)
 
+          if self.instantSetpointUpdateFlag:
+            self.BatteriesInfo[device]['P_batt_inv'] = value[1]
+            MethodUtil.BatteryP_batt_inv[device] = value[1]
+
         elif printAllDispatchesFlag:
           print('DeviceDispatcher--DISPATCH NOT needed, battery device: ' +
                 name + ', timestamp: ' + str(timestamp) +
@@ -1125,6 +1129,10 @@ class DeconflictionPipeline(GridAPPSD):
                     ', device: ' + name + ', timestamp: ' + str(timestamp) +
                     ', new value: ' + str(value[1]) + ', old value: ' +
                     str(self.Regulators[device]['step']))
+
+          if self.instantSetpointUpdateFlag:
+            self.Regulators[device]['step'] = value[1]
+            MethodUtil.RegulatorPos[device] = value[1]
 
         elif name == self.testDeviceName:
           print('~TEST DEBUG DeviceDispatcher--DISPATCH NOT needed, regulator' +
@@ -2065,6 +2073,7 @@ class DeconflictionPipeline(GridAPPSD):
       self.pltTZero = None
 
     self.bypassDeconflictionFlag = False
+    self.instantSetpointUpdateFlag = False
 
     print('\nInitialization--finished, waiting for messages...\n')
 
@@ -2114,7 +2123,8 @@ class DeconflictionPipeline(GridAPPSD):
       # "device dispatch" of new setpoints. This keeps new setpoints from
       # being dispatched before simulation measurements reflect the
       # previously dispatched setpoints.
-      if pendingDeconflictFlag and self.simMessageCounter>1:
+      if pendingDeconflictFlag and \
+         (self.instantSetpointUpdateFlag or self.simMessageCounter>1):
         self.DeconflictSetpoints(timestamp, app_names, pendingMeasMsgFlag,
                                  self.printAllConflictsResolutionsFlag)
         pendingDeconflictFlag = False
