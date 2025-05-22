@@ -2025,7 +2025,7 @@ class DeconflictionPipeline(GridAPPSD):
     # device dispatch using the ResolutionVector
     self.rulesStageFirstFlag = True
     self.rulesStageLastFlag = False
-    self.noValidatorRulesFlag = False
+    self.noValidatorRulesFlag = True
     self.refCount = 0 # for debug/verification
     self.coopStageFlag = True
 
