@@ -640,14 +640,6 @@ class DeconflictionPipeline(GridAPPSD):
 
 
   def RulesForBatteriesConflict(self, printAllRulesFlag=False):
-    # GDB RULE_TWEAK
-    #rollingTimeInterval = 60 # for short simulations, every minute
-    #rollingTimeInterval = 60*30 # for long simulations, every 30 minutes
-    rollingTimeInterval = 60*15 # for long simulations, every 15 minutes
-    # number of changes between charging and discharging, and vice versa,
-    # allowed in the rolling time interval
-    rollingSwitchesAllowed = 1
-
     for device in self.BatteriesInfo:
       histList = self.BatteryHistory[device]
       if printAllRulesFlag:
@@ -658,7 +650,7 @@ class DeconflictionPipeline(GridAPPSD):
       # iterate backwards through histList counting switches
       rollingSwitchCount = 0
       rollingStartTime = self.BatteriesInfo[device]['timestamp'] - \
-                         rollingTimeInterval
+                         self.rulesBattTimeInterval
       for hist in reversed(histList):
         if hist[0] < rollingStartTime:
           break
@@ -668,9 +660,9 @@ class DeconflictionPipeline(GridAPPSD):
         print('RulesForBatteriesConflict--device: ' +
               MethodUtil.DeviceToName[device] +
               ', rolling charge/discharge switches: ' + str(rollingSwitchCount)+
-              ', vs. allowed: ' + str(rollingSwitchesAllowed))
+              ', vs. allowed: ' + str(self.rulesBattSwitchesAllowed))
 
-      if rollingSwitchCount >= rollingSwitchesAllowed:
+      if rollingSwitchCount >= self.rulesBattSwitchesAllowed:
         # save the final P_batt_inv in the history list since we need to make
         # sure not to allow the opposite direction in any setpoint requests
         self.BatteriesInfo[device]['switch_P_batt_inv'] = \
@@ -704,14 +696,6 @@ class DeconflictionPipeline(GridAPPSD):
 
   def RulesForBatteriesResolution(self, newResolutionVector,
                                   printAllRulesFlag=False):
-    # GDB RULE_TWEAK
-    #rollingTimeInterval = 60 # for short simulations, every minute
-    #rollingTimeInterval = 60*30 # for long simulations, every 30 minutes
-    rollingTimeInterval = 60*15 # for long simulations, every 15 minutes
-    # number of changes between charging and discharging, and vice versa,
-    # allowed in the rolling time interval
-    rollingSwitchesAllowed = 1
-
     for device in self.BatteriesInfo:
       histList = self.BatteryHistory[device]
       if printAllRulesFlag:
@@ -722,7 +706,7 @@ class DeconflictionPipeline(GridAPPSD):
       # iterate backwards through histList counting switches
       rollingSwitchCount = 0
       rollingStartTime = self.BatteriesInfo[device]['timestamp'] - \
-                         rollingTimeInterval
+                         self.rulesBattTimeInterval
       for hist in reversed(histList):
         if hist[0] < rollingStartTime:
           break
@@ -732,9 +716,9 @@ class DeconflictionPipeline(GridAPPSD):
         print('RulesForBatteriesResolution--device: ' +
               MethodUtil.DeviceToName[device] +
               ', rolling charge/discharge switches: ' + str(rollingSwitchCount)+
-              ', vs. allowed: ' + str(rollingSwitchesAllowed))
+              ', vs. allowed: ' + str(self.rulesBattSwitchesAllowed))
 
-      if rollingSwitchCount >= rollingSwitchesAllowed:
+      if rollingSwitchCount >= self.rulesBattSwitchesAllowed:
         # save the final P_batt_inv in the history list since we need to make
         # sure not to allow the opposite direction in any setpoint requests
         self.BatteriesInfo[device]['switch_P_batt_inv'] = \
@@ -837,28 +821,20 @@ class DeconflictionPipeline(GridAPPSD):
 
 
   def RulesForRegulatorsConflict(self, printAllRulesFlag=False):
-    # GDB RULE_TWEAK
-    #outerRollingTimeInterval = 60 # for short simulations, every minute
-    #outerRollingTimeInterval = 60*30 # for long simulations, every 30 minutes
-    outerRollingTimeInterval = 60*15 # for long simulations, every 15 minutes
-    #outerRollingStepsAllowed = 8 # picked to trigger the rule a reasonable # of times
-    outerRollingStepsAllowed = 4 # picked to trigger the rule a reasonable # of times
-
-    innerRollingTimeInterval = 30
-    innerRollingStepsAllowed = 1
-
     # iterate over all regulator tap setpoints in ConflictMatrix to make sure
     # they fall within the acceptable tap budget range of the current position
     for device in self.ConflictMatrix:
       name = MethodUtil.DeviceToName[device]
       if name.startswith('RatioTapChanger.'):
         outerTapBudget = self.RulesForRegulatorsBudget(device,
-                             outerRollingTimeInterval, outerRollingStepsAllowed,
-                             printAllRulesFlag)
+                                                self.rulesRegOuterTimeInterval,
+                                                self.rulesRegOuterStepsAllowed,
+                                                printAllRulesFlag)
 
         innerTapBudget = self.RulesForRegulatorsBudget(device,
-                             innerRollingTimeInterval, innerRollingStepsAllowed,
-                             printAllRulesFlag)
+                                                self.rulesRegInnerTimeInterval,
+                                                self.rulesRegInnerStepsAllowed,
+                                                printAllRulesFlag)
 
         tapBudget = min(outerTapBudget, innerTapBudget)
 
@@ -933,28 +909,20 @@ class DeconflictionPipeline(GridAPPSD):
 
   def RulesForRegulatorsResolution(self,newResolutionVector,
                                    printAllRulesFlag=False):
-    # GDB RULE_TWEAK
-    #outerRollingTimeInterval = 60 # for short simulations, every minute
-    #outerRollingTimeInterval = 60*30 # for long simulations, every 30 minutes
-    outerRollingTimeInterval = 60*15 # for long simulations, every 15 minutes
-    #outerRollingStepsAllowed = 8 # picked to trigger the rule a reasonable # of times
-    outerRollingStepsAllowed = 4 # picked to trigger the rule a reasonable # of times
-
-    innerRollingTimeInterval = 30
-    innerRollingStepsAllowed = 1
-
     # iterate over all regulator tap setpoints in newResolutionVector to insure
     # they fall within the acceptable tap budget range of the current position
     for device in newResolutionVector:
       name = MethodUtil.DeviceToName[device]
       if name.startswith('RatioTapChanger.'):
         outerTapBudget = self.RulesForRegulatorsBudget(device,
-                             outerRollingTimeInterval, outerRollingStepsAllowed,
-                             printAllRulesFlag)
+                                                self.rulesRegOuterTimeInterval,
+                                                self.rulesRegOuterStepsAllowed,
+                                                printAllRulesFlag)
 
         innerTapBudget = self.RulesForRegulatorsBudget(device,
-                             innerRollingTimeInterval, innerRollingStepsAllowed,
-                             printAllRulesFlag)
+                                                self.rulesRegInnerTimeInterval,
+                                                self.rulesRegInnerStepsAllowed,
+                                                printAllRulesFlag)
 
         tapBudget = min(outerTapBudget, innerTapBudget)
 
@@ -2028,6 +1996,25 @@ class DeconflictionPipeline(GridAPPSD):
     self.noValidatorRulesFlag = True
     self.refCount = 0 # for debug/verification
     self.coopStageFlag = True
+
+    # rules settings for short simulations
+    self.rulesBattTimeInterval = 60*15 # every 15 minutes
+    # number of changes between charging and discharging, and vice versa,
+    # allowed in the rolling time interval
+    self.rulesBattSwitchesAllowed = 1
+    self.rulesRegOuterTimeInterval = 60*15 # every 15 minutes
+    self.rulesRegOuterStepsAllowed = 4
+    self.rulesRegInnerTimeInterval = 30
+    self.rulesRegInnerStepsAllowed = 1
+
+    longSimFlag = False
+    if longSimFlag:
+      self.rulesBattTimeInterval = 60*60*4 # every 4 hours
+      self.rulesBattSwitchesAllowed = 1
+      self.rulesRegOuterTimeInterval = 60*60*4 # every 4 hours
+      self.rulesRegOuterStepsAllowed = 8
+      self.rulesRegInnerTimeInterval = 60
+      self.rulesRegInnerStepsAllowed = 1
 
     # for SHIVA conflict metric testing
     #self.TimeConflictMatrix = {}
