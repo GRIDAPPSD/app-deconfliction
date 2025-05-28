@@ -1742,9 +1742,10 @@ class DeconflictionPipeline(GridAPPSD):
     # Using 2% for the conflict metric percent change is more arbitrary as 1%
     # seems to work decently as well, but can result in a lot more cooperation
     # iterations for likely not much gain.
-    if not coopMaxMessageFlag and \
-       self.conflictMetric>self.conflictValueThreshold and \
-       (perConflictDelta>self.conflictPercentThreshold or perConflictDelta<0.0):
+    if self.coopResponseCounter<self.coopMinResponses or \
+       ((not coopMaxMessageFlag) and \
+        self.conflictMetric>self.conflictValueThreshold and \
+        (perConflictDelta>self.conflictPercentThreshold or perConflictDelta<0.0)):
       # initiate further cooperation
       print('>>> DeconflictSetpoints--thresholds NOT met, initiating ' +
             'further cooperation at response: ' + str(self.coopResponseCounter))
@@ -1843,6 +1844,10 @@ class DeconflictionPipeline(GridAPPSD):
         self.pltFile.write(str(self.rulesLastConflictMetric))
         self.pltFile.write(',')
       self.pltFile.write(str(self.coopResponseCounter))
+      # DEBUG START
+      self.pltFile.write(',')
+      self.pltFile.write(str(perConflictDelta))
+      # DEBUG END
       self.pltFile.write('\n')
 
     # Published IEEE Access Foundational Paper Reference:
@@ -1959,10 +1964,13 @@ class DeconflictionPipeline(GridAPPSD):
 
     # thresholds for concluding cooperation phases
     self.coopMessagesThreshold = 10
-    #self.conflictValueThreshold = 0.2
-    self.conflictValueThreshold = 0.15
-    #self.conflictPercentThreshold = 2.0
-    self.conflictPercentThreshold = 0.1
+    #self.conflictValueThreshold = 0.15
+    #self.conflictValueThreshold = 0.05
+    self.conflictValueThreshold = 0.025
+    #self.conflictPercentThreshold = 0.1
+    #self.conflictPercentThreshold = 0.02
+    self.conflictPercentThreshold = 0.01
+    self.coopMinResponses = 2
 
     # initialize conflict metric
     self.conflictMetric = 0.0
