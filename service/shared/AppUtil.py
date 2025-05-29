@@ -222,6 +222,9 @@ class AppUtil:
       SolarPVsInfo[bus]['name'] = name
       #print('SolarPV name: ' + name + ', kW: ' + str(SolarPVsInfo[name]['kW']) + ', kVar: ' + str(SolarPVsInfo[name]['kVar']), flush=True)
       idx += 1
+      devid = obj['id']['value']
+      MethodUtil.DeviceToName[devid] = name
+      MethodUtil.NameToDevice[name] = devid
 
     # Add measid key to SolarPVsInfo for matching sim measurements
     objs = sparql_mgr.obj_meas_export('PowerElectronicsConnection')
