@@ -1784,6 +1784,18 @@ class DeconflictionPipeline(GridAPPSD):
             str(perConflictDelta) + ', responses: ' +
             str(self.coopResponseCounter))
 
+      # GDB 6/2/25: Spent too many hours trying to figure out how I could
+      # end up with no change in the conflict metric and eventually determined
+      # it was legitimate based on competing apps not changing their
+      # cooperation response setpoints between iterations. This commented out
+      # logic let me bail when this happens for looking through log files.
+      '''
+      if self.conflictMetric == prevConflictMetric:
+        print('DEBUG EXIT with unchanged conflict metric: ' +
+              str(self.conflictMetric))
+        sys.exit(0)
+      '''
+
     # replace running ConflictMatrix with the minimum conflict version and
     # we'll roll with that from this point on
     self.ConflictMatrix = copy.deepcopy(self.MinConflictMatrix)
@@ -2070,6 +2082,7 @@ class DeconflictionPipeline(GridAPPSD):
       self.pltFile = open('log/plot_data.csv', 'w')
       self.pltTZero = None
 
+    #self.bypassDeconflictionFlag = True
     self.bypassDeconflictionFlag = False
     self.instantSetpointUpdateFlag = False
 
