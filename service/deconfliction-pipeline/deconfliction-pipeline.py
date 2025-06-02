@@ -1978,10 +1978,9 @@ class DeconflictionPipeline(GridAPPSD):
     self.coopMessagesThreshold = 10
     #self.conflictValueThreshold = 0.15
     #self.conflictValueThreshold = 0.05
-    self.conflictValueThreshold = 0.025
+    self.conflictValueThreshold = 0.10
     #self.conflictPercentThreshold = 0.1
-    #self.conflictPercentThreshold = 0.02
-    self.conflictPercentThreshold = 0.01
+    self.conflictPercentThreshold = 2.0
     self.coopMinResponses = 2
 
     # initialize conflict metric
