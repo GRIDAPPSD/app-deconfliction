@@ -1209,6 +1209,7 @@ class CompetingApp(GridAPPSD):
 
     # for bypassing deconfliction pipeline and sending directly to simulation
     self.sendToSimFlag = False
+    #self.sendToSimFlag = True
     self.sim_publish_topic = simulation_input_topic(simulation_id)
 
     # create DifferenceBuilder once and reuse it throughout the simulation
@@ -1344,7 +1345,7 @@ class CompetingApp(GridAPPSD):
 
           for i in range(len_BatteriesInfo):
             # check if this is a "cooperating" battery
-            if p_batt_diff[i] <= diffMax:
+            if p_batt_diff[i] < diffMax:
               # if so, set the greedy value to the proposed value
               self.p_batt_greedy[i] = self.p_batt_proposed[i]
 
@@ -1394,7 +1395,7 @@ class CompetingApp(GridAPPSD):
 
           for i in range(len_RegulatorsInfo):
             # check if this is a "cooperating" regulator
-            if reg_diff[i] <= diffMax:
+            if reg_diff[i] < diffMax:
               # if so, set the greedy value to the proposed value
               self.reg_greedy[i] = self.reg_proposed[i]
 
