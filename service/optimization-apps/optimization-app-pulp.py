@@ -1064,7 +1064,11 @@ class CompetingApp(GridAPPSD):
 
         for i in range(len_Batteries):
           # check if this is a "cooperating" battery
-          if p_batt_diff[i] <= diffMax:
+          # GDB 6/2/25: choose whether to cooperate more or less based on
+          # whether or not to accept the proposed setpoint for the one at
+          # the cutoff point
+          #if p_batt_diff[i] <= diffMax: # cooperate more
+          if p_batt_diff[i] < diffMax: # cooperate less
             # if so, set the greedy value to the proposed value
             self.p_batt_greedy[i] = self.p_batt_proposed[i]
 
@@ -1105,7 +1109,11 @@ class CompetingApp(GridAPPSD):
 
         for i in range(len_Regulators):
           # check if this is a "cooperating" regulator
-          if reg_diff[i] <= diffMax:
+          # GDB 6/2/25: choose whether to cooperate more or less based on
+          # whether or not to accept the proposed setpoint for the one at
+          # the cutoff point
+          #if reg_diff[i] <= diffMax: # cooperate more
+          if reg_diff[i] < diffMax: # cooperate less
             # if so, set the greedy value to the proposed value
             self.reg_greedy[i] = self.reg_proposed[i]
 
