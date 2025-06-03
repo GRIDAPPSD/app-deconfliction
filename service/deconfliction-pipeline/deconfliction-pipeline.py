@@ -1673,6 +1673,7 @@ class DeconflictionPipeline(GridAPPSD):
       # publish this target resolution vector to the cooperation topic for
       # competing apps that support cooperation to respond to
       self.coopResponseCounter = 0
+      self.coopConflictFlag = False
       self.coopPhaseCounter += 1
       self.coopCurrentPhase = 'COOP-' + str(self.coopPhaseCounter)
       coopMessage = {'cooperationPhase': self.coopCurrentPhase,
@@ -1736,16 +1737,15 @@ class DeconflictionPipeline(GridAPPSD):
     # maximum for number of cooperation response messages, a conflict metric
     # value below a specified value or a (nonnegative) % conflict change between
     # 0 and a specifed value between iterations (cooperation responses).
-    # Using 0.2 for the conflict metric absolute threshold seems to be a sweet
-    # spot based on test apps which don't seem to drop much below that, never
-    # to 0.1 or even 0.15.
-    # Using 2% for the conflict metric percent change is more arbitrary as 1%
-    # seems to work decently as well, but can result in a lot more cooperation
-    # iterations for likely not much gain.
+    # The % conflict change needs to happen over two responses as controlled by
+    # the self.coopConflictFlag as a single response can bail too soon.
     if self.coopResponseCounter<self.coopMinResponses or \
        ((not coopMaxMessageFlag) and \
         self.conflictMetric>self.conflictValueThreshold and \
-        (perConflictDelta>self.conflictPercentThreshold or perConflictDelta<0.0)):
+        (((not self.coopConflictFlag) and \
+          perConflictDelta>self.conflictPercentThreshold) or \
+         perConflictDelta<0.0)):
+
       # initiate further cooperation
       print('>>> DeconflictSetpoints--thresholds NOT met, initiating ' +
             'further cooperation at response: ' + str(self.coopResponseCounter))
@@ -1767,6 +1767,9 @@ class DeconflictionPipeline(GridAPPSD):
       print('DeconflictSetpoints--finished processing, timestamp: ' +
             str(timestamp))
       return
+
+    # flag for whether the first check of % conflict change meets threshold
+    self.coopConflictFlag = perConflictDelta <= self.conflictPercentThreshold
 
     # thresholds for ending cooperation have been met to get here
     if coopMaxMessageFlag:
@@ -1976,11 +1979,8 @@ class DeconflictionPipeline(GridAPPSD):
 
     # thresholds for concluding cooperation phases
     self.coopMessagesThreshold = 10
-    #self.conflictValueThreshold = 0.15
-    #self.conflictValueThreshold = 0.05
     self.conflictValueThreshold = 0.10
-    #self.conflictPercentThreshold = 0.1
-    self.conflictPercentThreshold = 2.0
+    self.conflictPercentThreshold = 1.0
     self.coopMinResponses = 2
 
     # initialize conflict metric
@@ -1988,6 +1988,7 @@ class DeconflictionPipeline(GridAPPSD):
     # initialize combination cooperation timestamp and control flag
     self.coopTimestamp = 0
     self.coopResponseCounter = 0
+    self.coopConflictFlag = False
     # initialize running cooperation minimums for conflict metric and matrix
     self.minConflictMetric = 1.0
     self.MinConflictMatrix = {}
