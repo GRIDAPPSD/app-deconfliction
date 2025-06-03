@@ -1772,8 +1772,8 @@ class DeconflictionPipeline(GridAPPSD):
     # change is below the threshold or if it needs to happen twice
     # Hardwire value to false so the first check can conclude cooperation and
     # set it to the expression if two checks are required
-    self.coopConflictFlag = False
-    #self.coopConflictFlag = perConflictDelta <= self.conflictPercentThreshold
+    #self.coopConflictFlag = False
+    self.coopConflictFlag = perConflictDelta <= self.conflictPercentThreshold
 
     # thresholds for ending cooperation have been met to get here
     if coopMaxMessageFlag:
