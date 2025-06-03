@@ -1768,8 +1768,12 @@ class DeconflictionPipeline(GridAPPSD):
             str(timestamp))
       return
 
-    # flag for whether the first check of % conflict change meets threshold
-    self.coopConflictFlag = perConflictDelta <= self.conflictPercentThreshold
+    # flag for whether to conclude cooperation the first time the % conflict
+    # change is below the threshold or if it needs to happen twice
+    # Hardwire value to false so the first check can conclude cooperation and
+    # set it to the expression if two checks are required
+    self.coopConflictFlag = False
+    #self.coopConflictFlag = perConflictDelta <= self.conflictPercentThreshold
 
     # thresholds for ending cooperation have been met to get here
     if coopMaxMessageFlag:
@@ -1980,8 +1984,10 @@ class DeconflictionPipeline(GridAPPSD):
     # thresholds for concluding cooperation phases
     self.coopMessagesThreshold = 10
     self.conflictValueThreshold = 0.10
-    self.conflictPercentThreshold = 1.0
+    self.conflictPercentThreshold = 0.5
+    # allows multiple cooperation responses to be required with a value > 1
     self.coopMinResponses = 2
+    #self.coopMinResponses = 1
 
     # initialize conflict metric
     self.conflictMetric = 0.0
