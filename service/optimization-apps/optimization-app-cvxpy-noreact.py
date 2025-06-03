@@ -1238,11 +1238,16 @@ class CompetingApp(GridAPPSD):
           else:
             print('DECONFLICTOR COOPERATE batteries coopCount: ALL, diffMax: ' + str(diffMax), flush=True)
 
+          icoop = 0
           for i in range(len_BatteriesInfo):
             # check if this is a "cooperating" battery
             if p_batt_diff[i] <= diffMax:
-              # if so, set the greedy value to the proposed value
-              self.p_batt_greedy[i] = self.p_batt_proposed[i]
+              # full cooperation by setting the greedy value to proposed value
+              #self.p_batt_greedy[i] = self.p_batt_proposed[i]
+              # adjust cooperation level based on difference
+              icoop += 1
+              ratio = (self.p_batt_proposed[i] - self.p_batt_greedy[i])/float(icoop)
+              self.p_batt_greedy[i] += ratio
 
           print('DECONFLICTOR COOPERATE p_batt_coop: ' + str(self.p_batt_greedy), flush=True)
 
@@ -1288,11 +1293,16 @@ class CompetingApp(GridAPPSD):
           else:
             print('DECONFLICTOR COOPERATE regulators coopCount: ALL, diffMax: ' + str(diffMax), flush=True)
 
+          icoop = 0
           for i in range(len_RegulatorsInfo):
             # check if this is a "cooperating" regulator
             if reg_diff[i] <= diffMax:
-              # if so, set the greey value to the proposed value
-              self.reg_greedy[i] = self.reg_proposed[i]
+              # full cooperation by setting the greedy value to proposed value
+              #self.reg_greedy[i] = self.reg_proposed[i]
+              # adjust cooperation level based on difference
+              icoop += 1
+              ratio = int((self.reg_proposed[i] - self.reg_greedy[i])/icoop)
+              self.reg_greedy[i] += ratio
 
           print('DECONFLICTOR COOPERATE reg_coop: ' + str(self.reg_greedy), flush=True)
 
