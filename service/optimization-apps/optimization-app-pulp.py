@@ -1054,6 +1054,7 @@ class CompetingApp(GridAPPSD):
         diffMax = 0
         if len(p_batt_sort) > 0:
           coopCount = max(1, -(len(p_batt_sort)//-2)) # integer "ceiling" division
+          #coopCount = max(1, -(len(p_batt_sort)//-4)) # integer "ceiling" division
 
           # find the value associated with the last "cooperating" battery
           diffMax = p_batt_sort[coopCount-1]
@@ -1099,6 +1100,7 @@ class CompetingApp(GridAPPSD):
         if len(reg_sort) > 0:
           # determine the number of regulators that will "cooperate"
           coopCount = max(1, -(len(reg_sort)//-2)) # integer "ceiling" division
+          #coopCount = max(1, -(len(reg_sort)//-4)) # integer "ceiling" division
 
           # find the value associated with the last "cooperating" regulator
           diffMax = reg_sort[coopCount-1]
