@@ -782,6 +782,7 @@ class CompetingApp(GridAPPSD):
       for bus in self.SolarPVsInfo:
         idx = self.SolarPVsIdx[bus]
         mrid = self.SolarPVsInfo[bus]['mrid']
+        name = self.SolarPVsInfo[bus]['name']
 
         total_p = self.p_pv_A[idx].value + self.p_pv_B[idx].value + \
                   self.p_pv_C[idx].value
@@ -792,18 +793,22 @@ class CompetingApp(GridAPPSD):
         self.difference_builder.add_difference(mrid,
              'PowerElectronicsConnection.q', total_q, None)
 
-        p_pv_setpoints.append([bus, self.p_pv_A[idx].value/1000,
-                                    self.p_pv_B[idx].value/1000,
-                                    self.p_pv_C[idx].value/1000])
-        q_pv_setpoints.append([bus, self.q_pv_A[idx].value/1000,
-                                    self.q_pv_B[idx].value/1000,
-                                    self.q_pv_C[idx].value/1000])
+        p_pv_setpoints.append([name, bus, self.p_pv_A[idx].value/1000,
+                                          self.p_pv_B[idx].value/1000,
+                                          self.p_pv_C[idx].value/1000,
+                                          total_p/1000])
+        q_pv_setpoints.append([name, bus, self.q_pv_A[idx].value/1000,
+                                          self.q_pv_B[idx].value/1000,
+                                          self.q_pv_C[idx].value/1000,
+                                          total_q/1000])
 
-      print(tabulate(p_pv_setpoints, headers=['p_pv_bus', 'p_pv_A (kW)',
-                     'p_pv_B (kW)', 'p_pv_C (kW)'], tablefmt='psql'),flush=True)
+      print(tabulate(p_pv_setpoints, headers=['SolarPV', 'bus',
+                     'p_pv_A (kW)', 'p_pv_B (kW)', 'p_pv_C (kW)',
+                     'total p (kW)'], tablefmt='psql'), flush=True)
 
-      print(tabulate(q_pv_setpoints, headers=['q_pv_bus', 'q_pv_A (kW)',
-                     'q_pv_B (kW)', 'q_pv_C (kW)'], tablefmt='psql'),flush=True)
+      print(tabulate(q_pv_setpoints, headers=['SolarPV', 'bus',
+                     'q_pv_A (kW)', 'q_pv_B (kW)', 'q_pv_C (kW)',
+                     'total q (kW)'], tablefmt='psql'), flush=True)
 
     '''
     if self.includePFlowFlag:
@@ -1208,8 +1213,8 @@ class CompetingApp(GridAPPSD):
                                                    simulation_id)
 
     # for bypassing deconfliction pipeline and sending directly to simulation
-    self.sendToSimFlag = False
-    #self.sendToSimFlag = True
+    #self.sendToSimFlag = False
+    self.sendToSimFlag = True
     self.sim_publish_topic = simulation_input_topic(simulation_id)
 
     # create DifferenceBuilder once and reuse it throughout the simulation
