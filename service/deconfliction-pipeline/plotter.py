@@ -117,38 +117,40 @@ def make_reg_plots(title, prefix, Regulators, t_plot, reg_plot):
     plt.close()
 
 
-def make_p_solar_plots(title, prefix, SolarPVs, t_plot, p_solar_plot):
+def make_p_pv_plots(title, prefix, SolarPVs, t_plot, p_pv_plot):
   for name in SolarPVs:
-    if len(t_plot) != len(p_solar_plot[name]):
-      print('*** Mismatched data points for plot ' + title + ' p_solar ' + name + ', time len: ' + str(len(t_plot)) + ', p_solar len: ' + str(len(p_solar_plot[name])), flush=True)
+    if len(t_plot) != len(p_pv_plot[name]):
+      print('*** Mismatched data points for plot ' + title + ' p_pv ' + name + ', time len: ' + str(len(t_plot)) + ', p_pv len: ' + str(len(p_pv_plot[name])), flush=True)
+    pvname = name[17:] # extract just the name for tidier plots
     plt.figure()
     #fig, ax = plt.subplots()
-    plt.title(title + ' p_solar:  ' + name, pad=15.0)
-    plt.plot(t_plot[:len(p_solar_plot[name])], p_solar_plot[name])
+    plt.title(title + ' p_pv:  ' + pvname, pad=15.0)
+    plt.plot(t_plot[:len(p_pv_plot[name])], p_pv_plot[name])
     #ax.xaxis.set_major_formatter(md.DateFormatter('%H:%M'))
     #plt.xlim([AppUtil.to_datetime(1), AppUtil.to_datetime(96)])
     #plt.xticks([AppUtil.to_datetime(1), AppUtil.to_datetime(25), AppUtil.to_datetime(49), AppUtil.to_datetime(73), AppUtil.to_datetime(96)])
     plt.xlabel('Time')
-    plt.ylabel('p_solar (kW)')
-    plt.savefig('log/' + prefix + '_p_solar_' + name + '.png')
+    plt.ylabel('p_pv (kW)')
+    plt.savefig('log/' + prefix + '_p_pv_' + pvname + '.png')
     #plot.show()
     plt.close()
 
 
-def make_q_solar_plots(title, prefix, SolarPVs, t_plot, q_solar_plot):
+def make_q_pv_plots(title, prefix, SolarPVs, t_plot, q_pv_plot):
   for name in SolarPVs:
-    if len(t_plot) != len(q_solar_plot[name]):
-      print('*** Mismatched data points for plot ' + title + ' q_solar ' + name + ', time len: ' + str(len(t_plot)) + ', q_solar len: ' + str(len(q_solar_plot[name])), flush=True)
+    if len(t_plot) != len(q_pv_plot[name]):
+      print('*** Mismatched data points for plot ' + title + ' q_pv ' + name + ', time len: ' + str(len(t_plot)) + ', q_pv len: ' + str(len(q_pv_plot[name])), flush=True)
+    pvname = name[17:] # extract just the name for tidier plots
     plt.figure()
     #fig, ax = plt.subplots()
-    plt.title(title + ' q_solar:  ' + name, pad=15.0)
-    plt.plot(t_plot[:len(q_solar_plot[name])], q_solar_plot[name])
+    plt.title(title + ' q_pv:  ' + pvname, pad=15.0)
+    plt.plot(t_plot[:len(q_pv_plot[name])], q_pv_plot[name])
     #ax.xaxis.set_major_formatter(md.DateFormatter('%H:%M'))
     #plt.xlim([AppUtil.to_datetime(1), AppUtil.to_datetime(96)])
     #plt.xticks([AppUtil.to_datetime(1), AppUtil.to_datetime(25), AppUtil.to_datetime(49), AppUtil.to_datetime(73), AppUtil.to_datetime(96)])
     plt.xlabel('Time')
-    plt.ylabel('q_solar (kW)')
-    plt.savefig('log/' + prefix + '_q_solar_' + name + '.png')
+    plt.ylabel('q_pv (kW)')
+    plt.savefig('log/' + prefix + '_q_pv_' + pvname + '.png')
     #plot.show()
     plt.close()
 
@@ -162,14 +164,14 @@ def _main():
 
   Regulators = ['RatioTapChanger.reg1a','RatioTapChanger.reg2a','RatioTapChanger.reg3a','RatioTapChanger.reg3c','RatioTapChanger.reg4a','RatioTapChanger.reg4b','RatioTapChanger.reg4c']
 
-  SolarPVs = ['dg_6','dg_12','dg_18','dg_30','dg_36','dg_42','dg_48','dg_54','dg_60','dg_66','dg_72','dg_78','dg_84','dg_90']
+  SolarPVs = ['PhotovoltaicUnit.dg_6','PhotovoltaicUnit.dg_12','PhotovoltaicUnit.dg_18','PhotovoltaicUnit.dg_30','PhotovoltaicUnit.dg_36','PhotovoltaicUnit.dg_42','PhotovoltaicUnit.dg_48','PhotovoltaicUnit.dg_54','PhotovoltaicUnit.dg_60','PhotovoltaicUnit.dg_66','PhotovoltaicUnit.dg_72','PhotovoltaicUnit.dg_78','PhotovoltaicUnit.dg_84','PhotovoltaicUnit.dg_90']
 
   t_plot = []
   p_batt_plot = {}
   soc_plot = {}
   reg_plot = {}
-  p_solar_plot = {}
-  q_solar_plot = {}
+  p_pv_plot = {}
+  q_pv_plot = {}
 
   for batt in Batteries:
     p_batt_plot[batt] = []
@@ -178,9 +180,9 @@ def _main():
   for reg in Regulators:
     reg_plot[reg] = []
 
-  for sol in SolarPVs:
-    p_solar_plot[sol] = []
-    q_solar_plot[sol] = []
+  for pv in SolarPVs:
+    p_pv_plot[pv] = []
+    q_pv_plot[pv] = []
 
   app = 'SIMULATION'
   prefix = 'sim'
@@ -203,17 +205,17 @@ def _main():
           reg_plot[reg].append(int(tokens[it+1]))
 
         for it in range(32, 74, 3):
-          sol = tokens[it]
-          p_solar_plot[sol].append(float(tokens[it+1]))
-          q_solar_plot[sol].append(float(tokens[it+2]))
+          pv = tokens[it]
+          p_pv_plot[pv].append(float(tokens[it+1]))
+          q_pv_plot[pv].append(float(tokens[it+2]))
 
   print(app + ' hits: ' + str(hits), flush=True)
 
   make_p_batt_plots(app, prefix, Batteries, t_plot, p_batt_plot)
   make_soc_plots(app, prefix, Batteries, t_plot, soc_plot)
   make_reg_plots(app, prefix, Regulators, t_plot, reg_plot)
-  make_p_solar_plots(app, prefix, SolarPVs, t_plot, p_solar_plot)
-  make_q_solar_plots(app, prefix, SolarPVs, t_plot, q_solar_plot)
+  make_p_pv_plots(app, prefix, SolarPVs, t_plot, p_pv_plot)
+  make_q_pv_plots(app, prefix, SolarPVs, t_plot, q_pv_plot)
 
   t_plot.clear()
 
@@ -224,9 +226,9 @@ def _main():
   for reg in Regulators:
     reg_plot[reg].clear()
 
-  for sol in SolarPVs:
-    p_solar_plot[sol].clear()
-    q_solar_plot[sol].clear()
+  for pv in SolarPVs:
+    p_pv_plot[pv].clear()
+    q_pv_plot[pv].clear()
 
   '''
   #app_list = ['gridappsd-resilience-app', 'gridappsd-decarbonization-app', 'gridappsd-profit_cvr-app']
