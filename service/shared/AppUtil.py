@@ -207,7 +207,7 @@ class AppUtil:
     print('\nCount of SolarPV: ' + str(len(bindings)), flush=True)
     idx = 0
     for obj in bindings:
-      name = obj['name']['value']
+      name = 'PhotovoltaicUnit.' + obj['name']['value']
       bus = obj['bus']['value'].upper()
       ratedS = float(obj['ratedS']['value'])
       #ratedU = float(obj['ratedU']['value'])
@@ -220,7 +220,7 @@ class AppUtil:
       SolarPVsInfo[bus]['ratedS'] = float(obj['ratedS']['value'])
       SolarPVsInfo[bus]['mrid'] = obj['id']['value']
       SolarPVsInfo[bus]['name'] = name
-      #print('SolarPV name: ' + name + ', kW: ' + str(SolarPVsInfo[name]['kW']) + ', kVar: ' + str(SolarPVsInfo[name]['kVar']), flush=True)
+      print('SolarPV name: ' + name + ', kW: ' + str(SolarPVsInfo[bus]['kW']) + ', kVar: ' + str(SolarPVsInfo[bus]['kVar']), flush=True)
       idx += 1
       devid = obj['id']['value']
       MethodUtil.DeviceToName[devid] = name
