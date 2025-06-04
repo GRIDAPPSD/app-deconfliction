@@ -203,6 +203,7 @@ class AppUtil:
   def getSolarPVs(sparql_mgr):
     SolarPVsIdx = {}
     SolarPVsInfo = {}
+    SolarPVs = {}
     bindings = sparql_mgr.pv_query()
     print('\nCount of SolarPV: ' + str(len(bindings)), flush=True)
     idx = 0
@@ -223,6 +224,8 @@ class AppUtil:
       print('SolarPV name: ' + name + ', kW: ' + str(SolarPVsInfo[bus]['kW']) + ', kVar: ' + str(SolarPVsInfo[bus]['kVar']), flush=True)
       idx += 1
       devid = obj['id']['value']
+      SolarPVs[devid] = {}
+      SolarPVs[devid]['PQ_pv_inv'] = None
       MethodUtil.DeviceToName[devid] = name
       MethodUtil.NameToDevice[name] = devid
 
@@ -235,7 +238,7 @@ class AppUtil:
       if item['type']=='VA' and item['bus'] in SolarPVsInfo:
         SolarPVsInfo[item['bus']]['measid'] = item['measid']
 
-    return (SolarPVsInfo, SolarPVsIdx)
+    return (SolarPVsInfo, SolarPVsIdx, SolarPVs)
 
 
   def getEnergySource(sparql_mgr):

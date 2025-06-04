@@ -171,7 +171,7 @@ class CompetingApp(GridAPPSD):
       self.optConstraintsNetworkWithPFlow(self.includeBatteriesFlag,
                       self.includeEnergyConsumersFlag, self.includeSolarPVsFlag,
                       self.BusInfo, self.LinesIn, self.LinesOut,
-                      self.EnergyConsumers, self.SolarPVs,
+                      self.EnergyConsumers, self.SolarPVsInfo,
                       self.BatteriesObj, self.BatteriesIdx, self.p_batt,
                       self.p_flow_A, self.p_flow_B, self.p_flow_C)
 
@@ -316,7 +316,7 @@ class CompetingApp(GridAPPSD):
 
   def optConstraintsNetworkWithPFlow(self, includeBatteriesFlag,
               includeEnergyConsumersFlag, includeSolarPVsFlag,
-              BusInfo, LinesIn, LinesOut, EnergyConsumers, SolarPVs,
+              BusInfo, LinesIn, LinesOut, EnergyConsumers, SolarPVsInfo,
               BatteriesObj, BatteriesIdx, p_batt, p_flow_A, p_flow_B, p_flow_C):
     for bus in BusInfo:
       bus_idx = BusInfo[bus]['idx']
@@ -330,11 +330,11 @@ class CompetingApp(GridAPPSD):
              'A' in EnergyConsumers[bus]['kW']:
             injection_p = EnergyConsumers[bus]['kW']['A']
 
-          if includeSolarPVsFlag and bus in SolarPVs and \
-             'A' in SolarPVs[bus]['phase']:
-            injection_p -= SolarPVs[bus]['p']
-            #print('SolarPVs A bus: ' + bus + ', value: ' +
-            #      str(SolarPVs[bus]['p']), flush=True)
+          if includeSolarPVsFlag and bus in SolarPVsInfo and \
+             'A' in SolarPVsInfo[bus]['phase']:
+            injection_p -= SolarPVsInfo[bus]['p']
+            #print('SolarPVsInfo A bus: ' + bus + ', value: ' +
+            #      str(SolarPVsInfo[bus]['p']), flush=True)
 
           if includeBatteriesFlag and bus in BatteriesObj and \
              'A' in BatteriesObj[bus]['phase']:
@@ -356,11 +356,11 @@ class CompetingApp(GridAPPSD):
              'B' in EnergyConsumers[bus]['kW']:
             injection_p = EnergyConsumers[bus]['kW']['B']
 
-          if includeSolarPVsFlag and bus in SolarPVs and \
-             'B' in SolarPVs[bus]['phase']:
-            injection_p -= SolarPVs[bus]['p']
-            #print('SolarPVs B bus: ' + bus + ', value: ' +
-            #      str(SolarPVs[bus]['p']), flush=True)
+          if includeSolarPVsFlag and bus in SolarPVsInfo and \
+             'B' in SolarPVsInfo[bus]['phase']:
+            injection_p -= SolarPVsInfo[bus]['p']
+            #print('SolarPVsInfo B bus: ' + bus + ', value: ' +
+            #      str(SolarPVsInfo[bus]['p']), flush=True)
 
           if includeBatteriesFlag and bus in BatteriesObj and \
              'B' in BatteriesObj[bus]['phase']:
@@ -382,11 +382,11 @@ class CompetingApp(GridAPPSD):
              'C' in EnergyConsumers[bus]['kW']:
             injection_p = EnergyConsumers[bus]['kW']['C']
 
-          if includeSolarPVsFlag and bus in SolarPVs and \
-             'C' in SolarPVs[bus]['phase']:
-            injection_p -= SolarPVs[bus]['p']
-            #print('SolarPVs C bus: ' + bus + ', value: ' +
-            #      str(SolarPVs[bus]['p']), flush=True)
+          if includeSolarPVsFlag and bus in SolarPVsInfo and \
+             'C' in SolarPVsInfo[bus]['phase']:
+            injection_p -= SolarPVsInfo[bus]['p']
+            #print('SolarPVsInfo C bus: ' + bus + ', value: ' +
+            #      str(SolarPVsInfo[bus]['p']), flush=True)
 
           if includeBatteriesFlag and bus in BatteriesObj and \
              'C' in BatteriesObj[bus]['phase']:
@@ -765,12 +765,12 @@ class CompetingApp(GridAPPSD):
 
 
   def updateSolarPVs(self, measurements):
-    for bus in self.SolarPVs:
-      measid = self.SolarPVs[bus]['measid']
+    for bus in self.SolarPVsInfo:
+      measid = self.SolarPVsInfo[bus]['measid']
       if measid in measurements:
         p, q = self.pol2cart(measurements[measid]['magnitude'],
                              measurements[measid]['angle'])
-        self.SolarPVs[bus]['p'] = abs(p)
+        self.SolarPVsInfo[bus]['p'] = abs(p)
 
 
   def updateBatterySoC(self, measurements):
@@ -819,8 +819,8 @@ class CompetingApp(GridAPPSD):
     self.EnergyConsumers = AppUtil.getEnergyConsumers(sparql_mgr)
     #print('Starting EnergyConsumers: ' + json.dumps(self.EnergyConsumers, indent=2), flush=True)
 
-    self.SolarPVs, SolarPVsIdx = AppUtil.getSolarPVs(sparql_mgr)
-    #print('Starting SolarPVs: ' + json.dumps(self.SolarPVs, indent=2), flush=True)
+    self.SolarPVsInfo, SolarPVsIdx, SolarPVs = AppUtil.getSolarPVs(sparql_mgr)
+    #print('Starting SolarPVsInfo: ' + json.dumps(self.SolarPVsInfo, indent=2), flush=True)
 
     self.BatteriesInfo, self.BatteriesIdx = AppUtil.getBatteries(sparql_mgr)
     print('Starting BatteriesInfo: ' + json.dumps(self.BatteriesInfo, indent=2), flush=True)
@@ -1144,7 +1144,7 @@ class CompetingApp(GridAPPSD):
 
         if self.includeSolarPVsFlag:
           self.updateSolarPVs(message['measurements'])
-          #print('Updated SolarPVs #' + str(messageCounter) + ': ' + json.dumps(self.SolarPVs, indent=2), flush=True)
+          #print('Updated SolarPVsInfo #' + str(messageCounter) + ': ' + json.dumps(self.SolarPVsInfo, indent=2), flush=True)
 
         if self.includeBatteriesFlag:
           self.updateBatterySoC(message['measurements'])

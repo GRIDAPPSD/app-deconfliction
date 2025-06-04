@@ -928,7 +928,7 @@ class CompetingApp(GridAPPSD):
     self.EnergyConsumers = AppUtil.getEnergyConsumers(sparql_mgr)
     #print('Starting EnergyConsumers: ' + json.dumps(self.EnergyConsumers, indent=2), flush=True)
 
-    self.SolarPVsInfo, self.SolarPVsIdx = AppUtil.getSolarPVs(sparql_mgr)
+    self.SolarPVsInfo, self.SolarPVsIdx, SolarPVs = AppUtil.getSolarPVs(sparql_mgr)
     #print('Starting SolarPVsInfo: ' + json.dumps(self.SolarPVsInfo, indent=2), flush=True)
 
     self.BatteriesInfo, self.BatteriesIdx = AppUtil.getBatteries(sparql_mgr)
@@ -1213,8 +1213,8 @@ class CompetingApp(GridAPPSD):
                                                    simulation_id)
 
     # for bypassing deconfliction pipeline and sending directly to simulation
-    #self.sendToSimFlag = False
-    self.sendToSimFlag = True
+    self.sendToSimFlag = False
+    #self.sendToSimFlag = True
     self.sim_publish_topic = simulation_input_topic(simulation_id)
 
     # create DifferenceBuilder once and reuse it throughout the simulation

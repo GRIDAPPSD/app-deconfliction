@@ -115,10 +115,11 @@ class CompetingApp(GridAPPSD):
             injection_p = self.EnergyConsumers[bus]['kW']['A']
             injection_q = self.EnergyConsumers[bus]['kVar']['A']
 
-          if bus in self.SolarPVs and 'A' in self.SolarPVs[bus]['phase']:
-            injection_p -= self.SolarPVs[bus]['p']
-            #print('SolarPVs A bus: ' + bus + ', value: ' +
-            #      str(self.SolarPVs[bus]['p']), flush=True)
+          if bus in self.SolarPVsInfo and \
+             'A' in self.SolarPVsInfo[bus]['phase']:
+            injection_p -= self.SolarPVsInfo[bus]['p']
+            #print('SolarPVsInfo A bus: ' + bus + ', value: ' +
+            #      str(self.SolarPVsInfo[bus]['p']), flush=True)
 
           if bus in self.BatteriesObj and \
              'A' in self.BatteriesObj[bus]['phase']:
@@ -151,10 +152,11 @@ class CompetingApp(GridAPPSD):
             injection_p = self.EnergyConsumers[bus]['kW']['B']
             injection_q = self.EnergyConsumers[bus]['kVar']['B']
 
-          if bus in self.SolarPVs and 'B' in self.SolarPVs[bus]['phase']:
-            injection_p -= self.SolarPVs[bus]['p']
-            #print('SolarPVs B bus: ' + bus + ', value: ' +
-            #      str(self.SolarPVs[bus]['p']), flush=True)
+          if bus in self.SolarPVsInfo and \
+             'B' in self.SolarPVsInfo[bus]['phase']:
+            injection_p -= self.SolarPVsInfo[bus]['p']
+            #print('SolarPVsInfo B bus: ' + bus + ', value: ' +
+            #      str(self.SolarPVsInfo[bus]['p']), flush=True)
 
           if bus in self.BatteriesObj and \
              'B' in self.BatteriesObj[bus]['phase']:
@@ -187,10 +189,11 @@ class CompetingApp(GridAPPSD):
             injection_p = self.EnergyConsumers[bus]['kW']['C']
             injection_q = self.EnergyConsumers[bus]['kVar']['C']
 
-          if bus in self.SolarPVs and 'C' in self.SolarPVs[bus]['phase']:
-            injection_p -= self.SolarPVs[bus]['p']
-            #print('SolarPVs C bus: ' + bus + ', value: ' +
-            #      str(self.SolarPVs[bus]['p']), flush=True)
+          if bus in self.SolarPVsInfo and \
+             'C' in self.SolarPVsInfo[bus]['phase']:
+            injection_p -= self.SolarPVsInfo[bus]['p']
+            #print('SolarPVsInfo C bus: ' + bus + ', value: ' +
+            #      str(self.SolarPVsInfo[bus]['p']), flush=True)
 
           if bus in self.BatteriesObj and \
              'C' in self.BatteriesObj[bus]['phase']:
@@ -635,12 +638,12 @@ class CompetingApp(GridAPPSD):
 
 
   def updateSolarPVs(self, measurements):
-    for bus in self.SolarPVs:
-      measid = self.SolarPVs[bus]['measid']
+    for bus in self.SolarPVsInfo:
+      measid = self.SolarPVsInfo[bus]['measid']
       if measid in measurements:
         p, q = self.pol2cart(measurements[measid]['magnitude'],
                              measurements[measid]['angle'])
-        self.SolarPVs[bus]['p'] = abs(p)
+        self.SolarPVsInfo[bus]['p'] = abs(p)
 
 
   def updateBatterySoC(self, measurements):
@@ -671,8 +674,8 @@ class CompetingApp(GridAPPSD):
     self.EnergyConsumers = AppUtil.getEnergyConsumers(sparql_mgr)
     #print('Starting EnergyConsumers: ' + json.dumps(self.EnergyConsumers, indent=2), flush=True)
 
-    self.SolarPVs, SolarPVsIdx = AppUtil.getSolarPVs(sparql_mgr)
-    #print('Starting SolarPVs: ' + json.dumps(self.SolarPVs, indent=2), flush=True)
+    self.SolarPVsInfo, SolarPVsIdx, SolarPVs = AppUtil.getSolarPVs(sparql_mgr)
+    #print('Starting SolarPVsInfo: ' + json.dumps(self.SolarPVsInfo, indent=2), flush=True)
 
     self.BatteriesInfo, self.BatteriesIdx = AppUtil.getBatteries(sparql_mgr)
     print('Starting BatteriesInfo: ' + json.dumps(self.BatteriesInfo, indent=2), flush=True)
@@ -989,7 +992,7 @@ class CompetingApp(GridAPPSD):
         #print('Updated EnergyConsumers #' + str(messageCounter) + ': ' + json.dumps(self.EnergyConsumers, indent=2), flush=True)
 
         self.updateSolarPVs(message['measurements'])
-        #print('Updated SolarPVs #' + str(messageCounter) + ': ' + json.dumps(self.SolarPVs, indent=2), flush=True)
+        #print('Updated SolarPVsInfo #' + str(messageCounter) + ': ' + json.dumps(self.SolarPVsInfo, indent=2), flush=True)
 
         self.updateBatterySoC(message['measurements'])
         #print('Updated BatterySoC #' + str(messageCounter) + ': ' + json.dumps(self.BatteriesInfo, indent=2), flush=True)
