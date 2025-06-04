@@ -962,6 +962,7 @@ class CompetingApp(GridAPPSD):
           flush=True)
 
     messageCounter = 0
+    currentCoopPhase = None
 
     while self.keepLoopingFlag:
       if self.messageQueue.qsize() == 0:
@@ -1015,6 +1016,17 @@ class CompetingApp(GridAPPSD):
         # message consists of a target ResolutionVector that is a dictionary
         # with device mrid keys and target set-point values
         targetResolutionVector = message['targetResolutionVector']
+
+        # coopCounter allows diminishing cooperation with each succeeding
+        # solicitation within a phase
+        coopPhase = message['cooperationPhase']
+        if coopPhase == currentCoopPhase:
+          # comment out incrementing coopCounter to not diminish cooperation
+          coopCounter += 1
+        else:
+          currentCoopPhase = coopPhase
+          coopCounter = 0
+
         #for mrid in targetResolutionVector:
         #  print('DECONFLICTOR COOPERATE mrid ' + mrid + ' target set-point: ' + str(targetResolutionVector[mrid]), flush=True)
 
@@ -1076,7 +1088,8 @@ class CompetingApp(GridAPPSD):
             #self.p_batt_greedy[i] = self.p_batt_proposed[i]
             # adjust cooperation level based on difference
             icoop += 1
-            ratio = (self.p_batt_proposed[i] - self.p_batt_greedy[i])/float(icoop)
+            ratio = (self.p_batt_proposed[i] - self.p_batt_greedy[i])/ \
+                    float(icoop + coopCounter)
             self.p_batt_greedy[i] += ratio
 
         print('DECONFLICTOR COOPERATE p_batt_coop: ' + str(self.p_batt_greedy), flush=True)
@@ -1128,7 +1141,8 @@ class CompetingApp(GridAPPSD):
             #self.reg_greedy[i] = self.reg_proposed[i]
             # adjust cooperation level based on difference
             icoop += 1
-            ratio = int((self.reg_proposed[i] - self.reg_greedy[i])/icoop)
+            ratio = int((self.reg_proposed[i] - self.reg_greedy[i])/ \
+                        (icoop + coopCounter))
             self.reg_greedy[i] += ratio
 
         print('DECONFLICTOR COOPERATE reg_coop: ' + str(self.reg_greedy), flush=True)
@@ -1149,8 +1163,7 @@ class CompetingApp(GridAPPSD):
                'PowerElectronicsConnection.p', -self.p_batt_greedy[idx], None)
 
         dispatch_message = self.difference_builder.get_message()
-        dispatch_message['cooperationPhase'] = \
-                         message['cooperationPhase']
+        dispatch_message['cooperationPhase'] = coopPhase
         print('Sending Cooperation DifferenceBuilder message!', flush=True)
         #print('Sending Cooperation DifferenceBuilder message: ' +
         #      json.dumps(dispatch_message), flush=True)
