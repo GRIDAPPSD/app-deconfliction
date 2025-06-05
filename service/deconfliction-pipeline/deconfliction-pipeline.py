@@ -99,9 +99,9 @@ class DeconflictionPipeline(GridAPPSD):
     # meas_msg_flag could be checked within the device loop to make the code
     # more compact, but better performance by making it a top-level check
     if meas_msg_flag:
-      # delete any existing matches for app_name so there are no stragglers
-      # from past timestamps
       for device in self.ConflictMatrix:
+        # delete any existing matches for app_name so there are no stragglers
+        # from past timestamps
         if app_name in self.ConflictMatrix[device]:
           self.ConflictMatrix[device].pop(app_name)
 
@@ -116,56 +116,134 @@ class DeconflictionPipeline(GridAPPSD):
     else:
       MinSetpoints = {}
       MaxSetpoints = {}
+      MinSetpointsReal = {}
+      MaxSetpointsReal = {}
+      MinSetpointsImag = {}
+      MaxSetpointsImag = {}
 
       # find the min/max setpoints for each device to make sure new
       # setpoints fall in that range
       for device in self.ConflictMatrix:
         for app in self.ConflictMatrix[device]:
-          if device not in MinSetpoints:
-            MinSetpoints[device] = self.ConflictMatrix[device][app][1]
-            MaxSetpoints[device] = self.ConflictMatrix[device][app][1]
+          value = self.ConflictMatrix[device][app][1]
+          if not isinstance(value, complex):
+            if device not in MinSetpoints:
+              MinSetpoints[device] = value
+              MaxSetpoints[device] = value
+            else:
+              MinSetpoints[device] = min(MinSetpoints[device], value)
+              MaxSetpoints[device] = max(MaxSetpoints[device], value)
+
           else:
-            MinSetpoints[device] = min(MinSetpoints[device],
-                                       self.ConflictMatrix[device][app][1])
-            MaxSetpoints[device] = max(MaxSetpoints[device],
-                                       self.ConflictMatrix[device][app][1])
+            # SolarPVs have complex values
+            value = self.ConflictMatrix[device][app][1].real
+            if device not in MinSetpointsReal:
+              MinSetpointsReal[device] = value
+              MaxSetpointsReal[device] = value
+            else:
+              MinSetpointsReal[device] = min(MinSetpointsReal[device], value)
+              MaxSetpointsReal[device] = max(MaxSetpointsReal[device], value)
+
+            value = self.ConflictMatrix[device][app][1].imag
+            if device not in MinSetpointsImag:
+              MinSetpointsImag[device] = value
+              MaxSetpointsImag[device] = value
+            else:
+              MinSetpointsImag[device] = min(MinSetpointsImag[device], value)
+              MaxSetpointsImag[device] = max(MaxSetpointsImag[device], value)
 
         # delete any existing matches for app_name so there are no stragglers
         # from past timestamps
         if app_name in self.ConflictMatrix[device]:
           self.ConflictMatrix[device].pop(app_name)
 
-    # now add the new set-points for app_name
+    # deviceSetPoints is an intermediate structure with only a single entry
+    # per device where set_points will have multiple entries for SolarPVs that
+    # will be translated to complex values here
+    deviceSetPoints = {}
     for point in set_points:
       device = point['object']
       #attribute = point['attribute']
       value = point['value']
 
+      if device not in deviceSetPoints:
+        deviceSetPoints[device] = value
+      elif not isinstance(deviceSetPoints[device], complex):
+        # this assumes the p value for the SolarPV was processed first
+        # so this will add the q value
+        deviceSetPoints[device] = complex(deviceSetPoints[device], value)
+
+    # now add the new setpoints for app_name into ConflictMatrix
+    for device, value in deviceSetPoints.items():
       if device not in self.ConflictMatrix:
         self.ConflictMatrix[device] = {}
 
       # for cooperation messages, make sure value falls in the min/max range
       if not meas_msg_flag and device in MinSetpoints:
-        if value < MinSetpoints[device]:
-          print('SetpointProcessor--for cooperation, app: ' + app_name +
-                ', device: ' + MethodUtil.DeviceToName[device] +
-                '--setpoint request below min allowable to prevent ' +
-                'backtracking: ' + str(value))
-          value = MinSetpoints[device]
-          print('SetpointProcessor--for cooperation, app: ' + app_name +
-                ', device: ' + MethodUtil.DeviceToName[device] +
-                '--setpoint reset to min allowable to prevent backtracking: ' +
-                str(value))
-        elif value > MaxSetpoints[device]:
-          print('SetpointProcessor--for cooperation, app: ' + app_name +
-                ', device: ' + MethodUtil.DeviceToName[device] +
-                '--setpoint request above max allowable to prevent ' +
-                'backtracking: ' + str(value))
-          value = MaxSetpoints[device]
-          print('SetpointProcessor--for cooperation, app: ' + app_name +
-                ', device: ' + MethodUtil.DeviceToName[device] +
-                '--setpoint reset to max allowable to prevent backtracking: ' +
-                str(value))
+        if not isinstance(value, complex):
+          if value < MinSetpoints[device]:
+            print('SetpointProcessor--for cooperation, app: ' + app_name +
+                  ', device: ' + MethodUtil.DeviceToName[device] +
+                  '--setpoint request below min allowable to prevent ' +
+                  'backtracking: ' + str(value))
+            value = MinSetpoints[device]
+            print('SetpointProcessor--for cooperation, app: ' + app_name +
+                  ', device: ' + MethodUtil.DeviceToName[device] +
+                  '--setpoint reset to min allowable to prevent backtracking: '+
+                  str(value))
+          elif value > MaxSetpoints[device]:
+            print('SetpointProcessor--for cooperation, app: ' + app_name +
+                  ', device: ' + MethodUtil.DeviceToName[device] +
+                  '--setpoint request above max allowable to prevent ' +
+                  'backtracking: ' + str(value))
+            value = MaxSetpoints[device]
+            print('SetpointProcessor--for cooperation, app: ' + app_name +
+                  ', device: ' + MethodUtil.DeviceToName[device] +
+                  '--setpoint reset to max allowable to prevent backtracking: '+
+                  str(value))
+
+        else:
+          if value.real < MinSetpointsReal[device]:
+            print('SetpointProcessor--for cooperation, app: ' + app_name +
+                  ', device: ' + MethodUtil.DeviceToName[device] +
+                  '--setpoint (real) request below min allowable to prevent ' +
+                  'backtracking: ' + str(value.real))
+            value = complex(MinSetpointsReal[device], value.imag)
+            print('SetpointProcessor--for cooperation, app: ' + app_name +
+                  ', device: ' + MethodUtil.DeviceToName[device] +
+                  '--setpoint (real) reset to min allowable to prevent ' +
+                  'backtracking: ' + str(value.real))
+          elif value.real > MaxSetpointsReal[device]:
+            print('SetpointProcessor--for cooperation, app: ' + app_name +
+                  ', device: ' + MethodUtil.DeviceToName[device] +
+                  '--setpoint (real) request above max allowable to prevent ' +
+                  'backtracking: ' + str(value.real))
+            value = complex(MaxSetpointsReal[device], value.imag)
+            print('SetpointProcessor--for cooperation, app: ' + app_name +
+                  ', device: ' + MethodUtil.DeviceToName[device] +
+                  '--setpoint (real) reset to max allowable to prevent ' +
+                  'backtracking: ' + str(value.real))
+
+          if value.imag < MinSetpointsImag[device]:
+            print('SetpointProcessor--for cooperation, app: ' + app_name +
+                  ', device: ' + MethodUtil.DeviceToName[device] +
+                  '--setpoint (imag) request below min allowable to prevent ' +
+                  'backtracking: ' + str(value.imag))
+            value = complex(value.real, MinSetpointsImag[device])
+            print('SetpointProcessor--for cooperation, app: ' + app_name +
+                  ', device: ' + MethodUtil.DeviceToName[device] +
+                  '--setpoint (imag) reset to min allowable to prevent ' +
+                  'backtracking: ' + str(value.imag))
+          elif value.imag > MaxSetpointsImag[device]:
+            print('SetpointProcessor--for cooperation, app: ' + app_name +
+                  ', device: ' + MethodUtil.DeviceToName[device] +
+                  '--setpoint (imag) request above max allowable to prevent ' +
+                  'backtracking: ' + str(value.imag))
+            value = complex(value.real, MaxSetpointsImag[device])
+            print('SetpointProcessor--for cooperation, app: ' + app_name +
+                  ', device: ' + MethodUtil.DeviceToName[device] +
+                  '--setpoint (imag) reset to max allowable to prevent ' +
+                  'backtracking: ' + str(value.real))
 
       self.ConflictMatrix[device][app_name] = (timestamp, value)
 
@@ -196,26 +274,30 @@ class DeconflictionPipeline(GridAPPSD):
 
 
   def ConflictMetricComputation(self, timestamp, printAllMetricsFlag=False):
-    centroid = {}
-    apps = {}
-    n_devices = len(self.ConflictMatrix)
 
     # GDB 5/21/24: Don't crash with an empty ConflictMatrix
-    if n_devices == 0:
+    if len(self.ConflictMatrix) == 0:
       print('ConflictMetricComputation--conflict metric undefined ' +
             '(no conflicts), timestamp: ' + str(timestamp))
       return 0.0
 
+    centroid = {}
+    apps = {}
+    n_devices = 0
+
     for device in self.ConflictMatrix:
-      n_apps_device = len(self.ConflictMatrix[device])
+      name = MethodUtil.DeviceToName[device]
 
+      # TODO: need help from MONISH to support SolarPVs in conflict metric
+      if name.startswith('PhotovoltaicUnit.'):
+        continue
+
+      n_devices += 1
       device_setpoints = []
-
       for app in self.ConflictMatrix[device]:
         gamma_d_a = self.ConflictMatrix[device][app][1]
         if app not in apps:
           apps[app] = {}
-        name = MethodUtil.DeviceToName[device]
 
         if printAllMetricsFlag:
           print('ConflictMetricComputation--device: ' + name + ', app: ' +
@@ -238,13 +320,13 @@ class DeconflictionPipeline(GridAPPSD):
 
       # Find centroid
       # GDB 6/26/24: Also don't crash with empty ConflictMatrix for a device
+      n_apps_device = len(self.ConflictMatrix[device])
       if n_apps_device > 0:
         centroid[device] = sum(device_setpoints) / n_apps_device
 
     # Distance vector:
     # Distance between setpoints requested by each app to the centroid vector
     dist_centroid = []
-    n_apps = len(apps)
     for app in apps:
       sum_dist = 0
       for device in centroid:
@@ -254,6 +336,7 @@ class DeconflictionPipeline(GridAPPSD):
       dist_centroid.append(math.sqrt(sum_dist))
 
     # Compute conflict metric: average distance
+    n_apps = len(apps)
     conflict_metric = sum(dist_centroid) / n_apps
     # Ensuring 0 <= conflict_metric <= 1
     conflict_metric = conflict_metric * 2 / math.sqrt(n_devices)
@@ -277,7 +360,7 @@ class DeconflictionPipeline(GridAPPSD):
       name = MethodUtil.DeviceToName[device]
       if name.startswith('BatteryUnit.'):
         # Normalize setpoints using max charge and discharge possible
-        sigma_d_t[device] = (gamma_d_t + self.BatteriesInfo[device]['prated']) / \
+        sigma_d_t[device] = (gamma_d_t + self.BatteriesInfo[device]['prated'])/\
                             (2 * self.BatteriesInfo[device]['prated'])
 
       elif name.startswith('RatioTapChanger.'):
@@ -286,6 +369,9 @@ class DeconflictionPipeline(GridAPPSD):
                              abs(self.Regulators[device]['highStep'])) / \
                             (self.Regulators[device]['highStep'] + \
                              abs(self.Regulators[device]['lowStep']))
+
+      #TODO MONISH HELP with SolarPV support here
+      #elif name.startswith('PhotovoltaicUnit.'):
 
       # while we are iterating over devices, build up a list of apps we
       # need to compute weights for since that's buried down a level within
@@ -321,6 +407,9 @@ class DeconflictionPipeline(GridAPPSD):
             sigma_d_a[device] = sigma
             centroid[device] = (sigma + sigma_d_t[device]) / 2
 
+          #TODO MONISH HELP with SolarPV support here
+          #elif name.startswith('PhotovoltaicUnit.'):
+
       # Distance vector:
       sum_dist_a = 0
       sum_dist_t = 0
@@ -331,12 +420,12 @@ class DeconflictionPipeline(GridAPPSD):
       dist_centroid_a = math.sqrt(sum_dist_a)
       dist_centroid_t = math.sqrt(sum_dist_t)
 
-      # Compute conflict metric: average distance
+      # Compute per app conflict metric: average distance
       conflict_metric = (dist_centroid_a + dist_centroid_t) / 2
       # Ensuring 0 <= conflict_metric <= 1
       conflict_metric = conflict_metric * 2 / math.sqrt(len(sigma_d_a))
 
-      # The lower the conflict metric, the higher the incentive weight value
+      # The lower the conflict metric, the higher the app incentive weight value
       self.OptAppWeights[app] = 1.0 - conflict_metric
       #print('CooperationWeightsUpdate--timestamp: ' + str(timestamp) +
       #   ', app: ' + app + ', initial weight: ' + str(self.OptAppWeights[app]))
@@ -345,7 +434,7 @@ class DeconflictionPipeline(GridAPPSD):
       # block comment out from here to end of function to bypass adjustments
       minWeight = min(minWeight, self.OptAppWeights[app])
 
-    # Adjust weights to give even more inventive for better cooperating apps
+    # Adjust weights to give even more incentive for better cooperating apps
     weightLoss = 0.75 * minWeight # boost the incentive
     for app in app_list:
       self.OptAppWeights[app] -= weightLoss
@@ -376,6 +465,9 @@ class DeconflictionPipeline(GridAPPSD):
     for device in self.ConflictMatrix:
       setpoint = None
       for app in self.ConflictMatrix[device]:
+        # this is a weird/clever way of determining if any of the setpoints
+        # are different by comparing each one with the previous one, which
+        # isn't the intuitive way to do it, but it is fast and compact
         if setpoint!=None and setpoint!=self.ConflictMatrix[device][app][1]:
           return True
         setpoint = self.ConflictMatrix[device][app][1]
@@ -996,6 +1088,10 @@ class DeconflictionPipeline(GridAPPSD):
   def Optimization(self, timestamp, ConflictMatrix):
     ResolutionVector = {}
 
+    # This should work whether the conflict matrix setpoint values are
+    # scalars as with batteries and regulators or complex numbers as with
+    # solarPVs. Storing those SolarPV p,q values as complex numbers pays
+    # off here.
     for device in ConflictMatrix:
       optTimestamp = 0
       optNumerator = 0.0
@@ -1021,6 +1117,7 @@ class DeconflictionPipeline(GridAPPSD):
       if optDenominator > 0.0:
         name = MethodUtil.DeviceToName[device]
         if name.startswith('RatioTapChanger.'):
+          # note round() function yields an int
           ResolutionVector[device] = (optTimestamp,
                                       round(optNumerator/optDenominator))
         else:
@@ -1067,10 +1164,59 @@ class DeconflictionPipeline(GridAPPSD):
             self.BatteriesInfo[device]['P_batt_inv'] = value[1]
             MethodUtil.BatteryP_batt_inv[device] = value[1]
 
+        elif name == self.testDeviceName:
+          print('~TEST DEBUG DeviceDispatcher--DISPATCH NOT needed, battery' +
+                ' device: ' + name + ', timestamp: ' + str(timestamp) +
+                ', same value: ' + str(value[1]))
+
         elif printAllDispatchesFlag:
           print('DeviceDispatcher--DISPATCH NOT needed, battery device: ' +
                 name + ', timestamp: ' + str(timestamp) +
                 ', same value: ' + str(value[1]))
+
+      #XXX
+      elif name.startswith('PhotovoltaicUnit.'):
+        # for SolarPV devices the value is complex so if either of those
+        # components has changed for a device, both get dispatched
+        if value[1] != self.SolarPVs[device]['PQ_pv_inv']:
+          #new value before old value for DifferenceBuilder
+          print('GARY: value: ' + str(value), flush=True)
+          print('GARY: SolarPVs: ' + str(self.SolarPVs[device]['PQ_pv_inv']), flush=True)
+          self.difference_builder.add_difference(device,
+                                  'PowerElectronicsConnection.p', value[1].real,
+                                  self.SolarPVs[device]['PQ_pv_inv'].real)
+          self.difference_builder.add_difference(device,
+                                  'PowerElectronicsConnection.q', value[1].imag,
+                                  self.SolarPVs[device]['PQ_pv_inv'].imag)
+
+          diffCount += 1
+
+          if printAllDispatchesFlag:
+            print('DeviceDispatcher--solarPV device: ' + name +
+                  ', timestamp: ' + str(timestamp) + ', new value: ' +
+                  str(value[1]) + ', old value: ' +
+                  str(self.SolarPVs[device]['PQ_pv_inv']))
+
+          if self.testDeviceName and name==self.testDeviceName:
+            print('~TEST Dispatching to solarPV id: ' + device +
+                  ', device: ' + name + ', timestamp: ' + str(timestamp) +
+                  ', new value: ' + str(value[1]) + ', old value: ' +
+                  str(self.SolarPVs[device]['PQ_pv_inv']))
+
+          if self.instantSetpointUpdateFlag:
+            self.SolarPVs[device]['PQ_pv_inv'] = value[1]
+            MethodUtil.SolarPVs_inv[device] = value[1]
+
+        elif name == self.testDeviceName:
+          print('~TEST DEBUG DeviceDispatcher--DISPATCH NOT needed, solarPV' +
+                ' device: ' + name + ', timestamp: ' + str(timestamp) +
+                ', same value: ' + str(value[1]))
+
+        elif printAllDispatchesFlag:
+          print('DeviceDispatcher--DISPATCH NOT needed, solarPV device: ' +
+                name + ', timestamp: ' + str(timestamp) +
+                ', same value: ' + str(value[1]))
+      #XXX
 
       elif name.startswith('RatioTapChanger.'):
         # Dispatch regulator tap positions whenever they are different from the
@@ -1302,6 +1448,25 @@ class DeconflictionPipeline(GridAPPSD):
         p, q = self.pol2cart(measurements[measid]['magnitude'],
                              measurements[measid]['angle'])
 
+        device = self.SolarPVsInfo[bus]['mrid']
+
+        # negate the p and q values from the simulation so it is directly
+        # comparable to the value that must be given to GridLAB-D in a
+        # DifferenceBuilder message
+        meas_PQ_pv_inv = complex(-p, -q)
+
+        # only update if there is a value change
+        #XXX
+        if meas_PQ_pv_inv != self.SolarPVs[device]['PQ_pv_inv']:
+          self.SolarPVs[device]['PQ_pv_inv'] = meas_PQ_pv_inv
+          MethodUtil.SolarPVs_inv[device] = meas_PQ_pv_inv
+          if printAllMessagesFlag:
+            print('ProcessSimulationMessage--timestamp: ' +
+                  str(timestamp) + ', device: ' +
+                  self.SolarPVsInfo[bus]['name'] + ', PQ_pv_inv: ' +
+                  str(self.SolarPVs[device]['PQ_pv_inv']))
+        #XXX
+
         if self.pltFlag:
           self.pltFile.write(',')
           self.pltFile.write(self.SolarPVsInfo[bus]['name'])
@@ -1327,6 +1492,10 @@ class DeconflictionPipeline(GridAPPSD):
         print('~TEST simulation updated tap position for device name: ' +
               self.testDeviceName + ', timestamp: ' + str(timestamp) +
               ', pos: ' + str(self.Regulators[device]['step']))
+      elif device in self.SolarPVs:
+        print('~TEST simulation updated PQ_pv_inv for device name: ' +
+              self.testDeviceName + ', timestamp: ' + str(timestamp)+
+              ', PQ_pv_inv: ' + str(self.SolarPVs[device]['PQ_pv_inv']))
 
 
   def getAppName(self, header):
@@ -1412,7 +1581,8 @@ class DeconflictionPipeline(GridAPPSD):
 
         self.logConflictTest('running cooperation before Optimization')
         newResolutionVector = self.Optimization(timestamp, self.ConflictMatrix)
-        self.logResolutionTest('running cooperation after Optimization', newResolutionVector)
+        self.logResolutionTest('running cooperation after Optimization',
+                               newResolutionVector)
 
         # Published IEEE Access Foundational Paper Reference:
         #   Step 3.2--Deconfliction Solution
@@ -1532,10 +1702,12 @@ class DeconflictionPipeline(GridAPPSD):
               'stage deconfliction')
         self.RulesForBatteriesResolution(newResolutionVector,
                                          self.printAllRulesFlag)
-        self.logResolutionTest('no conflict before last rules stage', newResolutionVector)
+        self.logResolutionTest('no conflict before last rules stage',
+                               newResolutionVector)
         self.RulesForRegulatorsResolution(newResolutionVector,
                                           self.printAllRulesFlag)
-        self.logResolutionTest('no conflict after last rules stage', newResolutionVector)
+        self.logResolutionTest('no conflict after last rules stage',
+                               newResolutionVector)
 
       if printAllConflictsResolutionsFlag:
         print('DeconflictSetpoints--ResolutionVector (no conflict): ' +
@@ -1626,8 +1798,7 @@ class DeconflictionPipeline(GridAPPSD):
           self.logResolutionTest('bypassing cooperation after last rules stage', self.TargetResolutionVector)
 
         if printAllConflictsResolutionsFlag:
-          print('DeconflictSetpoints--ResolutionVector (bypassing cooperation): ' +
-                str(self.TargetResolutionVector))
+          print('DeconflictSetpoints--ResolutionVector (bypassing cooperation): ' + str(self.TargetResolutionVector))
 
         if self.testDeviceName:
           device = MethodUtil.NameToDevice[self.testDeviceName]
@@ -1638,8 +1809,7 @@ class DeconflictionPipeline(GridAPPSD):
                   ', timestamp: ' +
                   str(self.TargetResolutionVector[device][0]))
           else:
-            print('~TEST ResolutionVector (bypassing cooperation) does not contain ' +
-                  self.testDeviceName)
+            print('~TEST ResolutionVector (bypassing cooperation) does not contain ' + self.testDeviceName)
 
         # Published IEEE Access Foundational Paper Reference:
         #   Step 4--Setpoint Validator
@@ -1676,8 +1846,17 @@ class DeconflictionPipeline(GridAPPSD):
       self.coopConflictFlag = False
       self.coopPhaseCounter += 1
       self.coopCurrentPhase = 'COOP-' + str(self.coopPhaseCounter)
+
+      # can't serialize TargetResolutionVector that contains complex numbers
+      # for SolarPV setpoints. Need to translate all of those to tuples
+      tupleTargetResolutionVector = copy.deepcopy(self.TargetResolutionVector)
+      for device, value in tupleTargetResolutionVector.items():
+        if isinstance(value[1], complex):
+          tupleTargetResolutionVector[device] = (value[0],
+                                                (value[1].real, value[1].imag))
+
       coopMessage = {'cooperationPhase': self.coopCurrentPhase,
-                     'targetResolutionVector': self.TargetResolutionVector}
+                     'targetResolutionVector': tupleTargetResolutionVector}
       self.gapps.send(self.coop_topic, json.dumps(coopMessage))
       print('>>> DeconflictSetpoints--kicked off new cooperation phase, ' +
             'updated current phase: ' + self.coopCurrentPhase)
@@ -1961,7 +2140,7 @@ class DeconflictionPipeline(GridAPPSD):
       self.RegulatorHistory[device] = []
 
     # for the app scalability task
-    self.SolarPVsInfo, self.SolarPVsIdx = \
+    self.SolarPVsInfo, SolarPVsIdx, self.SolarPVs = \
                        AppUtil.getSolarPVs(MethodUtil.sparql_mgr)
 
     # deltaT is time between timesteps as fractional hours
@@ -2088,8 +2267,8 @@ class DeconflictionPipeline(GridAPPSD):
       self.pltFile = open('log/plot_data.csv', 'w')
       self.pltTZero = None
 
-    #self.bypassDeconflictionFlag = True
-    self.bypassDeconflictionFlag = False
+    #self.bypassDeconflictionFlag = False
+    self.bypassDeconflictionFlag = True
     self.instantSetpointUpdateFlag = False
 
     print('\nInitialization--finished, waiting for messages...\n')
