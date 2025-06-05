@@ -179,8 +179,8 @@ class DeconflictionPipeline(GridAPPSD):
         self.ConflictMatrix[device] = {}
 
       # for cooperation messages, make sure value falls in the min/max range
-      if not meas_msg_flag and device in MinSetpoints:
-        if not isinstance(value, complex):
+      if not meas_msg_flag:
+        if device in MinSetpoints:
           if value < MinSetpoints[device]:
             print('SetpointProcessor--for cooperation, app: ' + app_name +
                   ', device: ' + MethodUtil.DeviceToName[device] +
@@ -202,7 +202,7 @@ class DeconflictionPipeline(GridAPPSD):
                   '--setpoint reset to max allowable to prevent backtracking: '+
                   str(value))
 
-        else:
+        elif device in MinSetpointsReal[device]:
           if value.real < MinSetpointsReal[device]:
             print('SetpointProcessor--for cooperation, app: ' + app_name +
                   ', device: ' + MethodUtil.DeviceToName[device] +
