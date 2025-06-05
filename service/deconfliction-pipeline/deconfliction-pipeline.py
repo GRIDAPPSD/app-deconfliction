@@ -1853,7 +1853,7 @@ class DeconflictionPipeline(GridAPPSD):
       for device, value in tupleTargetResolutionVector.items():
         if isinstance(value[1], complex):
           tupleTargetResolutionVector[device] = (value[0],
-                                                (value[1].real, value[1].imag))
+                                                 (value[1].real, value[1].imag))
 
       coopMessage = {'cooperationPhase': self.coopCurrentPhase,
                      'targetResolutionVector': tupleTargetResolutionVector}
@@ -1937,6 +1937,14 @@ class DeconflictionPipeline(GridAPPSD):
       # that computes a weighted centroid per device
       newTargetResolutionVector = self.Optimization(timestamp,
                                                     self.ConflictMatrix)
+
+      # can't serialize TargetResolutionVector that contains complex numbers
+      # for SolarPV setpoints. Need to translate all of those to tuples, which
+      # I can do in-place this time since we aren't keeping this version.
+      for device, value in newTargetResolutionVector.items():
+        if isinstance(value[1], complex):
+          newTargetResolutionVector[device] = (value[0],
+                                               (value[1].real, value[1].imag))
 
       # publish this target resolution vector to the cooperation topic for
       # competing apps that support cooperation to respond to
@@ -2267,8 +2275,8 @@ class DeconflictionPipeline(GridAPPSD):
       self.pltFile = open('log/plot_data.csv', 'w')
       self.pltTZero = None
 
-    #self.bypassDeconflictionFlag = False
-    self.bypassDeconflictionFlag = True
+    self.bypassDeconflictionFlag = False
+    #self.bypassDeconflictionFlag = True
     self.instantSetpointUpdateFlag = False
 
     print('\nInitialization--finished, waiting for messages...\n')
