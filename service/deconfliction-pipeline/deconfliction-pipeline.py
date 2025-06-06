@@ -1198,8 +1198,7 @@ class DeconflictionPipeline(GridAPPSD):
         # components has changed for a device, both get dispatched
         if value[1] != self.SolarPVs[device]['PQ_pv_inv']:
           #new value before old value for DifferenceBuilder
-          print('GARY: device: ' + name + ', new SolarPV value: ' + str(value[1]), flush=True)
-          print('GARY: device: ' + name + ', old SolarPV value: ' + str(self.SolarPVs[device]['PQ_pv_inv']), flush=True)
+          print('GARY SolarPV: ' + name + ', new: ' + str(value[1]) + ', old: ' + str(self.SolarPVs[device]['PQ_pv_inv']), flush=True)
           self.difference_builder.add_difference(device,
                                   'PowerElectronicsConnection.p', value[1].real,
                                   self.SolarPVs[device]['PQ_pv_inv'].real)
