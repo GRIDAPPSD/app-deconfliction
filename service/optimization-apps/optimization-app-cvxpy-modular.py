@@ -784,8 +784,7 @@ class CompetingApp(GridAPPSD):
                      'Target SoC'], tablefmt='psql'), flush=True)
 
     if includeSolarPVsFlag:
-      p_pv_setpoints = []
-      q_pv_setpoints = []
+      pq_pv_setpoints = []
       for bus in self.SolarPVsInfo:
         idx = self.SolarPVsInfo[bus]['idx']
         mrid = self.SolarPVsInfo[bus]['mrid']
@@ -800,31 +799,13 @@ class CompetingApp(GridAPPSD):
         self.difference_builder.add_difference(mrid,
              'PowerElectronicsConnection.q', -total_q, None)
 
-        #p_pv_setpoints.append([name, bus, self.p_pv_A[idx].value/1000,
-        #                                  self.p_pv_B[idx].value/1000,
-        #                                  self.p_pv_C[idx].value/1000,
-        #                                  total_p/1000])
-        p_pv_setpoints.append([name, bus, total_p/1000])
-        #q_pv_setpoints.append([name, bus, self.q_pv_A[idx].value/1000,
-        #                                  self.q_pv_B[idx].value/1000,
-        #                                  self.q_pv_C[idx].value/1000,
-        #                                  total_q/1000])
-        q_pv_setpoints.append([name, bus, total_q/1000])
+        pq_pv_setpoints.append([name, bus, total_p/1000, total_q/1000])
 
         # set pq_pv_greedy with every optimization based on measurements
         self.pq_pv_greedy[idx] = complex(total_p, total_q)
 
-      #print(tabulate(p_pv_setpoints, headers=['SolarPV', 'bus',
-      #               'p_pv_A (kW)', 'p_pv_B (kW)', 'p_pv_C (kW)',
-      #               'total p (kW)'], tablefmt='psql'), flush=True)
-      print(tabulate(p_pv_setpoints, headers=['SolarPV', 'bus',
-                     'total p (kW)'], tablefmt='psql'), flush=True)
-
-      #print(tabulate(q_pv_setpoints, headers=['SolarPV', 'bus',
-      #               'q_pv_A (kW)', 'q_pv_B (kW)', 'q_pv_C (kW)',
-      #               'total q (kW)'], tablefmt='psql'), flush=True)
-      print(tabulate(q_pv_setpoints, headers=['SolarPV', 'bus',
-                     'total q (kW)'], tablefmt='psql'), flush=True)
+      print(tabulate(pq_pv_setpoints, headers=['SolarPV', 'bus', 'Total p (kW)',
+                     'Total q (kW)'], tablefmt='psql'), flush=True)
 
     '''
     if self.includePFlowFlag:
