@@ -202,7 +202,7 @@ class DeconflictionPipeline(GridAPPSD):
                   '--setpoint reset to max allowable to prevent backtracking: '+
                   str(value))
 
-        elif device in MinSetpointsReal[device]:
+        elif device in MinSetpointsReal:
           if value.real < MinSetpointsReal[device]:
             print('SetpointProcessor--for cooperation, app: ' + app_name +
                   ', device: ' + MethodUtil.DeviceToName[device] +
