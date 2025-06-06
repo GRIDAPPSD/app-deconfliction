@@ -111,7 +111,6 @@ class AppUtil:
   def getBatteries(sparql_mgr):
     BatteryMap = {}
     BatteriesInfo = {}
-    BatteriesIdx = {}
     bindings = sparql_mgr.battery_query()
     #print('battery_query results bindings: ' + str(bindings), flush=True)
     print('\nCount of Batteries: ' + str(len(bindings)), flush=True)
@@ -121,10 +120,10 @@ class AppUtil:
       eqid = obj['pecid']['value']
       BatteryMap[eqid] = devid
 
-      BatteriesIdx[devid] = idx
       BatteriesInfo[devid] = {}
       name = 'BatteryUnit.' + obj['name']['value']
       BatteriesInfo[devid]['name'] = name
+      BatteriesInfo[devid]['idx'] = idx
       BatteriesInfo[devid]['bus'] = obj['bus']['value']
       BatteriesInfo[devid]['phase'] = obj['phases']['value']
       BatteriesInfo[devid]['ratedkW'] = float(obj['ratedS']['value'])/1000.0
@@ -150,7 +149,7 @@ class AppUtil:
         elif item['type'] == 'SoC':
           BatteriesInfo[BatteryMap[item['eqid']]]['SoC_measid'] = item['measid']
 
-    return (BatteriesInfo, BatteriesIdx)
+    return BatteriesInfo
 
 
   def getEnergyConsumers(sparql_mgr):

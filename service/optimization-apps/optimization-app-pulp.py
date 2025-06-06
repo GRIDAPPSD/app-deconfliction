@@ -127,7 +127,7 @@ class CompetingApp(GridAPPSD):
             mrid = self.BatteriesObj[bus]['mrid']
             self.dynamicProb += lpSum(self.p_flow_A[idx] \
                  for idx in self.LinesIn[bus_idx]['A']) - \
-               self.p_batt[self.BatteriesIdx[mrid]] - injection_p == \
+               self.p_batt[self.BatteriesInfo[mrid]['idx']] - injection_p == \
                lpSum(self.p_flow_A[idx] for idx in self.LinesOut[bus_idx]['A'])
 
             self.dynamicProb += lpSum(self.q_flow_A[idx] \
@@ -164,7 +164,7 @@ class CompetingApp(GridAPPSD):
             mrid = self.BatteriesObj[bus]['mrid']
             self.dynamicProb += lpSum(self.p_flow_B[idx] \
                  for idx in self.LinesIn[bus_idx]['B']) - \
-               self.p_batt[self.BatteriesIdx[mrid]] - injection_p == \
+               self.p_batt[self.BatteriesInfo[mrid]['idx']] - injection_p == \
                lpSum(self.p_flow_B[idx] for idx in self.LinesOut[bus_idx]['B'])
 
             self.dynamicProb += lpSum(self.q_flow_B[idx] \
@@ -201,7 +201,7 @@ class CompetingApp(GridAPPSD):
             mrid = self.BatteriesObj[bus]['mrid']
             self.dynamicProb += lpSum(self.p_flow_C[idx] \
                  for idx in self.LinesIn[bus_idx]['C']) - \
-               self.p_batt[self.BatteriesIdx[mrid]] - injection_p == \
+               self.p_batt[self.BatteriesInfo[mrid]['idx']] - injection_p == \
                lpSum(self.p_flow_C[idx] for idx in self.LinesOut[bus_idx]['C'])
 
             self.dynamicProb += lpSum(self.q_flow_C[idx] \
@@ -221,7 +221,7 @@ class CompetingApp(GridAPPSD):
 
     for mrid in self.BatteriesInfo:
       self.BatteriesInfo[mrid]['state'] = 'idling'
-      idx = self.BatteriesIdx[mrid]
+      idx = self.BatteriesInfo[mrid]['idx']
       self.dynamicProb += self.soc[idx] == self.BatteriesInfo[mrid]['SoC'] + \
               self.BatteriesInfo[mrid]['eff'] * self.p_batt_c[idx] * \
               self.deltaT / self.BatteriesInfo[mrid]['ratedE'] + \
@@ -272,7 +272,7 @@ class CompetingApp(GridAPPSD):
     if self.opt_type == 'decarbonization':
       bus_idx_batt = {'A': [], 'B': [], 'C': []}
       for mrid in self.BatteriesInfo:
-        idx = self.BatteriesIdx[mrid]
+        idx = self.BatteriesInfo[mrid]['idx']
         self.dynamicProb += self.p_batt[idx] == self.p_batt[idx].varValue
         bus = self.BatteriesInfo[mrid]['bus']
         if 'A' in self.BatteriesInfo[mrid]['phase']:
@@ -351,7 +351,7 @@ class CompetingApp(GridAPPSD):
 
     p_batt_setpoints = []
     for mrid in self.BatteriesInfo:
-      idx = self.BatteriesIdx[mrid]
+      idx = self.BatteriesInfo[mrid]['idx']
       self.BatteriesInfo[mrid]['SoC'] = self.soc[idx].varValue
       # new value before old value for DifferenceBuilder
       # note the optimized p_batt value is negated for the GridLAB-D
@@ -365,7 +365,7 @@ class CompetingApp(GridAPPSD):
                    'Target SoC'], tablefmt='psql'), flush=True)
 
     for mrid in self.BatteriesInfo:
-      idx = self.BatteriesIdx[mrid]
+      idx = self.BatteriesInfo[mrid]['idx']
       self.p_batt_greedy[idx] = self.p_batt[idx].varValue
 
     for reg in self.RegulatorsInfo:
@@ -677,7 +677,7 @@ class CompetingApp(GridAPPSD):
     self.SolarPVsInfo, SolarPVs = AppUtil.getSolarPVs(sparql_mgr)
     #print('Starting SolarPVsInfo: ' + json.dumps(self.SolarPVsInfo, indent=2), flush=True)
 
-    self.BatteriesInfo, self.BatteriesIdx = AppUtil.getBatteries(sparql_mgr)
+    self.BatteriesInfo = AppUtil.getBatteries(sparql_mgr)
     print('Starting BatteriesInfo: ' + json.dumps(self.BatteriesInfo, indent=2), flush=True)
 
     self.BatteriesObj = {}
@@ -1035,7 +1035,7 @@ class CompetingApp(GridAPPSD):
 
         for mrid in self.BatteriesInfo:
           if mrid in targetResolutionVector:
-            idx = self.BatteriesIdx[mrid]
+            idx = self.BatteriesInfo[mrid]['idx']
             self.p_batt_proposed[idx] = -targetResolutionVector[mrid][1]
 
         for reg in self.RegulatorsInfo:
@@ -1158,7 +1158,7 @@ class CompetingApp(GridAPPSD):
                                                  self.reg_greedy[idx], None)
 
         for mrid in self.BatteriesInfo:
-          idx = self.BatteriesIdx[mrid]
+          idx = self.BatteriesInfo[mrid]['idx']
           # new value before old value for DifferenceBuilder
           # note the p_batt value is negated for the GridLAB-D
           # DifferenceBuilder message

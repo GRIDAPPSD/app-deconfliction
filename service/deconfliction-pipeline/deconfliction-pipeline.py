@@ -2135,7 +2135,7 @@ class DeconflictionPipeline(GridAPPSD):
 
     MethodUtil.sparql_mgr = SPARQLManager(gapps, feeder_mrid, simulation_id)
 
-    self.BatteriesInfo, self.BatteriesIdx = AppUtil.getBatteries(MethodUtil.sparql_mgr)
+    self.BatteriesInfo = AppUtil.getBatteries(MethodUtil.sparql_mgr)
     #print('Intialialization--starting BatteriesInfo: ' + str(self.BatteriesInfo))
 
     # dictionary of lists for the rolling time interval rules stage

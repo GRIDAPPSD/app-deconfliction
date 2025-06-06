@@ -159,10 +159,10 @@ class CompetingApp(GridAPPSD):
     self.Constraints = []
 
     if self.includeBatteriesFlag:
-      self.optConstraintsDERWithBatteries(self.BatteriesIdx, self.BatteriesInfo,
-                                self.deltaT, self.soc,
-                                self.p_batt, self.p_batt_c, self.p_batt_d,
-                                self.lambda_c, self.lambda_d)
+      self.optConstraintsDERWithBatteries(self.BatteriesInfo, self.deltaT,
+                                          self.soc, self.p_batt,
+                                          self.p_batt_c, self.p_batt_d,
+                                          self.lambda_c, self.lambda_d)
 
     if self.includeRegulatorsFlag:
       self.optConstraintsDERWithRegulators(self.RegulatorsInfo, self.reg_taps)
@@ -177,7 +177,7 @@ class CompetingApp(GridAPPSD):
                       self.includeEnergyConsumersFlag, self.includeSolarPVsFlag,
                       self.BusInfo, self.LinesIn, self.LinesOut,
                       self.EnergyConsumers, self.SolarPVsInfo,
-                      self.BatteriesObj, self.BatteriesIdx, self.p_batt,
+                      self.BatteriesObj, self.BatteriesInfo, self.p_batt,
                       self.p_flow_A, self.p_flow_B, self.p_flow_C,
                       self.p_pv_A, self.p_pv_B, self.p_pv_C)
 
@@ -215,8 +215,8 @@ class CompetingApp(GridAPPSD):
       # note decarbonization is a two stage optimization and the first stage
       # is run within the objectiveForDecarbonization function
       objective = self.optObjectiveForDecarbonization(self.BusInfo,
-                                    self.BatteriesIdx, self.BatteriesInfo,
-                                    self.EnergySource, self.Psub, self.Psub_mod,
+                                    self.BatteriesInfo, self.EnergySource,
+                                    self.Psub, self.Psub_mod,
                                     self.p_flow_A, self.p_flow_B, self.p_flow_C,
                                     self.p_batt, self.v_A, self.v_B, self.v_C)
 
@@ -300,11 +300,11 @@ class CompetingApp(GridAPPSD):
       self.Psub_mod = cp.Variable(integer=False, name='P_sub_mod')
 
 
-  def optConstraintsDERWithBatteries(self, BatteriesIdx, BatteriesInfo, deltaT,
-                           soc, p_batt, p_batt_c, p_batt_d, lambda_c, lambda_d):
+  def optConstraintsDERWithBatteries(self, BatteriesInfo, deltaT, soc, p_batt,
+                                     p_batt_c, p_batt_d, lambda_c, lambda_d):
     for mrid in BatteriesInfo:
       BatteriesInfo[mrid]['state'] = 'idling'
-      idx = BatteriesIdx[mrid]
+      idx = BatteriesInfo[mrid]['idx']
       self.Constraints.append(
               soc[idx] == BatteriesInfo[mrid]['SoC'] + \
               BatteriesInfo[mrid]['eff'] * p_batt_c[idx] * \
@@ -393,7 +393,7 @@ class CompetingApp(GridAPPSD):
   def optConstraintsNetworkWithPFlow(self, includeBatteriesFlag,
          includeEnergyConsumersFlag, includeSolarPVsFlag,
          BusInfo, LinesIn, LinesOut, EnergyConsumers, SolarPVsInfo,
-         BatteriesObj, BatteriesIdx, p_batt, p_flow_A, p_flow_B, p_flow_C,
+         BatteriesObj, BatteriesInfo, p_batt, p_flow_A, p_flow_B, p_flow_C,
          p_pv_A, p_pv_B, p_pv_C):
     for bus in BusInfo:
       bus_idx = BusInfo[bus]['idx']
@@ -421,7 +421,7 @@ class CompetingApp(GridAPPSD):
             mrid = BatteriesObj[bus]['mrid']
             self.Constraints.append(sum(p_flow_A[idx] \
                  for idx in LinesIn[bus_idx]['A']) - \
-               p_batt[BatteriesIdx[mrid]] - injection_p == \
+               p_batt[BatteriesInfo[mrid]['idx']] - injection_p == \
                sum(p_flow_A[idx] for idx in LinesOut[bus_idx]['A']))
 
           else:
@@ -448,7 +448,7 @@ class CompetingApp(GridAPPSD):
             mrid = BatteriesObj[bus]['mrid']
             self.Constraints.append(sum(p_flow_B[idx] \
                  for idx in LinesIn[bus_idx]['B']) - \
-               p_batt[BatteriesIdx[mrid]] - injection_p == \
+               p_batt[BatteriesInfo[mrid]['idx']] - injection_p == \
                sum(p_flow_B[idx] for idx in LinesOut[bus_idx]['B']))
 
           else:
@@ -475,7 +475,7 @@ class CompetingApp(GridAPPSD):
             mrid = BatteriesObj[bus]['mrid']
             self.Constraints.append(sum(p_flow_C[idx] \
                  for idx in LinesIn[bus_idx]['C']) - \
-               p_batt[BatteriesIdx[mrid]] - injection_p == \
+               p_batt[BatteriesInfo[mrid]['idx']] - injection_p == \
                sum(p_flow_C[idx] for idx in LinesOut[bus_idx]['C']))
 
           else:
@@ -686,7 +686,7 @@ class CompetingApp(GridAPPSD):
     return objective
 
 
-  def optObjectiveForDecarbonization(self, BusInfo, BatteriesIdx, BatteriesInfo,
+  def optObjectiveForDecarbonization(self, BusInfo, BatteriesInfo,
                                      EnergySource, Psub, Psub_mod,
                                      p_flow_A, p_flow_B, p_flow_C,
                                      p_batt, v_A, v_B, v_C):
@@ -718,7 +718,7 @@ class CompetingApp(GridAPPSD):
     # second stage for decarbonization
     bus_idx_batt = {'A': [], 'B': [], 'C': []}
     for mrid in BatteriesInfo:
-      idx = BatteriesIdx[mrid]
+      idx = BatteriesInfo[mrid]['idx']
       self.Constraints.append(p_batt[idx] == p_batt[idx].value)
       bus = BatteriesInfo[mrid]['bus']
       if 'A' in BatteriesInfo[mrid]['phase']:
@@ -767,7 +767,7 @@ class CompetingApp(GridAPPSD):
     if includeBatteriesFlag:
       p_batt_setpoints = []
       for mrid in self.BatteriesInfo:
-        idx = self.BatteriesIdx[mrid]
+        idx = self.BatteriesInfo[mrid]['idx']
         self.BatteriesInfo[mrid]['SoC'] = self.soc[idx].value
         # new value before old value for DifferenceBuilder
         # note the optimized p_batt value is negated for the GridLAB-D
@@ -947,7 +947,7 @@ class CompetingApp(GridAPPSD):
     self.SolarPVsInfo, self.SolarPVs = AppUtil.getSolarPVs(sparql_mgr)
     #print('Starting SolarPVsInfo: ' + json.dumps(self.SolarPVsInfo, indent=2), flush=True)
 
-    self.BatteriesInfo, self.BatteriesIdx = AppUtil.getBatteries(sparql_mgr)
+    self.BatteriesInfo = AppUtil.getBatteries(sparql_mgr)
     print('Starting BatteriesInfo: ' + json.dumps(self.BatteriesInfo, indent=2), flush=True)
 
     self.BatteriesObj = {}
@@ -1333,7 +1333,7 @@ class CompetingApp(GridAPPSD):
         if self.includeBatteriesFlag:
           for mrid in self.BatteriesInfo:
             if mrid in targetResolutionVector:
-              idx = self.BatteriesIdx[mrid]
+              idx = self.BatteriesInfo[mrid]['idx']
               self.p_batt_proposed[idx] = -targetResolutionVector[mrid][1]
 
         if self.includeRegulatorsFlag:
@@ -1408,7 +1408,7 @@ class CompetingApp(GridAPPSD):
           print('DECONFLICTOR COOPERATE p_batt_coop: ' + str(self.p_batt_greedy), flush=True)
 
           for mrid in self.BatteriesInfo:
-            idx = self.BatteriesIdx[mrid]
+            idx = self.BatteriesInfo[mrid]['idx']
             # new value before old value for DifferenceBuilder
             # note the p_batt value is negated for the GridLAB-D
             # DifferenceBuilder message
