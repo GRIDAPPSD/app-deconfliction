@@ -1198,8 +1198,8 @@ class DeconflictionPipeline(GridAPPSD):
         # components has changed for a device, both get dispatched
         if value[1] != self.SolarPVs[device]['PQ_pv_inv']:
           #new value before old value for DifferenceBuilder
-          print('GARY: value: ' + str(value), flush=True)
-          print('GARY: SolarPVs: ' + str(self.SolarPVs[device]['PQ_pv_inv']), flush=True)
+          print('GARY: device: ' + name + ', new SolarPV value: ' + str(value[1]), flush=True)
+          print('GARY: device: ' + name + ', old SolarPV value: ' + str(self.SolarPVs[device]['PQ_pv_inv']), flush=True)
           self.difference_builder.add_difference(device,
                                   'PowerElectronicsConnection.p', value[1].real,
                                   self.SolarPVs[device]['PQ_pv_inv'].real)
@@ -2065,10 +2065,8 @@ class DeconflictionPipeline(GridAPPSD):
         self.pltFile.write(str(self.rulesLastConflictMetric))
         self.pltFile.write(',')
       self.pltFile.write(str(self.coopResponseCounter))
-      # DEBUG START
       self.pltFile.write(',')
       self.pltFile.write(str(perConflictDelta))
-      # DEBUG END
       self.pltFile.write('\n')
 
     # Published IEEE Access Foundational Paper Reference:
