@@ -211,12 +211,13 @@ class AppUtil:
       bus = obj['bus']['value'].upper()
       devid = obj['id']['value']
       #ratedU = float(obj['ratedU']['value'])
+      ratedS = float(obj['ratedS']['value'])
       SolarPVsInfo[bus] = {}
       SolarPVsInfo[bus]['kW'] = float(obj['p']['value'])/1000.0
       SolarPVsInfo[bus]['kVar'] = float(obj['q']['value'])/1000.0
       SolarPVsInfo[bus]['p'] = float(obj['p']['value'])
       SolarPVsInfo[bus]['phase'] = obj['phases']['value']
-      SolarPVsInfo[bus]['ratedS'] = float(obj['ratedS']['value'])
+      SolarPVsInfo[bus]['ratedS'] = ratedS
       SolarPVsInfo[bus]['mrid'] = devid
       SolarPVsInfo[bus]['name'] = name
       SolarPVsInfo[bus]['idx'] = idx
@@ -224,6 +225,7 @@ class AppUtil:
       SolarPVs[devid] = {}
       SolarPVs[devid]['PQ_pv_inv'] = None
       SolarPVs[devid]['idx'] = idx
+      SolarPVs[devid]['ratedS'] = ratedS
       idx += 1
       MethodUtil.DeviceToName[devid] = name
       MethodUtil.NameToDevice[name] = devid

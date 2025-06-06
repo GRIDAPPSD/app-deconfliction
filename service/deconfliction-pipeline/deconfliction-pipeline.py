@@ -288,10 +288,6 @@ class DeconflictionPipeline(GridAPPSD):
     for device in self.ConflictMatrix:
       name = MethodUtil.DeviceToName[device]
 
-      # TODO: need help from MONISH to support SolarPVs in conflict metric
-      if name.startswith('PhotovoltaicUnit.'):
-        continue
-
       n_devices += 1
       device_setpoints = []
       for app in self.ConflictMatrix[device]:
@@ -318,6 +314,14 @@ class DeconflictionPipeline(GridAPPSD):
           apps[app][device] = sigma_d_a
           device_setpoints.append(sigma_d_a)
 
+        elif name.startswith('PhotovoltaicUnit.'):
+          # Normalize setpoints by dividing by rated power. A complex number
+          # will result and be assigned to apps and device_setpoints, but this
+          # will be dealt with later to produce a scalar
+          sigma_d_a = gamma_d_a / self.SolarPVs[device]['ratedS']
+          apps[app][device] = sigma_d_a
+          device_setpoints.append(sigma_d_a)
+
       # Find centroid
       # GDB 6/26/24: Also don't crash with empty ConflictMatrix for a device
       n_apps_device = len(self.ConflictMatrix[device])
@@ -331,7 +335,13 @@ class DeconflictionPipeline(GridAPPSD):
       sum_dist = 0
       for device in centroid:
         if device in apps[app]:
-          sum_dist += (centroid[device] - apps[app][device]) ** 2
+          # note this works on either complex (SolarPVs) or scalar values.
+          # The abs() function wouldn't be needed for scalars, but doesn't
+          # hurt either since it's just squaring the value so it just makes
+          # the code more compact not to check if it is operating on scalar
+          # or complex values. For complex values the abs() takes the magnitude
+          # of the difference and gets us back into the scalar world.
+          sum_dist + = abs(centroid[device] - apps[app][device]) ** 2
 
       dist_centroid.append(math.sqrt(sum_dist))
 
@@ -350,7 +360,6 @@ class DeconflictionPipeline(GridAPPSD):
                                TargetResolutionVector):
     sigma_d_t = {}
     app_list = []
-    minWeight = 1.0
 
     # find the sigma values for the target resolution vector first because
     # they are needed while iterating over each of the apps later
@@ -370,8 +379,9 @@ class DeconflictionPipeline(GridAPPSD):
                             (self.Regulators[device]['highStep'] + \
                              abs(self.Regulators[device]['lowStep']))
 
-      #TODO MONISH HELP with SolarPV support here
-      #elif name.startswith('PhotovoltaicUnit.'):
+      elif name.startswith('PhotovoltaicUnit.'):
+        # Normalize setpoints using rated power
+        sigma_d_t[device] = gamma_d_t / self.SolarPVs[device]['ratedS'])
 
       # while we are iterating over devices, build up a list of apps we
       # need to compute weights for since that's buried down a level within
@@ -379,6 +389,8 @@ class DeconflictionPipeline(GridAPPSD):
       for app in ConflictMatrix[device]:
         if app not in app_list:
           app_list.append(app)
+
+    minWeight = 1.0
 
     # now with a list of apps we can loop over that at the top level since
     # we ultimately need a weight for every app (that includes all devices)
@@ -407,15 +419,22 @@ class DeconflictionPipeline(GridAPPSD):
             sigma_d_a[device] = sigma
             centroid[device] = (sigma + sigma_d_t[device]) / 2
 
-          #TODO MONISH HELP with SolarPV support here
-          #elif name.startswith('PhotovoltaicUnit.'):
+          elif name.startswith('PhotovoltaicUnit.'):
+            # Normalize setpoints using rated power
+            sigma = gamma_d_a / self.SolarPVs[device]['ratedS']
+            sigma_d_a[device] = sigma
+            centroid[device] = (sigma + sigma_d_t[device]) / 2
 
       # Distance vector:
       sum_dist_a = 0
       sum_dist_t = 0
       for device in centroid:
-        sum_dist_a += (centroid[device] - sigma_d_a[device]) ** 2
-        sum_dist_t += (centroid[device] - sigma_d_t[device]) ** 2
+        # applying abs() is the magic to convert complex numbers to scalars
+        # so it handles solarPV devices with complex setpoints as well as
+        # batteries and regulators with scalar setpoints as taking the abs()
+        # of those differences before squaring yields the same results
+        sum_dist_a += abs(centroid[device] - sigma_d_a[device]) ** 2
+        sum_dist_t += abs(centroid[device] - sigma_d_t[device]) ** 2
 
       dist_centroid_a = math.sqrt(sum_dist_a)
       dist_centroid_t = math.sqrt(sum_dist_t)
@@ -1174,7 +1193,6 @@ class DeconflictionPipeline(GridAPPSD):
                 name + ', timestamp: ' + str(timestamp) +
                 ', same value: ' + str(value[1]))
 
-      #XXX
       elif name.startswith('PhotovoltaicUnit.'):
         # for SolarPV devices the value is complex so if either of those
         # components has changed for a device, both get dispatched
@@ -1216,14 +1234,13 @@ class DeconflictionPipeline(GridAPPSD):
           print('DeviceDispatcher--DISPATCH NOT needed, solarPV device: ' +
                 name + ', timestamp: ' + str(timestamp) +
                 ', same value: ' + str(value[1]))
-      #XXX
 
       elif name.startswith('RatioTapChanger.'):
         # Dispatch regulator tap positions whenever they are different from the
         # current tap position
         if value[1] != self.Regulators[device]['step']:
           # new value before old value for DifferenceBuilder
-          # TODO DEBUG REG4 ISSUE WITH PHASES BEING TIED TOGETHER
+          # TODO INVESTIGATE REG4 ISSUE WITH PHASES BEING TIED TOGETHER
           '''
           if name!='RatioTapChanger.reg4a' and name!='RatioTapChanger.reg4c':
             self.difference_builder.add_difference(device,
@@ -1456,7 +1473,6 @@ class DeconflictionPipeline(GridAPPSD):
         meas_PQ_pv_inv = complex(-p, -q)
 
         # only update if there is a value change
-        #XXX
         if meas_PQ_pv_inv != self.SolarPVs[device]['PQ_pv_inv']:
           self.SolarPVs[device]['PQ_pv_inv'] = meas_PQ_pv_inv
           MethodUtil.SolarPVs_inv[device] = meas_PQ_pv_inv
@@ -1465,7 +1481,6 @@ class DeconflictionPipeline(GridAPPSD):
                   str(timestamp) + ', device: ' +
                   self.SolarPVsInfo[bus]['name'] + ', PQ_pv_inv: ' +
                   str(self.SolarPVs[device]['PQ_pv_inv']))
-        #XXX
 
         if self.pltFlag:
           self.pltFile.write(',')
