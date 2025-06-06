@@ -381,7 +381,7 @@ class DeconflictionPipeline(GridAPPSD):
 
       elif name.startswith('PhotovoltaicUnit.'):
         # Normalize setpoints using rated power
-        sigma_d_t[device] = gamma_d_t / self.SolarPVs[device]['ratedS'])
+        sigma_d_t[device] = gamma_d_t / self.SolarPVs[device]['ratedS']
 
       # while we are iterating over devices, build up a list of apps we
       # need to compute weights for since that's buried down a level within
