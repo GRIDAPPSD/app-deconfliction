@@ -800,24 +800,30 @@ class CompetingApp(GridAPPSD):
         self.difference_builder.add_difference(mrid,
              'PowerElectronicsConnection.q', -total_q, None)
 
-        p_pv_setpoints.append([name, bus, self.p_pv_A[idx].value/1000,
-                                          self.p_pv_B[idx].value/1000,
-                                          self.p_pv_C[idx].value/1000,
-                                          total_p/1000])
-        q_pv_setpoints.append([name, bus, self.q_pv_A[idx].value/1000,
-                                          self.q_pv_B[idx].value/1000,
-                                          self.q_pv_C[idx].value/1000,
-                                          total_q/1000])
+        #p_pv_setpoints.append([name, bus, self.p_pv_A[idx].value/1000,
+        #                                  self.p_pv_B[idx].value/1000,
+        #                                  self.p_pv_C[idx].value/1000,
+        #                                  total_p/1000])
+        p_pv_setpoints.append([name, bus, total_p/1000])
+        #q_pv_setpoints.append([name, bus, self.q_pv_A[idx].value/1000,
+        #                                  self.q_pv_B[idx].value/1000,
+        #                                  self.q_pv_C[idx].value/1000,
+        #                                  total_q/1000])
+        q_pv_setpoints.append([name, bus, total_q/1000])
 
         # set pq_pv_greedy with every optimization based on measurements
         self.pq_pv_greedy[idx] = complex(total_p, total_q)
 
+      #print(tabulate(p_pv_setpoints, headers=['SolarPV', 'bus',
+      #               'p_pv_A (kW)', 'p_pv_B (kW)', 'p_pv_C (kW)',
+      #               'total p (kW)'], tablefmt='psql'), flush=True)
       print(tabulate(p_pv_setpoints, headers=['SolarPV', 'bus',
-                     'p_pv_A (kW)', 'p_pv_B (kW)', 'p_pv_C (kW)',
                      'total p (kW)'], tablefmt='psql'), flush=True)
 
+      #print(tabulate(q_pv_setpoints, headers=['SolarPV', 'bus',
+      #               'q_pv_A (kW)', 'q_pv_B (kW)', 'q_pv_C (kW)',
+      #               'total q (kW)'], tablefmt='psql'), flush=True)
       print(tabulate(q_pv_setpoints, headers=['SolarPV', 'bus',
-                     'q_pv_A (kW)', 'q_pv_B (kW)', 'q_pv_C (kW)',
                      'total q (kW)'], tablefmt='psql'), flush=True)
 
     '''
@@ -1304,7 +1310,7 @@ class CompetingApp(GridAPPSD):
         # except for SolarPVs the set-point values are tuples and they are
         # easier to work with as complex numbers so do that translation now
         for mrid, value in targetResolutionVector.items():
-          if isinstance(value[1], complex):
+          if isinstance(value[1], tuple):
             targetResolutionVector[mrid] = (value[0],
                                             complex(value[1][0], value[1][1]))
 
