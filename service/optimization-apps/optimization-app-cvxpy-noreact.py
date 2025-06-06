@@ -172,7 +172,7 @@ class CompetingApp(GridAPPSD):
                       self.includeEnergyConsumersFlag, self.includeSolarPVsFlag,
                       self.BusInfo, self.LinesIn, self.LinesOut,
                       self.EnergyConsumers, self.SolarPVsInfo,
-                      self.BatteriesObj, self.BatteriesInfo, self.p_batt,
+                      self.BatteriesBus, self.BatteriesInfo, self.p_batt,
                       self.p_flow_A, self.p_flow_B, self.p_flow_C)
 
     if self.includeQFlowFlag:
@@ -317,7 +317,7 @@ class CompetingApp(GridAPPSD):
   def optConstraintsNetworkWithPFlow(self, includeBatteriesFlag,
              includeEnergyConsumersFlag, includeSolarPVsFlag,
              BusInfo, LinesIn, LinesOut, EnergyConsumers, SolarPVsInfo,
-             BatteriesObj, BatteriesInfo, p_batt, p_flow_A, p_flow_B, p_flow_C):
+             BatteriesBus, BatteriesInfo, p_batt, p_flow_A, p_flow_B, p_flow_C):
     for bus in BusInfo:
       bus_idx = BusInfo[bus]['idx']
       if bus_idx not in LinesOut:
@@ -336,10 +336,10 @@ class CompetingApp(GridAPPSD):
             #print('SolarPVsInfo A bus: ' + bus + ', value: ' +
             #      str(SolarPVsInfo[bus]['p']), flush=True)
 
-          if includeBatteriesFlag and bus in BatteriesObj and \
-             'A' in BatteriesObj[bus]['phase']:
+          if includeBatteriesFlag and bus in BatteriesBus and \
+             'A' in BatteriesBus[bus]['phase']:
             #print('Batteries A bus: ' + bus, flush=True)
-            mrid = BatteriesObj[bus]['mrid']
+            mrid = BatteriesBus[bus]['mrid']
             self.Constraints.append(sum(p_flow_A[idx] \
                  for idx in LinesIn[bus_idx]['A']) - \
                p_batt[BatteriesInfo[mrid]['idx']] - injection_p == \
@@ -362,10 +362,10 @@ class CompetingApp(GridAPPSD):
             #print('SolarPVsInfo B bus: ' + bus + ', value: ' +
             #      str(SolarPVsInfo[bus]['p']), flush=True)
 
-          if includeBatteriesFlag and bus in BatteriesObj and \
-             'B' in BatteriesObj[bus]['phase']:
+          if includeBatteriesFlag and bus in BatteriesBus and \
+             'B' in BatteriesBus[bus]['phase']:
             #print('Batteries B bus: ' + bus, flush=True)
-            mrid = BatteriesObj[bus]['mrid']
+            mrid = BatteriesBus[bus]['mrid']
             self.Constraints.append(sum(p_flow_B[idx] \
                  for idx in LinesIn[bus_idx]['B']) - \
                p_batt[BatteriesInfo[mrid]['idx']] - injection_p == \
@@ -388,10 +388,10 @@ class CompetingApp(GridAPPSD):
             #print('SolarPVsInfo C bus: ' + bus + ', value: ' +
             #      str(SolarPVsInfo[bus]['p']), flush=True)
 
-          if includeBatteriesFlag and bus in BatteriesObj and \
-             'C' in BatteriesObj[bus]['phase']:
+          if includeBatteriesFlag and bus in BatteriesBus and \
+             'C' in BatteriesBus[bus]['phase']:
             #print('Batteries C bus: ' + bus, flush=True)
-            mrid = BatteriesObj[bus]['mrid']
+            mrid = BatteriesBus[bus]['mrid']
             self.Constraints.append(sum(p_flow_C[idx] \
                  for idx in LinesIn[bus_idx]['C']) - \
                p_batt[BatteriesInfo[mrid]['idx']] - injection_p == \
@@ -822,14 +822,8 @@ class CompetingApp(GridAPPSD):
     self.SolarPVsInfo, SolarPVs = AppUtil.getSolarPVs(sparql_mgr)
     #print('Starting SolarPVsInfo: ' + json.dumps(self.SolarPVsInfo, indent=2), flush=True)
 
-    self.BatteriesInfo = AppUtil.getBatteries(sparql_mgr)
+    self.BatteriesInfo, self.BatteriesBus = AppUtil.getBatteries(sparql_mgr)
     print('Starting BatteriesInfo: ' + json.dumps(self.BatteriesInfo, indent=2), flush=True)
-
-    self.BatteriesObj = {}
-    for mrid in self.BatteriesInfo:
-      self.BatteriesObj[self.BatteriesInfo[mrid]['bus']] = {}
-      self.BatteriesObj[self.BatteriesInfo[mrid]['bus']]['mrid'] = mrid
-      self.BatteriesObj[self.BatteriesInfo[mrid]['bus']]['phase'] = self.BatteriesInfo[mrid]['phase']
 
     # objs = sparql_mgr.obj_dict_export('LinearShuntCompensator')
     # print('Count of LinearShuntCompensators Dict: ' + str(len(objs)),

@@ -121,10 +121,10 @@ class CompetingApp(GridAPPSD):
             #print('SolarPVsInfo A bus: ' + bus + ', value: ' +
             #      str(self.SolarPVsInfo[bus]['p']), flush=True)
 
-          if bus in self.BatteriesObj and \
-             'A' in self.BatteriesObj[bus]['phase']:
+          if bus in self.BatteriesBus and \
+             'A' in self.BatteriesBus[bus]['phase']:
             #print('Batteries A bus: ' + bus, flush=True)
-            mrid = self.BatteriesObj[bus]['mrid']
+            mrid = self.BatteriesBus[bus]['mrid']
             self.dynamicProb += lpSum(self.p_flow_A[idx] \
                  for idx in self.LinesIn[bus_idx]['A']) - \
                self.p_batt[self.BatteriesInfo[mrid]['idx']] - injection_p == \
@@ -158,10 +158,10 @@ class CompetingApp(GridAPPSD):
             #print('SolarPVsInfo B bus: ' + bus + ', value: ' +
             #      str(self.SolarPVsInfo[bus]['p']), flush=True)
 
-          if bus in self.BatteriesObj and \
-             'B' in self.BatteriesObj[bus]['phase']:
+          if bus in self.BatteriesBus and \
+             'B' in self.BatteriesBus[bus]['phase']:
             #print('Batteries B bus: ' + bus, flush=True)
-            mrid = self.BatteriesObj[bus]['mrid']
+            mrid = self.BatteriesBus[bus]['mrid']
             self.dynamicProb += lpSum(self.p_flow_B[idx] \
                  for idx in self.LinesIn[bus_idx]['B']) - \
                self.p_batt[self.BatteriesInfo[mrid]['idx']] - injection_p == \
@@ -195,10 +195,10 @@ class CompetingApp(GridAPPSD):
             #print('SolarPVsInfo C bus: ' + bus + ', value: ' +
             #      str(self.SolarPVsInfo[bus]['p']), flush=True)
 
-          if bus in self.BatteriesObj and \
-             'C' in self.BatteriesObj[bus]['phase']:
+          if bus in self.BatteriesBus and \
+             'C' in self.BatteriesBus[bus]['phase']:
             #print('Batteries C bus: ' + bus, flush=True)
-            mrid = self.BatteriesObj[bus]['mrid']
+            mrid = self.BatteriesBus[bus]['mrid']
             self.dynamicProb += lpSum(self.p_flow_C[idx] \
                  for idx in self.LinesIn[bus_idx]['C']) - \
                self.p_batt[self.BatteriesInfo[mrid]['idx']] - injection_p == \
@@ -677,14 +677,8 @@ class CompetingApp(GridAPPSD):
     self.SolarPVsInfo, SolarPVs = AppUtil.getSolarPVs(sparql_mgr)
     #print('Starting SolarPVsInfo: ' + json.dumps(self.SolarPVsInfo, indent=2), flush=True)
 
-    self.BatteriesInfo = AppUtil.getBatteries(sparql_mgr)
+    self.BatteriesInfo, self.BatteriesBus = AppUtil.getBatteries(sparql_mgr)
     print('Starting BatteriesInfo: ' + json.dumps(self.BatteriesInfo, indent=2), flush=True)
-
-    self.BatteriesObj = {}
-    for mrid in self.BatteriesInfo:
-      self.BatteriesObj[self.BatteriesInfo[mrid]['bus']] = {}
-      self.BatteriesObj[self.BatteriesInfo[mrid]['bus']]['mrid'] = mrid
-      self.BatteriesObj[self.BatteriesInfo[mrid]['bus']]['phase'] = self.BatteriesInfo[mrid]['phase']
 
     # objs = sparql_mgr.obj_dict_export('LinearShuntCompensator')
     # print('Count of LinearShuntCompensators Dict: ' + str(len(objs)),

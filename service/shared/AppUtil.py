@@ -111,6 +111,7 @@ class AppUtil:
   def getBatteries(sparql_mgr):
     BatteryMap = {}
     BatteriesInfo = {}
+    BatteriesBus = {}
     bindings = sparql_mgr.battery_query()
     #print('battery_query results bindings: ' + str(bindings), flush=True)
     print('\nCount of Batteries: ' + str(len(bindings)), flush=True)
@@ -124,8 +125,10 @@ class AppUtil:
       name = 'BatteryUnit.' + obj['name']['value']
       BatteriesInfo[devid]['name'] = name
       BatteriesInfo[devid]['idx'] = idx
-      BatteriesInfo[devid]['bus'] = obj['bus']['value']
-      BatteriesInfo[devid]['phase'] = obj['phases']['value']
+      bus = obj['bus']['value']
+      BatteriesInfo[devid]['bus'] = bus
+      phase = obj['phases']['value']
+      BatteriesInfo[devid]['phase'] = phase
       BatteriesInfo[devid]['ratedkW'] = float(obj['ratedS']['value'])/1000.0
       BatteriesInfo[devid]['prated'] = float(obj['ratedS']['value'])
       BatteriesInfo[devid]['ratedE'] = float(obj['ratedE']['value'])
@@ -136,6 +139,11 @@ class AppUtil:
       BatteriesInfo[devid]['eff_c'] = 0.975 * 0.86
       BatteriesInfo[devid]['eff_d'] = 0.975 * 0.86
       print('Battery devid: ' + devid + ', name: ' + name + ', ratedE: ' + str(round(BatteriesInfo[devid]['ratedE'],4)) + ', SoC: ' + str(round(BatteriesInfo[devid]['SoC'],4)), flush=True)
+      # need a bus-indexed batteries dictionary as well
+      BatteriesBus[bus] = {}
+      BatteriesBus[bus]['mrid'] = devid
+      BatteriesBus[bus]['phase'] = phase
+
       idx += 1
       MethodUtil.DeviceToName[devid] = name
       MethodUtil.NameToDevice[name] = devid
@@ -149,7 +157,7 @@ class AppUtil:
         elif item['type'] == 'SoC':
           BatteriesInfo[BatteryMap[item['eqid']]]['SoC_measid'] = item['measid']
 
-    return BatteriesInfo
+    return (BatteriesInfo, BatteriesBus)
 
 
   def getEnergyConsumers(sparql_mgr):
