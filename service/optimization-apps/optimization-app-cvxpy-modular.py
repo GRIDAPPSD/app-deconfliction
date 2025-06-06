@@ -809,6 +809,9 @@ class CompetingApp(GridAPPSD):
                                           self.q_pv_C[idx].value/1000,
                                           total_q/1000])
 
+        # set pq_pv_greedy with every optimization based on measurements
+        self.pq_pv_greedy[idx] = complex(total_p, total_q)
+
       print(tabulate(p_pv_setpoints, headers=['SolarPV', 'bus',
                      'p_pv_A (kW)', 'p_pv_B (kW)', 'p_pv_C (kW)',
                      'total p (kW)'], tablefmt='psql'), flush=True)
@@ -1336,8 +1339,6 @@ class CompetingApp(GridAPPSD):
               idx = self.SolarPVs[mrid]['idx']
               self.pq_pv_proposed[idx] = -targetResolutionVector[mrid][1]
 
-        # START HERE with SolarPVs cooperation support
-
         # Need to define the full optimization problem each time anything
         # changes for CVXPY to be happy
         # GDB 9/9/24: Can't do a new optimization for cooperation because
@@ -1353,8 +1354,8 @@ class CompetingApp(GridAPPSD):
 
         # GDB 9/10/24: Here is the alternative support for cooperation via
         # ranking the differences between proposed and greedy setpoints:
-        # first, create a list of differences
         if self.includeBatteriesFlag:
+          # first, create a list of differences
           len_BatteriesInfo = len(self.BatteriesInfo)
           p_batt_diff = [None] * len_BatteriesInfo
           for i in range(len_BatteriesInfo):
@@ -1404,6 +1405,65 @@ class CompetingApp(GridAPPSD):
             # DifferenceBuilder message
             self.difference_builder.add_difference(mrid,
                  'PowerElectronicsConnection.p', -self.p_batt_greedy[idx], None)
+
+        if self.includeSolarPVsFlag:
+          len_SolarPVsInfo = len(self.SolarPVsInfo)
+          pq_pv_diff = [None] * len_SolarPVsInfo
+          for i in range(len_SolarPVsInfo):
+            # note this is the same difference code for SolarPVs as the others
+            # even though the greedy and proposed vectors are complex
+            pq_pv_diff[i] = abs(self.pq_pv_greedy[i] - self.pq_pv_proposed[i])
+
+          print('DECONFLICTOR COOPERATE pq_pv_diff: ' + str(pq_pv_diff), flush=True)
+
+          # omit any setpoints where proposed == greeedy
+          pq_pv_sort = []
+          for i in range(len_SolarPVsInfo):
+            if pq_pv_diff[i] > 0:
+              pq_pv_sort.append(pq_pv_diff[i])
+
+          # sorts in place
+          pq_pv_sort.sort()
+
+          # handle the case of only proposed == greedy
+          diffMax = 0
+          if len(pq_pv_sort) > 0:
+            coopCount = max(1, -(len(pq_pv_sort)//-2)) # integer "ceiling" division
+
+            # find the value associated with the last "cooperating" battery
+            diffMax = pq_pv_sort[coopCount-1]
+
+            print('DECONFLICTOR COOPERATE solarPVs coopCount: ' + str(coopCount) + ', diffMax: ' + str(diffMax), flush=True)
+          else:
+            print('DECONFLICTOR COOPERATE solarPVs coopCount: ALL, diffMax: ' + str(diffMax), flush=True)
+
+          icoop = 0
+          for i in range(len_SolarPVsInfo):
+            # check if this is a "cooperating" solarPV
+            if pq_pv_diff[i] <= diffMax:
+              # full cooperation by setting the greedy value to proposed value
+              #self.pq_pv_greedy[i] = self.pq_pv_proposed[i]
+              # adjust cooperation level based on difference
+              icoop += 1
+              # again, these are complex numbers, but division by a scalar
+              # is done to each of them giving a complex result that is then
+              # added to the original complex number. This is equivalent to
+              # breaking up the work into the real and imag components.
+              ratio = (self.pq_pv_proposed[i] - self.pq_pv_greedy[i])/ \
+                      float(icoop + coopCounter)
+              self.pq_pv_greedy[i] += ratio
+
+          print('DECONFLICTOR COOPERATE pq_pv_coop: ' + str(self.pq_pv_greedy), flush=True)
+
+          for mrid in self.SolarPVs:
+            idx = self.SolarPVs[mrid]['idx']
+            # new value before old value for DifferenceBuilder
+            # note the p and q values are negated for the GridLAB-D
+            # DifferenceBuilder message
+            self.difference_builder.add_difference(mrid,
+             'PowerElectronicsConnection.p', -self.pq_pv_greedy[idx].real, None)
+            self.difference_builder.add_difference(mrid,
+             'PowerElectronicsConnection.q', -self.pq_pv_greedy[idx].imag, None)
 
         if self.includeRegulatorsFlag:
           # now do the same for regulators
