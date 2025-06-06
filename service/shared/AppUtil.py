@@ -235,7 +235,7 @@ class AppUtil:
     print('Count of PowerElectronicsConnections Meas: ' + str(len(objs)),
           flush=True)
     for item in objs:
-      print('DEBUG PVmeas items: ' + str(item), flush=True)
+      #print('DEBUG PVmeas items: ' + str(item), flush=True)
       if item['type']=='VA' and item['bus'] in SolarPVsInfo:
         SolarPVsInfo[item['bus']]['measid'] = item['measid']
 
