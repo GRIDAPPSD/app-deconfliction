@@ -1310,7 +1310,10 @@ class CompetingApp(GridAPPSD):
         # except for SolarPVs the set-point values are tuples and they are
         # easier to work with as complex numbers so do that translation now
         for mrid, value in targetResolutionVector.items():
-          if isinstance(value[1], tuple):
+          # I create tuples for the complex SolarPV setpoints for serialization,
+          # but JSON serializes those as lists so the reverse deserialization
+          # needs to check for lists rather than tuples
+          if isinstance(value[1], list):
             targetResolutionVector[mrid] = (value[0],
                                             complex(value[1][0], value[1][1]))
 
