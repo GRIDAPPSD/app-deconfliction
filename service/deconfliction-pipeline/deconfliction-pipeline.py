@@ -341,7 +341,7 @@ class DeconflictionPipeline(GridAPPSD):
           # the code more compact not to check if it is operating on scalar
           # or complex values. For complex values the abs() takes the magnitude
           # of the difference and gets us back into the scalar world.
-          sum_dist + = abs(centroid[device] - apps[app][device]) ** 2
+          sum_dist += abs(centroid[device] - apps[app][device]) ** 2
 
       dist_centroid.append(math.sqrt(sum_dist))
 
