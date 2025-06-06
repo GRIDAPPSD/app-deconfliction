@@ -201,7 +201,6 @@ class AppUtil:
 
 
   def getSolarPVs(sparql_mgr):
-    SolarPVsIdx = {}
     SolarPVsInfo = {}
     SolarPVs = {}
     bindings = sparql_mgr.pv_query()
@@ -210,22 +209,22 @@ class AppUtil:
     for obj in bindings:
       name = 'PhotovoltaicUnit.' + obj['name']['value']
       bus = obj['bus']['value'].upper()
-      ratedS = float(obj['ratedS']['value'])
+      devid = obj['id']['value']
       #ratedU = float(obj['ratedU']['value'])
-      SolarPVsIdx[bus] = idx
       SolarPVsInfo[bus] = {}
       SolarPVsInfo[bus]['kW'] = float(obj['p']['value'])/1000.0
       SolarPVsInfo[bus]['kVar'] = float(obj['q']['value'])/1000.0
       SolarPVsInfo[bus]['p'] = float(obj['p']['value'])
       SolarPVsInfo[bus]['phase'] = obj['phases']['value']
       SolarPVsInfo[bus]['ratedS'] = float(obj['ratedS']['value'])
-      SolarPVsInfo[bus]['mrid'] = obj['id']['value']
+      SolarPVsInfo[bus]['mrid'] = devid
       SolarPVsInfo[bus]['name'] = name
+      SolarPVsInfo[bus]['idx'] = idx
       print('SolarPV name: ' + name + ', kW: ' + str(SolarPVsInfo[bus]['kW']) + ', kVar: ' + str(SolarPVsInfo[bus]['kVar']), flush=True)
-      idx += 1
-      devid = obj['id']['value']
       SolarPVs[devid] = {}
       SolarPVs[devid]['PQ_pv_inv'] = None
+      SolarPVs[devid]['idx'] = idx
+      idx += 1
       MethodUtil.DeviceToName[devid] = name
       MethodUtil.NameToDevice[name] = devid
 
@@ -238,7 +237,7 @@ class AppUtil:
       if item['type']=='VA' and item['bus'] in SolarPVsInfo:
         SolarPVsInfo[item['bus']]['measid'] = item['measid']
 
-    return (SolarPVsInfo, SolarPVsIdx, SolarPVs)
+    return (SolarPVsInfo, SolarPVs)
 
 
   def getEnergySource(sparql_mgr):

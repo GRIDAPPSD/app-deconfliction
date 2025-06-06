@@ -2148,8 +2148,7 @@ class DeconflictionPipeline(GridAPPSD):
       self.RegulatorHistory[device] = []
 
     # for the app scalability task
-    self.SolarPVsInfo, SolarPVsIdx, self.SolarPVs = \
-                       AppUtil.getSolarPVs(MethodUtil.sparql_mgr)
+    self.SolarPVsInfo, self.SolarPVs =AppUtil.getSolarPVs(MethodUtil.sparql_mgr)
 
     # deltaT is time between timesteps as fractional hours
     # optimization interval seconds is the number of simulation seconds

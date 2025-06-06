@@ -168,7 +168,7 @@ class CompetingApp(GridAPPSD):
       self.optConstraintsDERWithRegulators(self.RegulatorsInfo, self.reg_taps)
 
     if self.includeSolarPVsFlag:
-      self.optConstraintsDERWithSolarPVs(self.SolarPVsIdx, self.SolarPVsInfo,
+      self.optConstraintsDERWithSolarPVs(self.SolarPVsInfo,
                                          self.p_pv_A, self.p_pv_B, self.p_pv_C,
                                          self.q_pv_A, self.q_pv_B, self.q_pv_C)
 
@@ -176,7 +176,7 @@ class CompetingApp(GridAPPSD):
       self.optConstraintsNetworkWithPFlow(self.includeBatteriesFlag,
                       self.includeEnergyConsumersFlag, self.includeSolarPVsFlag,
                       self.BusInfo, self.LinesIn, self.LinesOut,
-                      self.EnergyConsumers, self.SolarPVsInfo, self.SolarPVsIdx,
+                      self.EnergyConsumers, self.SolarPVsInfo,
                       self.BatteriesObj, self.BatteriesIdx, self.p_batt,
                       self.p_flow_A, self.p_flow_B, self.p_flow_C,
                       self.p_pv_A, self.p_pv_B, self.p_pv_C)
@@ -288,6 +288,13 @@ class CompetingApp(GridAPPSD):
       self.q_pv_B = cp.Variable(len_SolarPVsInfo, integer=False,name='q_pv_B')
       self.q_pv_C = cp.Variable(len_SolarPVsInfo, integer=False,name='q_pv_C')
 
+      # cooperation variables
+      # since these are held constant, I don't need to define them with
+      # cp.Variable calls, but as fixed length vectors. It's still convenient
+      # though to define them along with the other optimization variables.
+      self.pq_pv_proposed = [None] * len_SolarPVsInfo
+      self.pq_pv_greedy = [None] * len_SolarPVsInfo
+
     if objectiveDecarbonizationFlag:
       self.Psub = cp.Variable(integer=False, name='P_sub')
       self.Psub_mod = cp.Variable(integer=False, name='P_sub_mod')
@@ -331,11 +338,11 @@ class CompetingApp(GridAPPSD):
     self.Constraints.append(reg_taps[(0, 16)] == 1)
 
 
-  def optConstraintsDERWithSolarPVs(self, SolarPVsIdx, SolarPVsInfo,
+  def optConstraintsDERWithSolarPVs(self, SolarPVsInfo,
                                     p_pv_A, p_pv_B, p_pv_C,
                                     q_pv_A, q_pv_B, q_pv_C):
     for bus in SolarPVsInfo:
-      idx = SolarPVsIdx[bus]
+      idx = SolarPVsInfo[bus]['idx']
 
       numphases = len(SolarPVsInfo[bus]['phase'])
       if 'N' in SolarPVsInfo[bus]['phase']:
@@ -385,7 +392,7 @@ class CompetingApp(GridAPPSD):
 
   def optConstraintsNetworkWithPFlow(self, includeBatteriesFlag,
          includeEnergyConsumersFlag, includeSolarPVsFlag,
-         BusInfo, LinesIn, LinesOut, EnergyConsumers, SolarPVsInfo, SolarPVsIdx,
+         BusInfo, LinesIn, LinesOut, EnergyConsumers, SolarPVsInfo,
          BatteriesObj, BatteriesIdx, p_batt, p_flow_A, p_flow_B, p_flow_C,
          p_pv_A, p_pv_B, p_pv_C):
     for bus in BusInfo:
@@ -403,7 +410,7 @@ class CompetingApp(GridAPPSD):
           if includeSolarPVsFlag and bus in SolarPVsInfo and \
              'A' in SolarPVsInfo[bus]['phase']:
             #injection_p -= SolarPVsInfo[bus]['p']
-            idx = SolarPVsIdx[bus]
+            idx = SolarPVsInfo[bus]['idx']
             injection_p -= p_pv_A[idx]
             #print('SolarPVsInfo A bus: ' + bus + ', value: ' +
             #      str(SolarPVsInfo[bus]['p']), flush=True)
@@ -430,7 +437,7 @@ class CompetingApp(GridAPPSD):
 
           if includeSolarPVsFlag and bus in SolarPVsInfo and \
              'B' in SolarPVsInfo[bus]['phase']:
-            idx = SolarPVsIdx[bus]
+            idx = SolarPVsInfo[bus]['idx']
             injection_p -= p_pv_B[idx]
             #print('SolarPVsInfo B bus: ' + bus + ', value: ' +
             #      str(SolarPVsInfo[bus]['p']), flush=True)
@@ -457,7 +464,7 @@ class CompetingApp(GridAPPSD):
 
           if includeSolarPVsFlag and bus in SolarPVsInfo and \
              'C' in SolarPVsInfo[bus]['phase']:
-            idx = SolarPVsIdx[bus]
+            idx = SolarPVsInfo[bus]['idx']
             injection_p -= p_pv_C[idx]
             #print('SolarPVsInfo C bus: ' + bus + ', value: ' +
             #      str(SolarPVsInfo[bus]['p']), flush=True)
@@ -780,7 +787,7 @@ class CompetingApp(GridAPPSD):
       p_pv_setpoints = []
       q_pv_setpoints = []
       for bus in self.SolarPVsInfo:
-        idx = self.SolarPVsIdx[bus]
+        idx = self.SolarPVsInfo[bus]['idx']
         mrid = self.SolarPVsInfo[bus]['mrid']
         name = self.SolarPVsInfo[bus]['name']
 
@@ -928,7 +935,7 @@ class CompetingApp(GridAPPSD):
     self.EnergyConsumers = AppUtil.getEnergyConsumers(sparql_mgr)
     #print('Starting EnergyConsumers: ' + json.dumps(self.EnergyConsumers, indent=2), flush=True)
 
-    self.SolarPVsInfo, self.SolarPVsIdx, SolarPVs = AppUtil.getSolarPVs(sparql_mgr)
+    self.SolarPVsInfo, self.SolarPVs = AppUtil.getSolarPVs(sparql_mgr)
     #print('Starting SolarPVsInfo: ' + json.dumps(self.SolarPVsInfo, indent=2), flush=True)
 
     self.BatteriesInfo, self.BatteriesIdx = AppUtil.getBatteries(sparql_mgr)
@@ -1290,6 +1297,14 @@ class CompetingApp(GridAPPSD):
         # message consists of a target ResolutionVector that is a dictionary
         # with device mrid keys and target set-point values
         targetResolutionVector = message['targetResolutionVector']
+
+        # except for SolarPVs the set-point values are tuples and they are
+        # easier to work with as complex numbers so do that translation now
+        for mrid, value in targetResolutionVector.items():
+          if isinstance(value[1], complex):
+            targetResolutionVector[mrid] = (value[0],
+                                            complex(value[1][0], value[1][1]))
+
         #for mrid in targetResolutionVector:
         #  print('DECONFLICTOR COOPERATE mrid ' + mrid + ' target set-point: ' + str(targetResolutionVector[mrid]), flush=True)
 
@@ -1314,6 +1329,14 @@ class CompetingApp(GridAPPSD):
             if reg in targetResolutionVector:
               idx = self.RegulatorsInfo[reg]['idx']
               self.reg_proposed[idx] = targetResolutionVector[reg][1]
+
+        if self.includeSolarPVsFlag:
+          for mrid in self.SolarPVs:
+            if mrid in targetResolutionVector:
+              idx = self.SolarPVs[mrid]['idx']
+              self.pq_pv_proposed[idx] = -targetResolutionVector[mrid][1]
+
+        # START HERE with SolarPVs cooperation support
 
         # Need to define the full optimization problem each time anything
         # changes for CVXPY to be happy
