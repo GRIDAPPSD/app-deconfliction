@@ -230,7 +230,6 @@ def _main():
     p_pv_plot[pv].clear()
     q_pv_plot[pv].clear()
 
-  '''
   #app_list = ['gridappsd-resilience-app', 'gridappsd-decarbonization-app', 'gridappsd-profit_cvr-app']
   app_list = ['gridappsd-resilience-app', 'gridappsd-decarbonization-app']
   #app_list = ['gridappsd-resilience-app']
@@ -269,7 +268,6 @@ def _main():
 
     for reg in Regulators:
       reg_plot[reg].clear()
-  '''
 
   print('Goodbye!')
 
