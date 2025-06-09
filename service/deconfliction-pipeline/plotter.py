@@ -164,7 +164,7 @@ def _main():
 
   Regulators = ['RatioTapChanger.reg1a','RatioTapChanger.reg2a','RatioTapChanger.reg3a','RatioTapChanger.reg3c','RatioTapChanger.reg4a','RatioTapChanger.reg4b','RatioTapChanger.reg4c']
 
-  SolarPVs = ['PhotovoltaicUnit.dg_6','PhotovoltaicUnit.dg_12','PhotovoltaicUnit.dg_18','PhotovoltaicUnit.dg_30','PhotovoltaicUnit.dg_36','PhotovoltaicUnit.dg_42','PhotovoltaicUnit.dg_48','PhotovoltaicUnit.dg_54','PhotovoltaicUnit.dg_60','PhotovoltaicUnit.dg_66','PhotovoltaicUnit.dg_72','PhotovoltaicUnit.dg_78','PhotovoltaicUnit.dg_84','PhotovoltaicUnit.dg_90']
+  SolarPVs = ['PhotovoltaicUnit.dg_12','PhotovoltaicUnit.dg_18','PhotovoltaicUnit.dg_30','PhotovoltaicUnit.dg_36','PhotovoltaicUnit.dg_42','PhotovoltaicUnit.dg_48','PhotovoltaicUnit.dg_54','PhotovoltaicUnit.dg_6','PhotovoltaicUnit.dg_60','PhotovoltaicUnit.dg_66','PhotovoltaicUnit.dg_72','PhotovoltaicUnit.dg_78','PhotovoltaicUnit.dg_84','PhotovoltaicUnit.dg_90']
 
   t_plot = []
   p_batt_plot = {}
@@ -195,19 +195,26 @@ def _main():
         hits += 1
         t_plot.append(float(tokens[1]))
 
-        for it in range(3, 18, 3):
+        start = 3
+        finish = start + len(Batteries)*3
+        for it in range(start, finish, 3):
           batt = tokens[it]
           p_batt_plot[batt].append(float(tokens[it+1]))
           soc_plot[batt].append(float(tokens[it+2]))
 
-        for it in range(18, 32, 2):
+        start = finish
+        finish = start + len(Regulators)*2
+        for it in range(start, finish, 2):
           reg = tokens[it]
           reg_plot[reg].append(int(tokens[it+1]))
 
-        for it in range(32, 74, 3):
+        start = finish
+        finish = start + len(SolarPVs)*2
+        for it in range(start, finish, 2):
           pv = tokens[it]
-          p_pv_plot[pv].append(float(tokens[it+1]))
-          q_pv_plot[pv].append(float(tokens[it+2]))
+          cmplx = complex(tokens[it+1])
+          p_pv_plot[pv].append(cmplx.real)
+          q_pv_plot[pv].append(cmplx.imag)
 
   print(app + ' hits: ' + str(hits), flush=True)
 
@@ -255,11 +262,17 @@ def _main():
               p_batt_plot[dev].append(float(tokens[it+1]))
             elif dev.startswith('RatioTapChanger.'):
               reg_plot[dev].append(int(tokens[it+1]))
+            elif dev.startswith('PhotovoltaicUnit.'):
+              cmplx = complex(tokens[it+1])
+              p_pv_plot[dev].append(cmplx.real)
+              q_pv_plot[dev].append(cmplx.imag)
 
     print(app_list[iapp] + ' hits: ' + str(hits), flush=True)
 
     make_p_batt_plots(app_list[iapp], prefix_list[iapp], Batteries, t_plot, p_batt_plot)
     make_reg_plots(app_list[iapp], prefix_list[iapp], Regulators, t_plot, reg_plot)
+    make_p_pv_plots(app_list[iapp], prefix_list[iapp], SolarPVs, t_plot, p_pv_plot)
+    make_q_pv_plots(app_list[iapp], prefix_list[iapp], SolarPVs, t_plot, q_pv_plot)
 
     t_plot.clear()
 
@@ -268,6 +281,10 @@ def _main():
 
     for reg in Regulators:
       reg_plot[reg].clear()
+
+    for pv in SolarPVs:
+      p_pv_plot[pv].clear()
+      q_pv_plot[pv].clear()
 
   print('Goodbye!')
 
