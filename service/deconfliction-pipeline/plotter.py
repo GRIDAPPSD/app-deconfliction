@@ -199,7 +199,7 @@ def _main():
         finish = start + len(Batteries)*3
         for it in range(start, finish, 3):
           batt = tokens[it]
-          p_batt_plot[batt].append(float(tokens[it+1]))
+          p_batt_plot[batt].append(float(tokens[it+1])/1000.0)
           soc_plot[batt].append(float(tokens[it+2]))
 
         start = finish
@@ -212,7 +212,7 @@ def _main():
         finish = start + len(SolarPVs)*2
         for it in range(start, finish, 2):
           pv = tokens[it]
-          cmplx = complex(tokens[it+1])
+          cmplx = complex(tokens[it+1])/1000.0
           p_pv_plot[pv].append(cmplx.real)
           q_pv_plot[pv].append(cmplx.imag)
 
@@ -259,11 +259,11 @@ def _main():
           for it in range(3, numdev, 2):
             dev = tokens[it]
             if dev.startswith('BatteryUnit.'):
-              p_batt_plot[dev].append(float(tokens[it+1]))
+              p_batt_plot[dev].append(float(tokens[it+1])/1000.0)
             elif dev.startswith('RatioTapChanger.'):
               reg_plot[dev].append(int(tokens[it+1]))
             elif dev.startswith('PhotovoltaicUnit.'):
-              cmplx = complex(tokens[it+1])
+              cmplx = complex(tokens[it+1])/1000.0
               p_pv_plot[dev].append(cmplx.real)
               q_pv_plot[dev].append(cmplx.imag)
 
