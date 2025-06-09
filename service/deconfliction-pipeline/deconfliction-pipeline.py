@@ -1485,9 +1485,7 @@ class DeconflictionPipeline(GridAPPSD):
           self.pltFile.write(',')
           self.pltFile.write(self.SolarPVsInfo[bus]['name'])
           self.pltFile.write(',')
-          self.pltFile.write(str(p/1000))
-          self.pltFile.write(',')
-          self.pltFile.write(str(q/1000))
+          self.pltFile.write(str(self.SolarPVs[device]['PQ_pv_inv']))
 
     if self.pltFlag:
       self.pltFile.write('\n')
