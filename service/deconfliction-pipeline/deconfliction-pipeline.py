@@ -834,6 +834,27 @@ class DeconflictionPipeline(GridAPPSD):
                   ', P_batt setpoint reset to zero')
 
 
+  def logConflictReg(self, msg):
+    for device in self.ConflictMatrix:
+      name = MethodUtil.DeviceToName[device]
+      if name.startswith('RatioTapChanger.'):
+        for app in self.ConflictMatrix[device]:
+          print('REG DEBUG ConflictMatrix ' + msg + ', app: ' + app +
+                ', device: ' + name +
+                ', setpoint: ' + str(self.ConflictMatrix[device][app][1]))
+
+
+  def logConflictPV(self, msg):
+    for device in self.ConflictMatrix:
+      name = MethodUtil.DeviceToName[device]
+      if name.startswith('PhotovoltaicUnit.'):
+        for app in self.ConflictMatrix[device]:
+          print('REG DEBUG ConflictMatrix ' + msg + ', app: ' + app +
+                ', device: ' + name + ', setpoint p: ' +
+                str(self.ConflictMatrix[device][app][1].real) +
+                ', q: ' + str(self.ConflictMatrix[device][app][1].imag))
+
+
   def logConflictTest(self, msg):
     if self.testDeviceName != None:
       self.refCount += 1
@@ -1848,6 +1869,9 @@ class DeconflictionPipeline(GridAPPSD):
       self.gapps.send(self.coop_topic, json.dumps(coopMessage))
       print('>>> DeconflictSetpoints--kicked off new cooperation phase, ' +
             'updated current phase: ' + self.coopCurrentPhase)
+
+      #self.logConflictReg('coop kickoff')
+      #self.logConflictPV('coop kickoff')
 
       # set the cooperation timestamp to indicate when cooperation was initiated
       self.coopTimestamp = timestamp
