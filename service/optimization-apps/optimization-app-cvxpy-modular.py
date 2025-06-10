@@ -1371,6 +1371,7 @@ class CompetingApp(GridAPPSD):
             print('DECONFLICTOR COOPERATE batteries coopCount: ALL, diffMax: ' + str(diffMax), flush=True)
 
           icoop = 0
+          p_batt_denom = [] # just for diagnostic logging
           for i in range(len_BatteriesInfo):
             # check if this is a "cooperating" battery
             if p_batt_diff[i] <= diffMax:
@@ -1381,8 +1382,12 @@ class CompetingApp(GridAPPSD):
               ratio = (self.p_batt_proposed[i] - self.p_batt_greedy[i])/ \
                       float(icoop + coopCounter)
               self.p_batt_greedy[i] += ratio
+              p_batt_denom.append((icoop, coopCounter))
+            else:
+              p_batt_denom.append(None)
 
           print('DECONFLICTOR COOPERATE p_batt_coop: ' + str(self.p_batt_greedy), flush=True)
+          print('DECONFLICTOR COOPERATE p_batt_denom: ' + str(p_batt_denom), flush=True)
 
           for mrid in self.BatteriesInfo:
             idx = self.BatteriesInfo[mrid]['idx']
@@ -1426,6 +1431,7 @@ class CompetingApp(GridAPPSD):
             print('DECONFLICTOR COOPERATE solarPVs coopCount: ALL, diffMax: ' + str(diffMax), flush=True)
 
           icoop = 0
+          pq_pv_denom = [] # just for diagnostic logging
           for i in range(len_SolarPVsInfo):
             # check if this is a "cooperating" solarPV
             if pq_pv_diff[i] <= diffMax:
@@ -1440,8 +1446,12 @@ class CompetingApp(GridAPPSD):
               ratio = (self.pq_pv_proposed[i] - self.pq_pv_greedy[i])/ \
                       float(icoop + coopCounter)
               self.pq_pv_greedy[i] += ratio
+              pq_pv_denom.append((icoop, coopCounter))
+            else:
+              pq_pv_denom.append(None)
 
           print('DECONFLICTOR COOPERATE pq_pv_coop: ' + str(self.pq_pv_greedy), flush=True)
+          print('DECONFLICTOR COOPERATE pq_pv_denom: ' + str(pq_pv_denom), flush=True)
 
           for mrid in self.SolarPVs:
             idx = self.SolarPVs[mrid]['idx']
@@ -1488,6 +1498,7 @@ class CompetingApp(GridAPPSD):
             print('DECONFLICTOR COOPERATE regulators coopCount: ALL, diffMax: ' + str(diffMax), flush=True)
 
           icoop = 0
+          reg_denom = [] # just for diagnostic logging
           for i in range(len_RegulatorsInfo):
             # check if this is a "cooperating" regulator
             if reg_diff[i] <= diffMax:
@@ -1498,8 +1509,12 @@ class CompetingApp(GridAPPSD):
               ratio = int((self.reg_proposed[i] - self.reg_greedy[i])/ \
                           (icoop + coopCounter))
               self.reg_greedy[i] += ratio
+              reg_denom.append((icoop, coopCounter))
+            else:
+              reg_denom.append(None)
 
           print('DECONFLICTOR COOPERATE reg_coop: ' + str(self.reg_greedy), flush=True)
+          print('DECONFLICTOR COOPERATE reg_denom: ' + str(reg_denom), flush=True)
 
           for reg in self.RegulatorsInfo:
             idx = self.RegulatorsInfo[reg]['idx']
