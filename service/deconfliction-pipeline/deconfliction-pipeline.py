@@ -849,7 +849,7 @@ class DeconflictionPipeline(GridAPPSD):
       name = MethodUtil.DeviceToName[device]
       if name.startswith('PhotovoltaicUnit.'):
         for app in self.ConflictMatrix[device]:
-          print('REG DEBUG ConflictMatrix ' + msg + ', app: ' + app +
+          print('PV DEBUG ConflictMatrix ' + msg + ', app: ' + app +
                 ', device: ' + name + ', setpoint p: ' +
                 str(self.ConflictMatrix[device][app][1].real) +
                 ', q: ' + str(self.ConflictMatrix[device][app][1].imag))
@@ -865,6 +865,16 @@ class DeconflictionPipeline(GridAPPSD):
             print('~TEST DEBUG ConflictMatrix ' + msg + ', app: ' + app +
                   ', device: ' + name + ', ref: ' + str(self.refCount) +
                   ', setpoint: ' + str(self.ConflictMatrix[device][app][1]))
+
+
+  def logResolutionPV(self, msg, resolutionVector):
+    for device in resolutionVector:
+      name = MethodUtil.DeviceToName[device]
+      if name.startswith('PhotovoltaicUnit.'):
+        print('PV DEBUG ResolutionVector ' + msg +
+              ', device: ' + name + ', setpoint p: ' +
+              str(resolutionVector[device][1].real) +
+              ', q: ' + str(resolutionVector[device][1].imag))
 
 
   def logResolutionTest(self, msg, resolutionVector):
@@ -1195,7 +1205,6 @@ class DeconflictionPipeline(GridAPPSD):
         # components has changed for a device, both get dispatched
         if value[1] != self.SolarPVs[device]['PQ_pv_inv']:
           #new value before old value for DifferenceBuilder
-          print('GARY SolarPV: ' + name + ', new: ' + str(value[1]) + ', old: ' + str(self.SolarPVs[device]['PQ_pv_inv']), flush=True)
           self.difference_builder.add_difference(device,
                                   'PowerElectronicsConnection.p', value[1].real,
                                   self.SolarPVs[device]['PQ_pv_inv'].real)
@@ -2020,6 +2029,8 @@ class DeconflictionPipeline(GridAPPSD):
     self.logConflictTest('cooperation stage done before Optimization')
     newResolutionVector = self.Optimization(timestamp, self.ConflictMatrix)
     self.logConflictTest('cooperation stage done after Optimization')
+
+    #self.logResolutionPV('coop done', newResolutionVector)
 
     # Published IEEE Access Foundational Paper Reference:
     #   Step 3.2--Deconfliction Solution
