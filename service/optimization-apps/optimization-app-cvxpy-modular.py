@@ -1393,6 +1393,8 @@ class CompetingApp(GridAPPSD):
                  'PowerElectronicsConnection.p', -self.p_batt_greedy[idx], None)
 
         if self.includeSolarPVsFlag:
+          print('DECONFLICTOR COOPERATE pq_pv_greedy: ' + str(self.pq_pv_greedy), flush=True)
+          print('DECONFLICTOR COOPERATE pq_pv_proposed: ' + str(self.pq_pv_proposed), flush=True)
           len_SolarPVsInfo = len(self.SolarPVsInfo)
           pq_pv_diff = [None] * len_SolarPVsInfo
           for i in range(len_SolarPVsInfo):
