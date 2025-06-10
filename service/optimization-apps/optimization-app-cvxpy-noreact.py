@@ -1245,14 +1245,20 @@ class CompetingApp(GridAPPSD):
           else:
             print('DECONFLICTOR COOPERATE batteries coopCount: ALL, diffMax: ' + str(diffMax), flush=True)
 
-          icoop = 0
           for i in range(len_BatteriesInfo):
             # check if this is a "cooperating" battery
-            if p_batt_diff[i] <= diffMax:
+            if p_batt_diff[i]>0 and p_batt_diff[i]<=diffMax:
               # full cooperation by setting the greedy value to proposed value
               #self.p_batt_greedy[i] = self.p_batt_proposed[i]
               # adjust cooperation level based on difference
-              icoop += 1
+              # find which entry this p_batt_diff is within p_batt_sort to
+              # determine how much to cooperate. This is tricky code in that
+              # a loop iterator varible is referenced after the loop.
+              for ic in range(len(p_batt_sort)):
+                if p_batt_diff[i] == p_batt_sort[ic]:
+                  break
+              icoop = ic + 1
+
               ratio = (self.p_batt_proposed[i] - self.p_batt_greedy[i])/ \
                       float(icoop + coopCounter)
               self.p_batt_greedy[i] += ratio
@@ -1301,14 +1307,20 @@ class CompetingApp(GridAPPSD):
           else:
             print('DECONFLICTOR COOPERATE regulators coopCount: ALL, diffMax: ' + str(diffMax), flush=True)
 
-          icoop = 0
           for i in range(len_RegulatorsInfo):
             # check if this is a "cooperating" regulator
-            if reg_diff[i] <= diffMax:
+            if reg_diff[i]>0 and reg_diff[i]<=diffMax:
               # full cooperation by setting the greedy value to proposed value
               #self.reg_greedy[i] = self.reg_proposed[i]
               # adjust cooperation level based on difference
-              icoop += 1
+              # find which entry this p_batt_diff is within p_batt_sort to
+              # determine how much to cooperate. This is tricky code in that
+              # a loop iterator varible is referenced after the loop.
+              for ic in range(len(reg_sort)):
+                if reg_diff[i] == reg_sort[ic]:
+                  break
+              icoop = ic + 1
+
               ratio = int((self.reg_proposed[i] - self.reg_greedy[i])/ \
                           (icoop + coopCounter))
               self.reg_greedy[i] += ratio
