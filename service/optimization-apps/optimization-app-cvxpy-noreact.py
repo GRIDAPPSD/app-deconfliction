@@ -668,12 +668,13 @@ class CompetingApp(GridAPPSD):
       regulator_taps = []
       for reg in self.RegulatorsInfo:
         idx = self.RegulatorsInfo[reg]['idx']
+        name = self.RegulatorsInfo[reg]['name']
         for k in range(32):
           if self.reg_taps[(idx, k)].value:
             # new value before old value for DifferenceBuilder
             self.difference_builder.add_difference(reg, 'TapChanger.step',
                                                    k-16, None)
-            regulator_taps.append([reg, k-16, self.b_i[k]])
+            regulator_taps.append([name, k-16, self.b_i[k]])
 
             # set reg_greedy with every optimization based on measurements
             self.reg_greedy[idx] = k-16
@@ -686,13 +687,14 @@ class CompetingApp(GridAPPSD):
       p_batt_setpoints = []
       for mrid in self.BatteriesInfo:
         idx = self.BatteriesInfo[mrid]['idx']
+        name = self.BatteriesInfo[mrid]['name']
         self.BatteriesInfo[mrid]['SoC'] = self.soc[idx].value
         # new value before old value for DifferenceBuilder
         # note the optimized p_batt value is negated for the GridLAB-D
         # DifferenceBuilder message
         self.difference_builder.add_difference(mrid,
              'PowerElectronicsConnection.p', -self.p_batt[idx].value, None)
-        p_batt_setpoints.append([mrid, self.p_batt[idx].value/1000,
+        p_batt_setpoints.append([name, self.p_batt[idx].value/1000,
                                  self.soc[idx].value])
 
         # set p_batt_greedy with every optimization based on measurements
