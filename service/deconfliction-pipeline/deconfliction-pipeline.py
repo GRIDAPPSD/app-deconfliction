@@ -182,68 +182,44 @@ class DeconflictionPipeline(GridAPPSD):
       if not meas_msg_flag:
         if device in MinSetpoints:
           if value < MinSetpoints[device]:
-            print('SetpointProcessor--for cooperation, app: ' + app_name +
-                  ', device: ' + MethodUtil.DeviceToName[device] +
-                  '--setpoint request below min allowable to prevent ' +
-                  'backtracking: ' + str(value))
+            print('SetpointProcessor--app: ' + app_name + ', device: ' +
+                  MethodUtil.DeviceToName[device] +
+                  '--cooperation setpoint below min to prevent backtracking: ' +
+                  str(value) + ', reset to: ' + str(MinSetpoints[device]))
             value = MinSetpoints[device]
-            print('SetpointProcessor--for cooperation, app: ' + app_name +
-                  ', device: ' + MethodUtil.DeviceToName[device] +
-                  '--setpoint reset to min allowable to prevent backtracking: '+
-                  str(value))
           elif value > MaxSetpoints[device]:
-            print('SetpointProcessor--for cooperation, app: ' + app_name +
-                  ', device: ' + MethodUtil.DeviceToName[device] +
-                  '--setpoint request above max allowable to prevent ' +
-                  'backtracking: ' + str(value))
+            print('SetpointProcessor--app: ' + app_name + ', device: ' +
+                  MethodUtil.DeviceToName[device] +
+                  '--cooperation setpoint above max to prevent backtracking: ' +
+                  str(value) + ', reset to: ' + str(MaxSetpoints[device]))
             value = MaxSetpoints[device]
-            print('SetpointProcessor--for cooperation, app: ' + app_name +
-                  ', device: ' + MethodUtil.DeviceToName[device] +
-                  '--setpoint reset to max allowable to prevent backtracking: '+
-                  str(value))
 
         elif device in MinSetpointsReal:
           if value.real < MinSetpointsReal[device]:
-            print('SetpointProcessor--for cooperation, app: ' + app_name +
-                  ', device: ' + MethodUtil.DeviceToName[device] +
-                  '--setpoint (real) request below min allowable to prevent ' +
-                  'backtracking: ' + str(value.real))
+            print('SetpointProcessor--app: ' + app_name + ', device: ' +
+                  MethodUtil.DeviceToName[device] + '--cooperation setpoint ' +
+                  '(real) below min to prevent backtracking: ' +
+                  str(value) + ', reset to: ' + str(MinSetpointsReal[device]))
             value = complex(MinSetpointsReal[device], value.imag)
-            print('SetpointProcessor--for cooperation, app: ' + app_name +
-                  ', device: ' + MethodUtil.DeviceToName[device] +
-                  '--setpoint (real) reset to min allowable to prevent ' +
-                  'backtracking: ' + str(value.real))
           elif value.real > MaxSetpointsReal[device]:
-            print('SetpointProcessor--for cooperation, app: ' + app_name +
-                  ', device: ' + MethodUtil.DeviceToName[device] +
-                  '--setpoint (real) request above max allowable to prevent ' +
-                  'backtracking: ' + str(value.real))
+            print('SetpointProcessor--app: ' + app_name + ', device: ' +
+                  MethodUtil.DeviceToName[device] + '--cooperation setpoint ' +
+                  '(real) above max to prevent backtracking: ' +
+                  str(value) + ', reset to: ' + str(MaxSetpointsReal[device]))
             value = complex(MaxSetpointsReal[device], value.imag)
-            print('SetpointProcessor--for cooperation, app: ' + app_name +
-                  ', device: ' + MethodUtil.DeviceToName[device] +
-                  '--setpoint (real) reset to max allowable to prevent ' +
-                  'backtracking: ' + str(value.real))
 
           if value.imag < MinSetpointsImag[device]:
-            print('SetpointProcessor--for cooperation, app: ' + app_name +
-                  ', device: ' + MethodUtil.DeviceToName[device] +
-                  '--setpoint (imag) request below min allowable to prevent ' +
-                  'backtracking: ' + str(value.imag))
+            print('SetpointProcessor--app: ' + app_name + ', device: ' +
+                  MethodUtil.DeviceToName[device] + '--cooperation setpoint ' +
+                  '(imag) below min to prevent backtracking: ' +
+                  str(value) + ', reset to: ' + str(MinSetpointsImag[device]))
             value = complex(value.real, MinSetpointsImag[device])
-            print('SetpointProcessor--for cooperation, app: ' + app_name +
-                  ', device: ' + MethodUtil.DeviceToName[device] +
-                  '--setpoint (imag) reset to min allowable to prevent ' +
-                  'backtracking: ' + str(value.imag))
           elif value.imag > MaxSetpointsImag[device]:
-            print('SetpointProcessor--for cooperation, app: ' + app_name +
-                  ', device: ' + MethodUtil.DeviceToName[device] +
-                  '--setpoint (imag) request above max allowable to prevent ' +
-                  'backtracking: ' + str(value.imag))
+            print('SetpointProcessor--app: ' + app_name + ', device: ' +
+                  MethodUtil.DeviceToName[device] + '--cooperation setpoint ' +
+                  '(imag) above max to prevent backtracking: ' +
+                  str(value) + ', reset to: ' + str(MaxSetpointsImag[device]))
             value = complex(value.real, MaxSetpointsImag[device])
-            print('SetpointProcessor--for cooperation, app: ' + app_name +
-                  ', device: ' + MethodUtil.DeviceToName[device] +
-                  '--setpoint (imag) reset to max allowable to prevent ' +
-                  'backtracking: ' + str(value.real))
 
       self.ConflictMatrix[device][app_name] = (timestamp, value)
 
