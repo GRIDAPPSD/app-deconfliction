@@ -1374,7 +1374,7 @@ class CompetingApp(GridAPPSD):
           p_batt_denom = [] # just for diagnostic logging
           for i in range(len_BatteriesInfo):
             # check if this is a "cooperating" battery
-            if p_batt_diff[i] <= diffMax:
+            if p_batt_diff[i]>0 and p_batt_diff[i]<=diffMax:
               # full cooperation by setting the greedy value to proposed value
               #self.p_batt_greedy[i] = self.p_batt_proposed[i]
               # adjust cooperation level based on difference
@@ -1434,7 +1434,7 @@ class CompetingApp(GridAPPSD):
           pq_pv_denom = [] # just for diagnostic logging
           for i in range(len_SolarPVsInfo):
             # check if this is a "cooperating" solarPV
-            if pq_pv_diff[i] <= diffMax:
+            if pq_pv_diff[i]>0 and pq_pv_diff[i]<=diffMax:
               # full cooperation by setting the greedy value to proposed value
               #self.pq_pv_greedy[i] = self.pq_pv_proposed[i]
               # adjust cooperation level based on difference
@@ -1501,7 +1501,7 @@ class CompetingApp(GridAPPSD):
           reg_denom = [] # just for diagnostic logging
           for i in range(len_RegulatorsInfo):
             # check if this is a "cooperating" regulator
-            if reg_diff[i] <= diffMax:
+            if reg_diff[i]>0 and reg_diff[i]<=diffMax:
               # full cooperation by setting the greedy value to proposed value
               #self.reg_greedy[i] = self.reg_proposed[i]
               # adjust cooperation level based on difference
