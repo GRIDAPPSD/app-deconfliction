@@ -102,8 +102,8 @@ def make_reg_plots(title, prefix, Regulators, t_plot, reg_plot):
     regname = name[16:] # extract just the name for tidier plots
     plt.title(title + ' Tap Pos:  ' + regname, pad=15.0)
     plt.plot(t_plot[:len(reg_plot[name])], reg_plot[name])
-    ax = plt.figure().gca()
-    ax.yaxis.set_major_locator(MaxNLocator(integer=True))
+    #ax = plt.figure().gca()
+    #ax.yaxis.set_major_locator(MaxNLocator(integer=True))
     #ax.xaxis.set_major_formatter(md.DateFormatter('%H:%M'))
     #plt.xlim([AppUtil.to_datetime(1), AppUtil.to_datetime(96)])
     #plt.xticks([AppUtil.to_datetime(1), AppUtil.to_datetime(25), AppUtil.to_datetime(49), AppUtil.to_datetime(73), AppUtil.to_datetime(96)])
