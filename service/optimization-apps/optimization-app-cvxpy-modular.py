@@ -57,6 +57,7 @@ import queue
 import copy
 
 from time import sleep
+#import cylp
 import cvxpy as cp
 
 from gridappsd import GridAPPSD
@@ -738,8 +739,9 @@ class CompetingApp(GridAPPSD):
   def optDo(self, objective):
     problem = cp.Problem(cp.Minimize(objective), self.Constraints)
 
-    # problem.solve(solver=cp.MOSEK, verbose=True)
     startTime = datetime.now()
+    #problem.solve(solver=cp.MOSEK, verbose=True) # commercial solver
+    #problem.solve(solver=cp.CBC, verbose=False)
     problem.solve(solver=cp.GLPK_MI, abstol=1e-3, kktsolver='chol',
                   feastol=1e-3, max_iters=100, verbose=False)
     print('Optimization status:', problem.status, flush=True)
