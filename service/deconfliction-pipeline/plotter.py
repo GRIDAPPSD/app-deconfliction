@@ -59,6 +59,20 @@ def to_datetime(time):
   return datetime(1966, 8, 1, (int(time)-1)//4, 15*((int(time)-1) % 4), 0)
 
 
+def make_cm_plot(cm_t_plot, cm_start_plot, cm_rules_plot, cm_coop_plot):
+  plt.title('Conflict Metric', pad=15.0)
+  #ax = plt.figure().gca()
+  #ax.xaxis.set_major_formatter(md.DateFormatter('%H:%M'))
+  #plt.xlim([AppUtil.to_datetime(1), AppUtil.to_datetime(96)])
+  #plt.xticks([AppUtil.to_datetime(1), AppUtil.to_datetime(25), AppUtil.to_datetime(49), AppUtil.to_datetime(73), AppUtil.to_datetime(96)])
+  plt.xlabel('Time (sec)')
+  plt.ylabel('Conflict Metric')
+  plt.plot(cm_t_plot, cm_start_plot)
+  plt.savefig('log/conflict_metric.png')
+  #plot.show()
+  plt.close()
+
+
 def make_p_batt_plots(title, prefix, Batteries, t_plot, p_batt_plot):
   for name in Batteries:
     if len(t_plot) != len(p_batt_plot[name]):
@@ -69,8 +83,8 @@ def make_p_batt_plots(title, prefix, Batteries, t_plot, p_batt_plot):
     #ax.xaxis.set_major_formatter(md.DateFormatter('%H:%M'))
     #plt.xlim([AppUtil.to_datetime(1), AppUtil.to_datetime(96)])
     #plt.xticks([AppUtil.to_datetime(1), AppUtil.to_datetime(25), AppUtil.to_datetime(49), AppUtil.to_datetime(73), AppUtil.to_datetime(96)])
-    plt.xlabel('Time')
-    plt.ylabel('P_batt  (kW)')
+    plt.xlabel('Time (sec)')
+    plt.ylabel('P_batt (kW)')
     plt.plot(t_plot[:len(p_batt_plot[name])], p_batt_plot[name])
     plt.savefig('log/' + prefix + '_p_batt_' + batname + '.png')
     #plot.show()
@@ -87,7 +101,7 @@ def make_soc_plots(title, prefix, Batteries, t_plot, soc_plot):
     #ax.xaxis.set_major_formatter(md.DateFormatter('%H:%M'))
     #plt.xlim([AppUtil.to_datetime(1), AppUtil.to_datetime(96)])
     #plt.xticks([AppUtil.to_datetime(1), AppUtil.to_datetime(25), AppUtil.to_datetime(49), AppUtil.to_datetime(73), AppUtil.to_datetime(96)])
-    plt.xlabel('Time')
+    plt.xlabel('Time (sec)')
     plt.ylabel('Battery SoC')
     plt.plot(t_plot[:len(soc_plot[name])], soc_plot[name])
     plt.savefig('log/' + prefix + '_soc_' + batname + '.png')
@@ -107,7 +121,7 @@ def make_reg_plots(title, prefix, Regulators, t_plot, reg_plot):
     #ax.xaxis.set_major_formatter(md.DateFormatter('%H:%M'))
     #plt.xlim([AppUtil.to_datetime(1), AppUtil.to_datetime(96)])
     #plt.xticks([AppUtil.to_datetime(1), AppUtil.to_datetime(25), AppUtil.to_datetime(49), AppUtil.to_datetime(73), AppUtil.to_datetime(96)])
-    plt.xlabel('Time')
+    plt.xlabel('Time (sec)')
     plt.ylabel('Regulator Tap Pos')
     plt.plot(t_plot[:len(reg_plot[name])], reg_plot[name])
     plt.savefig('log/' + prefix + '_tap_' + regname + '.png')
@@ -117,6 +131,10 @@ def make_reg_plots(title, prefix, Regulators, t_plot, reg_plot):
 
 def make_p_pv_plots(title, prefix, SolarPVs, t_plot, p_pv_plot):
   for name in SolarPVs:
+    # just bail if there is no SolarPV data
+    if len(p_pv_plot[name]) == 0:
+      return
+
     if len(t_plot) != len(p_pv_plot[name]):
       print('*** Mismatched data points for plot ' + title + ' p_pv ' + name + ', time len: ' + str(len(t_plot)) + ', p_pv len: ' + str(len(p_pv_plot[name])), flush=True)
     pvname = name[17:] # extract just the name for tidier plots
@@ -125,7 +143,7 @@ def make_p_pv_plots(title, prefix, SolarPVs, t_plot, p_pv_plot):
     #ax.xaxis.set_major_formatter(md.DateFormatter('%H:%M'))
     #plt.xlim([AppUtil.to_datetime(1), AppUtil.to_datetime(96)])
     #plt.xticks([AppUtil.to_datetime(1), AppUtil.to_datetime(25), AppUtil.to_datetime(49), AppUtil.to_datetime(73), AppUtil.to_datetime(96)])
-    plt.xlabel('Time')
+    plt.xlabel('Time (sec)')
     plt.ylabel('p_pv (kW)')
     plt.plot(t_plot[:len(p_pv_plot[name])], p_pv_plot[name])
     plt.savefig('log/' + prefix + '_p_pv_' + pvname + '.png')
@@ -135,6 +153,10 @@ def make_p_pv_plots(title, prefix, SolarPVs, t_plot, p_pv_plot):
 
 def make_q_pv_plots(title, prefix, SolarPVs, t_plot, q_pv_plot):
   for name in SolarPVs:
+    # just bail if there is no SolarPV data
+    if len(q_pv_plot[name]) == 0:
+      return
+
     if len(t_plot) != len(q_pv_plot[name]):
       print('*** Mismatched data points for plot ' + title + ' q_pv ' + name + ', time len: ' + str(len(t_plot)) + ', q_pv len: ' + str(len(q_pv_plot[name])), flush=True)
     pvname = name[17:] # extract just the name for tidier plots
@@ -143,7 +165,7 @@ def make_q_pv_plots(title, prefix, SolarPVs, t_plot, q_pv_plot):
     #ax.xaxis.set_major_formatter(md.DateFormatter('%H:%M'))
     #plt.xlim([AppUtil.to_datetime(1), AppUtil.to_datetime(96)])
     #plt.xticks([AppUtil.to_datetime(1), AppUtil.to_datetime(25), AppUtil.to_datetime(49), AppUtil.to_datetime(73), AppUtil.to_datetime(96)])
-    plt.xlabel('Time')
+    plt.xlabel('Time (sec)')
     plt.ylabel('q_pv (kW)')
     plt.plot(t_plot[:len(q_pv_plot[name])], q_pv_plot[name])
     plt.savefig('log/' + prefix + '_q_pv_' + pvname + '.png')
@@ -180,15 +202,21 @@ def _main():
     p_pv_plot[pv] = []
     q_pv_plot[pv] = []
 
+  cm_t_plot = []
+  cm_start_plot = []
+  cm_rules_plot = []
+  cm_coop_plot = []
+
   app = 'SIMULATION'
   prefix = 'sim'
 
-  hits = 0
+  simhits = 0
+  cmhits = 0
   with open('log/plot_data.csv', 'r') as file:
     for line in file:
       tokens = line.split(',')
       if tokens[0] == app:
-        hits += 1
+        simhits += 1
         t_plot.append(float(tokens[1]))
 
         start = 3
@@ -212,7 +240,15 @@ def _main():
           p_pv_plot[pv].append(cmplx.real)
           q_pv_plot[pv].append(cmplx.imag)
 
-  print(app + ' hits: ' + str(hits), flush=True)
+      elif tokens[0] == 'conflict_metric':
+        cmhits += 1
+        cm_t_plot.append(float(tokens[1]))
+        cm_start_plot.append(float(tokens[3]))
+        cm_rules_plot.append(float(tokens[4]))
+        cm_coop_plot.append(float(tokens[5]))
+
+  print(app + ' hits: ' + str(simhits), flush=True)
+  print('conflict_metric hits: ' + str(cmhits), flush=True)
 
   make_p_batt_plots(app, prefix, Batteries, t_plot, p_batt_plot)
   make_soc_plots(app, prefix, Batteries, t_plot, soc_plot)
@@ -232,6 +268,13 @@ def _main():
   for pv in SolarPVs:
     p_pv_plot[pv].clear()
     q_pv_plot[pv].clear()
+
+  make_cm_plot(cm_t_plot, cm_start_plot, cm_rules_plot, cm_coop_plot)
+
+  cm_t_plot.clear()
+  cm_start_plot.clear()
+  cm_rules_plot.clear()
+  cm_coop_plot.clear()
 
   #app_list = ['gridappsd-resilience-app', 'gridappsd-decarbonization-app', 'gridappsd-profit_cvr-app']
   app_list = ['gridappsd-resilience-app', 'gridappsd-decarbonization-app']
