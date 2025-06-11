@@ -739,13 +739,16 @@ class CompetingApp(GridAPPSD):
     problem = cp.Problem(cp.Minimize(objective), self.Constraints)
 
     # problem.solve(solver=cp.MOSEK, verbose=True)
+    startTime = datetime.now()
     problem.solve(solver=cp.GLPK_MI, abstol=1e-3, kktsolver='chol',
                   feastol=1e-3, max_iters=100, verbose=False)
     print('Optimization status:', problem.status, flush=True)
     now = datetime.now()
-    diff = (now - self.lastTime).total_seconds()
+    optTime = (now - startTime).total_seconds()
+    optInterval= (now - self.lastTime).total_seconds()
     self.lastTime = now
-    print('Optimization time difference: ' + str(diff), flush=True)
+    print('Optimization time: ' + str(optTime), flush=True)
+    print('Optimization time interval: ' + str(optInterval), flush=True)
 
 
   def optDispatch(self, includeRegulatorsFlag, includeBatteriesFlag,

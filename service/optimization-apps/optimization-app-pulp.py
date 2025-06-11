@@ -261,15 +261,17 @@ class CompetingApp(GridAPPSD):
     '''
 
     # solve
+    startTime = datetime.now()
     self.dynamicProb.solve(PULP_CBC_CMD(msg=0, gapRel=self.gapRel,
                            timeLimit=5))
     print('Optimization status:', LpStatus[self.dynamicProb.status],
           flush=True)
     now = datetime.now()
-    diff = (now - self.lastTime).total_seconds()
+    optTime = (now - startTime).total_seconds()
+    optInterval= (now - self.lastTime).total_seconds()
     self.lastTime = now
-    print('Optimization time difference: ' + str(diff), flush=True)
-
+    print('Optimization time: ' + str(optTime), flush=True)
+    print('Optimization time interval: ' + str(optInterval), flush=True)
 
     objective = pulp.value(self.dynamicProb.objective)
 
@@ -291,8 +293,16 @@ class CompetingApp(GridAPPSD):
                           lpSum(-self.v_A[i] for i in bus_idx_batt['A']) + \
                           lpSum(-self.v_B[i] for i in bus_idx_batt['B']) + \
                           lpSum(-self.v_C[i] for i in bus_idx_batt['C'])
+      startTime = datetime.now()
       self.dynamicProb.solve(GLPK_CMD(msg=0, options=['--mipgap', '0.01']))
-      print('Optimization Stage II:', LpStatus[self.dynamicProb.status],
+      print('Optimization status Stage II:', LpStatus[self.dynamicProb.status],
+            flush=True)
+      now = datetime.now()
+      optTime = (now - startTime).total_seconds()
+      optInterval= (now - self.lastTime).total_seconds()
+      self.lastTime = now
+      print('Optimization time Stage II: ' + str(optTime), flush=True)
+      print('Optimization time interval Stage II: ' + str(optInterval),
             flush=True)
 
     # self.dynamicProb.writeLP('log/' + self.opt_type + '_' +
