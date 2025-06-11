@@ -1246,6 +1246,9 @@ class DeconflictionPipeline(GridAPPSD):
         if value[1] != self.Regulators[device]['step']:
           # new value before old value for DifferenceBuilder
           # TODO INVESTIGATE REG4 ISSUE WITH PHASES BEING TIED TOGETHER
+          # Uncomment the "if" block to keep from dispatching 4a and 4c
+          # setpoint changes to see how it behaves without coupling. Also
+          # comment out the same logic that's inside the "if" block
           '''
           if name!='RatioTapChanger.reg4a' and name!='RatioTapChanger.reg4c':
             self.difference_builder.add_difference(device,
@@ -2235,8 +2238,8 @@ class DeconflictionPipeline(GridAPPSD):
     # number of changes between charging and discharging, and vice versa,
     # allowed in the rolling time interval
     self.rulesBattSwitchesAllowed = 1
-    self.rulesRegOuterTimeInterval = 60*15 # every 15 minutes
-    self.rulesRegOuterStepsAllowed = 4
+    self.rulesRegOuterTimeInterval = 60*10 # every 10 minutes
+    self.rulesRegOuterStepsAllowed = 16
     self.rulesRegInnerTimeInterval = 30
     self.rulesRegInnerStepsAllowed = 1
 
@@ -2245,9 +2248,7 @@ class DeconflictionPipeline(GridAPPSD):
       self.rulesBattTimeInterval = 60*60*4 # every 4 hours
       self.rulesBattSwitchesAllowed = 1
       self.rulesRegOuterTimeInterval = 60*60*4 # every 4 hours
-      self.rulesRegOuterStepsAllowed = 8
-      self.rulesRegInnerTimeInterval = 60
-      self.rulesRegInnerStepsAllowed = 1
+      self.rulesRegOuterStepsAllowed = 16
 
     # for SHIVA conflict metric testing
     #self.TimeConflictMatrix = {}
