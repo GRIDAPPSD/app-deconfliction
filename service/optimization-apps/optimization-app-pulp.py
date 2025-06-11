@@ -265,6 +265,11 @@ class CompetingApp(GridAPPSD):
                            timeLimit=5))
     print('Optimization status:', LpStatus[self.dynamicProb.status],
           flush=True)
+    now = datetime.now()
+    diff = (now - self.lastTime).total_seconds()
+    self.lastTime = now
+    print('Optimization time difference: ' + str(diff), flush=True)
+
 
     objective = pulp.value(self.dynamicProb.objective)
 
@@ -962,6 +967,7 @@ class CompetingApp(GridAPPSD):
 
     messageCounter = 0
     currentCoopPhase = None
+    self.lastTime = datetime.now()
 
     while self.keepLoopingFlag:
       if self.messageQueue.qsize() == 0:

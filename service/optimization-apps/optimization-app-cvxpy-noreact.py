@@ -661,6 +661,10 @@ class CompetingApp(GridAPPSD):
     problem.solve(solver=cp.GLPK_MI, abstol=1e-3, kktsolver='chol',
                   feastol=1e-3, max_iters=100, verbose=False)
     print('Optimization status:', problem.status, flush=True)
+    now = datetime.now()
+    diff = (now - self.lastTime).total_seconds()
+    self.lastTime = now
+    print('Optimization time difference: ' + str(diff), flush=True)
 
 
   def optDispatch(self, includeRegulatorsFlag, includeBatteriesFlag):
@@ -1112,6 +1116,7 @@ class CompetingApp(GridAPPSD):
 
     messageCounter = 0
     currentCoopPhase = None
+    self.lastTime = datetime.now()
 
     while self.keepLoopingFlag:
       if self.messageQueue.qsize() == 0:
