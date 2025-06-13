@@ -1392,7 +1392,9 @@ class CompetingApp(GridAPPSD):
               for ic in range(len(p_batt_sort)):
                 if p_batt_diff[i] == p_batt_sort[ic]:
                   break
-              fcoop = float(ic/2.0) + 1
+              fcoop = float(ic/2.0) + 1.0 # more cooperation
+              #fcoop = float(ic/1.5) + 1.0 # in-between cooperation
+              #fcoop = float(ic/1.0) + 1.0 # less cooperation
 
               ratio = (self.p_batt_proposed[i] - self.p_batt_greedy[i])/ \
                       float(fcoop + coopCounter)
@@ -1458,7 +1460,9 @@ class CompetingApp(GridAPPSD):
               for ic in range(len(pq_pv_sort)):
                 if pq_pv_diff[i] == pq_pv_sort[ic]:
                   break
-              fcoop = float(ic/2.0) + 1
+              fcoop = float(ic/2.0) + 1.0 # more cooperation
+              #fcoop = float(ic/1.5) + 1.0 # in-between cooperation
+              #fcoop = float(ic/1.0) + 1.0 # less cooperation
 
               # again, these are complex numbers, but division by a scalar
               # is done to each of them giving a complex result that is then
@@ -1531,7 +1535,9 @@ class CompetingApp(GridAPPSD):
               for ic in range(len(reg_sort)):
                 if reg_diff[i] == reg_sort[ic]:
                   break
-              fcoop = float(ic/2.0) + 1
+              fcoop = float(ic/2.0) + 1.0 # more cooperation
+              #fcoop = float(ic/1.5) + 1.0 # in-between cooperation
+              #fcoop = float(ic/1.0) + 1.0 # less cooperation
 
               ratio = int((self.reg_proposed[i] - self.reg_greedy[i])/ \
                           (fcoop + coopCounter))
