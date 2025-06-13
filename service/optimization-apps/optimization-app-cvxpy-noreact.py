@@ -1265,10 +1265,10 @@ class CompetingApp(GridAPPSD):
               for ic in range(len(p_batt_sort)):
                 if p_batt_diff[i] == p_batt_sort[ic]:
                   break
-              icoop = ic + 1
+              fcoop = float(ic/2.0) + 1
 
               ratio = (self.p_batt_proposed[i] - self.p_batt_greedy[i])/ \
-                      float(icoop + coopCounter)
+                      float(fcoop + coopCounter)
               self.p_batt_greedy[i] += ratio
 
           print('DECONFLICTOR COOPERATE p_batt_coop: ' + str(self.p_batt_greedy), flush=True)
@@ -1327,10 +1327,10 @@ class CompetingApp(GridAPPSD):
               for ic in range(len(reg_sort)):
                 if reg_diff[i] == reg_sort[ic]:
                   break
-              icoop = ic + 1
+              fcoop = float(ic/2.0) + 1
 
               ratio = int((self.reg_proposed[i] - self.reg_greedy[i])/ \
-                          (icoop + coopCounter))
+                          (fcoop + coopCounter))
               self.reg_greedy[i] += ratio
 
           print('DECONFLICTOR COOPERATE reg_coop: ' + str(self.reg_greedy), flush=True)

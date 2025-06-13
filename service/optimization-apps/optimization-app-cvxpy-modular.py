@@ -1392,12 +1392,12 @@ class CompetingApp(GridAPPSD):
               for ic in range(len(p_batt_sort)):
                 if p_batt_diff[i] == p_batt_sort[ic]:
                   break
-              icoop = ic + 1
+              fcoop = float(ic/2.0) + 1
 
               ratio = (self.p_batt_proposed[i] - self.p_batt_greedy[i])/ \
-                      float(icoop + coopCounter)
+                      float(fcoop + coopCounter)
               self.p_batt_greedy[i] += ratio
-              p_batt_denom.append((icoop, coopCounter))
+              p_batt_denom.append((fcoop, coopCounter))
             else:
               p_batt_denom.append(None)
 
@@ -1458,16 +1458,16 @@ class CompetingApp(GridAPPSD):
               for ic in range(len(pq_pv_sort)):
                 if pq_pv_diff[i] == pq_pv_sort[ic]:
                   break
-              icoop = ic + 1
+              fcoop = float(ic/2.0) + 1
 
               # again, these are complex numbers, but division by a scalar
               # is done to each of them giving a complex result that is then
               # added to the original complex number. This is equivalent to
               # breaking up the work into the real and imag components.
               ratio = (self.pq_pv_proposed[i] - self.pq_pv_greedy[i])/ \
-                      float(icoop + coopCounter)
+                      float(fcoop + coopCounter)
               self.pq_pv_greedy[i] += ratio
-              pq_pv_denom.append((icoop, coopCounter))
+              pq_pv_denom.append((fcoop, coopCounter))
             else:
               pq_pv_denom.append(None)
 
@@ -1531,12 +1531,12 @@ class CompetingApp(GridAPPSD):
               for ic in range(len(reg_sort)):
                 if reg_diff[i] == reg_sort[ic]:
                   break
-              icoop = ic + 1
+              fcoop = float(ic/2.0) + 1
 
               ratio = int((self.reg_proposed[i] - self.reg_greedy[i])/ \
-                          (icoop + coopCounter))
+                          (fcoop + coopCounter))
               self.reg_greedy[i] += ratio
-              reg_denom.append((icoop, coopCounter))
+              reg_denom.append((fcoop, coopCounter))
             else:
               reg_denom.append(None)
 
