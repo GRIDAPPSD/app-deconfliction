@@ -60,7 +60,8 @@ from pulp import *
 
 from gridappsd import GridAPPSD
 from gridappsd import DifferenceBuilder
-from gridappsd.topics import simulation_output_topic, simulation_log_topic, service_output_topic
+from gridappsd.topics import simulation_output_topic, simulation_log_topic
+from gridappsd.topics import service_input_topic, service_output_topic
 
 from datetime import datetime
 from tabulate import tabulate
@@ -682,7 +683,7 @@ class CompetingApp(GridAPPSD):
     self.keepLoopingFlag = True
     out_id = gapps.subscribe(simulation_output_topic(simulation_id), self)
     log_id = gapps.subscribe(simulation_log_topic(simulation_id), self)
-    coop_id = gapps.subscribe(service_output_topic('gridappsd-deconflictor-app',
+    coop_id = gapps.subscribe(service_output_topic('deconfliction.cooperation',
                               simulation_id), self)
 
     SPARQLManager = getattr(importlib.import_module('sparql'), 'SPARQLManager')
@@ -962,11 +963,11 @@ class CompetingApp(GridAPPSD):
                                      len(self.BatteriesInfo), len(self.RegulatorsInfo))
 
     # topic for sending out set_points messages
-    self.app_name = 'gridappsd-' + self.opt_type + '-app'
-    self.meas_publish_topic = service_output_topic(self.app_name+':meas',
-                                                   simulation_id)
-    self.coop_publish_topic = service_output_topic(self.app_name+':coop',
-                                                   simulation_id)
+    app_name = self.opt_type + '-app'
+    self.meas_publish_topic = service_input_topic(
+                          'deconfliction.measurements.'+app_name, simulation_id)
+    self.coop_publish_topic = service_input_topic(
+                          'deconfliction.cooperation.'+app_name, simulation_id)
 
     # create DifferenceBuilder once and reuse it throughout the simulation
     self.difference_builder = DifferenceBuilder(simulation_id)

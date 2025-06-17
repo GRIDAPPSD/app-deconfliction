@@ -63,7 +63,8 @@ import cvxpy as cp
 from gridappsd import GridAPPSD
 from gridappsd import DifferenceBuilder
 from gridappsd.topics import simulation_input_topic, simulation_output_topic
-from gridappsd.topics import simulation_log_topic, service_output_topic
+from gridappsd.topics import simulation_log_topic
+from gridappsd.topics import service_input_topic, service_output_topic
 
 from datetime import datetime
 from tabulate import tabulate
@@ -927,7 +928,7 @@ class CompetingApp(GridAPPSD):
     self.keepLoopingFlag = True
     out_id = gapps.subscribe(simulation_output_topic(simulation_id), self)
     log_id = gapps.subscribe(simulation_log_topic(simulation_id), self)
-    coop_id = gapps.subscribe(service_output_topic('gridappsd-deconflictor-app',
+    coop_id = gapps.subscribe(service_output_topic('deconfliction.cooperation',
                               simulation_id), self)
 
     SPARQLManager = getattr(importlib.import_module('sparql'), 'SPARQLManager')
@@ -1208,11 +1209,11 @@ class CompetingApp(GridAPPSD):
     self.optPrelim()
 
     # topics for sending out set_points messages
-    self.app_name = 'gridappsd-' + self.opt_type + '-app'
-    self.meas_publish_topic = service_output_topic(self.app_name+':meas',
-                                                   simulation_id)
-    self.coop_publish_topic = service_output_topic(self.app_name+':coop',
-                                                   simulation_id)
+    app_name = self.opt_type + '-app'
+    self.meas_publish_topic = service_input_topic(
+                          'deconfliction.measurements.'+app_name, simulation_id)
+    self.coop_publish_topic = service_input_topic(
+                          'deconfliction.cooperation.'+app_name, simulation_id)
 
     # for bypassing deconfliction pipeline and sending directly to simulation
     self.sendToSimFlag = False
