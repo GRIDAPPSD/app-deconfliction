@@ -69,7 +69,8 @@ from datetime import datetime
 from gridappsd import GridAPPSD
 from gridappsd import DifferenceBuilder
 from gridappsd.topics import simulation_input_topic, simulation_output_topic
-from gridappsd.topics import simulation_log_topic, service_output_topic
+from gridappsd.topics import simulation_log_topic
+from gridappsd.topics import service_input_topic, service_output_topic
 
 # magic so all print statements flush without having to add flush=True
 import functools
@@ -1519,14 +1520,14 @@ class DeconflictionPipeline(GridAPPSD):
               ', PQ_pv_inv: ' + str(self.SolarPVs[device]['PQ_pv_inv']))
 
 
-  def getAppName(self, header):
+  def getAppNameMeas(self, header):
     app_info = header['destination']
 
-    if app_info.startswith('/topic/goss.gridappsd.simulation.'):
-      endind = app_info[33:].find('.')
-      app_info = app_info[33:33+endind]
+    if app_info.startswith('/topic/goss.gridappsd.simulation.deconfliction.measurements.'):
+      endind = app_info[60:].find('.')
+      app_info = app_info[60:60+endind]
 
-    return app_info.split(':')[0]
+    return app_info
 
 
   def OnMeasSetpointsMessage(self, header, message):
@@ -1534,8 +1535,18 @@ class DeconflictionPipeline(GridAPPSD):
       print('OnMeasSetpointsMessage--received message: ' + str(message))
       print('OnMeasSetpointsMessage--received header: ' + str(header))
 
-    app_name = self.getAppName(header)
+    app_name = self.getAppNameMeas(header)
     self.messageQueue.put((app_name, True, None, message['input']['message']))
+
+
+  def getAppNameCoop(self, header):
+    app_info = header['destination']
+
+    if app_info.startswith('/topic/goss.gridappsd.simulation.deconfliction.cooperation.'):
+      endind = app_info[59:].find('.')
+      app_info = app_info[59:59+endind]
+
+    return app_info
 
 
   def OnCoopSetpointsMessage(self, header, message):
@@ -1543,7 +1554,7 @@ class DeconflictionPipeline(GridAPPSD):
       print('OnCoopSetpointsMessage--received message: ' + str(message))
       print('OnCoopSetpointsMessage--received header: ' + str(header))
 
-    app_name = self.getAppName(header)
+    app_name = self.getAppNameCoop(header)
     self.messageQueue.put((app_name, False, message['cooperationPhase'],
                            message['input']['message']))
 
@@ -2117,22 +2128,26 @@ class DeconflictionPipeline(GridAPPSD):
 
     # must enumerate all possible apps even if not all are running since I need
     # separate topics for each to distinguish them via message header
-    competing_apps = ['gridappsd-resilience-app',
-                      'gridappsd-decarbonization-app',
-                      'gridappsd-profit_cvr-app']
-    set_id = {}
+    competing_apps = ['resilience-app',
+                      'decarbonization-app',
+                      'profit_cvr-app']
+    subscribed_list = []
     for app in competing_apps:
       # subscribe to competing app set-points messages
-      set_id[app+':meas'] = gapps.subscribe(service_output_topic(app + ':meas',
-                                 simulation_id), self.OnMeasSetpointsMessage)
-      set_id[app+':coop'] = gapps.subscribe(service_output_topic(app + ':coop',
-                                 simulation_id), self.OnCoopSetpointsMessage)
+      meas_id = gapps.subscribe(service_input_topic(
+                      'deconfliction.measurements.'+app, simulation_id),
+                      self.OnMeasSetpointsMessage)
+      subscribed_list.append(meas_id)
+      coop_id = gapps.subscribe(service_input_topic(
+                      'deconfliction.cooperation.'+app, simulation_id),
+                      self.OnCoopSetpointsMessage)
+      subscribed_list.append(coop_id)
 
     # simulation topic for sending DifferenceBuilder messages
     self.publish_topic = simulation_input_topic(simulation_id)
 
     # service topic for sending target resolution messages to cooperating apps
-    self.coop_topic = service_output_topic('gridappsd-deconflictor-app',
+    self.coop_topic = service_output_topic('deconfliction.cooperation',
                                            simulation_id)
 
     # create DifferenceBuilder once and reuse it throughout the simulation
@@ -2363,8 +2378,8 @@ class DeconflictionPipeline(GridAPPSD):
     if self.pltFlag:
       self.pltFile.close()
 
-    for id in set_id:
-      gapps.unsubscribe(set_id[id])
+    for id in subscribed_list:
+      gapps.unsubscribe(id)
     gapps.unsubscribe(out_id)
     gapps.unsubscribe(log_id)
 
