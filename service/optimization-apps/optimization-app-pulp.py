@@ -514,7 +514,7 @@ class CompetingApp(GridAPPSD):
       # to be dependent on magic
       self.staticProb += lpSum(-100 * self.soc[i] for i in range(len_Batteries))
 
-    elif self.opt_type == 'profit_cvr':
+    elif self.opt_type == 'cvr':
       self.staticProb = LpProblem("Min_Load_Demand", LpMinimize)
       self.staticProb += lpSum((self.v_A[i] + self.v_B[i] + self.v_C[i]) for i in range(len(self.BusInfo)))
 
@@ -933,8 +933,8 @@ class CompetingApp(GridAPPSD):
       self.opt_type = 'resilience'
     elif opt_type.startswith('d') or opt_type.startswith('D'):
       self.opt_type = 'decarbonization'
-    elif opt_type.startswith('p') or opt_type.startswith('P'):
-      self.opt_type = 'profit_cvr'
+    elif opt_type.startswith('c') or opt_type.startswith('C'):
+      self.opt_type = 'cvr'
       self.gapRel = 0.05
     else:
       print('*** Exiting due to unrecognized optimization type: ' + opt_type,

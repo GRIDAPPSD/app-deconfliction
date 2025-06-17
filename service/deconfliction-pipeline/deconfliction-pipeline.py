@@ -2130,7 +2130,7 @@ class DeconflictionPipeline(GridAPPSD):
     # separate topics for each to distinguish them via message header
     competing_apps = ['resilience-app',
                       'decarbonization-app',
-                      'profit_cvr-app']
+                      'cvr-app']
     subscribed_list = []
     for app in competing_apps:
       # subscribe to competing app set-points messages

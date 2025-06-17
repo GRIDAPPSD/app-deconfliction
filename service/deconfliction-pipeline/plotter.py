@@ -280,7 +280,7 @@ def _main():
   cm_rules_plot.clear()
   cm_coop_plot.clear()
 
-  #app_list = ['resilience-app', 'decarbonization-app', 'profit_cvr-app']
+  #app_list = ['resilience-app', 'decarbonization-app', 'cvr-app']
   app_list = ['resilience-app', 'decarbonization-app']
   #app_list = ['resilience-app']
   #app_list = ['decarbonization-app']

@@ -93,8 +93,8 @@ if [[ $APPS == *"d"* || $APPS == *"D"* ]]; then
   ./run-decarbonization.sh $SIMID "$SIMREQ" $OPTLIB $INTERVAL >/dev/null &
 fi
 
-if [[ $APPS == *"p"* || $APPS == *"P"* ]]; then
-  ./run-profit.sh $SIMID "$SIMREQ" $OPTLIB $INTERVAL >/dev/null &
+if [[ $APPS == *"c"* || $APPS == *"C"* ]]; then
+  ./run-cvr.sh $SIMID "$SIMREQ" $OPTLIB $INTERVAL >/dev/null &
 fi
 
 cd ../deconfliction-pipeline

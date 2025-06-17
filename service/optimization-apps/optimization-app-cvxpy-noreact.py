@@ -113,7 +113,7 @@ class CompetingApp(GridAPPSD):
     self.objectiveDecarbonizationFlag = False
     if self.opt_type == 'resilience':
       self.objectiveResilienceFlag = True
-    elif self.opt_type == 'profit_cvr':
+    elif self.opt_type == 'cvr':
       self.objectiveCVRFlag = True
     elif self.opt_type == 'decarbonization':
       self.objectiveDecarbonizationFlag = True
@@ -1076,8 +1076,8 @@ class CompetingApp(GridAPPSD):
       self.opt_type = 'resilience'
     elif opt_type.startswith('d') or opt_type.startswith('D'):
       self.opt_type = 'decarbonization'
-    elif opt_type.startswith('p') or opt_type.startswith('P'):
-      self.opt_type = 'profit_cvr'
+    elif opt_type.startswith('c') or opt_type.startswith('C'):
+      self.opt_type = 'cvr'
     else:
       print('*** Exiting due to unrecognized optimization type: ' + opt_type,
             flush=True)
