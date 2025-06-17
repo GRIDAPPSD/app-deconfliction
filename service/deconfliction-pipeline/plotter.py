@@ -280,10 +280,10 @@ def _main():
   cm_rules_plot.clear()
   cm_coop_plot.clear()
 
-  #app_list = ['gridappsd-resilience-app', 'gridappsd-decarbonization-app', 'gridappsd-profit_cvr-app']
-  app_list = ['gridappsd-resilience-app', 'gridappsd-decarbonization-app']
-  #app_list = ['gridappsd-resilience-app']
-  #app_list = ['gridappsd-decarbonization-app']
+  #app_list = ['resilience-app', 'decarbonization-app', 'profit_cvr-app']
+  app_list = ['resilience-app', 'decarbonization-app']
+  #app_list = ['resilience-app']
+  #app_list = ['decarbonization-app']
   #prefix_list = ['resil', 'decarb', 'cvr']
   prefix_list = ['resil', 'decarb']
   #prefix_list = ['resil']
