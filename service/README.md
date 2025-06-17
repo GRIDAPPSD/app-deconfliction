@@ -12,7 +12,7 @@ The service directory of the app-deconfliction repository contains the entirety 
 <li>Optimization
 </ol>
 
-While the FY23 prototype used hardwired file-based simulation data to drive the sample competing apps, the FY24 service uses GridLAB-D simulations and meets the requirements for a full service within the GridAPPS-D platform. Apps using both the PuLP and CVXPY optimization libraries with objectives for resilience, decarbonization, and profit via conservation voltage reduction (CVR) are supported for the FY24 service.
+While the FY23 prototype used hardwired file-based simulation data to drive the sample competing apps, the FY24 service uses GridLAB-D simulations and meets the requirements for a full service within the GridAPPS-D platform. Apps using both the PuLP and CVXPY optimization libraries with objectives for resilience, decarbonization, and conservation voltage reduction (CVR) are supported for the FY24 service.
 
 ## Overview
 
@@ -38,7 +38,7 @@ For details on the combined/staged deconfliction methodology implemented in the 
     ├── optimization-app-cvxpy.py
     ├── run-resilience.sh
     ├── run-decarbonization.sh
-    └── run-profit.sh
+    └── run-cvr.sh
 ├── deconfliction-pipeline
     ├── deconfliction-pipeline.py
     └── run-pipeline.sh
@@ -96,7 +96,7 @@ Note the final argument of "standalone" must be present to perform a standalone 
 $ ./run-resilience.sh 123apps standalone pulp
 ````
 
-There is little to be gained from trying the decarbonization or profit objectives in addition to resilience, but they also support the standalone argument. Modules likely to be missing for the competing apps include numpy, tabulate, pulp, and cvxpy. The following may prove helpful based on failed imports:
+There is little to be gained from trying the decarbonization or cvr objectives in addition to resilience, but they also support the standalone argument. Modules likely to be missing for the competing apps include numpy, tabulate, pulp, and cvxpy. The following may prove helpful based on failed imports:
 
 ```` bash
 $ sudo pip install numpy
@@ -133,7 +133,7 @@ $ ./run-deconfliction.sh <MODEL> <APPS> [--optlib <OPTLIB>] [--interval <INTERVA
 
 where \<MODEL\> is a shorthand used for looking up the full GridAPPS-D simulation request and feeder mrid. Currently, the only \<MODEL\> value supported for the deconfliction service is "123apps", which uses the updated IEEE 123-bus model that includes batteries, assuming that has been loaded into the GridAPPS-D platform per the guidance above.
 
-\<APPS\> is a shorthand code composed of the first letters for each of the competing apps to run. The possible apps are resilience, code "r" or "R"; decarbonization, code "d" or "D", and profit_cvr, code "p" or "P". Thus, "rdp" would run all three apps and "rd" would run resilience and decarbonization without profit_cvr.
+\<APPS\> is a shorthand code composed of the first letters for each of the competing apps to run. The possible apps are resilience, code "r" or "R"; decarbonization, code "d" or "D", and cvr, code "c" or "C". Thus, "rdc" would run all three apps and "rd" would run resilience and decarbonization without cvr.
 
 \<OPTLIB\> is the optional name of the optimization library to use for competing apps. If the value is "pulp" then the PuLP library will be used. Otherwise, the CVXPY library will be used.
 
@@ -145,11 +145,11 @@ With all of that as background, as example invocations of run-deconfliction.sh, 
 
 ```` bash
 $ ./run-deconfliction.sh 123apps rd
-$ ./run-deconfliction.sh 123apps rdp
-$ ./run-deconfliction.sh 123apps rdp pulp
+$ ./run-deconfliction.sh 123apps rdc
+$ ./run-deconfliction.sh 123apps rdc pulp
 ````
 
-In the first invocation, the resilience and decarbonization competing apps are run with a GridLAB-D simulation for the batteries-included IEEE 123 node model. In the second invocation, the profit CVR app is add in as well. In the third invocation, the PuLP optimization library is used for the competing apps instead of the default CVXPY library.
+In the first invocation, the resilience and decarbonization competing apps are run with a GridLAB-D simulation for the batteries-included IEEE 123 node model. In the second invocation, the cvr app is add in as well. In the third invocation, the PuLP optimization library is used for the competing apps instead of the default CVXPY library.
 
 The run-deconfliction.sh wrapper script normally only shows diagnostic log output for the deconfliction pipeline process in the terminal where the wrapper script is invoked. However, each of the processes produces a log file that can either be viewed during the run (typically via "tail -f") or afterwards. These files are written to a log subdirectory--optimization-apps/log for the competing apps and deconfliction-pipeline/log for the pipeline process. If you are interested in the briefest of workflow progress output such as for a simple demonstration a "grep" for the ">>>" pattern will do the job. For example, to tail this workflow overview during a running simulation, change directory to deconfliction-pipeline/log and issue the command: tail -f deconfliction-pipeline.log | grep ">>>"
 
