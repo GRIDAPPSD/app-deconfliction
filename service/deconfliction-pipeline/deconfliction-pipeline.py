@@ -1520,33 +1520,13 @@ class DeconflictionPipeline(GridAPPSD):
               ', PQ_pv_inv: ' + str(self.SolarPVs[device]['PQ_pv_inv']))
 
 
-  def getAppNameMeas(self, header):
-    app_info = header['destination']
-
-    if app_info.startswith('/topic/goss.gridappsd.simulation.deconfliction.measurements.'):
-      endind = app_info[60:].find('.')
-      app_info = app_info[60:60+endind]
-
-    return app_info
-
-
   def OnMeasSetpointsMessage(self, header, message):
     if self.printAllMessagesFlag:
       print('OnMeasSetpointsMessage--received message: ' + str(message))
       print('OnMeasSetpointsMessage--received header: ' + str(header))
 
-    app_name = self.getAppNameMeas(header)
-    self.messageQueue.put((app_name, True, None, message['input']['message']))
-
-
-  def getAppNameCoop(self, header):
-    app_info = header['destination']
-
-    if app_info.startswith('/topic/goss.gridappsd.simulation.deconfliction.cooperation.'):
-      endind = app_info[59:].find('.')
-      app_info = app_info[59:59+endind]
-
-    return app_info
+    self.messageQueue.put((message['app_name'], True, None,
+                           message['input']['message']))
 
 
   def OnCoopSetpointsMessage(self, header, message):
@@ -1554,8 +1534,7 @@ class DeconflictionPipeline(GridAPPSD):
       print('OnCoopSetpointsMessage--received message: ' + str(message))
       print('OnCoopSetpointsMessage--received header: ' + str(header))
 
-    app_name = self.getAppNameCoop(header)
-    self.messageQueue.put((app_name, False, message['cooperationPhase'],
+    self.messageQueue.put((message['app_name'], False, message['coop_phase'],
                            message['input']['message']))
 
 
@@ -1887,7 +1866,7 @@ class DeconflictionPipeline(GridAPPSD):
           tupleTargetResolutionVector[device] = (value[0],
                                                  (value[1].real, value[1].imag))
 
-      coopMessage = {'cooperationPhase': self.coopCurrentPhase,
+      coopMessage = {'coop_phase': self.coopCurrentPhase,
                      'targetResolutionVector': tupleTargetResolutionVector}
       self.gapps.send(self.coop_topic, json.dumps(coopMessage))
       print('>>> DeconflictSetpoints--kicked off new cooperation phase, ' +
@@ -1983,7 +1962,7 @@ class DeconflictionPipeline(GridAPPSD):
 
       # publish this target resolution vector to the cooperation topic for
       # competing apps that support cooperation to respond to
-      coopMessage = {'cooperationPhase': self.coopCurrentPhase,
+      coopMessage = {'coop_phase': self.coopCurrentPhase,
                      'targetResolutionVector': newTargetResolutionVector}
       self.gapps.send(self.coop_topic, json.dumps(coopMessage))
       print('DeconflictSetpoints--finished processing, timestamp: ' +
@@ -2126,22 +2105,12 @@ class DeconflictionPipeline(GridAPPSD):
     log_id = gapps.subscribe(simulation_log_topic(simulation_id),
                              self.OnSimMessage)
 
-    # must enumerate all possible apps even if not all are running since I need
-    # separate topics for each to distinguish them via message header
-    competing_apps = ['resilience-app',
-                      'decarbonization-app',
-                      'cvr-app']
-    subscribed_list = []
-    for app in competing_apps:
-      # subscribe to competing app set-points messages
-      meas_id = gapps.subscribe(service_input_topic(
-                      'deconfliction.measurements.'+app, simulation_id),
-                      self.OnMeasSetpointsMessage)
-      subscribed_list.append(meas_id)
-      coop_id = gapps.subscribe(service_input_topic(
-                      'deconfliction.cooperation.'+app, simulation_id),
-                      self.OnCoopSetpointsMessage)
-      subscribed_list.append(coop_id)
+    # subscribe to measurements based setpoints messages and cooperation
+    # response messages
+    meas_id = gapps.subscribe(service_input_topic('deconfliction.measurements',
+                              simulation_id), self.OnMeasSetpointsMessage)
+    coop_id = gapps.subscribe(service_input_topic('deconfliction.cooperation',
+                              simulation_id), self.OnCoopSetpointsMessage)
 
     # simulation topic for sending DifferenceBuilder messages
     self.publish_topic = simulation_input_topic(simulation_id)
@@ -2378,10 +2347,10 @@ class DeconflictionPipeline(GridAPPSD):
     if self.pltFlag:
       self.pltFile.close()
 
-    for id in subscribed_list:
-      gapps.unsubscribe(id)
     gapps.unsubscribe(out_id)
     gapps.unsubscribe(log_id)
+    gapps.unsubscribe(meas_id)
+    gapps.unsubscribe(coop_id)
 
     # for SHIVA conflict metric
     #json_file = open('log/ConflictMatrix_' + basename + '.json', 'w')
