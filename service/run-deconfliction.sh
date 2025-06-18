@@ -6,7 +6,7 @@
 #
 # where <MODEL> = 123apps (only one supported currently)
 #       <APPS> = code with first letter of each competing app to run, apps are
-#                (r)esilience, (d)ecarbonization, (p)rofit_cvr
+#                (r)esilience, (m)ax_local, (c)vr
 #       <OPTLIB> = optional optimization library used for competing apps
 #       <INTERVAL> = optional interval in seconds at which competing apps
 #                    perform optimizations and send setpoints requests to
@@ -21,7 +21,7 @@
 #                   override application weighting factors when specified.
 #
 # e.g.,
-# ./run-deconfliction.sh 123apps rd
+# ./run-deconfliction.sh 123apps rm
 
 if [ "$#" -lt 2 ]; then
   echo "Usage: ./run-deconfliction.sh <model> <apps_code> [--optlib <opt_library>] [--interval <interval_sec>] [--weights <weights_basename>]"
