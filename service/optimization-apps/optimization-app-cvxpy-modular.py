@@ -69,7 +69,7 @@ from gridappsd.topics import service_input_topic, service_output_topic
 from datetime import datetime
 from tabulate import tabulate
 
-# suppress warnings about overriding optimization function from decarbonization
+# suppress warnings about overriding objective function from max_local
 import warnings
 warnings.simplefilter('ignore', UserWarning)
 
@@ -111,22 +111,22 @@ class CompetingApp(GridAPPSD):
     # will build up.
     self.objectiveResilienceFlag = False
     self.objectiveCVRFlag = False
-    self.objectiveDecarbonizationFlag = False
+    self.objectiveMaxLocalFlag = False
     if self.opt_type == 'resilience':
       self.objectiveResilienceFlag = True
     elif self.opt_type == 'cvr':
       self.objectiveCVRFlag = True
-    elif self.opt_type == 'decarbonization':
-      self.objectiveDecarbonizationFlag = True
+    elif self.opt_type == 'max_local':
+      self.objectiveMaxLocalFlag = True
 
     # make sure only a single objective is specified
     if self.objectiveResilienceFlag:
       self.objectiveCVRFlag = False
-      self.objectiveDecarbonizationFlag = False
+      self.objectiveMaxLocalFlag = False
     elif self.objectiveCVRFlag:
       self.objectiveResilienceFlag = False
-      self.objectiveDecarbonizationFlag = False
-    elif self.objectiveDecarbonizationFlag:
+      self.objectiveMaxLocalFlag = False
+    elif self.objectiveMaxLocalFlag:
       self.objectiveResilienceFlag = False
       self.objectiveCVRFlag = False
 
@@ -137,7 +137,7 @@ class CompetingApp(GridAPPSD):
     if self.objectiveCVRFlag:
       self.includeVoltagesFlag = True
 
-    if self.objectiveDecarbonizationFlag:
+    if self.objectiveMaxLocalFlag:
       self.includeBatteriesFlag = True
       self.includeVoltagesFlag = True
 
@@ -154,7 +154,7 @@ class CompetingApp(GridAPPSD):
     self.optDefineVariables(self.includePFlowFlag, self.includeQFlowFlag,
                             self.includeVoltagesFlag, self.includeBatteriesFlag,
                             self.includeRegulatorsFlag,self.includeSolarPVsFlag,
-                            self.objectiveDecarbonizationFlag)
+                            self.objectiveMaxLocalFlag)
 
 
   def optPerform(self):
@@ -213,10 +213,10 @@ class CompetingApp(GridAPPSD):
       objective = self.optObjectiveForCVR(self.BusInfo,
                                           self.v_A, self.v_B, self.v_C)
 
-    if self.objectiveDecarbonizationFlag:
-      # note decarbonization is a two stage optimization and the first stage
-      # is run within the objectiveForDecarbonization function
-      objective = self.optObjectiveForDecarbonization(self.BusInfo,
+    if self.objectiveMaxLocalFlag:
+      # note max_local is a two stage optimization and the first stage
+      # is run within the objectiveForMaxLocal function
+      objective = self.optObjectiveForMaxLocal(self.BusInfo,
                                     self.BatteriesInfo, self.EnergySource,
                                     self.Psub, self.Psub_mod,
                                     self.p_flow_A, self.p_flow_B, self.p_flow_C,
@@ -231,7 +231,7 @@ class CompetingApp(GridAPPSD):
   def optDefineVariables(self, includePFlowFlag, includeQFlowFlag,
                          includeVoltagesFlag, includeBatteriesFlag,
                          includeRegulatorsFlag, includeSolarPVsFlag,
-                         objectiveDecarbonizationFlag):
+                         objectiveMaxLocalFlag):
     if includePFlowFlag:
       len_BranchInfo = len(self.BranchInfo)
       self.p_flow_A = cp.Variable(len_BranchInfo, integer=False,name='p_flow_A')
@@ -297,7 +297,7 @@ class CompetingApp(GridAPPSD):
       self.pq_pv_proposed = [None] * len_SolarPVsInfo
       self.pq_pv_greedy = [None] * len_SolarPVsInfo
 
-    if objectiveDecarbonizationFlag:
+    if objectiveMaxLocalFlag:
       self.Psub = cp.Variable(integer=False, name='P_sub')
       self.Psub_mod = cp.Variable(integer=False, name='P_sub_mod')
 
@@ -688,11 +688,10 @@ class CompetingApp(GridAPPSD):
     return objective
 
 
-  def optObjectiveForDecarbonization(self, BusInfo, BatteriesInfo,
-                                     EnergySource, Psub, Psub_mod,
-                                     p_flow_A, p_flow_B, p_flow_C,
-                                     p_batt, v_A, v_B, v_C):
-    # constraints specific to decarbonization
+  def optObjectiveForMaxLocal(self, BusInfo, BatteriesInfo, EnergySource,
+                              Psub, Psub_mod, p_flow_A, p_flow_B, p_flow_C,
+                              p_batt, v_A, v_B, v_C):
+    # constraints specific to max_local
     self.Constraints.append(Psub_mod >= Psub)
     self.Constraints.append(Psub_mod >= -Psub)
 
@@ -717,7 +716,7 @@ class CompetingApp(GridAPPSD):
 
     self.optDo(objective)
 
-    # second stage for decarbonization
+    # second stage for max_local
     bus_idx_batt = {'A': [], 'B': [], 'C': []}
     for mrid in BatteriesInfo:
       idx = BatteriesInfo[mrid]['idx']
@@ -821,7 +820,7 @@ class CompetingApp(GridAPPSD):
 
     '''
     if self.includePFlowFlag:
-      if self.objectiveDecarbonizationFlag:
+      if self.objectiveMaxLocalFlag:
         print('')
         print('Psub: ' + str(self.Psub.value), flush=True)
         print('Psub_mod: ' + str(self.Psub_mod.value), flush=True)
@@ -1183,8 +1182,8 @@ class CompetingApp(GridAPPSD):
 
     if opt_type.startswith('r') or opt_type.startswith('R'):
       self.opt_type = 'resilience'
-    elif opt_type.startswith('d') or opt_type.startswith('D'):
-      self.opt_type = 'decarbonization'
+    elif opt_type.startswith('m') or opt_type.startswith('M'):
+      self.opt_type = 'max_local'
     elif opt_type.startswith('c') or opt_type.startswith('C'):
       self.opt_type = 'cvr'
     else:

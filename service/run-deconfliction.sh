@@ -89,8 +89,8 @@ if [[ $APPS == *"r"* || $APPS == *"R"* ]]; then
   ./run-resilience.sh $SIMID "$SIMREQ" $OPTLIB $INTERVAL >/dev/null &
 fi
 
-if [[ $APPS == *"d"* || $APPS == *"D"* ]]; then
-  ./run-decarbonization.sh $SIMID "$SIMREQ" $OPTLIB $INTERVAL >/dev/null &
+if [[ $APPS == *"m"* || $APPS == *"M"* ]]; then
+  ./run-max_local.sh $SIMID "$SIMREQ" $OPTLIB $INTERVAL >/dev/null &
 fi
 
 if [[ $APPS == *"c"* || $APPS == *"C"* ]]; then

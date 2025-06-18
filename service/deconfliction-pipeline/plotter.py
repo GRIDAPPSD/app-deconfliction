@@ -280,14 +280,14 @@ def _main():
   cm_rules_plot.clear()
   cm_coop_plot.clear()
 
-  #app_list = ['resilience-app', 'decarbonization-app', 'cvr-app']
-  app_list = ['resilience-app', 'decarbonization-app']
+  #app_list = ['resilience-app', 'max_local-app', 'cvr-app']
+  app_list = ['resilience-app', 'max_local-app']
   #app_list = ['resilience-app']
-  #app_list = ['decarbonization-app']
-  #prefix_list = ['resil', 'decarb', 'cvr']
-  prefix_list = ['resil', 'decarb']
+  #app_list = ['max_local-app']
+  #prefix_list = ['resil', 'max_local', 'cvr']
+  prefix_list = ['resil', 'max_local']
   #prefix_list = ['resil']
-  #prefix_list = ['decarb']
+  #prefix_list = ['max_local']
 
   for iapp in range(len(app_list)):
     hits = 0

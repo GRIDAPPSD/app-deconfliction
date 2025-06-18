@@ -1,7 +1,7 @@
 #!/bin/bash
 
 if [ "$#" -lt 2 ]; then
-  echo "Usage: ./run-decarbonization.sh <sim_id> <sim_request> [opt_library]"
+  echo "Usage: ./run-max_local.sh <sim_id> <sim_request> [opt_library]"
   echo
   exit
 fi
@@ -26,10 +26,10 @@ fi
 
 mkdir -p log
 if [ "$OPTLIB" = "pulp" ] || [ "$OPTLIB" = "PuLP" ] || [ "$OPTLIB" = "PULP" ]; then
-  python3 optimization-app-pulp.py decarbonization $SIMID "$SIMREQ" $INTERVAL 2>&1 | tee log/decarbonization-app.log
+  python3 optimization-app-pulp.py max_local $SIMID "$SIMREQ" $INTERVAL 2>&1 | tee log/max_local-app.log
 else
-  python3 optimization-app-cvxpy-modular.py decarbonization $SIMID "$SIMREQ" $INTERVAL 2>&1 | tee log/decarbonization-app.log
-  #python3 optimization-app-cvxpy-noreact.py decarbonization $SIMID "$SIMREQ" $INTERVAL 2>&1 | tee log/decarbonization-app.log
-  #NO LONGER RUNNABLE WITHOUT UPDATES python3 optimization-app-cvxpy.py decarbonization $SIMID "$SIMREQ" $INTERVAL 2>&1 | tee log/decarbonization-app.log
+  python3 optimization-app-cvxpy-modular.py max_local $SIMID "$SIMREQ" $INTERVAL 2>&1 | tee log/max_local-app.log
+  #python3 optimization-app-cvxpy-noreact.py max_local $SIMID "$SIMREQ" $INTERVAL 2>&1 | tee log/max_local-app.log
+  #NO LONGER RUNNABLE WITHOUT UPDATES python3 optimization-app-cvxpy.py max_local $SIMID "$SIMREQ" $INTERVAL 2>&1 | tee log/max_local-app.log
 fi
 

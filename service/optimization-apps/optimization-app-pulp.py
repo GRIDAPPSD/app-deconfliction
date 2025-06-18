@@ -66,7 +66,7 @@ from gridappsd.topics import service_input_topic, service_output_topic
 from datetime import datetime
 from tabulate import tabulate
 
-# suppress warnings about overriding optimization function from decarbonization
+# suppress warnings about overriding objective function from max_local
 import warnings
 warnings.simplefilter('ignore', UserWarning)
 
@@ -276,8 +276,8 @@ class CompetingApp(GridAPPSD):
 
     objective = pulp.value(self.dynamicProb.objective)
 
-    # Second stage for the decarbonization app
-    if self.opt_type == 'decarbonization':
+    # Second stage for the max_local app
+    if self.opt_type == 'max_local':
       bus_idx_batt = {'A': [], 'B': [], 'C': []}
       for mrid in self.BatteriesInfo:
         idx = self.BatteriesInfo[mrid]['idx']
@@ -498,7 +498,7 @@ class CompetingApp(GridAPPSD):
     # time-series multiplier values
 
     # objective
-    if self.opt_type == 'decarbonization':
+    if self.opt_type == 'max_local':
       self.staticProb = LpProblem("Min_Sub_Flow", LpMinimize)
       sub_flow_idx = self.EnergySource['flow_idx']
       self.staticProb += self.Psub_mod
@@ -932,8 +932,8 @@ class CompetingApp(GridAPPSD):
     self.gapRel = 0.01
     if opt_type.startswith('r') or opt_type.startswith('R'):
       self.opt_type = 'resilience'
-    elif opt_type.startswith('d') or opt_type.startswith('D'):
-      self.opt_type = 'decarbonization'
+    elif opt_type.startswith('m') or opt_type.startswith('M'):
+      self.opt_type = 'max_local'
     elif opt_type.startswith('c') or opt_type.startswith('C'):
       self.opt_type = 'cvr'
       self.gapRel = 0.05
