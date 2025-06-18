@@ -833,6 +833,7 @@ class CompetingApp(GridAPPSD):
 
     if includeRegulatorsFlag or includeBatteriesFlag:
       dispatch_message = self.difference_builder.get_message()
+      dispatch_message['app_name'] = self.app_name
       print('Sending Measurements DifferenceBuilder message!', flush=True)
       #print('Sending Measurements DifferenceBuilder message: ' +
       #      json.dumps(dispatch_message), flush=True)
@@ -1209,11 +1210,11 @@ class CompetingApp(GridAPPSD):
     self.optPrelim()
 
     # topics for sending out set_points messages
-    app_name = self.opt_type + '-app'
-    self.meas_publish_topic = service_input_topic(
-                          'deconfliction.measurements.'+app_name, simulation_id)
-    self.coop_publish_topic = service_input_topic(
-                          'deconfliction.cooperation.'+app_name, simulation_id)
+    self.app_name = self.opt_type + '-app'
+    self.meas_publish_topic = service_input_topic('deconfliction.measurements',
+                                                  simulation_id)
+    self.coop_publish_topic = service_input_topic('deconfliction.cooperation',
+                                                  simulation_id)
 
     # for bypassing deconfliction pipeline and sending directly to simulation
     self.sendToSimFlag = False
@@ -1309,7 +1310,7 @@ class CompetingApp(GridAPPSD):
 
         # coopCounter allows diminishing cooperation with each succeeding
         # solicitation within a phase
-        coopPhase = message['cooperationPhase']
+        coopPhase = message['coop_phase']
         if coopPhase == currentCoopPhase:
           # comment out incrementing coopCounter to not diminish cooperation
           coopCounter += 1
@@ -1558,7 +1559,8 @@ class CompetingApp(GridAPPSD):
 
         # finally, send out the cooperation setpoints via DifferenceBuilder msg
         dispatch_message = self.difference_builder.get_message()
-        dispatch_message['cooperationPhase'] = coopPhase
+        dispatch_message['app_name'] = self.app_name
+        dispatch_message['coop_phase'] = coopPhase
         print('Sending Cooperation DifferenceBuilder message!', flush=True)
         #print('Sending Cooperation DifferenceBuilder message: ' +
         #      json.dumps(dispatch_message), flush=True)
