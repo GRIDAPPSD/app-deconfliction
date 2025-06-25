@@ -92,7 +92,30 @@ import MethodUtil
 
 class CompetingApp(GridAPPSD):
 
-  def optPrelim(self):
+  def optPrelimScalability(self, line):
+    print('Scalability app_setup line: ' + line, flush=True)
+    tokens = line.split(',')
+
+    self.app_name = tokens[0] + '-app'
+
+    # hardwire objective to resilience for now
+    # XXX
+    objective = tokens[1]
+    self.opt_type = 'resilience'
+    self.objectiveResilienceFlag = True
+    self.objectiveCVRFlag = False
+    self.objectiveMaxLocalFlag = False
+
+    self.includeEnergyConsumersFlag = bool(int(tokens[2]))
+    self.includeSolarPVsFlag = bool(int(tokens[3]))
+    self.includeBatteriesFlag = bool(int(tokens[4]))
+    self.includeRegulatorsFlag = bool(int(tokens[5]))
+    self.includePFlowFlag = bool(int(tokens[6]))
+    self.includeQFlowFlag = bool(int(tokens[7]))
+    self.includeVoltagesFlag = bool(int(tokens[8]))
+
+
+  def optPrelimClassic(self):
     self.includeBatteriesFlag = True
     self.includeRegulatorsFlag = True
 
@@ -118,6 +141,8 @@ class CompetingApp(GridAPPSD):
       self.objectiveCVRFlag = True
     elif self.opt_type == 'max_local':
       self.objectiveMaxLocalFlag = True
+
+    self.app_name = self.opt_type + '-app'
 
     # make sure only a single objective is specified
     if self.objectiveResilienceFlag:
@@ -150,11 +175,6 @@ class CompetingApp(GridAPPSD):
     if self.includeVoltagesFlag:
       self.includePFlowFlag = True
       self.includeQFlowFlag = True
-
-    self.optDefineVariables(self.includePFlowFlag, self.includeQFlowFlag,
-                            self.includeVoltagesFlag, self.includeBatteriesFlag,
-                            self.includeRegulatorsFlag,self.includeSolarPVsFlag,
-                            self.objectiveMaxLocalFlag)
 
 
   def optPerform(self):
@@ -1186,6 +1206,8 @@ class CompetingApp(GridAPPSD):
       self.opt_type = 'max_local'
     elif opt_type.startswith('c') or opt_type.startswith('C'):
       self.opt_type = 'cvr'
+    elif opt_type.startswith('s') or opt_type.startswith('S'):
+      self.opt_type = 'scalability'
     else:
       print('*** Exiting due to unrecognized optimization type: ' + opt_type,
             flush=True)
@@ -1199,17 +1221,25 @@ class CompetingApp(GridAPPSD):
     optIntervalSec = 15
     # if attempting non-real-time, something like 600 is reasonable
     #optIntervalSec = 600
-    if interval != None:
+    if self.opt_type!='scalability' and interval!=None:
       optIntervalSec = int(interval)
 
     self.deltaT = optIntervalSec/3600.0
 
     self.b_i = np.arange(0.9, 1.1, 0.00625)
 
-    self.optPrelim()
+    if self.opt_type == 'scalability':
+      # the interval value is actually the app_setup.csv line
+      self.optPrelimScalability(interval)
+    else:
+      self.optPrelimClassic()
+
+    self.optDefineVariables(self.includePFlowFlag, self.includeQFlowFlag,
+                            self.includeVoltagesFlag, self.includeBatteriesFlag,
+                            self.includeRegulatorsFlag,self.includeSolarPVsFlag,
+                            self.objectiveMaxLocalFlag)
 
     # topics for sending out set_points messages
-    self.app_name = self.opt_type + '-app'
     self.meas_publish_topic = service_input_topic('deconfliction.measurements',
                                                   simulation_id)
     self.coop_publish_topic = service_input_topic('deconfliction.cooperation',
@@ -1604,15 +1634,8 @@ def _main():
   gapps = GridAPPSD(opts.simulation_id)
   assert gapps.connected
 
-  if opts.type == 'scalability':
-    line = opts.interval
-    print('GARY Scalability app_setup line: ' + str(line), flush=True)
-    competing_app = CompetingApp(gapps, 'resilience', feeder_mrid,
-                                 opts.simulation_id, None)
-
-  else:
-    competing_app = CompetingApp(gapps, opts.type, feeder_mrid,
-                                 opts.simulation_id, opts.interval)
+  competing_app = CompetingApp(gapps, opts.type, feeder_mrid,
+                               opts.simulation_id, opts.interval)
 
   print('Goodbye!', flush=True)
 
