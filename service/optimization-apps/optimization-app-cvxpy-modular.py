@@ -93,30 +93,33 @@ import MethodUtil
 class CompetingApp(GridAPPSD):
 
   def optPrelimScalability(self, line):
-    print('\nScalability app_setup line: ' + line, flush=True)
     tokens = line.split(',')
 
     self.app_name = tokens[0].strip() + '-app'
+    print('\nScalability app_name: ' + self.app_name, flush=True)
 
+    objWeights = tokens[1].strip()
+    # objWeights is of form: [<obj1> <obj2> <obj3> ...]
+    if objWeights.startswith('['):
+      objWeights = objWeights[1:]
+    if objWeights.endswith(']'):
+      objWeights = objWeights[:-1]
+    weights = objWeights.split()
+
+    # this is the original implementation to use the existing resilience,
+    # CVR, and max_local objectives for scalability testing
+    '''
     self.objectiveResilienceFlag = False
     self.objectiveCVRFlag = False
     self.objectiveMaxLocalFlag = False
 
-    objective = tokens[1].strip()
-    # objective is of form: [<resilience> <cvr> <max_local>]
-    if objective.startswith('['):
-      objective = objective[1:]
-    if objective.endswith(']'):
-      objective = objective[:-1]
-
-    items = objective.split()
-    if float(items[0]) > 0.0:
+    if float(weights[0]) > 0.0:
       self.objectiveResilienceFlag = True
       self.opt_type = 'resilience'
-    elif float(items[1]) > 0.0:
+    elif float(weights[1]) > 0.0:
       self.objectiveCVRFlag = True
       self.opt_type = 'cvr'
-    elif float(items[2]) > 0.0:
+    elif float(weights[2]) > 0.0:
       self.objectiveMaxLocalFlag = True
       self.opt_type = 'max_local'
 
@@ -127,6 +130,18 @@ class CompetingApp(GridAPPSD):
       self.opt_type = 'resilience'
 
     print('Scalability objective: ' + self.opt_type, flush=True)
+    '''
+
+    # this is the new way
+    self.objectiveWeights = []
+    for wt in weights:
+      if float(wt) > 0.0:
+        self.objectiveWeights.append(float(wt))
+      else:
+        self.objectiveWeights.append(None)
+
+    print('Scalability objective weights: ' + str(self.objectiveWeights),
+          flush=True)
 
     self.includeEnergyConsumersFlag = bool(int(tokens[2]))
     self.includeSolarPVsFlag = bool(int(tokens[3]))
@@ -135,6 +150,21 @@ class CompetingApp(GridAPPSD):
     self.includePFlowFlag = bool(int(tokens[6]))
     self.includeQFlowFlag = bool(int(tokens[7]))
     self.includeVoltagesFlag = bool(int(tokens[8]))
+
+    print('Scalability include EnergyConsumers: ' +
+          str(self.includeEnergyConsumersFlag), flush=True)
+    print('Scalability include SolarPVs: ' +
+          str(self.includeSolarPVsFlag), flush=True)
+    print('Scalability include Batteries: ' +
+          str(self.includeBatteriesFlag), flush=True)
+    print('Scalability include Regulators: ' +
+          str(self.includeRegulatorsFlag), flush=True)
+    print('Scalability include PFlow: ' +
+          str(self.includePFlowFlag), flush=True)
+    print('Scalability include QFlow: ' +
+          str(self.includeQFlowFlag), flush=True)
+    print('Scalability include Voltages: ' +
+          str(self.includeVoltagesFlag), flush=True)
 
 
   def optPrelimClassic(self):
@@ -243,17 +273,45 @@ class CompetingApp(GridAPPSD):
            self.q_flow_A, self.q_flow_B, self.q_flow_C,
            self.v_A, self.v_B, self.v_C)
 
-    if self.objectiveResilienceFlag:
-      objective = self.optObjectiveForResilience(self.BatteriesInfo, self.soc)
+    if self.opt_type == 'scalability':
+      objective = 0
+      numWeights = len(self.objectiveWeights)
 
-    if self.objectiveCVRFlag:
-      objective = self.optObjectiveForCVR(self.BusInfo,
-                                          self.v_A, self.v_B, self.v_C)
+      if numWeights>0 and self.objectiveWeights[0]!=None:
+        objective += self.objectiveWeights[0] * self.optObjective1(self.BusInfo,
+                                                   self.v_A, self.v_B, self.v_C)
 
-    if self.objectiveMaxLocalFlag:
-      # note max_local is a two stage optimization and the first stage
-      # is run within the objectiveForMaxLocal function
-      objective = self.optObjectiveForMaxLocal(self.BusInfo,
+      if numWeights>1 and self.objectiveWeights[1]!=None:
+        objective += self.objectiveWeights[1] * self.optObjective2(
+                                    self.EnergySource, self.Psub, self.Psub_mod,
+                                    self.Qsub, self.Qsub_mod,
+                                    self.p_flow_A, self.p_flow_B, self.p_flow_C,
+                                    self.q_flow_A, self.q_flow_B, self.q_flow_C)
+
+      if numWeights>2 and self.objectiveWeights[2]!=None:
+        objective += self.objectiveWeights[2] * self.optObjective3(
+                                                   self.BatteriesInfo, self.soc)
+
+      if numWeights>3 and self.objectiveWeights[3]!=None:
+        objective += self.objectiveWeights[3] * self.optObjective4(
+                                                   self.BatteriesInfo, self.soc)
+
+      if numWeights>4 and self.objectiveWeights[4]!=None:
+        objective += self.objectiveWeights[4] * self.optObjective5(
+                                                   self.BatteriesInfo, self.soc)
+
+    else:
+      if self.objectiveResilienceFlag:
+        objective = self.optObjectiveForResilience(self.BatteriesInfo, self.soc)
+
+      if self.objectiveCVRFlag:
+        objective = self.optObjectiveForCVR(self.BusInfo,
+                                            self.v_A, self.v_B, self.v_C)
+
+      if self.objectiveMaxLocalFlag:
+        # note max_local is a two stage optimization and the first stage
+        # is run within the objectiveForMaxLocal function
+        objective = self.optObjectiveForMaxLocal(self.BusInfo,
                                     self.BatteriesInfo, self.EnergySource,
                                     self.Psub, self.Psub_mod,
                                     self.p_flow_A, self.p_flow_B, self.p_flow_C,
@@ -267,8 +325,7 @@ class CompetingApp(GridAPPSD):
 
   def optDefineVariables(self, includePFlowFlag, includeQFlowFlag,
                          includeVoltagesFlag, includeBatteriesFlag,
-                         includeRegulatorsFlag, includeSolarPVsFlag,
-                         objectiveMaxLocalFlag):
+                         includeRegulatorsFlag, includeSolarPVsFlag):
     if includePFlowFlag:
       len_BranchInfo = len(self.BranchInfo)
       self.p_flow_A = cp.Variable(len_BranchInfo, integer=False,name='p_flow_A')
@@ -334,9 +391,10 @@ class CompetingApp(GridAPPSD):
       self.pq_pv_proposed = [None] * len_SolarPVsInfo
       self.pq_pv_greedy = [None] * len_SolarPVsInfo
 
-    if objectiveMaxLocalFlag:
-      self.Psub = cp.Variable(integer=False, name='P_sub')
-      self.Psub_mod = cp.Variable(integer=False, name='P_sub_mod')
+    self.Psub = cp.Variable(integer=False, name='P_sub')
+    self.Psub_mod = cp.Variable(integer=False, name='P_sub_mod')
+    self.Qsub = cp.Variable(integer=False, name='Q_sub')
+    self.Qsub_mod = cp.Variable(integer=False, name='Q_sub_mod')
 
 
   def optConstraintsDERWithBatteries(self, BatteriesInfo, deltaT, soc, p_batt,
@@ -770,6 +828,52 @@ class CompetingApp(GridAPPSD):
                         sum(-v_A[i] for i in bus_idx_batt['A']) + \
                         sum(-v_B[i] for i in bus_idx_batt['B']) + \
                         sum(-v_C[i] for i in bus_idx_batt['C'])
+    return objective
+
+
+  def optObjective1(self, BusInfo, v_A, v_B, v_C):
+    objective = sum((v_A[i] + v_B[i] + v_C[i]) for i in range(len(BusInfo)))
+    return objective
+
+
+  def optObjective2(self, EnergySource, Psub, Psub_mod, Qsub, Qsub_mod,
+                    p_flow_A, p_flow_B, p_flow_C, q_flow_A, q_flow_B, q_flow_C):
+    self.Constraints.append(Psub_mod >= Psub)
+    self.Constraints.append(Psub_mod >= -Psub)
+
+    self.Constraints.append(Qsub_mod >= Qsub)
+    self.Constraints.append(Qsub_mod >= -Qsub)
+
+    flow_min, flow_max = -5e6, 5e6
+    self.Constraints.append(Psub >= flow_min)
+    self.Constraints.append(Psub <= flow_max)
+    self.Constraints.append(Psub_mod >= flow_min)
+    self.Constraints.append(Psub_mod <= flow_max)
+
+    sub_flow_idx = EnergySource['flow_idx']
+    self.Constraints.append(Psub == p_flow_A[sub_flow_idx] + \
+                                    p_flow_B[sub_flow_idx] + \
+                                    p_flow_C[sub_flow_idx])
+    self.Constraints.append(Qsub == q_flow_A[sub_flow_idx] + \
+                                    q_flow_B[sub_flow_idx] + \
+                                    q_flow_C[sub_flow_idx])
+
+    objective = (Qsub_mod - Psub_mod)
+    return objective
+
+
+  def optObjective3(self, BatteriesInfo, soc):
+    objective = sum(-100 * soc[i] for i in range(len(BatteriesInfo)))
+    return objective
+
+
+  def optObjective4(self, BatteriesInfo, soc):
+    objective = sum(-100 * soc[i] for i in range(len(BatteriesInfo)))
+    return objective
+
+
+  def optObjective5(self, BatteriesInfo, soc):
+    objective = sum(-100 * soc[i] for i in range(len(BatteriesInfo)))
     return objective
 
 
@@ -1253,8 +1357,7 @@ class CompetingApp(GridAPPSD):
 
     self.optDefineVariables(self.includePFlowFlag, self.includeQFlowFlag,
                             self.includeVoltagesFlag, self.includeBatteriesFlag,
-                            self.includeRegulatorsFlag,self.includeSolarPVsFlag,
-                            self.objectiveMaxLocalFlag)
+                            self.includeRegulatorsFlag,self.includeSolarPVsFlag)
 
     # topics for sending out set_points messages
     self.meas_publish_topic = service_input_topic('deconfliction.measurements',
