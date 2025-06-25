@@ -1604,8 +1604,15 @@ def _main():
   gapps = GridAPPSD(opts.simulation_id)
   assert gapps.connected
 
-  competing_app = CompetingApp(gapps, opts.type, feeder_mrid,
-                               opts.simulation_id, opts.interval)
+  if opts.type == 'scalability':
+    line = opts.interval
+    print('GARY Scalability app_setup line: ' + str(line), flush=True)
+    competing_app = CompetingApp(gapps, 'resilience', feeder_mrid,
+                                 opts.simulation_id, None)
+
+  else:
+    competing_app = CompetingApp(gapps, opts.type, feeder_mrid,
+                                 opts.simulation_id, opts.interval)
 
   print('Goodbye!', flush=True)
 
