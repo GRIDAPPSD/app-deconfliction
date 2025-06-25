@@ -8,12 +8,12 @@ fi
 
 SIMID=$1
 SIMREQ=$2
-LINENO=$3
+LINENUM=$3
 
 mkdir -p log
 
 # extract the specifed line out of app_setup.csv
-LINE=`awk NR==$LINENO app_setup.csv`
+LINE=`awk NR==$LINENUM app_setup.csv`
 # extract first column to get AppName for log filename
 APPNAME=`echo $LINE | cut -f1 -d,`
 
