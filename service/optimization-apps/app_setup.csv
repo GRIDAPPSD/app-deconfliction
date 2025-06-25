@@ -1,2 +1,2 @@
 AppName,Objective,includeEnergyConsumersFlag,includeSolarPVsFlag,includeBatteriesFlag,includeRegulatorsFlag,includePFlowFlag,includeQFlowFlag,includeVoltagesFlag
-ScaledResilience,r,1,1,1,1,1,1,1
+ScaledResilience,[1 0 0],1,1,1,1,1,1,1

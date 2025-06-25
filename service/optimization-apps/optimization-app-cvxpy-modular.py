@@ -93,18 +93,40 @@ import MethodUtil
 class CompetingApp(GridAPPSD):
 
   def optPrelimScalability(self, line):
-    print('Scalability app_setup line: ' + line, flush=True)
+    print('\nScalability app_setup line: ' + line, flush=True)
     tokens = line.split(',')
 
-    self.app_name = tokens[0] + '-app'
+    self.app_name = tokens[0].strip() + '-app'
 
-    # hardwire objective to resilience for now
-    # XXX
-    objective = tokens[1]
-    self.opt_type = 'resilience'
-    self.objectiveResilienceFlag = True
+    self.objectiveResilienceFlag = False
     self.objectiveCVRFlag = False
     self.objectiveMaxLocalFlag = False
+
+    objective = tokens[1].strip()
+    # objective is of form: [<resilience> <cvr> <max_local>]
+    if objective.startswith('['):
+      objective = objective[1:]
+    if objective.endswith(']'):
+      objective = objective[:-1]
+
+    items = objective.split()
+    if float(items[0]) > 0.0:
+      self.objectiveResilienceFlag = True
+      self.opt_type = 'resilience'
+    elif float(items[1]) > 0.0:
+      self.objectiveCVRFlag = True
+      self.opt_type = 'cvr'
+    elif float(items[2]) > 0.0:
+      self.objectiveMaxLocalFlag = True
+      self.opt_type = 'max_local'
+
+    # default to resilience if nothing is set
+    if not (self.objectiveResilienceFlag or self.objectiveCVRFlag or \
+            self.objectiveMaxLocalFlag):
+      self.objectiveResilienceFlag = True
+      self.opt_type = 'resilience'
+
+    print('Scalability objective: ' + self.opt_type, flush=True)
 
     self.includeEnergyConsumersFlag = bool(int(tokens[2]))
     self.includeSolarPVsFlag = bool(int(tokens[3]))
@@ -127,11 +149,6 @@ class CompetingApp(GridAPPSD):
     self.includeQFlowFlag = True
     self.includeVoltagesFlag = True
 
-    # TODO NOTE: Feedback from Monish
-    # We will need something more generic and flexible for supporting different
-    # objectives than the hardwired code I have for the three existing
-    # objectives because we will have a bigger set of objectives that we
-    # will build up.
     self.objectiveResilienceFlag = False
     self.objectiveCVRFlag = False
     self.objectiveMaxLocalFlag = False
