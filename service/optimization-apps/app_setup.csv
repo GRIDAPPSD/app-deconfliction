@@ -1,2 +1,3 @@
 AppName,Objective,includeEnergyConsumersFlag,includeSolarPVsFlag,includeBatteriesFlag,includeRegulatorsFlag,includePFlowFlag,includeQFlowFlag,includeVoltagesFlag
 ScaledResilience,[1 0 0],1,1,1,1,1,1,1
+ScaledMaxLocal,[0 0 1],1,1,1,1,1,1,1
