@@ -8,9 +8,14 @@ fi
 
 SIMID=$1
 SIMREQ=$2
-LINE=$3
+LINENO=$3
 
 mkdir -p log
-# hardwire to resilience for the moment
-python3 optimization-app-cvxpy-modular.py scalability $SIMID "$SIMREQ" $LINE 2>&1 | tee log/scalability-app-$LINE.log
+
+# extract the specifed line out of app_setup.csv
+LINE=`awk NR==$LINENO app_setup.csv`
+# extract first column to get AppName for log filename
+APPNAME=`echo $LINE | cut -f1 -d,`
+
+python3 optimization-app-cvxpy-modular.py scalability $SIMID "$SIMREQ" "$LINE" 2>&1 | tee log/$APPNAME-app.log
 

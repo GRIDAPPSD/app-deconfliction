@@ -1,2 +1,2 @@
-one
-two
+AppName,Objective,includeEnergyConsumersFlag,includeSolarPVsFlag,includeBatteriesFlag,includeRegulatorsFlag,includePFlowFlag,includeQFlowFlag,includeVoltagesFlag
+ScaledResilience,r,1,1,1,1,1,1,1
