@@ -1,5 +1,4 @@
 AppName,Objective,includeEnergyConsumersFlag,includeSolarPVsFlag,includeBatteriesFlag,includeRegulatorsFlag,includePFlowFlag,includeQFlowFlag,includeVoltagesFlag
-ScaledResilience,[1 0 0],1,1,1,1,1,1,1
-ScaledCVRWithReg,[0 1 0],1,1,1,1,1,1,1
-ScaledCVRNoReg,[0 1 0],1,1,1,0,1,1,1
-ScaledMaxLocal,[0 0 1],1,1,1,1,1,1,1
+ScaledObj1,[1 0 0 0 0],1,1,1,1,1,1,1
+ScaledObj2,[0 1 0 0 0],1,1,1,1,1,1,1
+ScaledObj3,[0 0 1 0 0],1,1,1,1,1,1,1
