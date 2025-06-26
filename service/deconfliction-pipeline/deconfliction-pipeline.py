@@ -1560,14 +1560,14 @@ class DeconflictionPipeline(GridAPPSD):
     if meas_msg_flag and self.coopCurrentPhase!=None:
       if self.coopTimestamp == timestamp:
         print('>>> ProcessSetpointsMessage--special case skipping device ' +
-              'dispatch for MEAS message with running cooperation initiated ' +
+              'dispatch for MEAS message with running COOPERATION initiated ' +
               'for same timestamp: ' + str(timestamp))
 
       else:
         # checking for coopTimestamp!=timestamp fixes a special case where we've
         # already ended the last phase of cooperation but then more meas
         # messages arrive and we don't want to immediately do further dispatches
-        print('>>> ProcessSetpointsMessage--conclude running cooperation ' +
+        print('>>> ProcessSetpointsMessage--conclude running COOPERATION ' +
               'phase with new MEAS message received, coopTimestamp: ' +
               str(self.coopTimestamp))
 
@@ -1583,16 +1583,16 @@ class DeconflictionPipeline(GridAPPSD):
         #   Step 3.3--Resolution
         # OPTIMIZATION stage deconfliction
         print('ProcessSetpointsMessage--applying OPTIMIZATION stage ' +
-             'deconfliction to minimum conflict matrix for running cooperation')
+             'deconfliction to minimum conflict matrix for running COOPERATION')
 
         # update incentive weights using minimum conflict matrix before final
         # optimization stage and device dispatch
         self.CooperationWeightsUpdate(timestamp, self.ConflictMatrix,
                                       self.TargetResolutionVector)
 
-        self.logConflictTest('running cooperation before Optimization')
+        self.logConflictTest('running COOPERATION before OPTIMIZATION')
         newResolutionVector = self.Optimization(timestamp, self.ConflictMatrix)
-        self.logResolutionTest('running cooperation after Optimization',
+        self.logResolutionTest('running COOPERATION after OPTIMIZATION',
                                newResolutionVector)
 
         # Published IEEE Access Foundational Paper Reference:
@@ -1600,13 +1600,13 @@ class DeconflictionPipeline(GridAPPSD):
         # RULES & HEURISTICS stage deconfliction done last
         if self.rulesStageLastFlag:
           print('ProcessSetpointsMessage--applying final RULES & HEURISTICS ' +
-                'stage deconfliction for running cooperation')
+                'stage deconfliction for running COOPERATION')
           self.RulesForBatteriesResolution(newResolutionVector,
                                            self.printAllRulesFlag)
-          self.logConflictTest('running cooperation before last rules stage')
+          self.logConflictTest('running COOPERATION before last rules stage')
           self.RulesForRegulatorsResolution(newResolutionVector,
                                             self.printAllRulesFlag)
-          self.logConflictTest('running cooperation after last rules stage')
+          self.logConflictTest('running COOPERATION after last rules stage')
 
         # Published IEEE Access Foundational Paper Reference:
         #   Step 4--Setpoint Validator
@@ -1620,7 +1620,7 @@ class DeconflictionPipeline(GridAPPSD):
         dispatchCount = self.DeviceDispatcher(timestamp, newResolutionVector,
                                               self.printAllDispatchesFlag)
         print('>>> ProcessSetpointsMessage--invoked device dispatch for ' +
-              'running cooperation, # devices dispatched: ' +str(dispatchCount))
+              'running COOPERATION, # devices dispatched: ' +str(dispatchCount))
 
         # update the current resolution to the new resolution to be ready for
         # the next dispatch
@@ -1769,20 +1769,6 @@ class DeconflictionPipeline(GridAPPSD):
     # conflict identified logic
     print('DeconflictSetpoints--conflict YES found in conflict matrix')
     if meas_msg_flag:
-      # Published IEEE Access Foundational Paper Reference:
-      #   Step 3.2--Deconfliction Solution
-      # COOPERATION stage deconfliction
-      print('DeconflictSetpoints--applying COOPERATION stage ' +
-            'deconfliction for meas message')
-
-      # compute conflict metric for later comparison during later cooperation
-      self.conflictMetric = self.ConflictMetricComputation(timestamp,
-                                                       self.printAllMetricsFlag)
-
-      # clear incentive weights before kicking off cooperation phase because
-      # we always start from scratch
-      self.CooperationWeightsClear(timestamp, self.ConflictMatrix)
-
       # start with a "target" resolution vector using the optimization code
       # that computes a centroid/target per device
       self.TargetResolutionVector = self.Optimization(timestamp,
@@ -1791,7 +1777,7 @@ class DeconflictionPipeline(GridAPPSD):
       # if we are not performing cooperation state deconfliction, use the
       # target resolution vector as the final one and proceed to dispatch
       if not self.coopStageFlag:
-        print('>>> DeconflictSetpoints--bypassing cooperation stage')
+        print('>>> DeconflictSetpoints--bypassing COOPERATION stage')
 
         # Published IEEE Access Foundational Paper Reference:
         #   Step 3.2--Deconfliction Solution
@@ -1799,28 +1785,28 @@ class DeconflictionPipeline(GridAPPSD):
         # if there is no conflict and rules were just applied, there is no
         # need to apply them again since the ConflictMatrix has not changed
         if self.rulesStageLastFlag and not self.rulesStageFirstFlag:
-          print('DeconflictSetpoints--bypassing cooperation applying final ' +
+          print('DeconflictSetpoints--bypassing COOPERATION applying final ' +
                 'RULES & HEURISTICS stage deconfliction')
           self.RulesForBatteriesResolution(self.TargetResolutionVector,
                                            self.printAllRulesFlag)
-          self.logResolutionTest('bypassing cooperation before last rules stage', self.TargetResolutionVector)
+          self.logResolutionTest('bypassing COOPERATION before last rules stage', self.TargetResolutionVector)
           self.RulesForRegulatorsResolution(self.TargetResolutionVector,
                                             self.printAllRulesFlag)
-          self.logResolutionTest('bypassing cooperation after last rules stage', self.TargetResolutionVector)
+          self.logResolutionTest('bypassing COOPERATION after last rules stage', self.TargetResolutionVector)
 
         if printAllConflictsResolutionsFlag:
-          print('DeconflictSetpoints--ResolutionVector (bypassing cooperation): ' + str(self.TargetResolutionVector))
+          print('DeconflictSetpoints--ResolutionVector (bypassing COOPERATION): ' + str(self.TargetResolutionVector))
 
         if self.testDeviceName:
           device = MethodUtil.NameToDevice[self.testDeviceName]
           if device in self.TargetResolutionVector:
-            print('~TEST ResolutionVector (bypassing cooperation) for ' +
+            print('~TEST ResolutionVector (bypassing COOPERATION) for ' +
                   self.testDeviceName + ' setpoint: ' +
                   str(self.TargetResolutionVector[device][1]) +
                   ', timestamp: ' +
                   str(self.TargetResolutionVector[device][0]))
           else:
-            print('~TEST ResolutionVector (bypassing cooperation) does not contain ' + self.testDeviceName)
+            print('~TEST ResolutionVector (bypassing COOPERATION) does not contain ' + self.testDeviceName)
 
         # Published IEEE Access Foundational Paper Reference:
         #   Step 4--Setpoint Validator
@@ -1846,6 +1832,20 @@ class DeconflictionPipeline(GridAPPSD):
               str(timestamp))
         return
 
+      # Published IEEE Access Foundational Paper Reference:
+      #   Step 3.2--Deconfliction Solution
+      # COOPERATION stage deconfliction
+      print('DeconflictSetpoints--applying COOPERATION stage ' +
+            'deconfliction for meas message')
+
+      # compute conflict metric for later comparison during later cooperation
+      self.conflictMetric = self.ConflictMetricComputation(timestamp,
+                                                       self.printAllMetricsFlag)
+
+      # clear incentive weights before kicking off cooperation phase because
+      # we always start from scratch
+      self.CooperationWeightsClear(timestamp, self.ConflictMatrix)
+
       # need to insure there is always a minimum conflict matrix as soon as the
       # target resolution vector is set in case we never hit the code before
       # the threshold check that normally sets it
@@ -1869,7 +1869,7 @@ class DeconflictionPipeline(GridAPPSD):
       coopMessage = {'coop_phase': self.coopCurrentPhase,
                      'targetResolutionVector': tupleTargetResolutionVector}
       self.gapps.send(self.coop_topic, json.dumps(coopMessage))
-      print('>>> DeconflictSetpoints--kicked off new cooperation phase, ' +
+      print('>>> DeconflictSetpoints--kicked off new COOPERATION phase, ' +
             'updated current phase: ' + self.coopCurrentPhase)
 
       #self.logConflictReg('coop kickoff')
@@ -1941,7 +1941,7 @@ class DeconflictionPipeline(GridAPPSD):
 
       # initiate further cooperation
       print('>>> DeconflictSetpoints--thresholds NOT met, initiating ' +
-            'further cooperation at response: ' + str(self.coopResponseCounter))
+            'further COOPERATION at response: ' + str(self.coopResponseCounter))
 
       # update incentive weights for every cooperation response
       self.CooperationWeightsUpdate(timestamp, self.ConflictMatrix,
@@ -1979,16 +1979,16 @@ class DeconflictionPipeline(GridAPPSD):
     # thresholds for ending cooperation have been met to get here
     if coopMaxMessageFlag:
       print('>>> DeconflictSetpoints---threshold YES met for max ' +
-            'cooperation responses by an app, concluding cooperation with ' +
+            'cooperation responses by an app, concluding COOPERATION with ' +
             'app response counts: ' + str(self.AppCoopCount))
     elif self.conflictMetric <= self.conflictValueThreshold:
       print('>>> DeconflictSetpoints---threshold YES met for conflict ' +
-            'metric value, concluding cooperation with conflict metric: ' +
+            'metric value, concluding COOPERATION with conflict metric: ' +
             str(self.conflictMetric) + ', responses: ' +
             str(self.coopResponseCounter))
     else:
       print('>>> DeconflictSetpoints---threshold YES met for conflict ' +
-            'metric % change, concluding cooperation with % change: ' +
+            'metric % change, concluding COOPERATION with % change: ' +
             str(perConflictDelta) + ', responses: ' +
             str(self.coopResponseCounter))
 
@@ -2019,9 +2019,9 @@ class DeconflictionPipeline(GridAPPSD):
     self.CooperationWeightsUpdate(timestamp, self.ConflictMatrix,
                                   self.TargetResolutionVector)
 
-    self.logConflictTest('cooperation stage done before Optimization')
+    self.logConflictTest('COOPERATION stage done before OPTIMIZATION')
     newResolutionVector = self.Optimization(timestamp, self.ConflictMatrix)
-    self.logConflictTest('cooperation stage done after Optimization')
+    self.logConflictTest('cooperation stage done after OPTIMIZATION')
 
     #self.logResolutionPV('coop done', newResolutionVector)
 
@@ -2034,10 +2034,10 @@ class DeconflictionPipeline(GridAPPSD):
       self.RulesForBatteriesResolution(newResolutionVector,
                                        self.printAllRulesFlag)
 
-      self.logResolutionTest('cooperation and optimization stages done before last rules stage', newResolutionVector)
+      self.logResolutionTest('COOPERATION and OPTIMIZATION stages done before last rules stage', newResolutionVector)
       self.RulesForRegulatorsResolution(newResolutionVector,
                                         self.printAllRulesFlag)
-      self.logResolutionTest('cooperation and optimization stages done after last rules stage', newResolutionVector)
+      self.logResolutionTest('COOPERATION and OPTIMIZATION stages done after last rules stage', newResolutionVector)
 
       self.rulesLastConflictMetric = self.ConflictMetricComputation(timestamp)
 
@@ -2216,11 +2216,13 @@ class DeconflictionPipeline(GridAPPSD):
     # controls whether rules stage deconfliction is done as the first stage
     # using the ConflictMatrix and/or deferred until the last stage before
     # device dispatch using the ResolutionVector
-    self.rulesStageFirstFlag = True
+    #self.rulesStageFirstFlag = True
+    self.rulesStageFirstFlag = False
     self.rulesStageLastFlag = False
     self.noValidatorRulesFlag = True
+    #self.coopStageFlag = True
+    self.coopStageFlag = False
     self.refCount = 0 # for debug/verification
-    self.coopStageFlag = True
 
     # rules settings for short simulations
     self.rulesBattTimeInterval = 60*15 # every 15 minutes
