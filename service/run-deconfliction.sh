@@ -89,7 +89,6 @@ if [[ $APPS == "s" || $APPS == "S" ]]; then
   # scalability task invocation
   numlines=`grep -c . app_setup.csv`
   for ((line=2; line<=$numlines; line++)); do
-    echo $line
     ./run-scalability.sh $SIMID "$SIMREQ" $line >/dev/null &
   done
 fi
