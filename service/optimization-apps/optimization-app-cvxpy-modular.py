@@ -59,6 +59,7 @@ import copy
 from time import sleep
 #import cylp
 import cvxpy as cp
+import pandas as pd
 
 from gridappsd import GridAPPSD
 from gridappsd import DifferenceBuilder
@@ -293,6 +294,8 @@ class CompetingApp(GridAPPSD):
                                                    self.BatteriesInfo, self.soc)
 
       if numWeights>3 and self.objectiveWeights[3]!=None:
+
+
         objective += self.objectiveWeights[3] * self.optObjective4(
                                                    self.BatteriesInfo, self.soc)
 
@@ -863,7 +866,12 @@ class CompetingApp(GridAPPSD):
 
 
   def optObjective3(self, BatteriesInfo, soc):
-    objective = sum(-100 * soc[i] for i in range(len(BatteriesInfo)))
+    cost = pd.read_csv('lmp_data.csv')
+    cost = cost['price'].values
+    average_cost = np.mean(cost)
+    cost_now = cost[0]
+    print("objective 3 inputs are {}, {}, {}".format(timestamp, cost_now, average_cost))
+    objective = sum(-100 * (cost_now-average_cost) * soc[i] for i in range(len(BatteriesInfo)))
     return objective
 
 
@@ -1419,6 +1427,7 @@ class CompetingApp(GridAPPSD):
         if not self.includeRegulatorsFlag:
           self.updateRegulatorTaps(message['measurements'])
 
+        global timestamp
         timestamp = int(message['timestamp'])
 
         # If doing real-time simulation must subtract 5 off timestamp to make it
@@ -1427,11 +1436,9 @@ class CompetingApp(GridAPPSD):
         # If doing non-real-time simulation remove the 5 second offset because
         # GridLAB-D outputs at 60 second intervals
         #if timestamp % optIntervalSec != 0:
-          print('Simulation timestamp (skipping optimization): '+str(timestamp),
-                flush=True)
+          print('Simulation timestamp (skipping optimization): '+str(timestamp), flush=True)
         else:
-          print('Simulation timestamp for optimization: ' + str(timestamp),
-                flush=True)
+          print('Simulation timestamp for optimization: ' + str(timestamp), flush=True)
 
           self.optPerform()
 
