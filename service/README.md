@@ -48,21 +48,41 @@ Note "..." indicates files similar to the one preceding and there are additional
 
 <ol>
 <li>
-Here are some practical hints for getting up and going with the deconfliction service that may be helpful depending on your environment:
+Here are some practical hints for getting up and going with the deconfliction service that may be helpful especially if creating a new VirtualBox VM:
 <ul>
 <li>
-Use Ubuntu 22.04 rather than anything newer including 24.04 as anything newer than Python 3.10 is currently icompatible with GridAPPS-D and Ubuntu 22.04 is the last version not running a too-new Python version.
+Use Ubuntu version 22.04 rather than anything newer including 24.04 as 22.04 includes Python 3.10 which is the newest Python3 that is compatible with GridAPPS-D.
 </li>
 <li>
 Recommendations for a VirtualBox VM, if using VirtualBox, are a VM with 48 GB of memory (given a 64 GB host), 4 processors, 128 MB video memory, and a 512 GB dynamically allocated disk.
 </li>
 <li>
-Proceed through the Ubuntu installation user interface.
-</li>
-</ul>
+Proceed through the Ubuntu installation GUI pages. After some short period after finished a popup about installing new updates should be presented. Restart the VM at this point to get those updates.
 </li>
 <li>
-You must have the dockerized GridAPPS-D platform running which is available at https://github.com/GRIDAPPSD/gridappsd-docker. Follow the documentation there if you are unfamiliar with running the platform.
+From Devices menu select "Insert Guest Additions CD Image...". Click on the added CD icon along the lefthand side and then hit the "Run Software" button or right click on the autorun.sh file and select the run item. In the output from this there is a message about needing to install gcc, make, and perl. This can be ignored. Need to restart the VM with "Send the shutdown signal" option.
+</li>
+<li>
+On restart there should be choices for screen size under View->Virtual Screen 1. Recommended selection is 1920x1080.
+</li>
+<li>
+Turn off screen lock settings by right clicking over desktop background and selecting "Display Settings". Then from the dialog select Privacy->Screen.
+</li>
+<li>
+Setup a shared folder using Devices->Shared Folders->Shared Folders Settings. Hit "+" to create a new shared folder. Mount point should be /media/username along with selecting automount and make permanent. Add username to the vboxsf group in /etc/group and logout and back in again for group change to take effect.
+</li>
+<li>
+Run "sudo apt install git" and create ~/git directory
+</li>
+<li>
+git clone both https://github.com/GRIDAPPSD/gridappsd-docker and https://github.com/GRIDAPPSD/app-deconfliction
+</li>
+<li>
+Using the shared folder copy over the ~/.git-credentials file from an existing VM in order to get the github token needed for making git repo changes. Put this file in place as ~/.git-credentials in the new VM. Make a trivial change to an existing file such as in the app-deconfliction repo and git add/commit/push this change. The push will ask for username and the token (password) which is in the ~/.git-credentials file. Enter these and then run "git config credential.helper store" so these don't need to be entered going forward.
+</li>
+</ul>
+<li>
+You must have the dockerized GridAPPS-D platform running which is available at https://github.com/GRIDAPPSD/gridappsd-docker. Follow the documentation there if you are unfamiliar with running the platform. To get the run.sh script to run may need to do a "sudo apt install docker-compose" and "sudo rm /usr/local/bin/docker-compose"
 </li>
 
 <li>
@@ -72,7 +92,7 @@ Note that as long as docker containers are not cleared with the "./stop.sh -c" c
 </li>
 
 <li>
-Python version 3.8 or newer is required as the one in your $PATH and can be checked with the command "python --version".
+Python version 3.8 or newer is required (although not newer than 3.10 currently) as the one in your $PATH and can be checked with the command "python3 --version".
 </li>
 
 <li>
@@ -83,7 +103,7 @@ $ python
 >>> import gridappsd
 ````
 
-If the import returns an error message, see <https://github.com/GRIDAPPSD/gridappsd-python> for installation instructions.
+If the import returns an error message, see <https://github.com/GRIDAPPSD/gridappsd-python> for installation instructions. May need to do a "sudo apt install python-pip3" to be able to do the "sudo pip3 install gridappsd-python" needed to install this module.
 </li>
 
 <li>
