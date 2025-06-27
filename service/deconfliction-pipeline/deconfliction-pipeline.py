@@ -60,6 +60,7 @@ import sys
 import os
 import argparse
 import json
+#import pprint
 import math
 import copy
 import queue
@@ -233,6 +234,13 @@ class DeconflictionPipeline(GridAPPSD):
     if meas_msg_flag and self.pltFlag:
       self.pltFile.write('\n')
       self.pltFile.flush()
+
+      # Monish wants ConflictMatrix changes written separately for plotting
+      #self.cmatFile.write(str(self.ConflictMatrix))
+      print(self.ConflictMatrix, file=self.cmatFile)
+      #pprint.pp(self.ConflictMatrix, stream=self.cmatFile)
+      #self.cmatFile.write('\n')
+      self.cmatFile.flush()
 
     if printAllConflictsResolutionsFlag:
       print('SetpointProcessor--ConflictMatrix: ' +str(self.ConflictMatrix))
@@ -2286,6 +2294,7 @@ class DeconflictionPipeline(GridAPPSD):
     if self.pltFlag:
       self.pltFile = open('log/plot_data.csv', 'w')
       self.pltTZero = None
+      self.cmatFile = open('log/conflict_matrix.log', 'w')
 
     self.bypassDeconflictionFlag = False
     #self.bypassDeconflictionFlag = True
@@ -2348,6 +2357,7 @@ class DeconflictionPipeline(GridAPPSD):
 
     if self.pltFlag:
       self.pltFile.close()
+      self.cmatFile.close()
 
     gapps.unsubscribe(out_id)
     gapps.unsubscribe(log_id)
