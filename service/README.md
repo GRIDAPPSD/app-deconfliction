@@ -86,7 +86,7 @@ You must have the dockerized GridAPPS-D platform running which is available at h
 </li>
 
 <li>
-An updated version of the IEEE 123-bus model defining batteries and solar PVs not yet included in the standard GridAPPS-D platform distribution must be loaded after starting the platform. The CIM model for this updated test feeder is exported to the sim-starter directory. Open the Blazegraph URL in the web browser and upload the file (ieee123apps.xml) using the "UPDATE" tab (http://localhost:8889/bigdata/#update).
+An updated version of the IEEE 123-bus model defining batteries and solarPVs not yet included in the standard GridAPPS-D platform distribution must be loaded after starting the platform. The CIM model for this updated test feeder is exported to the sim-starter directory. Open the Blazegraph URL in the web browser and upload the file (ieee123apps.xml) using the "UPDATE" tab from http://localhost:8889/bigdata/#update (hit "Browse..." button to select file).
 
 Note that as long as docker containers are not cleared with the "./stop.sh -c" command, it is possible to stop and start the platform repeatedly without reloading this updated 123-bus model.
 </li>
@@ -127,14 +127,15 @@ $ ./run-resilience.sh 123apps standalone pulp
 There is little to be gained from trying the max_local or cvr objectives in addition to resilience, but they also support the standalone argument. Modules likely to be missing for the competing apps include numpy, tabulate, pulp, and cvxpy. The following may prove helpful based on failed imports:
 
 ```` bash
-$ sudo pip install numpy
-$ sudo pip install tabulate
+$ sudo pip3 install numpy
+$ sudo pip3 install tabulate
 $ sudo apt-get install glpk-utils
-$ sudo pip install pulp
-$ sudo pip install cvxpy
+$ sudo pip3 install pulp
+$ sudo pip3 install cvxpy
+$ sudo pip3 install pandas
 ````
 
-Note that glpk-utils is needed by the PuLP optmization module.
+Note that glpk-utils is needed by the PuLP and CVXPY optmization modules.
 </li>
 
 <li>
