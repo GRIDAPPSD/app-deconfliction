@@ -56,6 +56,9 @@ Use Ubuntu 22.04 rather than anything newer including 24.04 as anything newer th
 <li>
 Recommendations for a VirtualBox VM, if using VirtualBox, are a VM with 48 GB of memory (given a 64 GB host), 4 processors, 128 MB video memory, and a 512 GB dynamically allocated disk.
 </li>
+<li>
+Proceed through the Ubuntu installation user interface.
+</li>
 </ul>
 </li>
 <li>
