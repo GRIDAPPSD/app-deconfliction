@@ -1,26 +1,19 @@
 # app-deconfliction/service
 
 Author: Gary Black <br>
-Last updated: September 27, 2024
+Last updated: June 27, 2025
 
 ## Purpose
 
-The service directory of the app-deconfliction repository contains the entirety of the FY24 Centralized Deconfliction Service that includes both the deconfliction service (aka, deconfliction pipeline) and sample competing applications for development, testing, and demonstration. The service/pipeline performs deconfliction using a combined methodology applied in stages that were initially developed independently through work in FY23. These stages are:
-<ol>
-<li>Rules & Heuristics
-<li>Cooperation
-<li>Optimization
-</ol>
-
-While the FY23 prototype used hardwired file-based simulation data to drive the sample competing apps, the FY24 service uses GridLAB-D simulations and meets the requirements for a full service within the GridAPPS-D platform. Apps using both the PuLP and CVXPY optimization libraries with objectives for resilience, max_local (maximize local generation), and conservation voltage reduction (CVR) are supported for the FY24 service.
+The service directory of the app-deconfliction repository contains the entirety of the FY24/FY25 service that uses GridLAB-D simulations. Apps using both the PuLP and CVXPY optimization libraries with objectives for resilience, max_local (maximize local generation), and conservation voltage reduction (CVR) are supported for the FY24/FY25 service.
 
 ## Overview
 
 The Centralized Deconfliction Service builds on the FY23 prototype following the design described in the project foundational paper published in IEEE Access and available at <https://ieeexplore.ieee.org/document/10107708>, specifically sections III-B and -C. There are methods in deconfliction-pipeline.py code directly corresponding to subsections in the foundational paper, e.g., SetpointProcessor, ConflictIdentification, and DeviceDispatcher. The service extends what was done in the prototype by applying the combined or staged deconfliction methodology first described in the end of FY23 Deconfliction Alternatives Analysis paper as well as integrating with GridLAB-D simulations.
 
-The deconfliction workflow kicks off with GridLAB-D simulation measurement messages that provide updated device setpoints and battery SoC data. Competing apps subscribe to the GridLAB-D measurements to carry out their work determining and publishing new device setpoint requests via CIM DifferenceBuilder messages. The deconfliction service intercepts these DifferenceBuilder messages from competings apps to perform the steps described in the Foundational and Alternatives Analysis papers producing deconflicted setpoints dispatched to devices also through CIM DifferenceBuilder messages. The service exchanges messages with competing apps during an iterative stage of deconfliction that incentivizes apps to cooperate in trying to reach consensus setpoint values. Subsequent GridLAB-D simulation measurement messages reflect these deconflicted setpoints requested by the service and are processed by competing apps, thus completing the deconfliction workflow loop.
+The deconfliction workflow kicks off with GridLAB-D simulation measurement messages that provide updated device setpoints and battery SoC data. Competing apps subscribe to the GridLAB-D measurements to carry out their work (optimizations) determining and publishing new device setpoint requests via CIM DifferenceBuilder messages. The deconfliction service intercepts these DifferenceBuilder messages from competings apps to perform the steps described in the Foundational and Alternatives Analysis papers producing deconflicted setpoints dispatched to devices also through CIM DifferenceBuilder messages. The service exchanges messages with competing apps during an iterative stage of deconfliction that incentivizes apps to cooperate in trying to reach consensus setpoint values. Subsequent GridLAB-D simulation measurement messages reflect these deconflicted setpoints and are processed by competing apps, thus completing the deconfliction workflow loop.
 
-For details on the combined/staged deconfliction methodology implemented in the FY24 Centralized Deconfliction Service, please see the Functional Specification document for the service at <https://github.com/GRIDAPPSD/gridappsd-training/blob/main/module-content/docs/source/services/app-deconfliction/FY24ServiceFunctionalSpecsFinal.md>.
+For details on the combined/staged deconfliction methodology implemented in the FY24/FY25 Centralized Deconfliction Service, please see the Functional Specification document for the service at <https://github.com/GRIDAPPSD/gridappsd-training/blob/main/module-content/docs/source/services/app-deconfliction/FY24ServiceFunctionalSpecsFinal.md>.
 
 ## Directory layout
 
@@ -35,10 +28,11 @@ For details on the combined/staged deconfliction methodology implemented in the 
     └── ...
 ├── optimization-apps
     ├── optimization-app-pulp.py
-    ├── optimization-app-cvxpy.py
+    ├── optimization-app-cvxpy-modular.py
     ├── run-resilience.sh
     ├── run-max_local.sh
     └── run-cvr.sh
+    └── ...
 ├── deconfliction-pipeline
     ├── deconfliction-pipeline.py
     └── run-pipeline.sh
@@ -53,6 +47,17 @@ Note "..." indicates files similar to the one preceding and there are additional
 ## Prerequisites
 
 <ol>
+<li>
+Here are some practical hints for getting up and going with the deconfliction service that may be helpful depending on your environment:
+<ul>
+<li>
+Use Ubuntu 22.04 rather than anything newer including 24.04 as anything newer than Python 3.10 is currently icompatible with GridAPPS-D and Ubuntu 22.04 is the last version not running a too-new Python version.
+</li>
+<li>
+Recommendations for a VirtualBox VM, if using VirtualBox, are a VM with 48 GB of memory (given a 64 GB host), 4 processors, 128 MB video memory, and a 512 GB dynamically allocated disk.
+</li>
+</ul>
+</li>
 <li>
 You must have the dockerized GridAPPS-D platform running which is available at https://github.com/GRIDAPPSD/gridappsd-docker. Follow the documentation there if you are unfamiliar with running the platform.
 </li>
