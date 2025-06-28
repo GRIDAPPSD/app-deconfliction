@@ -146,16 +146,19 @@ class CompetingApp(GridAPPSD):
 
     self.includeEnergyConsumersFlag = bool(int(tokens[2]))
     self.includeSolarPVsFlag = bool(int(tokens[3]))
-    self.includeBatteriesFlag = bool(int(tokens[4]))
-    self.includeRegulatorsFlag = bool(int(tokens[5]))
-    self.includePFlowFlag = bool(int(tokens[6]))
-    self.includeQFlowFlag = bool(int(tokens[7]))
-    self.includeVoltagesFlag = bool(int(tokens[8]))
+    self.includeSolarPVsQFlag = bool(int(tokens[4]))
+    self.includeBatteriesFlag = bool(int(tokens[5]))
+    self.includeRegulatorsFlag = bool(int(tokens[6]))
+    self.includePFlowFlag = bool(int(tokens[7]))
+    self.includeQFlowFlag = bool(int(tokens[8]))
+    self.includeVoltagesFlag = bool(int(tokens[9]))
 
     print('Scalability include EnergyConsumers: ' +
           str(self.includeEnergyConsumersFlag), flush=True)
     print('Scalability include SolarPVs: ' +
           str(self.includeSolarPVsFlag), flush=True)
+    print('Scalability include SolarPVs Reactive: ' +
+          str(self.includeSolarPVsQFlag), flush=True)
     print('Scalability include Batteries: ' +
           str(self.includeBatteriesFlag), flush=True)
     print('Scalability include Regulators: ' +
@@ -233,12 +236,15 @@ class CompetingApp(GridAPPSD):
                                           self.soc, self.p_batt,
                                           self.p_batt_c, self.p_batt_d,
                                           self.lambda_c, self.lambda_d)
+    else:
+      ## Adding some battery limits to ensure feasiblity when battery is not being used
+      self.optConstraintsLimitsBatteries(self.BatteriesInfo, self.soc, self.p_batt)
 
     if self.includeRegulatorsFlag:
       self.optConstraintsDERWithRegulators(self.RegulatorsInfo, self.reg_taps)
 
     if self.includeSolarPVsFlag:
-      self.optConstraintsDERWithSolarPVs(self.SolarPVsInfo,
+      self.optConstraintsDERWithSolarPVs(self.SolarPVsInfo, self.includeSolarPVsQFlag,
                                          self.p_pv_A, self.p_pv_B, self.p_pv_C,
                                          self.q_pv_A, self.q_pv_B, self.q_pv_C)
 
@@ -252,9 +258,10 @@ class CompetingApp(GridAPPSD):
                       self.p_pv_A, self.p_pv_B, self.p_pv_C)
 
     if self.includeQFlowFlag:
-      self.optConstraintsNetworkWithQFlow(self.includeEnergyConsumersFlag,
-              self.BusInfo, self.LinesIn, self.LinesOut, self.EnergyConsumers,
-              self.q_flow_A, self.q_flow_B, self.q_flow_C)
+      self.optConstraintsNetworkWithQFlow(self.includeEnergyConsumersFlag, self.includeSolarPVsFlag,
+              self.BusInfo, self.LinesIn, self.LinesOut, self.EnergyConsumers, self.SolarPVsInfo,
+              self.q_flow_A, self.q_flow_B, self.q_flow_C, self.q_pv_A, self.q_pv_B, self.q_pv_C)
+
 
     if self.includeVoltagesFlag:
       # depending on whether solving for regulator tap positions is part of the
@@ -268,6 +275,7 @@ class CompetingApp(GridAPPSD):
            self.q_flow_A, self.q_flow_B, self.q_flow_C,
            self.v_A, self.v_B, self.v_C)
       else:
+        # print('current regulator taps: {}'.format(self.meas_reg_taps))
         self.optConstraintsNetworkWithVoltages(self.BusInfo, self.BranchInfo,
            self.RegulatorsIdx, self.EnergySource, self.b_i, self.meas_reg_taps,
            self.p_flow_A, self.p_flow_B, self.p_flow_C,
@@ -279,8 +287,9 @@ class CompetingApp(GridAPPSD):
       numWeights = len(self.objectiveWeights)
 
       if numWeights>0 and self.objectiveWeights[0]!=None:
-        objective += self.objectiveWeights[0] * self.optObjective1(self.BusInfo,
-                                                   self.v_A, self.v_B, self.v_C)
+        objective += self.objectiveWeights[0] * self.optObjective1(self.BusInfo, self.SolarPVsInfo,
+                                                self.v_A, self.v_B, self.v_C,
+                                                self.p_pv_A, self.p_pv_B, self.p_pv_C)
 
       if numWeights>1 and self.objectiveWeights[1]!=None:
         objective += self.objectiveWeights[1] * self.optObjective2(
@@ -290,14 +299,15 @@ class CompetingApp(GridAPPSD):
                                     self.q_flow_A, self.q_flow_B, self.q_flow_C)
 
       if numWeights>2 and self.objectiveWeights[2]!=None:
-        objective += self.objectiveWeights[2] * self.optObjective3(
-                                                   self.BatteriesInfo, self.soc)
+        objective += self.objectiveWeights[2] * self.optObjective3( self.SolarPVsInfo, self.BatteriesInfo,
+                                                                    self.p_pv_A, self.p_pv_B, self.p_pv_C, self.p_batt)
 
       if numWeights>3 and self.objectiveWeights[3]!=None:
 
 
-        objective += self.objectiveWeights[3] * self.optObjective4(
-                                                   self.BatteriesInfo, self.soc)
+        objective += self.objectiveWeights[3] * self.optObjective4( self.EnergySource, self.Psub,
+                                                                    self.Psub_mod, self.p_flow_A,
+                                                                    self.p_flow_B, self.p_flow_C)
 
       if numWeights>4 and self.objectiveWeights[4]!=None:
         objective += self.objectiveWeights[4] * self.optObjective5(
@@ -323,45 +333,46 @@ class CompetingApp(GridAPPSD):
     self.optDo(objective)
 
     self.optDispatch(self.includeRegulatorsFlag, self.includeBatteriesFlag,
-                     self.includeSolarPVsFlag)
+                     self.includeSolarPVsFlag, self.includeVoltagesFlag)
 
 
   def optDefineVariables(self, includePFlowFlag, includeQFlowFlag,
                          includeVoltagesFlag, includeBatteriesFlag,
                          includeRegulatorsFlag, includeSolarPVsFlag):
-    if includePFlowFlag:
-      len_BranchInfo = len(self.BranchInfo)
-      self.p_flow_A = cp.Variable(len_BranchInfo, integer=False,name='p_flow_A')
-      self.p_flow_B = cp.Variable(len_BranchInfo, integer=False,name='p_flow_B')
-      self.p_flow_C = cp.Variable(len_BranchInfo, integer=False,name='p_flow_C')
 
-    if includeQFlowFlag:
-      len_BranchInfo = len(self.BranchInfo)
-      self.q_flow_A = cp.Variable(len_BranchInfo, integer=False,name='q_flow_A')
-      self.q_flow_B = cp.Variable(len_BranchInfo, integer=False,name='q_flow_B')
-      self.q_flow_C = cp.Variable(len_BranchInfo, integer=False,name='q_flow_C')
+    # if includePFlowFlag:
+    len_BranchInfo = len(self.BranchInfo)
+    self.p_flow_A = cp.Variable(len_BranchInfo, integer=False,name='p_flow_A')
+    self.p_flow_B = cp.Variable(len_BranchInfo, integer=False,name='p_flow_B')
+    self.p_flow_C = cp.Variable(len_BranchInfo, integer=False,name='p_flow_C')
 
-    if includeVoltagesFlag:
-      len_BusInfo = len(self.BusInfo)
-      self.v_A = cp.Variable(len_BusInfo, integer=False, name='v_A')
-      self.v_B = cp.Variable(len_BusInfo, integer=False, name='v_B')
-      self.v_C = cp.Variable(len_BusInfo, integer=False, name='v_C')
+    # if includeQFlowFlag:
+    len_BranchInfo = len(self.BranchInfo)
+    self.q_flow_A = cp.Variable(len_BranchInfo, integer=False,name='q_flow_A')
+    self.q_flow_B = cp.Variable(len_BranchInfo, integer=False,name='q_flow_B')
+    self.q_flow_C = cp.Variable(len_BranchInfo, integer=False,name='q_flow_C')
 
-    if includeBatteriesFlag:
-      len_BatteriesInfo = len(self.BatteriesInfo)
-      self.p_batt = cp.Variable(len_BatteriesInfo, integer=False, name='p_batt')
-      self.p_batt_c = cp.Variable(len_BatteriesInfo, integer=False, name='p_batt_c')
-      self.p_batt_d = cp.Variable(len_BatteriesInfo, integer=False, name='p_batt_d')
-      self.soc = cp.Variable(len_BatteriesInfo, integer=False, name='soc')
-      self.lambda_c = cp.Variable(len_BatteriesInfo, boolean=True, name='lambda_c')
-      self.lambda_d = cp.Variable(len_BatteriesInfo, boolean=True, name='lambda_d')
+    # if includeVoltagesFlag:
+    len_BusInfo = len(self.BusInfo)
+    self.v_A = cp.Variable(len_BusInfo, integer=False, name='v_A')
+    self.v_B = cp.Variable(len_BusInfo, integer=False, name='v_B')
+    self.v_C = cp.Variable(len_BusInfo, integer=False, name='v_C')
+
+    # if includeBatteriesFlag:
+    len_BatteriesInfo = len(self.BatteriesInfo)
+    self.p_batt = cp.Variable(len_BatteriesInfo, integer=False, name='p_batt')
+    self.p_batt_c = cp.Variable(len_BatteriesInfo, integer=False, name='p_batt_c')
+    self.p_batt_d = cp.Variable(len_BatteriesInfo, integer=False, name='p_batt_d')
+    self.soc = cp.Variable(len_BatteriesInfo, integer=False, name='soc')
+    self.lambda_c = cp.Variable(len_BatteriesInfo, boolean=True, name='lambda_c')
+    self.lambda_d = cp.Variable(len_BatteriesInfo, boolean=True, name='lambda_d')
 
       # cooperation variables
       # since these are held constant, I don't need to define them with
       # cp.Variable calls, but as fixed length vectors. It's still convenient
       # though to define them along with the other optimization variables.
-      self.p_batt_proposed = [None] * len_BatteriesInfo
-      self.p_batt_greedy = [None] * len_BatteriesInfo
+    self.p_batt_proposed = [None] * len_BatteriesInfo
+    self.p_batt_greedy = [None] * len_BatteriesInfo
 
     if includeRegulatorsFlag:
       len_RegulatorsInfo = len(self.RegulatorsInfo)
@@ -378,21 +389,21 @@ class CompetingApp(GridAPPSD):
       # dictionary to track the current tap position from measurements
       self.meas_reg_taps = {}
 
-    if includeSolarPVsFlag:
-      len_SolarPVsInfo = len(self.SolarPVsInfo)
-      self.p_pv_A = cp.Variable(len_SolarPVsInfo, integer=False,name='p_pv_A')
-      self.p_pv_B = cp.Variable(len_SolarPVsInfo, integer=False,name='p_pv_B')
-      self.p_pv_C = cp.Variable(len_SolarPVsInfo, integer=False,name='p_pv_C')
-      self.q_pv_A = cp.Variable(len_SolarPVsInfo, integer=False,name='q_pv_A')
-      self.q_pv_B = cp.Variable(len_SolarPVsInfo, integer=False,name='q_pv_B')
-      self.q_pv_C = cp.Variable(len_SolarPVsInfo, integer=False,name='q_pv_C')
+    # if includeSolarPVsFlag:
+    len_SolarPVsInfo = len(self.SolarPVsInfo)
+    self.p_pv_A = cp.Variable(len_SolarPVsInfo, integer=False,name='p_pv_A')
+    self.p_pv_B = cp.Variable(len_SolarPVsInfo, integer=False,name='p_pv_B')
+    self.p_pv_C = cp.Variable(len_SolarPVsInfo, integer=False,name='p_pv_C')
+    self.q_pv_A = cp.Variable(len_SolarPVsInfo, integer=False,name='q_pv_A')
+    self.q_pv_B = cp.Variable(len_SolarPVsInfo, integer=False,name='q_pv_B')
+    self.q_pv_C = cp.Variable(len_SolarPVsInfo, integer=False,name='q_pv_C')
 
       # cooperation variables
       # since these are held constant, I don't need to define them with
       # cp.Variable calls, but as fixed length vectors. It's still convenient
       # though to define them along with the other optimization variables.
-      self.pq_pv_proposed = [None] * len_SolarPVsInfo
-      self.pq_pv_greedy = [None] * len_SolarPVsInfo
+    self.pq_pv_proposed = [None] * len_SolarPVsInfo
+    self.pq_pv_greedy = [None] * len_SolarPVsInfo
 
     self.Psub = cp.Variable(integer=False, name='P_sub')
     self.Psub_mod = cp.Variable(integer=False, name='P_sub_mod')
@@ -428,6 +439,17 @@ class CompetingApp(GridAPPSD):
       self.Constraints.append(soc[idx] >= 0.2)
       self.Constraints.append(soc[idx] <= 0.9)
 
+  def optConstraintsLimitsBatteries(self, BatteriesInfo, soc, p_batt):
+    print('Setting Some arbitrary limits for batteries')
+    for mrid in BatteriesInfo:
+      BatteriesInfo[mrid]['state'] = 'idling'
+      idx = BatteriesInfo[mrid]['idx']
+      self.Constraints.append(p_batt[idx] == 0)
+      # Battery SoC constraints added as Shiva couldn't identify CVXPY's
+      # equivalent to PuLP's lb and ub
+      self.Constraints.append(soc[idx] >= 0.2)
+      self.Constraints.append(soc[idx] <= 0.9)
+
 
   def optConstraintsDERWithRegulators(self, RegulatorsInfo, reg_taps):
     for k in range(len(RegulatorsInfo)):
@@ -438,7 +460,7 @@ class CompetingApp(GridAPPSD):
     self.Constraints.append(reg_taps[(0, 16)] == 1)
 
 
-  def optConstraintsDERWithSolarPVs(self, SolarPVsInfo,
+  def optConstraintsDERWithSolarPVs(self, SolarPVsInfo, includeSolarPVsQFlag,
                                     p_pv_A, p_pv_B, p_pv_C,
                                     q_pv_A, q_pv_B, q_pv_C):
     for bus in SolarPVsInfo:
@@ -451,44 +473,50 @@ class CompetingApp(GridAPPSD):
       ratedS = SolarPVsInfo[bus]['ratedS']/numphases
       ratedP = SolarPVsInfo[bus]['p']/numphases
 
-      coeff = math.sqrt(2) - 1
+      coeff = math.sqrt(2) - 1 ### Coefficient for Octagon Constraints
 
       if 'A' in SolarPVsInfo[bus]['phase']:
         self.Constraints.append(p_pv_A[idx] <= ratedP)
         self.Constraints.append(p_pv_A[idx] >= 0)
 
-        self.Constraints.append(q_pv_A[idx] <=  ratedS)
-        self.Constraints.append(q_pv_A[idx] >= -ratedS)
+        if includeSolarPVsQFlag:
+          self.Constraints.append(q_pv_A[idx] <= ratedS)
+          self.Constraints.append(q_pv_A[idx] >= -ratedS)
+          self.Constraints.append(coeff*p_pv_A[idx] + q_pv_A[idx] <= ratedS)
+          self.Constraints.append(coeff*p_pv_A[idx] - q_pv_A[idx] <= ratedS)
+          self.Constraints.append(p_pv_A[idx] + coeff*q_pv_A[idx] <= ratedS)
+          self.Constraints.append(p_pv_A[idx] - coeff*q_pv_A[idx] <= ratedS)
+        else:
+          self.Constraints.append(q_pv_A[idx] == 0)
 
-        self.Constraints.append(coeff*p_pv_A[idx] + q_pv_A[idx] <= ratedS)
-        self.Constraints.append(coeff*p_pv_A[idx] - q_pv_A[idx] <= ratedS)
-        self.Constraints.append(p_pv_A[idx] + coeff*q_pv_A[idx] <= ratedS)
-        self.Constraints.append(p_pv_A[idx] - coeff*q_pv_A[idx] <= ratedS)
 
       if 'B' in SolarPVsInfo[bus]['phase']:
         self.Constraints.append(p_pv_B[idx] <= ratedP)
         self.Constraints.append(p_pv_B[idx] >= 0)
 
-        self.Constraints.append(q_pv_B[idx] <=  ratedS)
-        self.Constraints.append(q_pv_B[idx] >= -ratedS)
-
-        self.Constraints.append(coeff*p_pv_B[idx] + q_pv_B[idx] <= ratedS)
-        self.Constraints.append(coeff*p_pv_B[idx] - q_pv_B[idx] <= ratedS)
-        self.Constraints.append(p_pv_B[idx] + coeff*q_pv_B[idx] <= ratedS)
-        self.Constraints.append(p_pv_B[idx] - coeff*q_pv_B[idx] <= ratedS)
+        if includeSolarPVsQFlag:
+          self.Constraints.append(q_pv_B[idx] <=  ratedS)
+          self.Constraints.append(q_pv_B[idx] >= -ratedS)
+          self.Constraints.append(coeff*p_pv_B[idx] + q_pv_B[idx] <= ratedS)
+          self.Constraints.append(coeff*p_pv_B[idx] - q_pv_B[idx] <= ratedS)
+          self.Constraints.append(p_pv_B[idx] + coeff*q_pv_B[idx] <= ratedS)
+          self.Constraints.append(p_pv_B[idx] - coeff*q_pv_B[idx] <= ratedS)
+        else:
+          self.Constraints.append(q_pv_B[idx] == 0)
 
       if 'C' in SolarPVsInfo[bus]['phase']:
         self.Constraints.append(p_pv_C[idx] <= ratedP)
         self.Constraints.append(p_pv_C[idx] >= 0)
 
-        self.Constraints.append(q_pv_C[idx] <=  ratedS)
-        self.Constraints.append(q_pv_C[idx] >= -ratedS)
-
-        self.Constraints.append(coeff*p_pv_C[idx] + q_pv_C[idx] <= ratedS)
-        self.Constraints.append(coeff*p_pv_C[idx] - q_pv_C[idx] <= ratedS)
-        self.Constraints.append(p_pv_C[idx] + coeff*q_pv_C[idx] <= ratedS)
-        self.Constraints.append(p_pv_C[idx] - coeff*q_pv_C[idx] <= ratedS)
-
+        if includeSolarPVsQFlag:
+          self.Constraints.append(q_pv_C[idx] <=  ratedS)
+          self.Constraints.append(q_pv_C[idx] >= -ratedS)
+          self.Constraints.append(coeff*p_pv_C[idx] + q_pv_C[idx] <= ratedS)
+          self.Constraints.append(coeff*p_pv_C[idx] - q_pv_C[idx] <= ratedS)
+          self.Constraints.append(p_pv_C[idx] + coeff*q_pv_C[idx] <= ratedS)
+          self.Constraints.append(p_pv_C[idx] - coeff*q_pv_C[idx] <= ratedS)
+        else:
+          self.Constraints.append(q_pv_C[idx] == 0)
 
   def optConstraintsNetworkWithPFlow(self, includeBatteriesFlag,
          includeEnergyConsumersFlag, includeSolarPVsFlag,
@@ -584,9 +612,9 @@ class CompetingApp(GridAPPSD):
                sum(p_flow_C[idx] for idx in LinesOut[bus_idx]['C']))
 
 
-  def optConstraintsNetworkWithQFlow(self, includeEnergyConsumersFlag,
-                               BusInfo, LinesIn, LinesOut, EnergyConsumers,
-                               q_flow_A, q_flow_B, q_flow_C):
+  def optConstraintsNetworkWithQFlow(self, includeEnergyConsumersFlag, includeSolarPVsFlag,
+                               BusInfo, LinesIn, LinesOut, EnergyConsumers, SolarPVsInfo,
+                               q_flow_A, q_flow_B, q_flow_C, q_pv_A, q_pv_B, q_pv_C):
     for bus in BusInfo:
       bus_idx = BusInfo[bus]['idx']
       if bus_idx not in LinesOut:
@@ -599,6 +627,11 @@ class CompetingApp(GridAPPSD):
              'A' in EnergyConsumers[bus]['kW']:
             injection_q = EnergyConsumers[bus]['kVar']['A']
 
+          if includeSolarPVsFlag and bus in SolarPVsInfo and \
+             'A' in SolarPVsInfo[bus]['phase']:
+            idx = SolarPVsInfo[bus]['idx']
+            injection_q -= q_pv_A[idx]
+
           self.Constraints.append(sum(q_flow_A[idx] \
                for idx in LinesIn[bus_idx]['A']) - injection_q == \
              sum(q_flow_A[idx] for idx in LinesOut[bus_idx]['A']))
@@ -608,6 +641,11 @@ class CompetingApp(GridAPPSD):
           if includeEnergyConsumersFlag and bus in EnergyConsumers and \
              'B' in EnergyConsumers[bus]['kW']:
             injection_q = EnergyConsumers[bus]['kVar']['B']
+
+          if includeSolarPVsFlag and bus in SolarPVsInfo and \
+             'B' in SolarPVsInfo[bus]['phase']:
+            idx = SolarPVsInfo[bus]['idx']
+            injection_q -= q_pv_B[idx]
 
           self.Constraints.append(sum(q_flow_B[idx] \
                for idx in LinesIn[bus_idx]['B']) - injection_q == \
@@ -619,6 +657,12 @@ class CompetingApp(GridAPPSD):
              'C' in EnergyConsumers[bus]['kW']:
             injection_q = EnergyConsumers[bus]['kVar']['C']
 
+          if includeSolarPVsFlag and bus in SolarPVsInfo and \
+             'C' in SolarPVsInfo[bus]['phase']:
+            idx = SolarPVsInfo[bus]['idx']
+            injection_q -= q_pv_C[idx]
+
+
           self.Constraints.append(sum(q_flow_C[idx] \
                for idx in LinesIn[bus_idx]['C']) - injection_q == \
              sum(q_flow_C[idx] for idx in LinesOut[bus_idx]['C']))
@@ -628,7 +672,7 @@ class CompetingApp(GridAPPSD):
                                RegulatorsIdx, EnergySource, b_i, reg_taps,
                                p_flow_A, p_flow_B, p_flow_C,
                                q_flow_A, q_flow_B, q_flow_C, v_A, v_B, v_C):
-    v_min, v_max = (0.95 * 2401.77) ** 2, (1.05 * 2401.77) ** 2
+    v_min, v_max = (0.9 * 2401.77) ** 2, (1.1 * 2401.77) ** 2
     for bus in BusInfo:
       bus_idx = BusInfo[bus]['idx']
       self.Constraints.append(v_A[bus_idx] >= v_min)
@@ -834,13 +878,27 @@ class CompetingApp(GridAPPSD):
     return objective
 
 
-  def optObjective1(self, BusInfo, v_A, v_B, v_C):
-    objective = sum((v_A[i] + v_B[i] + v_C[i]) for i in range(len(BusInfo)))
+  def optObjective1(self, BusInfo, SolarPVsInfo, v_A, v_B, v_C, p_pv_A, p_pv_B, p_pv_C):
+    print('Adding Objective 1 for CVR at time {}'.format(ts_time))
+    objective = sum((v_A[i] + v_B[i] + v_C[i]) for i in range(len(BusInfo))) / (2401.77 ** 2)
+    #### Adding additional term to minimize active power curtailment
+    objective_pv = 0
+    for bus in SolarPVsInfo:
+      idx = SolarPVsInfo[bus]['idx']
+      if 'A' in SolarPVsInfo[bus]['phase']:
+        objective_pv += p_pv_A[idx]
+      if 'A' in SolarPVsInfo[bus]['phase']:
+        objective_pv += p_pv_B[idx]
+      if 'B' in SolarPVsInfo[bus]['phase']:
+        objective_pv += p_pv_C[idx]
+
+    objective -= (objective_pv)/1000
     return objective
 
 
   def optObjective2(self, EnergySource, Psub, Psub_mod, Qsub, Qsub_mod,
                     p_flow_A, p_flow_B, p_flow_C, q_flow_A, q_flow_B, q_flow_C):
+    print('Adding Objective 2 for PF at time {}'.format(ts_time))
     self.Constraints.append(Psub_mod >= Psub)
     self.Constraints.append(Psub_mod >= -Psub)
 
@@ -861,27 +919,72 @@ class CompetingApp(GridAPPSD):
                                     q_flow_B[sub_flow_idx] + \
                                     q_flow_C[sub_flow_idx])
 
+    ####### simplified implementation of power factor #######
     objective = (Qsub_mod - Psub_mod)
     return objective
 
 
-  def optObjective3(self, BatteriesInfo, soc):
+  def optObjective3(self, SolarPVsInfo, BatteriesInfo, p_pv_A, p_pv_B, p_pv_C, p_batt):
     cost = pd.read_csv('lmp_data.csv')
-    cost = cost['price'].values
+    cost['time'] = pd.to_datetime(cost['time'])
+    ts_target = pd.to_datetime(str(ts_time))
+    idx_cost = abs(cost['time'] - ts_target).idxmin()
+    cost = cost['price'].values/1000
     average_cost = np.mean(cost)
-    cost_now = cost[0]
-    print("objective 3 inputs are {}, {}, {}".format(timestamp, cost_now, average_cost))
-    objective = sum(-100 * (cost_now-average_cost) * soc[i] for i in range(len(BatteriesInfo)))
+    cost_now = cost[idx_cost]
+
+    print('Adding Objective 3 for Arbitrage at time {} with current and average price {}, {}'.format(ts_target, cost_now, average_cost))
+    objective_batt = sum((cost_now-average_cost) * p_batt[i] for i in range(len(BatteriesInfo)))/1000
+
+    objective_pv = 0
+    for bus in SolarPVsInfo:
+      idx = SolarPVsInfo[bus]['idx']
+      if 'A' in SolarPVsInfo[bus]['phase']:
+        objective_pv += p_pv_A[idx]
+      if 'A' in SolarPVsInfo[bus]['phase']:
+        objective_pv += p_pv_B[idx]
+      if 'B' in SolarPVsInfo[bus]['phase']:
+        objective_pv += p_pv_C[idx]
+
+    objective_pv = -1 * cost_now * objective_pv /1000
+    objective = objective_batt + objective_pv
+
     return objective
 
 
-  def optObjective4(self, BatteriesInfo, soc):
-    objective = sum(-100 * soc[i] for i in range(len(BatteriesInfo)))
+  def optObjective4(self, EnergySource, Psub, Psub_mod, p_flow_A, p_flow_B, p_flow_C):
+
+    print('Adding Objective 4 for Peak Load at time {}'.format(ts_time))
+    target_peak = 2e6
+    self.Constraints.append(Psub_mod >= Psub - target_peak)
+    self.Constraints.append(Psub_mod >= -Psub + target_peak)
+
+    flow_min, flow_max = -5e6, 5e6
+    self.Constraints.append(Psub >= flow_min)
+    self.Constraints.append(Psub <= flow_max)
+    self.Constraints.append(Psub_mod >= flow_min)
+    self.Constraints.append(Psub_mod <= flow_max)
+
+    sub_flow_idx = EnergySource['flow_idx']
+    self.Constraints.append(Psub == p_flow_A[sub_flow_idx] + \
+                                    p_flow_B[sub_flow_idx] + \
+                                    p_flow_C[sub_flow_idx])
+
+    # originally Psub_mod was scaled by 1000 to solve an "unbounded" error
+    # with some version of CVXPY, but now I'm seeing it run fine without that
+    # scaling and I don't like the mismatch with Psub_mod on the second stage
+    # optmization so I'm going to go back to no scaling. The PuLP version
+    # never had scaling.
+    #objective = Psub_mod / 1000
+    objective = Psub_mod /1000
+
     return objective
 
 
   def optObjective5(self, BatteriesInfo, soc):
+    print('Adding Objective 5 for Resilience at time {}'.format(ts_time))
     objective = sum(-100 * soc[i] for i in range(len(BatteriesInfo)))
+    objective = 0
     return objective
 
 
@@ -903,7 +1006,12 @@ class CompetingApp(GridAPPSD):
 
 
   def optDispatch(self, includeRegulatorsFlag, includeBatteriesFlag,
-                  includeSolarPVsFlag):
+                  includeSolarPVsFlag, includeVoltagesFlag):
+
+    if includeVoltagesFlag:
+      volt_sum = sum((self.v_A[i].value + self.v_B[i].value + self.v_C[i].value) for i in range(len(self.BusInfo))) / (2401.77 ** 2)
+      print("Optimized sum of Voltages: {}".format(volt_sum))
+
     if includeRegulatorsFlag:
       regulator_taps = []
       for reg in self.RegulatorsInfo:
@@ -979,7 +1087,7 @@ class CompetingApp(GridAPPSD):
       print('')
     '''
 
-    if includeRegulatorsFlag or includeBatteriesFlag:
+    if includeRegulatorsFlag or includeBatteriesFlag or includeSolarPVsFlag:
       dispatch_message = self.difference_builder.get_message()
       dispatch_message['app_name'] = self.app_name
       print('Sending Measurements DifferenceBuilder message!', flush=True)
@@ -1090,7 +1198,7 @@ class CompetingApp(GridAPPSD):
     #print('Starting SolarPVsInfo: ' + json.dumps(self.SolarPVsInfo, indent=2), flush=True)
 
     self.BatteriesInfo, self.BatteriesBus = AppUtil.getBatteries(sparql_mgr)
-    print('Starting BatteriesInfo: ' + json.dumps(self.BatteriesInfo, indent=2), flush=True)
+    # print('Starting BatteriesInfo: ' + json.dumps(self.BatteriesInfo, indent=2), flush=True)
 
     # objs = sparql_mgr.obj_dict_export('LinearShuntCompensator')
     # print('Count of LinearShuntCompensators Dict: ' + str(len(objs)),
@@ -1427,18 +1535,19 @@ class CompetingApp(GridAPPSD):
         if not self.includeRegulatorsFlag:
           self.updateRegulatorTaps(message['measurements'])
 
-        global timestamp
-        timestamp = int(message['timestamp'])
+        global ts_time
+        ts_unix = int(message['timestamp'])
+        ts_time= datetime.utcfromtimestamp(ts_unix).time()
 
         # If doing real-time simulation must subtract 5 off timestamp to make it
         # evenly divisble by multiples of the 3 second GridLAB-D time interval
-        if (timestamp-5) % optIntervalSec != 0:
+        if (ts_unix-5) % optIntervalSec != 0:
         # If doing non-real-time simulation remove the 5 second offset because
         # GridLAB-D outputs at 60 second intervals
         #if timestamp % optIntervalSec != 0:
-          print('Simulation timestamp (skipping optimization): '+str(timestamp), flush=True)
+          print('Simulation timestamp (skipping optimization): '+str(ts_time), flush=True)
         else:
-          print('Simulation timestamp for optimization: ' + str(timestamp), flush=True)
+          print('Simulation timestamp for optimization: ' + str(ts_time), flush=True)
 
           self.optPerform()
 
