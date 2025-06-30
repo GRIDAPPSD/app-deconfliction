@@ -1,7 +1,7 @@
 # app-deconfliction/service
 
 Author: Gary Black <br>
-Last updated: June 27, 2025
+Last updated: June 30, 2025
 
 ## Purpose
 
@@ -186,11 +186,11 @@ Although the run-deconfliction.sh wrapper script starts a number of processes, s
 
 ## App Scalability Task
 
-For the FY25 App Scalability Task the CVXPY optimization app was reworked to support specifying combinations of objectives and optimization problem features to include and exclude. This allows suites of applications to be defined and run for scalability testing. This version of the optimization app is contained in the optimization-app-cvxpy-modular.py and there is a new mode of invoking the deconfliction pipeline specifically for app scalability testing.
+For the FY25 App Scalability Task the CVXPY optimization app was reworked to support specifying combinations of objectives and optimization problem features to include and exclude. This allows suites of applications to be defined and run for scalability testing. This version of the app is named optimization-app-cvxpy-modular.py and there is a new mode of invoking the optimization app instances and deconfliction pipeline specifically for app scalability testing.
 
-In addition to reworking or modularizing the code for scalability testing two other power flow modeling enhancements were made to this code. First, reactive or "Q" power flow is now supported where previously only active power flow was modeled. Secondly, SolarPVs or PhotovoltaicUnits are now controllable devices where the optimization app determines the complex power flow solution for these and requests device updates in CIM difference builder messages.
+In addition to reworking or modularizing the code for scalability testing two other power flow modeling enhancements were made to this code. First, reactive or "Q" power flow is now supported where previously only active power flow was modeled. Secondly, SolarPVs or PhotovoltaicUnits are now controllable devices where the updated optimization app determines the complex power flow solution for these and requests device updates with CIM difference builder messages.
 
-The five objectives that have been defined in optimization-app-cvxpy-modular are:
+The five objectives that have been defined in optimization-app-cvxpy-modular.py are:
 <ol>
 <li>CVR
 <li>Power flow
@@ -212,7 +212,7 @@ Each of these objectives can be set individually or any combination of them can 
 <li>Voltages
 </ol>
 
-To run an app scalability task test, the run-deconfliction.sh wrapper script takes a special value for the <APPS> argument instead of the usual shorthand code for the objective functions to run. This is a value of "s" for scalability testing which results in the app instances to run being taken from a file named app_setup.csv in the optimization-apps directory.
+To run an app scalability task test, the run-deconfliction.sh wrapper script takes a special value for the \<APPS\> argument instead of the usual shorthand code for the objective functions to run. This is a value of "s" for scalability testing which results in the app instances being defined in a file named app_setup.csv in the optimization-apps directory.
 
 ## Post FY24 TO-DO
 
