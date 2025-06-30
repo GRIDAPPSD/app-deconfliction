@@ -232,7 +232,7 @@ Here are the dependencies to produce meaningful results:
 <li>if objective #5 is applied then includeBatteriesFlag must always be "1"
 </ul>
 
-For performing app scalability testing where the deconfliction pipeline processing is not of concern, it is recommended that both rules and cooperation stages of deconfliction be turned off. This results simply in optimization stage deconfliction (the centroid of all conflicting device setpoints) being applied to quickl produce a ResolutionVector from a ConflictMatrix. This specifically keeps apps from needing to respond to cooperation request messages from the pipeline to streamline communications. To do this, edit deconfliction-pipeline.py in the deconfliction-pipeline directory and search for "APP SCALABILITY" for guidance on the code updates needed.
+For performing app scalability testing where the deconfliction pipeline processing is not of concern, it is recommended that both rules and cooperation stages of deconfliction be turned off. This results in only optimization stage deconfliction (the centroid of all conflicting device setpoints) being applied to quickly produce a ResolutionVector from a ConflictMatrix. This specifically keeps apps from needing to respond to cooperation request messages from the pipeline to streamline communications. To do this, edit deconfliction-pipeline.py in the deconfliction-pipeline directory and search for "APP SCALABILITY" for guidance on the code changes needed.
 
 Conflict Matrix Snapshot for 5 Realistic Apps            |  Conflict Matrix Snapshot for 5 Realistic Apps
 :-------------------------:|:-------------------------:
