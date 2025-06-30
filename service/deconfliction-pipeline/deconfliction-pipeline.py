@@ -2232,6 +2232,12 @@ class DeconflictionPipeline(GridAPPSD):
     self.printAllValidatorFlag = False
     self.printAllDispatchesFlag = False
 
+    # APP SCALABILITY: to streamline the deconfliction workflow when focused
+    # on running large numbers of apps rather than on the deconfliction
+    # pipeline, it is recommended to turn off both rules and cooperation
+    # stages deconfliction using the followingflags below:
+    # self.rulesStageFirstFlag, self.rulesStageLastFlag, self.coopStageFlag
+
     # controls whether rules stage deconfliction is done as the first stage
     # using the ConflictMatrix and/or deferred until the last stage before
     # device dispatch using the ResolutionVector
@@ -2239,8 +2245,11 @@ class DeconflictionPipeline(GridAPPSD):
     self.rulesStageFirstFlag = False
     self.rulesStageLastFlag = False
     self.noValidatorRulesFlag = True
+
+    # controls where cooperation stage deconfliction is done
     #self.coopStageFlag = True
     self.coopStageFlag = False
+
     self.refCount = 0 # for debug/verification
 
     # rules settings for short simulations
