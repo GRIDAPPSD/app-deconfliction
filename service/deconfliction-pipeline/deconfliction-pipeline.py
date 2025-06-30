@@ -236,11 +236,7 @@ class DeconflictionPipeline(GridAPPSD):
       self.pltFile.flush()
 
       # Monish wants ConflictMatrix changes written separately for plotting
-      #self.cmatFile.write(str(self.ConflictMatrix))
-      print(self.ConflictMatrix, file=self.cmatFile)
-      #pprint.pp(self.ConflictMatrix, stream=self.cmatFile)
-      #self.cmatFile.write('\n')
-      self.cmatFile.flush()
+      self.logConflictMatrix()
 
     if printAllConflictsResolutionsFlag:
       print('SetpointProcessor--ConflictMatrix: ' +str(self.ConflictMatrix))
@@ -874,6 +870,21 @@ class DeconflictionPipeline(GridAPPSD):
             print('~TEST DEBUG ConflictMatrix ' + msg + ', app: ' + app +
                   ', device: ' + name + ', ref: ' + str(self.refCount) +
                   ', setpoint: ' + str(self.ConflictMatrix[device][app][1]))
+
+
+  def logConflictMatrix(self):
+    noComplexCMat = copy.deepcopy(self.ConflictMatrix)
+
+    for device in self.ConflictMatrix:
+      name = MethodUtil.DeviceToName[device]
+      if name.startswith('PhotovoltaicUnit.'):
+        for app in self.ConflictMatrix[device]:
+          cmplx = self.ConflictMatrix[device][app][1]
+          noComplexCMat[device][app] = (self.ConflictMatrix[device][app][0],
+                                        (cmplx.real, cmplx.imag))
+
+    print(json.dumps(noComplexCMat), file=self.cmatFile)
+    self.cmatFile.flush()
 
 
   def logResolutionPV(self, msg, resolutionVector):
