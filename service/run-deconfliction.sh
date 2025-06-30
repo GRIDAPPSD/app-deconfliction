@@ -86,10 +86,14 @@ read -d "\n" SIMID SIMREQ <<< $(./sim-starter.py $MODEL)
 cd ../optimization-apps
 
 if [[ $APPS == "s" || $APPS == "S" ]]; then
+  APPSETUP="app_setup.csv"
+  if [ "$#" -gt 2 ]; then
+    APPSETUP=$3
+  fi
   # scalability task invocation
-  numlines=`grep -c . app_setup.csv`
+  numlines=`grep -c . $APPSETUP`
   for ((line=2; line<=$numlines; line++)); do
-    ./run-scalability.sh $SIMID "$SIMREQ" $line >/dev/null &
+    ./run-scalability.sh $SIMID "$SIMREQ" $line $APPSETUP >/dev/null &
   done
 fi
 
