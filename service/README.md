@@ -184,6 +184,36 @@ The run-deconfliction.sh wrapper script normally only shows diagnostic log outpu
 
 Although the run-deconfliction.sh wrapper script starts a number of processes, some of them as background jobs, there is special logic that "traps" ctrl-C exits from the script and properly terminates all jobs associated with the deconfliction service such as competing apps. Note that in the case of a ctrl-C exit from the wrapper script that a GridLAB-D simulation that has been started will not be terminated and instead run to completion.
 
+## App Scalability Task
+
+For the FY25 App Scalability Task the CVXPY optimization app was reworked to support specifying combinations of objectives and optimization problem features to include and exclude. This allows suites of applications to be defined and run for scalability testing. This version of the optimization app is contained in the optimization-app-cvxpy-modular.py and there is a new mode of invoking the deconfliction pipeline specifically for app scalability testing.
+
+In addition to reworking or modularizing the code for scalability testing two other power flow modeling enhancements were made to this code. First, reactive or "Q" power flow is now supported where previously only active power flow was modeled. Secondly, SolarPVs or PhotovoltaicUnits are now controllable devices where the optimization app determines the complex power flow solution for these and requests device updates in CIM difference builder messages.
+
+The five objectives that have been defined in optimization-app-cvxpy-modular are:
+<ol>
+<li>CVR
+<li>Power flow
+<li>Arbitrage
+<li>Peak load
+<li>Resilience
+</ol>
+
+Each of these objectives can be set individually or any combination of them can be specified for an app instance including weighting factors for each objective. The eight optimization problem features that can be toggled on or off for specifying an app instance are:
+
+<ol>
+<li>Energy consumers
+<li>Active or "P" SolarPVs
+<li>Reactive or "Q" SolarPVs
+<li>Batteries
+<li>Regulators
+<li>Active or "P" power flow
+<li>Reactive or "Q" power flow
+<li>Voltages
+</ol>
+
+To run an app scalability task test, the run-deconfliction.sh wrapper script takes a special value for the <APPS> argument instead of the usual shorthand code for the objective functions to run. This is a value of "s" for scalability testing which results in the app instances to run being taken from a file named app_setup.csv in the optimization-apps directory.
+
 ## Post FY24 TO-DO
 
 <ul>
