@@ -43,11 +43,12 @@ def main():
         newAppName = f"app{random.randint(10, 999)}"
         if newAppName in topData['AppName']:
             continue
-        newList = "[" + ' '.join(map(str, randomRealsSum1())) + "]"
+        newList = randomRealsSum1()
+        newListStr = "[" + ' '.join(map(str, newList)) + "]"
 
         newRow = pd.DataFrame({
             'AppName': newAppName,
-            'Objective': [newList],
+            'Objective': [newListStr],
             'includeEnergyConsumersFlag': 1,
             'includeSolarPVsFlag': random.randint(0, 1),
             'includeSolarPVsQFlag': random.randint(0, 1),
@@ -57,6 +58,9 @@ def main():
             'includeQFlowFlag': random.randint(0, 1),
             'includeVoltagesFlag': random.randint(0, 1)
         })
+        if newRow['includeVoltagesFlag'].iloc[0] < 0.5: 
+            if newList[0] > 0.00001:
+                continue
         if newRow['includeVoltagesFlag'].iloc[0] > 0.5:
             if newRow['includePFlowFlag'].iloc[0] < 0.5:
                 continue
@@ -69,21 +73,6 @@ def main():
         topData = pd.concat([topData, newRow], ignore_index=True)
 
     topData.to_csv(targetFilename02, index=False)
-    return
-    with open('output.csv', 'w', newline='') as csvfile:
-        writer = csv.writer(csvfile, quoting=csv.QUOTE_NONE, escapechar=' ')
-        
-        # Write header
-        writer.writerow(topData.columns)
-        
-        # Write data rows
-        for _, row in topData.iterrows():
-            # Convert list to desired format
-            formatted_row = []
-            for item in row: 
-                formatted_row.append(item)
-            writer.writerow(formatted_row)
-
 
     return 0
 
