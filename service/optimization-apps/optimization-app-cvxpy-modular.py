@@ -880,19 +880,19 @@ class CompetingApp(GridAPPSD):
 
   def optObjective1(self, BusInfo, SolarPVsInfo, v_A, v_B, v_C, p_pv_A, p_pv_B, p_pv_C):
     print('Adding Objective 1 for CVR at time {}'.format(ts_time))
-    objective = sum((v_A[i] + v_B[i] + v_C[i]) for i in range(len(BusInfo))) / (2401.77 ** 2)
+    objective = sum((v_A[i] + v_B[i] + v_C[i]) for i in range(len(BusInfo))) / ((2401.77 ** 2) * (123*3))
     #### Adding additional term to minimize active power curtailment
     objective_pv = 0
     for bus in SolarPVsInfo:
       idx = SolarPVsInfo[bus]['idx']
       if 'A' in SolarPVsInfo[bus]['phase']:
         objective_pv += p_pv_A[idx]
-      if 'A' in SolarPVsInfo[bus]['phase']:
-        objective_pv += p_pv_B[idx]
       if 'B' in SolarPVsInfo[bus]['phase']:
+        objective_pv += p_pv_B[idx]
+      if 'C' in SolarPVsInfo[bus]['phase']:
         objective_pv += p_pv_C[idx]
 
-    objective -= (objective_pv)/1000
+    objective -= (objective_pv)/1000000
     return objective
 
 
@@ -920,7 +920,7 @@ class CompetingApp(GridAPPSD):
                                     q_flow_C[sub_flow_idx])
 
     ####### simplified implementation of power factor #######
-    objective = (Qsub_mod - Psub_mod)
+    objective = (Qsub_mod - Psub_mod) / 2000000
     return objective
 
 
@@ -947,7 +947,7 @@ class CompetingApp(GridAPPSD):
         objective_pv += p_pv_C[idx]
 
     objective_pv = -1 * cost_now * objective_pv /1000
-    objective = objective_batt + objective_pv
+    objective = (objective_batt + objective_pv) * self.deltaT
 
     return objective
 
@@ -976,15 +976,14 @@ class CompetingApp(GridAPPSD):
     # optmization so I'm going to go back to no scaling. The PuLP version
     # never had scaling.
     #objective = Psub_mod / 1000
-    objective = Psub_mod /1000
+    objective = Psub_mod /1000000
 
     return objective
 
 
   def optObjective5(self, BatteriesInfo, soc):
     print('Adding Objective 5 for Resilience at time {}'.format(ts_time))
-    objective = sum(-100 * soc[i] for i in range(len(BatteriesInfo)))
-    objective = 0
+    objective = sum(-100 * soc[i] for i in range(len(BatteriesInfo))) / (100)
     return objective
 
 
@@ -997,6 +996,7 @@ class CompetingApp(GridAPPSD):
     problem.solve(solver=cp.GLPK_MI, abstol=1e-3, kktsolver='chol',
                   feastol=1e-3, max_iters=100, verbose=False)
     print('Optimization status:', problem.status, flush=True)
+    print('Optimization Value:', problem.value, flush=True)
     now = datetime.now()
     optTime = (now - startTime).total_seconds()
     optInterval= (now - self.lastTime).total_seconds()
@@ -1009,7 +1009,8 @@ class CompetingApp(GridAPPSD):
                   includeSolarPVsFlag, includeVoltagesFlag):
 
     if includeVoltagesFlag:
-      volt_sum = sum((self.v_A[i].value + self.v_B[i].value + self.v_C[i].value) for i in range(len(self.BusInfo))) / (2401.77 ** 2)
+      # volt_sum = sum((self.v_A[i].value + self.v_B[i].value + self.v_C[i].value) for i in range(len(self.BusInfo))) / (2401.77 ** 2)
+      volt_sum = sum((self.v_A[i].value + self.v_B[i].value + self.v_C[i].value) for i in range(len(self.BusInfo))) / ((2401.77 ** 2) * (123 * 3))
       print("Optimized sum of Voltages: {}".format(volt_sum))
 
     if includeRegulatorsFlag:
