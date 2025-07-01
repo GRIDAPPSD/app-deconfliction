@@ -86,16 +86,6 @@ You must have the dockerized GridAPPS-D platform running which is available at h
 </li>
 
 <li>
-An updated version of the IEEE 123-bus model defining batteries and solarPVs not yet included in the standard GridAPPS-D platform distribution must be loaded after starting the platform. The CIM model for this updated test feeder is exported to the sim-starter directory. Open the Blazegraph URL in the web browser and upload the file (ieee123apps.xml) using the "UPDATE" tab from http://localhost:8889/bigdata/#update (hit "Browse..." button to select file).
-
-Note that as long as docker containers are not cleared with the "./stop.sh -c" command, it is possible to stop and start the platform repeatedly without reloading this updated 123-bus model.
-</li>
-
-<li>
-Along with uploading the ieee123apps.xml file under Blazegraph, measurements for this model must be inserted. From ~/git do a git clone of https://github.com/GRIDAPPSD/CIMHub. Then from the app-deconfliction/service/sim-starter/measurements directory copy all files there to ~/git/CIMHub/utils. Do "sudo pip3 install SPARQLWrapper" unless this has already been installed. CURRENTLY STUCK HERE trying to run insert_measurements_123apps.sh!!
-</li>
-
-<li>
 Python version 3.8 or newer is required (although not newer than 3.10 currently) as the one in your $PATH and can be checked with the command "python3 --version".
 </li>
 
@@ -108,6 +98,16 @@ $ python
 ````
 
 If the import returns an error message, see <https://github.com/GRIDAPPSD/gridappsd-python> for installation instructions. May need to do a "sudo apt install python-pip3" to be able to do the "sudo pip3 install gridappsd-python" needed to install this module.
+</li>
+
+<li>
+An updated version of the IEEE 123-bus model defining batteries and solarPVs not yet included in the standard GridAPPS-D platform distribution must be loaded after starting the platform. The CIM model for this updated test feeder is exported to the sim-starter directory. Open the Blazegraph URL in the web browser and upload the file (ieee123apps.xml) using the "UPDATE" tab from http://localhost:8889/bigdata/#update (hit "Browse..." button to select file).
+
+Note that as long as docker containers are not cleared with the "./stop.sh -c" command, it is possible to stop and start the platform repeatedly without reloading this updated 123-bus model.
+</li>
+
+<li>
+Along with uploading the ieee123apps.xml file under Blazegraph, measurements for this model must be inserted. From ~/git do a git clone of https://github.com/GRIDAPPSD/CIMHub. Then from the app-deconfliction/service/sim-starter/measurements directory copy the two .py files there to ~/git/CIMHub/src_python/cimhub and then copy the two .sh files to ~/git/CIMHub. Do "sudo pip3 install SPARQLWrapper" unless this package has already been installed in python3. Change directory to ~/git/CIMHub and run "./list_measurements_123apps.sh" which will generate a number of .txt files with a prefix of "ieee123_app_deconfliction_". Finally, run "./insert_measurements_123apps.sh" to add the measurements defined in these .txt files.
 </li>
 
 <li>
