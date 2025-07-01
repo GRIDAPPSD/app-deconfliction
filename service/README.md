@@ -146,7 +146,7 @@ $ sudo pip3 install cvxpy[CBC,CVXOPT,GLOP,GLPK]
 $ sudo pip3 install pandas
 ````
 
-Note that glpk-utils is needed by the PuLP and CVXPY optmization packages.
+Note that glpk-utils is needed by the PuLP and CVXPY optmization packages and must be installed before installing the optimization packages.
 </li>
 
 <li>
@@ -173,7 +173,7 @@ $ ./run-deconfliction.sh <MODEL> <APPS> [--optlib <OPTLIB>] [--interval <INTERVA
 
 where \<MODEL\> is a shorthand used for looking up the full GridAPPS-D simulation request and feeder mrid. Currently, the only \<MODEL\> value supported for the deconfliction service is "123apps", which uses the updated IEEE 123-bus model that includes batteries, assuming that has been loaded into the GridAPPS-D platform per the guidance above.
 
-\<APPS\> is a shorthand code composed of the first letters for each of the competing apps to run. The possible apps are resilience, code "r" or "R"; max_local, code "m" or "M", and cvr, code "c" or "C". Thus, "rmc" would run all three apps and "rm" would run resilience and max_local without cvr.
+\<APPS\> is a shorthand code composed of the first letters for each of the competing apps to run. The possible apps are resilience, code "r" or "R"; max_local, code "m" or "M", and cvr, code "c" or "C". Thus, "rmc" would run all three apps and "rm" would run resilience and max_local without cvr. There is also an "s" code for running app scalability test suites as described in App Scalability section below.
 
 \<OPTLIB\> is the optional name of the optimization library to use for competing apps. If the value is "pulp" then the PuLP library will be used. Otherwise, the CVXPY library will be used.
 
@@ -256,10 +256,9 @@ Conflict Matrix Snapshot for 25 Apps            |  Conflict Matrix Snapshot for 
 [//]: # ["Conflict_Matrix"](deconfliction-pipeline/plots/Conflict_Matrix_5_apps_1751321808.png)
 [//]: #  *Conflict Matrix Snapshot for 5 Realistic Apps*
 
-## Post FY24 TO-DO
+## FY25+ TO-DO
 
 <ul>
-<li>Include commands with prerequisite item 2 for adding measurements to the modified 123apps model allowing it to run simulations.
 <li>Get file-based weights working in combination with automatic cooperation incentive weights or toss the file-based weights feature.
 <li>Need to get the modified 123apps model added to the default GridAPPS-D platform distribution.
 <li>Register the deconfliction service as a formal service in the GridAPPS-D platform.
