@@ -23,19 +23,26 @@ For details on the combined/staged deconfliction methodology implemented in the 
 ├── run-deconfliction.sh
 ├── sim-starter
     ├── sim-starter.py
-    ├── ieee123apps.xml
     ├── 123apps-config.json
-    └── ...
+    ├── ...
+    └── 123apps_model
+        ├── ieee123apps.xml
+        ├── InsertMeasurementsOld.py
+        ├── ListMeasureablesOld.py
+        ├── insert_measurements_123apps.sh
+        └── list_measurements_123apps.sh
 ├── optimization-apps
     ├── optimization-app-pulp.py
     ├── optimization-app-cvxpy-modular.py
     ├── run-resilience.sh
     ├── run-max_local.sh
-    └── run-cvr.sh
+    ├── run-cvr.sh
+    ├── run-scalability.sh
     └── ...
 ├── deconfliction-pipeline
     ├── deconfliction-pipeline.py
-    └── run-pipeline.sh
+    ├── run-pipeline.sh
+    └── ...
 └── shared
     ├── AppUtil.py
     ├── MethodUtil.py
