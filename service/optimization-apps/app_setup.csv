@@ -1,4 +1,4 @@
-AppName,Objective,includeEnergyConsumersFlag,includeSolarPVsFlag,includeSolarPVsQFlag,includeBatteriesFlag,includeRegulatorsFlag,includePFlowFlag,includeQFlowFlag,includeVoltagesFlag
+AppName,Objective,includeEnergyConsumersFlag,includeSolarPVsPFlag,includeSolarPVsQFlag,includeBatteriesFlag,includeRegulatorsFlag,includePFlowFlag,includeQFlowFlag,includeVoltagesFlag
 app1,[1 0 0 0 0],1,1,1,1,1,1,1,1
 app2,[0 1 0 0 0],1,1,1,1,1,1,1,1
 app3,[0 0 1 0 0],1,1,1,1,1,1,1,1
