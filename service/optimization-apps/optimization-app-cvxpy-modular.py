@@ -175,9 +175,10 @@ class CompetingApp(GridAPPSD):
     self.includeBatteriesFlag = True
     self.includeRegulatorsFlag = True
 
-    # does it make sense to exclude either of these two?
+    # does it make sense to exclude any of these?
     self.includeEnergyConsumersFlag = True
     self.includeSolarPVsFlag = True
+    self.includeSolarPVsQFlag = True
 
     self.includePFlowFlag = True
     self.includeQFlowFlag = True
@@ -244,7 +245,8 @@ class CompetingApp(GridAPPSD):
       self.optConstraintsDERWithRegulators(self.RegulatorsInfo, self.reg_taps)
 
     if self.includeSolarPVsFlag:
-      self.optConstraintsDERWithSolarPVs(self.SolarPVsInfo, self.includeSolarPVsQFlag,
+      self.optConstraintsDERWithSolarPVs(self.SolarPVsInfo,
+                                         self.includeSolarPVsQFlag,
                                          self.p_pv_A, self.p_pv_B, self.p_pv_C,
                                          self.q_pv_A, self.q_pv_B, self.q_pv_C)
 
