@@ -197,7 +197,7 @@ In addition to reworking or modularizing the code for scalability testing two ot
 The five objectives that have been defined in optimization-app-cvxpy-modular.py are:
 <ol>
 <li>CVR
-<li>Power flow
+<li>Power Factor
 <li>Arbitrage (cost)
 <li>Peak load
 <li>Resilience
