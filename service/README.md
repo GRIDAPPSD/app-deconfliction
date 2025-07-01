@@ -90,14 +90,14 @@ Python version 3.8 or newer is required (although not newer than 3.10 currently)
 </li>
 
 <li>
-The gridappsd-python module must be installed in Python. To check if this module is already installed:
+The gridappsd-python package must be installed in Python. To check if this package is already installed:
 
 ```` bash
 $ python
 >>> import gridappsd
 ````
 
-If the import returns an error message, see <https://github.com/GRIDAPPSD/gridappsd-python> for installation instructions. May need to do a "sudo apt install python-pip3" to be able to do the "sudo pip3 install gridappsd-python" needed to install this module.
+If the import returns an error message, see <https://github.com/GRIDAPPSD/gridappsd-python> for installation instructions. May need to do a "sudo apt install python-pip3" to be able to do the "sudo pip3 install gridappsd-python" needed to install this package.
 </li>
 
 <li>
@@ -111,7 +111,7 @@ Along with uploading the ieee123apps.xml file under Blazegraph, measurements for
 </li>
 
 <li>
-Various other Python modules are required to run the different processes that are part of the deconfliction service. The recommended approach is to run one-by-one each required deconfliction process through initialization to identify missing modules. Missing modules should be installed until the process successfully initializes at which time the same initialization test can be done for the next process. The following steps walk through running each deconfliction process and cover the most likely missing modules.
+Various other Python packages are required to run the different processes that are part of the deconfliction service. The recommended approach is to run one-by-one each required deconfliction process through initialization to identify missing packages. Missing packages should be installed until the process successfully initializes at which time the same initialization test can be done for the next process. The following steps walk through running each deconfliction process and cover the most likely missing packages.
 </li>
 
 <li>
@@ -122,7 +122,7 @@ $ cd optimization-apps
 $ ./run-resilience.sh 123apps standalone
 ````
 
-Note the final argument of "standalone" must be present to perform a standalone invocation as needed for this test. If you get output starting with "Initialized resilience" after some query output, this demonstrates successful initialization and you may do a ctrl-C exit. It is best to test both a PuLP and CVXPY optimization app since each uses some different modules. The test above is for CVXPY, but PuLP can be tested with:
+Note the final argument of "standalone" must be present to perform a standalone invocation as needed for this test. If you get output starting with "Initialized resilience" after some query output, this demonstrates successful initialization and you may do a ctrl-C exit. It is best to test both a PuLP and CVXPY optimization app since each uses some different packages. The test above is for CVXPY, but PuLP can be tested with:
 
 ```` bash
 $ ./run-resilience.sh 123apps standalone pulp
@@ -139,7 +139,7 @@ $ sudo pip3 install cvxpy
 $ sudo pip3 install pandas
 ````
 
-Note that glpk-utils is needed by the PuLP and CVXPY optmization modules.
+Note that glpk-utils is needed by the PuLP and CVXPY optmization packages.
 </li>
 
 <li>
