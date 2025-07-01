@@ -142,7 +142,7 @@ $ sudo pip3 install numpy
 $ sudo pip3 install tabulate
 $ sudo apt-get install glpk-utils
 $ sudo pip3 install pulp
-$ sudo pip3 install cvxpy
+$ sudo pip3 install cvxpy[CBC,CVXOPT,GLOP,GLPK]
 $ sudo pip3 install pandas
 ````
 
