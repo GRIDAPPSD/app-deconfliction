@@ -25,7 +25,7 @@ def readSpecificColumnsFromCSV(readPath = '.', columnsList = None):
     return tempInput
 
 def main():
-    numberOfRows = 15
+    numberOfRows = 10
     rootPath = r"."
 
     target01 = f"app_setup"
@@ -39,7 +39,7 @@ def main():
         print(f"Empty dataframe for file in: {rootPath}") 
         return 0
 
-    while topData.shape[0] < numberOfRows:
+    while topData.shape[0] < 10:
         newAppName = f"app{random.randint(10, 999)}"
         if newAppName in topData['AppName']:
             continue
