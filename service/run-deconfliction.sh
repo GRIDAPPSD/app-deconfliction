@@ -90,6 +90,9 @@ if [[ $APPS == "s" || $APPS == "S" ]]; then
   if [ "$#" -gt 2 ]; then
     APPSETUP=$3
   fi
+  # use interval argument to let the pipeline know this is a scalability test
+  INTERVAL="scalability"
+
   # scalability task invocation
   numlines=`grep -c . $APPSETUP`
   for ((line=2; line<=$numlines; line++)); do
