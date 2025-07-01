@@ -1,7 +1,7 @@
 # app-deconfliction/service
 
 Author: Gary Black <br>
-Last updated: June 30, 2025
+Last updated: July 1, 2025
 
 ## Purpose
 
@@ -190,7 +190,7 @@ Although the run-deconfliction.sh wrapper script starts a number of processes, s
 
 ## App Scalability Task
 
-For the FY25 App Scalability Task the CVXPY optimization app was reworked to support specifying combinations of objectives and optimization problem features to include and exclude. This allows suites of applications to be defined and run for scalability testing. This version of the app is named optimization-app-cvxpy-modular.py and there is a new mode of invoking the optimization app instances and deconfliction pipeline specifically for app scalability testing.
+For the FY25 App Scalability Task the CVXPY optimization app was reworked to support specifying combinations of objectives and optimization problem features to include and exclude for each run of a scalability test suite. The configuration of the test suite is given in a CSV file with each line representing an optimization app instance or run. This version of the app is named optimization-app-cvxpy-modular.py and there is a new mode of invoking the optimization app instances and deconfliction pipeline through the run-deconfliction.sh wrapper script specifically for app scalability testing.
 
 In addition to reworking or modularizing the code for scalability testing two other power flow modeling enhancements were made to this code. First, reactive or "Q" power flow is now supported where previously only active power flow was modeled. Secondly, SolarPVs or PhotovoltaicUnits are now controllable devices where the updated optimization app determines the complex power flow solution for these and requests device updates with CIM difference builder messages.
 
@@ -198,7 +198,7 @@ The five objectives that have been defined in optimization-app-cvxpy-modular.py 
 <ol>
 <li>CVR
 <li>Power flow
-<li>Arbitrage
+<li>Arbitrage (cost)
 <li>Peak load
 <li>Resilience
 </ol>
@@ -216,11 +216,11 @@ Each of these objectives can be set individually or any combination of them can 
 <li>Voltages
 </ol>
 
-To run an app scalability task test, the run-deconfliction.sh wrapper script takes a special value for the \<APPS\> argument instead of the usual shorthand code for the objective functions to run. This is a value of "s" for scalability testing which results in the app instances being defined in a file named app_setup.csv in the optimization-apps directory.
+To run an app scalability task test, the run-deconfliction.sh wrapper script takes a special value for the \<APPS\> argument instead of the usual shorthand code for the objective functions to run. This is a value of "s" for scalability testing which results in the app instances being defined in a file named app_setup.csv in the optimization-apps directory. The default app_setup.csv filename can also be changed by passing the name to use as the command line argument after the "s" code. E.g., "./run-deconfliction.sh 123apps s app_setup_50.csv" would invoke an app scalability suite defined in the app_setup_50.csv file.
 
-The first line of app_setup.csv is the header defining the comma-separated value fields.  The first field, AppName, is used for the name of log files in the optimization-apps/log directory, in the deconfliction-pipeline/log/plot_data.csv file containing data for plotting, message passing between apps and the deconfliction pipeline, and for internal data structures for the pipeline such as ConflictMatrix. The second field is a space-separated vector with the weights for each of the five objective functions. A value of zero specifies that the objective should not be included and any positive floating point value indicates to apply that objective, numbers 1 through 5, with the given weighting factor. Normally the sum of the weights should add up to mean so if a single objective is applied it should be one. If all five objectives are to be applied with equal weight, the vector would be "[0.2 0.2 0.2 0.2 0.2]". When combining multiple objectives each is multiplied by the corresponding weight and summed into an overall objective for the app. The third field is the first of the eight features that can be include or not in the optimization instance. A value of "1" indicates to include the feature while a value of "0" indicates to exclude or omit the feature.
+The first line of app_setup.csv is the header defining the comma-separated value fields and each line after the first defines an instance of the app. The first field, AppName, is used for the name of log files in the optimization-apps/log directory, in the deconfliction-pipeline/log/plot_data.csv file containing data for plotting, message passing between apps and the deconfliction pipeline, and for internal data structures for the pipeline such as ConflictMatrix. The second field is a space-separated vector with the weights for each of the five objective functions. A value of zero specifies that the objective should not be included and any positive floating point value indicates to apply that objective, numbers 1 through 5, with the weighting factor of that floating point value. Normally the sum of the weights should add up to 1.0 so if a single objective is applied it should have a weight of 1. If all five objectives are to be applied with equal weight, the vector would be "[0.2 0.2 0.2 0.2 0.2]". When combining multiple objectives each is multiplied by the corresponding weight and summed into an overall objective for the app instance. The third field is the first of the eight features that can be include or not in the optimization instance. A value of "1" indicates to include the feature while a value of "0" indicates to exclude or omit the feature. The remaining seven fields are the rest of include/exclude feature values.
 
-While app scalability testing allows a large combination of objectives and features, there are a few dependencies between the various features to include in order in order for the optimization problem to be properly defined. Further, there are additional dependencies that need to be followed to produce meaningful results even though the optimization problem is properly defined without adhering to these. Here are the dependencies to define a proper optimization:
+While app scalability testing allows a large combination of objectives and features, there are a few dependencies between the various features in order for the optimization problem to be properly defined. Further, there are additional dependencies that need to be followed to produce meaningful results even though the optimization problem is properly defined without adhering to these. Here are the dependencies to define a proper optimization:
 <ul>
 <li>includeEnergyConsumersFlag must always be "1"
 <li>if includeVoltagesFlag is "1" then both includePFlowFlag and includeQFlowFlag must always be "1"
