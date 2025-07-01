@@ -1,6 +1,6 @@
 AppName,Objective,includeEnergyConsumersFlag,includeSolarPVsFlag,includeSolarPVsQFlag,includeBatteriesFlag,includeRegulatorsFlag,includePFlowFlag,includeQFlowFlag,includeVoltagesFlag
-app1,[1 0 0 0 0],1,1,1,0,1,1,1,1
-app2,[0 1 0 0 0],1,1,1,1,0,1,1,0
-app3,[0 0 1 0 0],1,1,1,1,0,1,1,1
-app4,[0 0 0 1 0],1,1,0,1,1,1,1,1
-app5,[0 0 0 0 1],1,0,0,1,0,1,1,0
+app1,[1 0 0 0 0],1,1,1,1,1,1,1,1
+app2,[0 1 0 0 0],1,1,1,1,1,1,1,1
+app3,[0 0 1 0 0],1,1,1,1,1,1,1,1
+app4,[0 0 0 1 0],1,1,1,1,1,1,1,1
+app5,[0 0 0 0 1],1,1,1,1,1,1,1,1

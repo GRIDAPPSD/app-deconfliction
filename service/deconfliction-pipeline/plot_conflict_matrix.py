@@ -35,7 +35,7 @@ for key in SolarPVs:
     device_rating_map[key] = [0, SolarPVs[key]['ratedS']]
 
 
-case_name =  '5_apps'
+case_name = '50_apps'
 conflict_matrix_filename = 'log/conflict_matrix.log'
 parsed_data = []
 
@@ -53,7 +53,7 @@ with open(conflict_matrix_filename, 'r') as f:
 
                     ## new_x = ((x - min_x) * 2 / (max_x - min_x)) - 1
                     setpoint_norm = -1 + (2*(setpoint - device_rating_map[device][0]) /  (device_rating_map[device][1] - device_rating_map[device][0]))
-                        
+
                     if time_stamp not in conflict_matrix_data:
                         conflict_matrix_data[time_stamp] = {}
                     if device not in conflict_matrix_data[time_stamp]:
@@ -66,28 +66,33 @@ with open(conflict_matrix_filename, 'r') as f:
             print(f"Error decoding JSON on line: {line.strip()} - {e}")
 
 
-
-conflict_matrix_dfs = {} 
+conflict_matrix_dfs = {}
 conflict_matrix_sizes = {}
 for time, data_dict in conflict_matrix_data.items():
-    conflict_matrix_dfs[time] = pd.DataFrame.from_dict(data_dict)
-    print('Conflict Matrix Size at Time stamp {} is {}'.format(time, conflict_matrix_dfs[time].size))
-    
+    time_stamps = conflict_matrix_dfs.keys()
+    filtered_time = [num for num in time_stamps if abs(time - num) < 15] ## aggregating data for the last X seconds
+    if len(filtered_time) > 0:
+        time = filtered_time[0]
+        conflict_matrix_dfs[time] = pd.merge(conflict_matrix_dfs[time],
+                                             pd.DataFrame.from_dict(data_dict, orient='index'), left_index=True,
+                                             right_index=True, how='outer')
+    else:
+        conflict_matrix_dfs[time] = pd.DataFrame.from_dict(data_dict, orient='index')
+    print(time, conflict_matrix_dfs[time].shape[0], conflict_matrix_dfs[time].shape[1])
 
 
 # Create a sample matrix
-# Create a sample matrix
-plt_interval  = 1751321808
-matrix_data = conflict_matrix_dfs[plt_interval].to_numpy()
-apps = list(conflict_matrix_dfs[plt_interval].index.values)
+plt_interval  = 1751337089
+matrix_data = conflict_matrix_dfs[plt_interval].to_numpy().T
+apps = list(conflict_matrix_dfs[plt_interval].keys())
 # Plot the matrix with a colormap
 fig, ax = plt.subplots()
 img = ax.imshow(matrix_data, cmap='inferno') # 'viridis' is a common colormap
 fig.colorbar(img, label='Normalized App Setpoints') # Add a colorbar to interpret the colors
-ax.set_title('Conflcit Matrix')
-ax.set_yticks(range(0,len(apps)), range(1,len(apps)+1))
+ax.set_title('Conflict Matrix')
+ax.set_yticks(range(0,len(apps), 2), range(1,len(apps)+1, 2))
 ax.set_xlabel('Device #')
 ax.set_ylabel('App #')
 fig.savefig('plots/Conflict_Matrix_{}_{}.png'.format(case_name,plt_interval))
-fig.show()
+# fig.show()
 # fig.close()
