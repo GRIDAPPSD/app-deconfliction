@@ -82,13 +82,17 @@ Using the shared folder copy over the ~/.git-credentials file from an existing V
 </li>
 </ul>
 <li>
-You must have the dockerized GridAPPS-D platform running which is available at https://github.com/GRIDAPPSD/gridappsd-docker. Follow the documentation there if you are unfamiliar with running the platform. To get the run.sh script to run may need to do a "sudo apt install docker-compose" and "sudo rm /usr/local/bin/docker-compose"
+You must have the dockerized GridAPPS-D platform running which is available at https://github.com/GRIDAPPSD/gridappsd-docker. Follow the documentation there if you are unfamiliar with running the platform. To get the run.sh script to run may need to do a "sudo apt install docker-compose" and "sudo rm /usr/local/bin/docker-compose". Also, note that app-deconfliction currently is not compatible with anything newer than the v2023.07.0 version of the platform. That's currently the default if a -t value is not given to run.sh, but that could change since the version in run.sh hasn't been updated in a couple years. Definitely can't do "./run.sh -t develop" and have it work with app-deconfliction. There are about 850 lines of query code in the app-deconfliction/service/shared directory for instance that hasn't been updated to work with CIM-graph.
 </li>
 
 <li>
 An updated version of the IEEE 123-bus model defining batteries and solarPVs not yet included in the standard GridAPPS-D platform distribution must be loaded after starting the platform. The CIM model for this updated test feeder is exported to the sim-starter directory. Open the Blazegraph URL in the web browser and upload the file (ieee123apps.xml) using the "UPDATE" tab from http://localhost:8889/bigdata/#update (hit "Browse..." button to select file).
 
 Note that as long as docker containers are not cleared with the "./stop.sh -c" command, it is possible to stop and start the platform repeatedly without reloading this updated 123-bus model.
+</li>
+
+<li>
+Along with uploading the ieee123apps.xml file under Blazegraph, measurements for this model must be inserted. From ~/git do a git clone of https://github.com/GRIDAPPSD/CIMHub. Then from the app-deconfliction/service/sim-starter/measurements directory copy all files there to ~/git/CIMHub/utils. Do "sudo pip3 install SPARQLWrapper" unless this has already been installed. CURRENTLY STUCK HERE trying to run insert_measurements_123apps.sh!!
 </li>
 
 <li>
