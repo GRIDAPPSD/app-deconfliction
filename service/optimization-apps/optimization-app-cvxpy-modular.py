@@ -145,7 +145,7 @@ class CompetingApp(GridAPPSD):
           flush=True)
 
     self.includeEnergyConsumersFlag = bool(int(tokens[2]))
-    self.includeSolarPVsFlag = bool(int(tokens[3]))
+    self.includeSolarPVsPFlag = bool(int(tokens[3]))
     self.includeSolarPVsQFlag = bool(int(tokens[4]))
     self.includeBatteriesFlag = bool(int(tokens[5]))
     self.includeRegulatorsFlag = bool(int(tokens[6]))
@@ -155,8 +155,8 @@ class CompetingApp(GridAPPSD):
 
     print('Scalability include EnergyConsumers: ' +
           str(self.includeEnergyConsumersFlag), flush=True)
-    print('Scalability include SolarPVs: ' +
-          str(self.includeSolarPVsFlag), flush=True)
+    print('Scalability include SolarPVs Active: ' +
+          str(self.includeSolarPVsPFlag), flush=True)
     print('Scalability include SolarPVs Reactive: ' +
           str(self.includeSolarPVsQFlag), flush=True)
     print('Scalability include Batteries: ' +
@@ -177,7 +177,7 @@ class CompetingApp(GridAPPSD):
 
     # does it make sense to exclude any of these?
     self.includeEnergyConsumersFlag = True
-    self.includeSolarPVsFlag = True
+    self.includeSolarPVsPFlag = True
     self.includeSolarPVsQFlag = True
 
     self.includePFlowFlag = True
@@ -244,7 +244,7 @@ class CompetingApp(GridAPPSD):
     if self.includeRegulatorsFlag:
       self.optConstraintsDERWithRegulators(self.RegulatorsInfo, self.reg_taps)
 
-    if self.includeSolarPVsFlag:
+    if self.includeSolarPVsPFlag:
       self.optConstraintsDERWithSolarPVs(self.SolarPVsInfo,
                                          self.includeSolarPVsQFlag,
                                          self.p_pv_A, self.p_pv_B, self.p_pv_C,
@@ -252,17 +252,19 @@ class CompetingApp(GridAPPSD):
 
     if self.includePFlowFlag:
       self.optConstraintsNetworkWithPFlow(self.includeBatteriesFlag,
-                      self.includeEnergyConsumersFlag, self.includeSolarPVsFlag,
-                      self.BusInfo, self.LinesIn, self.LinesOut,
-                      self.EnergyConsumers, self.SolarPVsInfo,
-                      self.BatteriesBus, self.BatteriesInfo, self.p_batt,
-                      self.p_flow_A, self.p_flow_B, self.p_flow_C,
-                      self.p_pv_A, self.p_pv_B, self.p_pv_C)
+                     self.includeEnergyConsumersFlag, self.includeSolarPVsPFlag,
+                     self.BusInfo, self.LinesIn, self.LinesOut,
+                     self.EnergyConsumers, self.SolarPVsInfo,
+                     self.BatteriesBus, self.BatteriesInfo, self.p_batt,
+                     self.p_flow_A, self.p_flow_B, self.p_flow_C,
+                     self.p_pv_A, self.p_pv_B, self.p_pv_C)
 
     if self.includeQFlowFlag:
-      self.optConstraintsNetworkWithQFlow(self.includeEnergyConsumersFlag, self.includeSolarPVsFlag,
-              self.BusInfo, self.LinesIn, self.LinesOut, self.EnergyConsumers, self.SolarPVsInfo,
-              self.q_flow_A, self.q_flow_B, self.q_flow_C, self.q_pv_A, self.q_pv_B, self.q_pv_C)
+      self.optConstraintsNetworkWithQFlow(self.includeEnergyConsumersFlag,
+                     self.includeSolarPVsPFlag, self.BusInfo, self.LinesIn,
+                     self.LinesOut, self.EnergyConsumers, self.SolarPVsInfo,
+                     self.q_flow_A, self.q_flow_B, self.q_flow_C,
+                     self.q_pv_A, self.q_pv_B, self.q_pv_C)
 
 
     if self.includeVoltagesFlag:
@@ -335,12 +337,12 @@ class CompetingApp(GridAPPSD):
     self.optDo(objective)
 
     self.optDispatch(self.includeRegulatorsFlag, self.includeBatteriesFlag,
-                     self.includeSolarPVsFlag, self.includeVoltagesFlag)
+                     self.includeSolarPVsPFlag, self.includeVoltagesFlag)
 
 
   def optDefineVariables(self, includePFlowFlag, includeQFlowFlag,
                          includeVoltagesFlag, includeBatteriesFlag,
-                         includeRegulatorsFlag, includeSolarPVsFlag):
+                         includeRegulatorsFlag, includeSolarPVsPFlag):
 
     # if includePFlowFlag:
     len_BranchInfo = len(self.BranchInfo)
@@ -391,7 +393,7 @@ class CompetingApp(GridAPPSD):
       # dictionary to track the current tap position from measurements
       self.meas_reg_taps = {}
 
-    # if includeSolarPVsFlag:
+    # if includeSolarPVsPFlag:
     len_SolarPVsInfo = len(self.SolarPVsInfo)
     self.p_pv_A = cp.Variable(len_SolarPVsInfo, integer=False,name='p_pv_A')
     self.p_pv_B = cp.Variable(len_SolarPVsInfo, integer=False,name='p_pv_B')
@@ -521,7 +523,7 @@ class CompetingApp(GridAPPSD):
           self.Constraints.append(q_pv_C[idx] == 0)
 
   def optConstraintsNetworkWithPFlow(self, includeBatteriesFlag,
-         includeEnergyConsumersFlag, includeSolarPVsFlag,
+         includeEnergyConsumersFlag, includeSolarPVsPFlag,
          BusInfo, LinesIn, LinesOut, EnergyConsumers, SolarPVsInfo,
          BatteriesBus, BatteriesInfo, p_batt, p_flow_A, p_flow_B, p_flow_C,
          p_pv_A, p_pv_B, p_pv_C):
@@ -537,7 +539,7 @@ class CompetingApp(GridAPPSD):
              'A' in EnergyConsumers[bus]['kW']:
             injection_p = EnergyConsumers[bus]['kW']['A']
 
-          if includeSolarPVsFlag and bus in SolarPVsInfo and \
+          if includeSolarPVsPFlag and bus in SolarPVsInfo and \
              'A' in SolarPVsInfo[bus]['phase']:
             #injection_p -= SolarPVsInfo[bus]['p']
             idx = SolarPVsInfo[bus]['idx']
@@ -565,7 +567,7 @@ class CompetingApp(GridAPPSD):
              'B' in EnergyConsumers[bus]['kW']:
             injection_p = EnergyConsumers[bus]['kW']['B']
 
-          if includeSolarPVsFlag and bus in SolarPVsInfo and \
+          if includeSolarPVsPFlag and bus in SolarPVsInfo and \
              'B' in SolarPVsInfo[bus]['phase']:
             idx = SolarPVsInfo[bus]['idx']
             injection_p -= p_pv_B[idx]
@@ -592,7 +594,7 @@ class CompetingApp(GridAPPSD):
              'C' in EnergyConsumers[bus]['kW']:
             injection_p = EnergyConsumers[bus]['kW']['C']
 
-          if includeSolarPVsFlag and bus in SolarPVsInfo and \
+          if includeSolarPVsPFlag and bus in SolarPVsInfo and \
              'C' in SolarPVsInfo[bus]['phase']:
             idx = SolarPVsInfo[bus]['idx']
             injection_p -= p_pv_C[idx]
@@ -614,9 +616,12 @@ class CompetingApp(GridAPPSD):
                sum(p_flow_C[idx] for idx in LinesOut[bus_idx]['C']))
 
 
-  def optConstraintsNetworkWithQFlow(self, includeEnergyConsumersFlag, includeSolarPVsFlag,
-                               BusInfo, LinesIn, LinesOut, EnergyConsumers, SolarPVsInfo,
-                               q_flow_A, q_flow_B, q_flow_C, q_pv_A, q_pv_B, q_pv_C):
+  def optConstraintsNetworkWithQFlow(self, includeEnergyConsumersFlag,
+                                     includeSolarPVsPFlag, BusInfo,
+                                     LinesIn, LinesOut,
+                                     EnergyConsumers, SolarPVsInfo,
+                                     q_flow_A, q_flow_B, q_flow_C,
+                                     q_pv_A, q_pv_B, q_pv_C):
     for bus in BusInfo:
       bus_idx = BusInfo[bus]['idx']
       if bus_idx not in LinesOut:
@@ -629,7 +634,7 @@ class CompetingApp(GridAPPSD):
              'A' in EnergyConsumers[bus]['kW']:
             injection_q = EnergyConsumers[bus]['kVar']['A']
 
-          if includeSolarPVsFlag and bus in SolarPVsInfo and \
+          if includeSolarPVsPFlag and bus in SolarPVsInfo and \
              'A' in SolarPVsInfo[bus]['phase']:
             idx = SolarPVsInfo[bus]['idx']
             injection_q -= q_pv_A[idx]
@@ -644,7 +649,7 @@ class CompetingApp(GridAPPSD):
              'B' in EnergyConsumers[bus]['kW']:
             injection_q = EnergyConsumers[bus]['kVar']['B']
 
-          if includeSolarPVsFlag and bus in SolarPVsInfo and \
+          if includeSolarPVsPFlag and bus in SolarPVsInfo and \
              'B' in SolarPVsInfo[bus]['phase']:
             idx = SolarPVsInfo[bus]['idx']
             injection_q -= q_pv_B[idx]
@@ -659,7 +664,7 @@ class CompetingApp(GridAPPSD):
              'C' in EnergyConsumers[bus]['kW']:
             injection_q = EnergyConsumers[bus]['kVar']['C']
 
-          if includeSolarPVsFlag and bus in SolarPVsInfo and \
+          if includeSolarPVsPFlag and bus in SolarPVsInfo and \
              'C' in SolarPVsInfo[bus]['phase']:
             idx = SolarPVsInfo[bus]['idx']
             injection_q -= q_pv_C[idx]
@@ -1008,7 +1013,7 @@ class CompetingApp(GridAPPSD):
 
 
   def optDispatch(self, includeRegulatorsFlag, includeBatteriesFlag,
-                  includeSolarPVsFlag, includeVoltagesFlag):
+                  includeSolarPVsPFlag, includeVoltagesFlag):
 
     if includeVoltagesFlag:
       # volt_sum = sum((self.v_A[i].value + self.v_B[i].value + self.v_C[i].value) for i in range(len(self.BusInfo))) / (2401.77 ** 2)
@@ -1054,7 +1059,7 @@ class CompetingApp(GridAPPSD):
       print(tabulate(p_batt_setpoints, headers=['Battery', 'P_batt (kW)',
                      'Target SoC'], tablefmt='psql'), flush=True)
 
-    if includeSolarPVsFlag:
+    if includeSolarPVsPFlag:
       pq_pv_setpoints = []
       for bus in self.SolarPVsInfo:
         idx = self.SolarPVsInfo[bus]['idx']
@@ -1090,7 +1095,7 @@ class CompetingApp(GridAPPSD):
       print('')
     '''
 
-    if includeRegulatorsFlag or includeBatteriesFlag or includeSolarPVsFlag:
+    if includeRegulatorsFlag or includeBatteriesFlag or includeSolarPVsPFlag:
       dispatch_message = self.difference_builder.get_message()
       dispatch_message['app_name'] = self.app_name
       print('Sending Measurements DifferenceBuilder message!', flush=True)
@@ -1475,8 +1480,8 @@ class CompetingApp(GridAPPSD):
       self.optPrelimClassic()
 
     self.optDefineVariables(self.includePFlowFlag, self.includeQFlowFlag,
-                            self.includeVoltagesFlag, self.includeBatteriesFlag,
-                            self.includeRegulatorsFlag,self.includeSolarPVsFlag)
+                          self.includeVoltagesFlag, self.includeBatteriesFlag,
+                          self.includeRegulatorsFlag, self.includeSolarPVsPFlag)
 
     # topics for sending out set_points messages
     self.meas_publish_topic = service_input_topic('deconfliction.measurements',
@@ -1525,7 +1530,7 @@ class CompetingApp(GridAPPSD):
           self.updateEnergyConsumers(message['measurements'])
           #print('Updated EnergyConsumers #' + str(messageCounter) + ': ' + json.dumps(self.EnergyConsumers, indent=2), flush=True)
 
-        if self.includeSolarPVsFlag:
+        if self.includeSolarPVsPFlag:
           self.updateSolarPVs(message['measurements'])
           #print('Updated SolarPVsInfo #' + str(messageCounter) + ': ' + json.dumps(self.SolarPVsInfo, indent=2), flush=True)
 
@@ -1598,7 +1603,7 @@ class CompetingApp(GridAPPSD):
               idx = self.RegulatorsInfo[reg]['idx']
               self.reg_proposed[idx] = targetResolutionVector[reg][1]
 
-        if self.includeSolarPVsFlag:
+        if self.includeSolarPVsPFlag:
           for mrid in self.SolarPVs:
             if mrid in targetResolutionVector:
               idx = self.SolarPVs[mrid]['idx']
@@ -1684,7 +1689,7 @@ class CompetingApp(GridAPPSD):
             self.difference_builder.add_difference(mrid,
                  'PowerElectronicsConnection.p', -self.p_batt_greedy[idx], None)
 
-        if self.includeSolarPVsFlag:
+        if self.includeSolarPVsPFlag:
           print('DECONFLICTOR COOPERATE pq_pv_greedy: ' + str(self.pq_pv_greedy), flush=True)
           print('DECONFLICTOR COOPERATE pq_pv_proposed: ' + str(self.pq_pv_proposed), flush=True)
           len_SolarPVsInfo = len(self.SolarPVsInfo)
