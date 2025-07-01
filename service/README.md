@@ -238,11 +238,11 @@ Here are the dependencies to produce meaningful results:
 
 For performing app scalability testing where the deconfliction pipeline processing is not of concern, it is recommended that both rules and cooperation stages of deconfliction be turned off. This results in only optimization stage deconfliction (the centroid of all conflicting device setpoints) being applied to quickly produce a ResolutionVector from a ConflictMatrix. This specifically keeps apps from needing to respond to cooperation request messages from the pipeline to streamline communications. To do this, edit deconfliction-pipeline.py in the deconfliction-pipeline directory and search for "APP SCALABILITY" for guidance on the code changes needed.
 
-Conflict Matrix Snapshot for 5 Realistic Apps            |  Conflict Matrix Snapshot for 10 Realistic Apps
+Conflict Matrix Snapshot for 5 Realistic Apps            |  Conflict Matrix Snapshot for 10 Apps
 :-------------------------:|:-------------------------:
 ![](deconfliction-pipeline/plots/Conflict_Matrix_5_apps_sample.png)  |  ![](deconfliction-pipeline/plots/Conflict_Matrix_10_apps_sample.png)
 
-Conflict Matrix Snapshot for 25 Realistic Apps            |  Conflict Matrix Snapshot for 50 Realistic Apps
+Conflict Matrix Snapshot for 25 Apps            |  Conflict Matrix Snapshot for 50 Apps
 :-------------------------:|:-------------------------:
 ![](deconfliction-pipeline/plots/Conflict_Matrix_25_apps_sample.png)  |  ![](deconfliction-pipeline/plots/Conflict_Matrix_50_apps_sample.png)
 
