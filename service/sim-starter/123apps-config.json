@@ -13,7 +13,7 @@
     "orig_start_time": "1704207000",
     "shiva_orig_start_time": "1744196455",
     "shiva_new_start_time": "1744196457",
-    "duration": "300",
+    "duration": "120",
     "hour_duration": "3600",
     "twelve_hour_duration": "43200",
     "simulator": "GridLAB-D",
