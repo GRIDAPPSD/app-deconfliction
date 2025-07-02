@@ -1,80 +1,62 @@
-import csv
-import os
-import pandas as pd
 import random
+import sys
+import os
 
 def randomIntegersSumN(count=5, target_sum=10):
-    breakpoints = sorted([0] + [random.randint(0, target_sum) for _ in range(count-1)] + [target_sum])
-    return [breakpoints[i+1] - breakpoints[i] for i in range(count)]
+  breakpoints = sorted([0] + [random.randint(0, target_sum) for _ in range(count-1)] + [target_sum])
+  return [breakpoints[i+1] - breakpoints[i] for i in range(count)]
+
 
 def randomRealsSum1(count=5):
-    return [round((1.0/10) * i, 1) for i in randomIntegersSumN(count, 10)]
+  return [round((1.0/10) * i, 1) for i in randomIntegersSumN(count, 10)]
 
-def readSpecificColumnsFromCSV(readPath = '.', columnsList = None):
-    try:
-        tempInput = pd.read_csv(readPath, header = 0, usecols = columnsList)
-    except FileNotFoundError:
-        return pd.DataFrame()
-
-    if columnsList == None:
-        return tempInput
-
-    if not (len(columnsList) == list(tempInput.columns.isin(columnsList)).count(True)):
-        return pd.DataFrame()
-
-    return tempInput
 
 def main():
-    numberOfRows = 10
-    rootPath = r"."
+  numRows = 10
+  baseFile = 'app_setup'
+  templateFile = baseFile + '.csv'
 
-    target01 = f"app_setup"
-    targetType = f".csv"
+  if len(sys.argv) > 1:
+    numRows = int(sys.argv[1])
 
-    targetFilename01 = f"{target01}{targetType}"
-    targetFilename02 = f"{target01}_{numberOfRows}{targetType}"
+    if len(sys.argv) > 2:
+      templateFile = sys.argv[2]
+      baseFile = os.path.splitext(templateFile)[0]
 
-    topData = readSpecificColumnsFromCSV(os.path.join(rootPath, targetFilename01))
-    if topData.empty: 
-        print(f"Empty dataframe for file in: {rootPath}") 
-        return 0
+  outname = baseFile + '_' + str(numRows) + '.csv'
 
-    while topData.shape[0] < 10:
-        newAppName = f"app{random.randint(10, 999)}"
-        if newAppName in topData['AppName']:
-            continue
-        newList = randomRealsSum1()
-        newListStr = "[" + ' '.join(map(str, newList)) + "]"
+  with open(outname, 'w') as outfile:
+    countRows = 0
+    with open(templateFile, 'r') as infile:
+      for line in infile:
+        outfile.write(line)
+        countRows += 1
 
-        newRow = pd.DataFrame({
-            'AppName': newAppName,
-            'Objective': [newListStr],
-            'includeEnergyConsumersFlag': 1,
-            'includeSolarPVsFlag': random.randint(0, 1),
-            'includeSolarPVsQFlag': random.randint(0, 1),
-            'includeBatteriesFlag': random.randint(0, 1),
-            'includeRegulatorsFlag': random.randint(0, 1),
-            'includePFlowFlag': random.randint(0, 1),
-            'includeQFlowFlag': random.randint(0, 1),
-            'includeVoltagesFlag': random.randint(0, 1)
-        })
-        if newRow['includeVoltagesFlag'].iloc[0] < 0.5: 
-            if newList[0] > 0.00001:
-                continue
-        if newRow['includeVoltagesFlag'].iloc[0] > 0.5:
-            if newRow['includePFlowFlag'].iloc[0] < 0.5:
-                continue
-            if newRow['includeQFlowFlag'].iloc[0] < 0.5:
-                continue
-        if newRow['includeSolarPVsQFlag'].iloc[0] > 0.5: 
-            if newRow['includeSolarPVsFlag'].iloc[0] < 0.5:
-                continue
+    for irow in range(countRows, numRows+1):
+      objList = randomRealsSum1()
+      objStr = "[" + ' '.join(map(str, objList)) + "]"
 
-        topData = pd.concat([topData, newRow], ignore_index=True)
+      includeEnergyConsumersFlag = 1
+      includeSolarPVsPFlag = random.randint(0, 1)
+      includeSolarPVsQFlag = random.randint(0, 1)
+      includeBatteriesFlag = random.randint(0, 1)
+      includeRegulatorsFlag = random.randint(0, 1)
+      includePFlowFlag = random.randint(0, 1)
+      includeQFlowFlag = random.randint(0, 1)
+      includeVoltagesFlag = random.randint(0, 1)
 
-    topData.to_csv(targetFilename02, index=False)
+      # CVR objective needs voltages
+      if objList[0] > 0.00001:
+        includeVoltagesFlag = 1
+      # voltages needs pflow and qflow
+      if includeVoltagesFlag == 1:
+        includePFlowFlag = 1
+        includeQFlowFlag = 1
+      # qflow needs pflow
+      if includeSolarPVsQFlag == 1:
+        includeSolarPVsPFlag = 1
 
-    return 0
+      outfile.write(f"app{irow},{objStr},{includeEnergyConsumersFlag},{includeSolarPVsPFlag},{includeSolarPVsQFlag},{includeBatteriesFlag},{includeRegulatorsFlag},{includePFlowFlag},{includeQFlowFlag},{includeVoltagesFlag}\n")
 
 if __name__ == '__main__':
-    main()
+  main()
