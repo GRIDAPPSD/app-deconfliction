@@ -60,7 +60,8 @@ from pulp import *
 
 from gridappsd import GridAPPSD
 from gridappsd import DifferenceBuilder
-from gridappsd.topics import simulation_output_topic, simulation_log_topic
+from gridappsd.topics import simulation input_topic, simulation_output_topic
+from gridappsd.topics import simulation_log_topic
 from gridappsd.topics import service_input_topic, service_output_topic
 
 from datetime import datetime
@@ -398,7 +399,11 @@ class CompetingApp(GridAPPSD):
     print('Sending DifferenceBuilder message!', flush=True)
     #print('Sending Measurements DifferenceBuilder message: ' +
     #      json.dumps(dispatch_message), flush=True)
-    self.gapps.send(self.meas_publish_topic, json.dumps(dispatch_message))
+
+    # these can go either to the simulation or the deconfliction pipeline
+    # based on the sendToSimFlag value
+    self.gapps.send(self.sim_publish_topic, json.dumps(dispatch_message))
+
     self.difference_builder.clear()
 
 
@@ -963,12 +968,19 @@ class CompetingApp(GridAPPSD):
     self.defineOptimizationStaticProblem(BranchInfo, RegulatorsIdx,
                                      len(self.BatteriesInfo), len(self.RegulatorsInfo))
 
-    # topic for sending out set_points messages
     self.app_name = self.opt_type + '-app'
-    self.meas_publish_topic = service_input_topic('deconfliction.measurements',
-                                                  simulation_id)
+
+    # topic for sending out cooperation responses
     self.coop_publish_topic = service_input_topic('deconfliction.cooperation',
                                                   simulation_id)
+
+    sendToSimFlag = False
+    #sendToSimFlag = True
+    if sendToSimFlag:
+      self.sim_publish_topic = simulation_input_topic(simulation_id)
+    else:
+      self.sim_publish_topic = service_input_topic('deconfliction.measurements',
+                                                   simulation_id)
 
     # create DifferenceBuilder once and reuse it throughout the simulation
     self.difference_builder = DifferenceBuilder(simulation_id)

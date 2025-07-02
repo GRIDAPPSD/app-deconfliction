@@ -1101,10 +1101,10 @@ class CompetingApp(GridAPPSD):
       print('Sending Measurements DifferenceBuilder message!', flush=True)
       #print('Sending Measurements DifferenceBuilder message: ' +
       #      json.dumps(dispatch_message), flush=True)
-      self.gapps.send(self.meas_publish_topic, json.dumps(dispatch_message))
 
-      if self.sendToSimFlag:
-        self.gapps.send(self.sim_publish_topic, json.dumps(dispatch_message))
+      # these can go either to the simulation or the deconfliction pipeline
+      # based on the sendToSimFlag value
+      self.gapps.send(self.sim_publish_topic, json.dumps(dispatch_message))
 
       self.difference_builder.clear()
 
@@ -1483,16 +1483,19 @@ class CompetingApp(GridAPPSD):
                           self.includeVoltagesFlag, self.includeBatteriesFlag,
                           self.includeRegulatorsFlag, self.includeSolarPVsPFlag)
 
-    # topics for sending out set_points messages
-    self.meas_publish_topic = service_input_topic('deconfliction.measurements',
-                                                  simulation_id)
+    # topic for sending out cooperation responses
     self.coop_publish_topic = service_input_topic('deconfliction.cooperation',
                                                   simulation_id)
 
-    # for bypassing deconfliction pipeline and sending directly to simulation
-    self.sendToSimFlag = False
-    #self.sendToSimFlag = True
-    self.sim_publish_topic = simulation_input_topic(simulation_id)
+    # determine whether to send directly to simulation or the deconfliction
+    # pipeline
+    sendToSimFlag = False
+    #sendToSimFlag = True
+    if sendToSimFlag:
+      self.sim_publish_topic = simulation_input_topic(simulation_id)
+    else:
+      self.sim_publish_topic = service_input_topic('deconfliction.measurements',
+                                                   simulation_id)
 
     # create DifferenceBuilder once and reuse it throughout the simulation
     self.difference_builder = DifferenceBuilder(simulation_id)
