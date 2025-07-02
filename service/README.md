@@ -1,7 +1,7 @@
 # app-deconfliction/service
 
 Author: Gary Black <br>
-Last updated: July 1, 2025
+Last updated: July 2, 2025
 
 ## Purpose
 
@@ -108,13 +108,13 @@ If the import returns an error message, see <https://github.com/GRIDAPPSD/gridap
 </li>
 
 <li>
-An updated version of the IEEE 123-bus model defining batteries and solarPVs not yet included in the standard GridAPPS-D platform distribution must be loaded after starting the platform. The CIM model for this updated test feeder is exported to the sim-starter/123apps_model directory. Open the Blazegraph URL in the web browser and upload the file (ieee123apps.xml) using the "UPDATE" tab from http://localhost:8889/bigdata/#update (hit "Browse..." button to select file).
+An updated version of the IEEE 123-bus model defining batteries and solarPVs not yet included in the standard GridAPPS-D platform distribution must be loaded after starting the platform. The CIM model for this updated test feeder is exported to the sim-starter/123apps_model directory. Open the Blazegraph URL in the web browser and upload the file ieee123apps.xml using the "UPDATE" tab from http://localhost:8889/bigdata/#update (hit "Browse..." button to select file).
 
 Note that as long as docker containers are not cleared with the "./stop.sh -c" command, it is possible to stop and start the platform repeatedly without reloading this updated 123-bus model.
 </li>
 
 <li>
-Along with uploading the ieee123apps.xml file under Blazegraph, measurements for this model must be inserted. From ~/git do a git clone of https://github.com/GRIDAPPSD/CIMHub. Then from the app-deconfliction/service/sim-starter/123apps_model directory copy the two .py files there to ~/git/CIMHub/src_python/cimhub and then copy the two .sh files to ~/git/CIMHub. Do "sudo pip3 install SPARQLWrapper" unless this package has already been installed in python3. Change directory to ~/git/CIMHub and run "./list_measurements_123apps.sh" which will generate a number of .txt files with a prefix of "ieee123_app_deconfliction_". Finally, run "./insert_measurements_123apps.sh" to add the measurements defined in these .txt files.
+Along with uploading the ieee123apps.xml file under Blazegraph, measurements for this model must be inserted. From ~/git do a git clone of https://github.com/GRIDAPPSD/CIMHub. Then from the app-deconfliction/service/sim-starter/123apps_model directory copy the two .py files to ~/git/CIMHub/src_python/cimhub and then copy the two .sh files to ~/git/CIMHub. Do "sudo pip3 install SPARQLWrapper" unless the SPARQLWrapper package has already been installed in python3. Change directory to ~/git/CIMHub and run "./list_measurements_123apps.sh" which will generate a number of .txt files with a prefix of "ieee123_app_deconfliction_". Finally, run "./insert_measurements_123apps.sh" to add the measurements defined in these .txt files.
 </li>
 
 <li>
@@ -122,20 +122,20 @@ Various other Python packages are required to run the different processes that a
 </li>
 
 <li>
-To test a competing app (all apps use the same base code varying only the optimization objective function) from a shell in the service directory:
+To test a competing app (all apps use the same base code varying primarily in the objective function) from a shell in the service directory:
 
 ```` bash
 $ cd optimization-apps
 $ ./run-resilience.sh 123apps standalone
 ````
 
-Note the final argument of "standalone" must be present to perform a standalone invocation as needed for this test. If you get output starting with "Initialized resilience" after some query output, this demonstrates successful initialization and you may do a ctrl-C exit. It is best to test both a PuLP and CVXPY optimization app since each uses some different packages. The test above is for CVXPY, but PuLP can be tested with:
+Note the final argument of "standalone" must be present to perform a standalone invocation as needed for this test. If you get a line out output of the form "Initialized ..., waiting for messages..." after some query output, this demonstrates successful initialization and you may do a ctrl-C exit. It is best to test both a PuLP and CVXPY optimization app since each uses some different packages. The test above is for CVXPY, but PuLP can be tested with:
 
 ```` bash
 $ ./run-resilience.sh 123apps standalone pulp
 ````
 
-There is little to be gained from trying the max_local or cvr objectives in addition to resilience, but they also support the standalone argument. Modules likely to be missing for the competing apps include numpy, tabulate, pulp, and cvxpy. The following may prove helpful based on failed imports:
+There is little to be gained from trying the max_local or cvr objectives in addition to resilience, but they also support the standalone argument. Modules likely to be missing for the competing apps include numpy, tabulate, pulp, and cvxpy. The following install commands may prove helpful based on failed imports:
 
 ```` bash
 $ sudo pip3 install numpy
@@ -157,7 +157,7 @@ $ cd ../deconfliction-pipeline
 $ ./run-pipeline.sh 123apps standalone
 ````
 
-Note the final argument of "standalone" must be present to perform a standalone invocation as needed for this test. If you get output starting with "Initialization--finished" after some query output, this demonstrates successful intialization and you may do a ctrl-C exit.
+Note the final argument of "standalone" must be present to perform a standalone invocation as needed for this test. If you get a line of output of the form "Initialization--finished, waiting for messages..." after some query output, this demonstrates successful intialization and you may do a ctrl-C exit.
 </li>
 </ol>
 
@@ -173,7 +173,7 @@ $ ./run-deconfliction.sh <MODEL> <APPS> [--optlib <OPTLIB>] [--interval <INTERVA
 
 where \<MODEL\> is a shorthand used for looking up the full GridAPPS-D simulation request and feeder mrid. Currently, the only \<MODEL\> value supported for the deconfliction service is "123apps", which uses the updated IEEE 123-bus model that includes batteries, assuming that has been loaded into the GridAPPS-D platform per the guidance above.
 
-\<APPS\> is a shorthand code composed of the first letters for each of the competing apps to run. The possible apps are resilience, code "r" or "R"; max_local, code "m" or "M", and cvr, code "c" or "C". Thus, "rmc" would run all three apps and "rm" would run resilience and max_local without cvr. There is also an "s" code for running app scalability test suites as described in App Scalability section below.
+\<APPS\> is a shorthand code composed of the first letters for each of the competing apps to run. The possible apps are resilience, code "r" or "R"; max_local, code "m" or "M", and CVR, code "c" or "C". Thus, "rmc" would run all three apps and "rm" would run resilience and max_local without CVR. There is also an "s" code for running app scalability test suites as described in App Scalability section below.
 
 \<OPTLIB\> is the optional name of the optimization library to use for competing apps. If the value is "pulp" then the PuLP library will be used. Otherwise, the CVXPY library will be used.
 
@@ -189,7 +189,7 @@ $ ./run-deconfliction.sh 123apps rmc
 $ ./run-deconfliction.sh 123apps rmc pulp
 ````
 
-In the first invocation, the resilience and max_local competing apps are run with a GridLAB-D simulation for the batteries-included IEEE 123 node model. In the second invocation, the cvr app is add in as well. In the third invocation, the PuLP optimization library is used for the competing apps instead of the default CVXPY library.
+In the first invocation, the resilience and max_local competing apps are run with a GridLAB-D simulation for the batteries-included IEEE 123 node model. In the second invocation, the CVR app is add in as well. In the third invocation, the PuLP optimization library is used for the competing apps instead of the default CVXPY library.
 
 The run-deconfliction.sh wrapper script normally only shows diagnostic log output for the deconfliction pipeline process in the terminal where the wrapper script is invoked. However, each of the processes produces a log file that can either be viewed during the run (typically via "tail -f") or afterwards. These files are written to a log subdirectory--optimization-apps/log for the competing apps and deconfliction-pipeline/log for the pipeline process. If you are interested in the briefest of workflow progress output such as for a simple demonstration a "grep" for the ">>>" pattern will do the job. For example, to tail this workflow overview during a running simulation, change directory to deconfliction-pipeline/log and issue the command: tail -f deconfliction-pipeline.log | grep ">>>"
 
@@ -242,6 +242,8 @@ Here are the dependencies to produce meaningful results:
 <li>if objective #4 is applied then includePFlowFlag must always be "1"
 <li>if objective #5 is applied then includeBatteriesFlag must always be "1"
 </ul>
+
+Two scripts are provided in the optimization-apps directory to automate the generation of app scalability test suites, generate-app-setup.py and nopandas-app-setup.py. The purpose of both scripts is the same, but issues on some systems with generate-app-setup.py producing incorrrect output led to the generation of the nopandas-app-setup.py version (that does not use the pandas package that seems to be related to the issue). For the generate-app-setup.py the code itself must be modified to change the number of app instances while for nopandas-app-setup.py this is given as a command line argument. To run generate-app-setup.py, issue "python3 generate-app-setup.py" and to run nopandas-app-setup.py, issue "python3 nopandas-app-setup.py \<num_apps\>" where \<num_apps\> is the number of apps in the generated test suite. Both of these scripts produce an output file named app_setup_\<num_apps\>.csv and both scripts start by copying the existing app_setup.csv file template to the output test suite.
 
 For performing app scalability testing where the deconfliction pipeline processing is not of concern, it is recommended that both rules and cooperation stages of deconfliction be turned off. This results in only optimization stage deconfliction (finding the centroid of all conflicting device setpoints) being applied to quickly produce a ResolutionVector from a ConflictMatrix. This specifically keeps apps from needing to respond to cooperation request messages from the pipeline to streamline communications. To facilitate this the run-deconfliction.sh wrapper script passes a flag to the deconfliction pipeline indicating it is an app scalability test with this resulting in rules and cooperation stages being skipped. To override this behavior, edit deconfliction-pipeline.py in the deconfliction-pipeline directory and search for "APP SCALABILITY" for guidance on code changes needed.
 
