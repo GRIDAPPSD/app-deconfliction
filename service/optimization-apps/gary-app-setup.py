@@ -25,9 +25,7 @@ def main():
         outfile.write(line)
         countRows += 1
 
-    for i in range(countRows, numRows+1):
-      appName = 'app' + str(i)
-
+    for irow in range(countRows, numRows+1):
       objList = randomRealsSum1()
       objStr = "[" + ' '.join(map(str, objList)) + "]"
 
@@ -40,17 +38,18 @@ def main():
       includeQFlowFlag = random.randint(0, 1)
       includeVoltagesFlag = random.randint(0, 1)
 
+      # CVR objective needs voltages
       if objList[0] > 0.00001:
         includeVoltagesFlag = 1
-
+      # voltages needs pflow and qflow
       if includeVoltagesFlag == 1:
         includePFlowFlag = 1
         includeQFlowFlag = 1
-
+      # qflow needs pflow
       if includeSolarPVsQFlag == 1:
         includeSolarPVsPFlag = 1
 
-      outfile.write(appName + ',' + objStr + ',' + str(includeEnergyConsumersFlag) + ',' + str(includeSolarPVsPFlag) + ',' + str(includeSolarPVsQFlag) + ',' + str(includeBatteriesFlag) + ',' + str(includeRegulatorsFlag) + ',' + str(includePFlowFlag) + ',' + str(includeQFlowFlag) + ',' + str(includeVoltagesFlag) +'\n')
+      outfile.write(f"app{irow},{objStr},{includeEnergyConsumersFlag},{includeSolarPVsPFlag},{includeSolarPVsQFlag},{includeBatteriesFlag},{includeRegulatorsFlag},{includePFlowFlag},{includeQFlowFlag},{includeVoltagesFlag}\n")
 
 if __name__ == '__main__':
   main()
