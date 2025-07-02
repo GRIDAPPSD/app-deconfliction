@@ -1,5 +1,6 @@
 import random
 import sys
+import os
 
 def randomIntegersSumN(count=5, target_sum=10):
   breakpoints = sorted([0] + [random.randint(0, target_sum) for _ in range(count-1)] + [target_sum])
@@ -12,15 +13,21 @@ def randomRealsSum1(count=5):
 
 def main():
   numRows = 10
+  baseFile = 'app_setup'
+  templateFile = baseFile + '.csv'
 
   if len(sys.argv) > 1:
     numRows = int(sys.argv[1])
 
-  outname = 'app_setup_' + str(numRows) + '.csv'
+    if len(sys.argv) > 2:
+      templateFile = sys.argv[2]
+      baseFile = os.path.splitext(templateFile)[0]
+
+  outname = baseFile + '_' + str(numRows) + '.csv'
 
   with open(outname, 'w') as outfile:
     countRows = 0
-    with open('app_setup.csv', 'r') as infile:
+    with open(templateFile, 'r') as infile:
       for line in infile:
         outfile.write(line)
         countRows += 1
