@@ -255,8 +255,6 @@ Conflict Matrix Snapshot for 25 Apps            |  Conflict Matrix Snapshot for 
 :-------------------------:|:-------------------------:
 ![](deconfliction-pipeline/plots/Conflict_Matrix_25_apps_sample.png)  |  ![](deconfliction-pipeline/plots/Conflict_Matrix_50_apps_sample.png)
 
-[//]: #  *Conflict Matrix Snapshot for 5 Realistic Apps*
-
 ## FY25+ TO-DO
 
 <ul>
