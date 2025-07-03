@@ -2129,20 +2129,24 @@ class DeconflictionPipeline(GridAPPSD):
 
     # subscribe to measurements based setpoints messages and cooperation
     # response messages
-    #subscribeToSimFlag = False
-    subscribeToSimFlag = True
-    if subscribeToSimFlag:
+
+    #deconflictionAsServiceFlag = False
+    deconflictionAsServiceFlag = True
+    if deconflictionAsServiceFlag:
       meas_id = gapps.subscribe(simulation_input_topic(simulation_id),
                                 self.OnMeasSetpointsMessage)
+      # service topic for sending DifferenceBuilder messages
+      self.publish_topic = service_output_topic(
+                           'gridappsd-app-deconfliction-service', simulation_id)
+
     else:
       meas_id =gapps.subscribe(service_input_topic('deconfliction.measurements',
                                simulation_id), self.OnMeasSetpointsMessage)
+      # simulation topic for sending DifferenceBuilder messages
+      self.publish_topic = simulation_input_topic(simulation_id)
 
     coop_id = gapps.subscribe(service_input_topic('deconfliction.cooperation',
                               simulation_id), self.OnCoopSetpointsMessage)
-
-    # simulation topic for sending DifferenceBuilder messages
-    self.publish_topic = simulation_input_topic(simulation_id)
 
     # service topic for sending target resolution messages to cooperating apps
     self.coop_topic = service_output_topic('deconfliction.cooperation',

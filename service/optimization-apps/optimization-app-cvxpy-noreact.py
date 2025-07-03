@@ -730,7 +730,7 @@ class CompetingApp(GridAPPSD):
       #      json.dumps(dispatch_message), flush=True)
 
       # these can go either to the simulation or the deconfliction pipeline
-      # based on the sendToSimFlag value
+      # based on the deconflictionAsServiceFlag value
       self.gapps.send(self.sim_publish_topic, json.dumps(dispatch_message))
 
       self.difference_builder.clear()
@@ -1109,9 +1109,9 @@ class CompetingApp(GridAPPSD):
 
     # determine whether to send directly to simulation or the deconfliction
     # pipeline
-    sendToSimFlag = False
-    #sendToSimFlag = True
-    if sendToSimFlag:
+    deconflictionAsServiceFlag = False
+    #deconflictionAsServiceFlag = True
+    if deconflictionAsServiceFlag:
       self.sim_publish_topic = simulation_input_topic(simulation_id)
     else:
       self.sim_publish_topic = service_input_topic('deconfliction.measurements',
