@@ -82,10 +82,10 @@ if (os.path.isdir('shared')):
   sys.path.append('./shared')
 elif (os.path.isdir('../shared')):
   sys.path.append('../shared')
-elif (os.path.isdir('app-deconfliction/competing-apps/shared')):
-  sys.path.append('app-deconfliction/competing-apps/shared')
+elif (os.path.isdir('app-deconfliction/service/shared')):
+  sys.path.append('app-deconfliction/service/shared')
 else:
-  sys.path.append('/gridappsd/services/app-deconfliction/competing-apps/shared')
+  sys.path.append('/gridappsd/services/app-deconfliction/service/shared')
 
 from AppUtil import AppUtil
 import MethodUtil
