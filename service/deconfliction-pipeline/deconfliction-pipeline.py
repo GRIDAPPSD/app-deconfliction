@@ -2129,9 +2129,9 @@ class DeconflictionPipeline(GridAPPSD):
 
     # subscribe to measurements based setpoints messages and cooperation
     # response messages
-    #subscribeToSim = False
-    subscribeToSim = True
-    if subscribeToSim:
+    #subscribeToSimFlag = False
+    subscribeToSimFlag = True
+    if subscribeToSimFlag:
       meas_id = gapps.subscribe(simulation_input_topic(simulation_id),
                                 self.OnMeasSetpointsMessage)
     else:
