@@ -37,5 +37,5 @@
        "appId":""
 
 },
-   "service_configs":[]
+   "service_configs":[{"id":"gridappsd-app-deconfliction-service"}]
 }
