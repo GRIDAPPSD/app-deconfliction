@@ -85,7 +85,10 @@ elif (os.path.isdir('../shared')):
 elif (os.path.isdir('app-deconfliction/service/shared')):
   sys.path.append('app-deconfliction/service/shared')
 else:
-  sys.path.append('/gridappsd/services/app-deconfliction/service/shared')
+  # GDB 7/3/25: In the docker container the repo has to be named with the
+  # full service id
+  #sys.path.append('/gridappsd/services/app-deconfliction/service/shared')
+  sys.path.append('/gridappsd/services/gridappsd-app-deconfliction-service/service/shared')
 
 from AppUtil import AppUtil
 import MethodUtil
