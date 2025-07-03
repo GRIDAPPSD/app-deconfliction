@@ -2136,7 +2136,6 @@ class DeconflictionPipeline(GridAPPSD):
                                simulation_id), self.OnMeasSetpointsMessage)
 
     coop_id = gapps.subscribe(service_input_topic('deconfliction.cooperation',
-    coop_id = gapps.subscribe(service_input_topic('deconfliction.cooperation',
                               simulation_id), self.OnCoopSetpointsMessage)
 
     # simulation topic for sending DifferenceBuilder messages
