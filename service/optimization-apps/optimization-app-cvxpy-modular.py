@@ -1489,8 +1489,8 @@ class CompetingApp(GridAPPSD):
 
     # determine whether to send directly to simulation or the deconfliction
     # pipeline
-    sendToSimFlag = False
-    #sendToSimFlag = True
+    #sendToSimFlag = False
+    sendToSimFlag = True
     if sendToSimFlag:
       self.sim_publish_topic = simulation_input_topic(simulation_id)
     else:
