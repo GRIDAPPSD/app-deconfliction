@@ -2130,6 +2130,7 @@ class DeconflictionPipeline(GridAPPSD):
     # subscribe to measurements based setpoints messages and cooperation
     # response messages
 
+    self.logDir = 'log'
     #deconflictionAsServiceFlag = False
     deconflictionAsServiceFlag = True
     if deconflictionAsServiceFlag:
@@ -2138,6 +2139,7 @@ class DeconflictionPipeline(GridAPPSD):
       # service topic for sending DifferenceBuilder messages
       self.publish_topic = service_output_topic(
                            'gridappsd-app-deconfliction-service', simulation_id)
+      self.logDir = '/tmp'
 
     else:
       meas_id =gapps.subscribe(service_input_topic('deconfliction.measurements',
@@ -2331,9 +2333,9 @@ class DeconflictionPipeline(GridAPPSD):
 
     self.pltFlag = True
     if self.pltFlag:
-      self.pltFile = open('log/plot_data.csv', 'w')
+      self.pltFile = open(self.logDir + '/plot_data.csv', 'w')
       self.pltTZero = None
-      self.cmatFile = open('log/conflict_matrix.log', 'w')
+      self.cmatFile = open(self.logDir + '/conflict_matrix.log', 'w')
 
     self.bypassDeconflictionFlag = False
     #self.bypassDeconflictionFlag = True
