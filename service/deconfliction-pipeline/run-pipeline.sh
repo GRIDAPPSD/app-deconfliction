@@ -26,5 +26,5 @@ if [ "$#" -gt 3 ]; then
 fi
 
 mkdir -p log
-python3 deconfliction-pipeline.py $SIMID "$SIMREQ" $INTERVAL $WEIGHTS 2>&1
+python3 deconfliction-pipeline.py $SIMID "$SIMREQ" $INTERVAL $WEIGHTS
 
