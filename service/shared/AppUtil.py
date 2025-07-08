@@ -5,6 +5,16 @@ import numpy as np
 import MethodUtil
 
 
+def prlog(msg, logFile):
+  try:
+    print(msg, flush=True)
+    if logFile != None:
+      with open(logFile, 'a') as flog:
+        flog.write(msg + '\n')
+  except:
+    pass
+
+
 class AppUtil:
   """ Class for competing app utility functions
   """
@@ -13,8 +23,8 @@ class AppUtil:
     RegulatorMap = {}
     Regulators = {}
     bindings = sparql_mgr.regulator_query()
-    #print('regulator_query results bindings: ' + str(bindings), flush=True)
-    print('\nCount of Regulators: ' + str(len(bindings)), flush=True)
+    #prlog('regulator_query results bindings: ' + str(bindings), sparql_mgr.logFile)
+    prlog('\nCount of Regulators: ' + str(len(bindings)), sparql_mgr.logFile)
     for obj in bindings:
       devid = obj['rid']['value']
       eqid = obj['pid']['value']
@@ -36,18 +46,18 @@ class AppUtil:
       Regulators[devid]['highStep'] = int(obj['highStep']['value'])
       Regulators[devid]['lowStep'] = int(obj['lowStep']['value'])
       Regulators[devid]['increment'] = float(obj['incr']['value'])
-      print('Regulator devid: ' + devid + ', name: ' + name + ', phase: ' + Regulators[devid]['phase'] + ', step: ' + str(Regulators[devid]['step']), flush=True)
+      prlog('Regulator devid: ' + devid + ', name: ' + name + ', phase: ' + Regulators[devid]['phase'] + ', step: ' + str(Regulators[devid]['step']), sparql_mgr.logFile)
       MethodUtil.DeviceToName[devid] = name
       MethodUtil.NameToDevice[name] = devid
 
     # Add measid key to Regulators for matching sim measurements
     objs = sparql_mgr.obj_meas_export('PowerTransformer')
-    print('Count of PowerTransformer Meas: ' + str(len(objs)), flush=True)
+    prlog('Count of PowerTransformer Meas: ' + str(len(objs)), sparql_mgr.logFile)
     matches = 0
     attempts = 0
     for item in objs:
       if item['type']=='Pos':
-        #print('Attempting to match PowerTransformer measurement: ' + str(item), flush=True)
+        #prlog('Attempting to match PowerTransformer measurement: ' + str(item), sparql_mgr.logFile)
         attempts += 1
         # GDB 6/25/24: This is ideally how matches should be done, but this
         # doesn't work with our current regulator query so improvising...
@@ -60,16 +70,16 @@ class AppUtil:
           if Regulators[devid]['name'] == nameToMatch:
             Regulators[devid]['measid'] = item['measid']
             matches += 1
-            #print('Matched full name Regulator dictionary item: ' + str(Regulators[devid]), flush=True)
+            #prlog('Matched full name Regulator dictionary item: ' + str(Regulators[devid]), sparql_mgr.logFile)
             break
           elif shortName==nameToMatch and \
                Regulators[devid]['phase']==item['phases']:
             Regulators[devid]['measid'] = item['measid']
             matches += 1
-            #print('Matched short name Regulator dictionary item: ' + str(Regulators[devid]), flush=True)
+            #prlog('Matched short name Regulator dictionary item: ' + str(Regulators[devid]), sparql_mgr.logFile)
             break
 
-    print('Matching Regulator measurement attempts: ' + str(attempts) + ', matches: ' + str(matches), flush=True)
+    prlog('Matching Regulator measurement attempts: ' + str(attempts) + ', matches: ' + str(matches), sparql_mgr.logFile)
 
     return Regulators
 
@@ -78,7 +88,7 @@ class AppUtil:
     Regulators = {}
     RegIdx = {}
     bindings = sparql_mgr.regulator_combine_query()
-    print('\nCount of Combine Regulators: ' + str(len(bindings)), flush=True)
+    prlog('\nCount of Combine Regulators: ' + str(len(bindings)), sparql_mgr.logFile)
     reg_idx = 0
     for obj in bindings:
       devid = obj['rid']['value']
@@ -113,8 +123,8 @@ class AppUtil:
     BatteriesInfo = {}
     BatteriesBus = {}
     bindings = sparql_mgr.battery_query()
-    #print('battery_query results bindings: ' + str(bindings), flush=True)
-    print('\nCount of Batteries: ' + str(len(bindings)), flush=True)
+    #prlog('battery_query results bindings: ' + str(bindings), sparql_mgr.logFile)
+    prlog('\nCount of Batteries: ' + str(len(bindings)), sparql_mgr.logFile)
     idx = 0
     for obj in bindings:
       devid = obj['id']['value']
@@ -138,7 +148,7 @@ class AppUtil:
       BatteriesInfo[devid]['eff'] = 0.975 * 0.86
       BatteriesInfo[devid]['eff_c'] = 0.975 * 0.86
       BatteriesInfo[devid]['eff_d'] = 0.975 * 0.86
-      print('Battery devid: ' + devid + ', name: ' + name + ', ratedE: ' + str(round(BatteriesInfo[devid]['ratedE'],4)) + ', SoC: ' + str(round(BatteriesInfo[devid]['SoC'],4)), flush=True)
+      prlog('Battery devid: ' + devid + ', name: ' + name + ', ratedE: ' + str(round(BatteriesInfo[devid]['ratedE'],4)) + ', SoC: ' + str(round(BatteriesInfo[devid]['SoC'],4)), sparql_mgr.logFile)
       # need a bus-indexed batteries dictionary as well
       BatteriesBus[bus] = {}
       BatteriesBus[bus]['mrid'] = devid
@@ -199,7 +209,7 @@ class AppUtil:
 
     # Add measid key to EnergyConsumers for matching sim measurements
     objs = sparql_mgr.obj_meas_export('EnergyConsumer')
-    print('Count of EnergyConsumers Meas: ' + str(len(objs)), flush=True)
+    prlog('Count of EnergyConsumers Meas: ' + str(len(objs)), sparql_mgr.logFile)
     for item in objs:
       if item['type'] == 'VA':
         EnergyConsumers[item['bus']]['measid'][item['phases']] = item['measid']
@@ -211,7 +221,7 @@ class AppUtil:
     SolarPVsInfo = {}
     SolarPVs = {}
     bindings = sparql_mgr.pv_query()
-    print('\nCount of SolarPV: ' + str(len(bindings)), flush=True)
+    prlog('\nCount of SolarPV: ' + str(len(bindings)), sparql_mgr.logFile)
     idx = 0
     for obj in bindings:
       name = 'PhotovoltaicUnit.' + obj['name']['value']
@@ -228,7 +238,7 @@ class AppUtil:
       SolarPVsInfo[bus]['mrid'] = devid
       SolarPVsInfo[bus]['name'] = name
       SolarPVsInfo[bus]['idx'] = idx
-      print('SolarPV name: ' + name + ', kW: ' + str(SolarPVsInfo[bus]['kW']) + ', kVar: ' + str(SolarPVsInfo[bus]['kVar']), flush=True)
+      prlog('SolarPV name: ' + name + ', kW: ' + str(SolarPVsInfo[bus]['kW']) + ', kVar: ' + str(SolarPVsInfo[bus]['kVar']), sparql_mgr.logFile)
       SolarPVs[devid] = {}
       SolarPVs[devid]['PQ_pv_inv'] = None
       SolarPVs[devid]['idx'] = idx
@@ -239,10 +249,10 @@ class AppUtil:
 
     # Add measid key to SolarPVsInfo for matching sim measurements
     objs = sparql_mgr.obj_meas_export('PowerElectronicsConnection')
-    print('Count of PowerElectronicsConnections Meas: ' + str(len(objs)),
-          flush=True)
+    prlog('Count of PowerElectronicsConnections Meas: ' + str(len(objs)),
+          sparql_mgr.logFile)
     for item in objs:
-      #print('DEBUG PVmeas items: ' + str(item), flush=True)
+      #prlog('DEBUG PVmeas items: ' + str(item), sparql_mgr.logFile)
       if item['type']=='VA' and item['bus'] in SolarPVsInfo:
         SolarPVsInfo[item['bus']]['measid'] = item['measid']
 

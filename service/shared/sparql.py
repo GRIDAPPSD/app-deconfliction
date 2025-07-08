@@ -9,7 +9,8 @@ class SPARQLManager:
     """Class for querying SPARQL in GridAPPS-D Toolbox tools/services
     """
     
-    def __init__(self, gapps, feeder_mrid, simulation_id=None, timeout=60):
+    def __init__(self, gapps, feeder_mrid, simulation_id=None,
+                 logFile=None, timeout=60):
         """Connect to the platform.
 
         :param feeder_mrid: unique identifier for the feeder in
@@ -33,6 +34,9 @@ class SPARQLManager:
         self.simulation_id = simulation_id
 
         #self.topic = "goss.gridappsd.process.request.data.powergridmodel"
+
+        self.logFile = logFile
+
 
 # Start of Common Competing Apps queries
 

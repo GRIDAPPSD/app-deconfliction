@@ -2180,7 +2180,8 @@ class DeconflictionPipeline(GridAPPSD):
     #self.testDeviceName = 'BatteryUnit.battery1'
     #self.testDeviceName = 'RatioTapChanger.reg4b'
 
-    MethodUtil.sparql_mgr = SPARQLManager(gapps, feeder_mrid, simulation_id)
+    MethodUtil.sparql_mgr = SPARQLManager(gapps, feeder_mrid, simulation_id,
+                                  logFile=logDir+'deconfliction-pipeline.log')
 
     self.BatteriesInfo, BatteriesBus=AppUtil.getBatteries(MethodUtil.sparql_mgr)
     #prlog('Intialialization--starting BatteriesInfo: ' + str(self.BatteriesInfo))
