@@ -79,8 +79,8 @@ from gridappsd.topics import service_input_topic, service_output_topic
 
 # TODO: this flag needs to be changed when running as a containerized service
 # vs. an application started from wrapper scripts like optimization apps
-deconflictionAsServiceFlag = False
-#deconflictionAsServiceFlag = True
+#deconflictionAsServiceFlag = False
+deconflictionAsServiceFlag = True
 logDir = 'log/'
 if deconflictionAsServiceFlag:
   logDir = '/tmp/'
