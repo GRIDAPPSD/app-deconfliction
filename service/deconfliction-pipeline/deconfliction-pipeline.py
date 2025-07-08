@@ -85,6 +85,9 @@ logDir = 'log/'
 if deconflictionAsServiceFlag:
   logDir = '/tmp/'
 
+# redirect stderr to a file
+sys.stderr = open(logDir + 'deconfliction-pipeline-stderr.log', 'w')
+
 # went with prlog for name so it's the exact length as print since I had to
 # replace all the existing print calls and that would be a mess otherwise
 def prlog(msg):
