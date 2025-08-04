@@ -286,6 +286,8 @@ class CompetingApp(GridAPPSD):
            self.q_flow_A, self.q_flow_B, self.q_flow_C,
            self.v_A, self.v_B, self.v_C)
 
+    validFlag = True
+
     if self.opt_type == 'scalability':
       objective = 0
       numWeights = len(self.objectiveWeights)
@@ -328,16 +330,15 @@ class CompetingApp(GridAPPSD):
       if self.objectiveMaxLocalFlag:
         # note max_local is a two stage optimization and the first stage
         # is run within the objectiveForMaxLocal function
-        objective = self.optObjectiveForMaxLocal(self.BusInfo,
+        validFlag, objective = self.optObjectiveForMaxLocal(self.BusInfo,
                                     self.BatteriesInfo, self.EnergySource,
                                     self.Psub, self.Psub_mod,
                                     self.p_flow_A, self.p_flow_B, self.p_flow_C,
                                     self.p_batt, self.v_A, self.v_B, self.v_C)
 
-    self.optDo(objective)
-
-    self.optDispatch(self.includeRegulatorsFlag, self.includeBatteriesFlag,
-                     self.includeSolarPVsPFlag, self.includeVoltagesFlag)
+    if validFlag and self.optDo(objective):
+      self.optDispatch(self.includeRegulatorsFlag, self.includeBatteriesFlag,
+                       self.includeSolarPVsPFlag, self.includeVoltagesFlag)
 
 
   def optDefineVariables(self, includePFlowFlag, includeQFlowFlag,
@@ -863,26 +864,28 @@ class CompetingApp(GridAPPSD):
     #objective = Psub_mod / 1000
     objective = Psub_mod
 
-    self.optDo(objective)
+    if self.optDo(objective):
+      # second stage for max_local
+      bus_idx_batt = {'A': [], 'B': [], 'C': []}
+      for mrid in BatteriesInfo:
+        idx = BatteriesInfo[mrid]['idx']
+        self.Constraints.append(p_batt[idx] == p_batt[idx].value)
+        bus = BatteriesInfo[mrid]['bus']
+        if 'A' in BatteriesInfo[mrid]['phase']:
+          bus_idx_batt['A'].append(BusInfo[bus]['idx'])
+        elif 'B' in BatteriesInfo[mrid]['phase']:
+          bus_idx_batt['B'].append(BusInfo[bus]['idx'])
+        else:
+          bus_idx_batt['C'].append(BusInfo[bus]['idx'])
 
-    # second stage for max_local
-    bus_idx_batt = {'A': [], 'B': [], 'C': []}
-    for mrid in BatteriesInfo:
-      idx = BatteriesInfo[mrid]['idx']
-      self.Constraints.append(p_batt[idx] == p_batt[idx].value)
-      bus = BatteriesInfo[mrid]['bus']
-      if 'A' in BatteriesInfo[mrid]['phase']:
-        bus_idx_batt['A'].append(BusInfo[bus]['idx'])
-      elif 'B' in BatteriesInfo[mrid]['phase']:
-        bus_idx_batt['B'].append(BusInfo[bus]['idx'])
-      else:
-        bus_idx_batt['C'].append(BusInfo[bus]['idx'])
+      objective += -Psub_mod + \
+                          sum(-v_A[i] for i in bus_idx_batt['A']) + \
+                          sum(-v_B[i] for i in bus_idx_batt['B']) + \
+                          sum(-v_C[i] for i in bus_idx_batt['C'])
+      return (True, objective)
 
-    objective += -Psub_mod + \
-                        sum(-v_A[i] for i in bus_idx_batt['A']) + \
-                        sum(-v_B[i] for i in bus_idx_batt['B']) + \
-                        sum(-v_C[i] for i in bus_idx_batt['C'])
-    return objective
+    else:
+      return (False, objective)
 
 
   def optObjective1(self, BusInfo, SolarPVsInfo, v_A, v_B, v_C, p_pv_A, p_pv_B, p_pv_C):
@@ -1010,6 +1013,8 @@ class CompetingApp(GridAPPSD):
     self.lastTime = now
     print('Optimization time: ' + str(optTime), flush=True)
     print('Optimization time interval: ' + str(optInterval), flush=True)
+
+    return (problem.status  == 'optimal')
 
 
   def optDispatch(self, includeRegulatorsFlag, includeBatteriesFlag,
@@ -1182,6 +1187,9 @@ class CompetingApp(GridAPPSD):
 
 
   def __init__(self, gapps, opt_type, feeder_mrid, simulation_id, interval):
+
+    #self.realtimeFlag = True
+    self.realtimeFlag = False
 
     self.gapps = gapps
 
@@ -1461,11 +1469,15 @@ class CompetingApp(GridAPPSD):
     # deltaT is time between timesteps as fractional hours
     # optimization interval seconds is the number of simulation seconds
     # between triggering an optimization and must be a multiple of 3
-    #optIntervalSec = 3 # optimize every GridLAB-D timestamp
-    # 15 seconds is a good number for a real-time simulation
-    optIntervalSec = 15
-    # if attempting non-real-time, something like 600 is reasonable
-    #optIntervalSec = 600
+    # for a real-time simulation
+    if self.realtimeFlag:
+      #optIntervalSec = 3 # optimize every GridLAB-D timestamp
+      # 15 seconds is a good number for a real-time simulation
+      optIntervalSec = 15
+    else:
+      # if attempting non-real-time, something like 600 is reasonable
+      optIntervalSec = 600
+
     if self.opt_type!='scalability' and interval!=None:
       optIntervalSec = int(interval)
 
@@ -1548,18 +1560,22 @@ class CompetingApp(GridAPPSD):
 
         global ts_time
         ts_unix = int(message['timestamp'])
-        ts_time= datetime.utcfromtimestamp(ts_unix).time()
+        ts_time = datetime.utcfromtimestamp(ts_unix).time()
 
         # If doing real-time simulation must subtract 5 off timestamp to make it
         # evenly divisble by multiples of the 3 second GridLAB-D time interval
-        if (ts_unix-5) % optIntervalSec != 0:
-        # If doing non-real-time simulation remove the 5 second offset because
-        # GridLAB-D outputs at 60 second intervals
-        #if timestamp % optIntervalSec != 0:
+        skipFlag = False
+        if self.realtimeFlag:
+          skipFlag = (ts_unix-5) % optIntervalSec != 0:
+        else:
+          # If doing non-real-time simulation remove the 5 second offset because
+          # GridLAB-D outputs at 60 second intervals
+          skipFlag = ts_unix % optIntervalSec != 0:
+
+        if skipFlag:
           print('Simulation timestamp (skipping optimization): '+str(ts_time), flush=True)
         else:
           print('Simulation timestamp for optimization: ' + str(ts_time), flush=True)
-
           self.optPerform()
 
       elif self.includeBatteriesFlag or self.includeRegulatorsFlag:

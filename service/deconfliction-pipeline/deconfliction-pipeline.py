@@ -2215,12 +2215,16 @@ class DeconflictionPipeline(GridAPPSD):
 
     # deltaT is time between timesteps as fractional hours
     # optimization interval seconds is the number of simulation seconds
-    # between triggering an optimization and must be a multiple of 3
-    #optIntervalSec = 3 # optimize every GridLAB-D timestamp
-    # 15 seconds is a good number for a real-time simulation
-    optIntervalSec = 15
-    # if attempting non-real-time, something like 600 is reasonable
-    #optIntervalSec = 600
+    # between triggering an optimization and must be a multiple of 3 for a
+    # real-time simulation
+    if self.realtimeFlag:
+      #optIntervalSec = 3 # optimize every GridLAB-D timestamp
+      # 15 seconds is a good number for a real-time simulation
+      optIntervalSec = 15
+    else:
+      # if attempting non-real-time, something like 600 is reasonable
+      optIntervalSec = 600
+
     if interval!=None and interval!='scalability':
       optIntervalSec = int(interval)
 
@@ -2267,6 +2271,10 @@ class DeconflictionPipeline(GridAPPSD):
     self.printAllConflictsResolutionsFlag = False
     self.printAllValidatorFlag = False
     self.printAllDispatchesFlag = False
+
+    # flag for whether simulation is run in real-time
+    #self.realtimeFlag = True
+    self.realtimeFlag = False
 
     # controls whether rules stage deconfliction is done as the first stage
     # using the ConflictMatrix and/or deferred until the last stage before
