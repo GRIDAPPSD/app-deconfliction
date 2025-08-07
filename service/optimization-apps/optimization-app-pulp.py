@@ -60,7 +60,7 @@ from pulp import *
 
 from gridappsd import GridAPPSD
 from gridappsd import DifferenceBuilder
-from gridappsd.topics import simulation input_topic, simulation_output_topic
+from gridappsd.topics import simulation_input_topic, simulation_output_topic
 from gridappsd.topics import simulation_log_topic
 from gridappsd.topics import service_input_topic, service_output_topic
 
