@@ -2214,7 +2214,8 @@ class DeconflictionPipeline(GridAPPSD):
     self.SolarPVsInfo, self.SolarPVs =AppUtil.getSolarPVs(MethodUtil.sparql_mgr)
 
     # flag for whether simulation is run in real-time
-    #self.realtimeFlag = True
+    self.realtimeFlag = True
+    #self.realtimeFlag = False
     self.realtimeFlag = False
 
     # deltaT is time between timesteps as fractional hours
@@ -2298,6 +2299,10 @@ class DeconflictionPipeline(GridAPPSD):
       self.rulesStageFirstFlag = False
       self.rulesStageLastFlag = False
       self.coopStageFlag = False
+    # for now, never do rules and cooperation
+    self.rulesStageFirstFlag = False
+    self.rulesStageLastFlag = False
+    self.coopStageFlag = False
 
     self.refCount = 0 # for debug/verification
 
