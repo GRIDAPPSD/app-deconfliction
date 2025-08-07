@@ -1188,7 +1188,8 @@ class CompetingApp(GridAPPSD):
 
   def __init__(self, gapps, opt_type, feeder_mrid, simulation_id, interval):
 
-    #self.realtimeFlag = True
+    self.realtimeFlag = True
+    #self.realtimeFlag = False
     self.realtimeFlag = False
 
     self.gapps = gapps
@@ -1501,8 +1502,8 @@ class CompetingApp(GridAPPSD):
 
     # determine whether to send directly to simulation or the deconfliction
     # pipeline
-    #deconflictionAsServiceFlag = False
-    deconflictionAsServiceFlag = True
+    deconflictionAsServiceFlag = False
+    #deconflictionAsServiceFlag = True
     if deconflictionAsServiceFlag:
       self.sim_publish_topic = simulation_input_topic(simulation_id)
     else:
