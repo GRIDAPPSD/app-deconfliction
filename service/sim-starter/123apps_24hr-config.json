@@ -36,6 +36,6 @@
        "events":[],
        "appId":""
 
-},
-   "service_configs":[{"id":"gridappsd-app-deconfliction-service"}]
+  },
+  "service_configs":[{"id":"gridappsd-app-deconfliction-service"}]
 }
