@@ -1566,11 +1566,11 @@ class CompetingApp(GridAPPSD):
         # evenly divisble by multiples of the 3 second GridLAB-D time interval
         skipFlag = False
         if self.realtimeFlag:
-          skipFlag = (ts_unix-5) % optIntervalSec != 0:
+          skipFlag = (ts_unix-5) % optIntervalSec != 0
         else:
           # If doing non-real-time simulation remove the 5 second offset because
           # GridLAB-D outputs at 60 second intervals
-          skipFlag = ts_unix % optIntervalSec != 0:
+          skipFlag = ts_unix % optIntervalSec != 0
 
         if skipFlag:
           print('Simulation timestamp (skipping optimization): '+str(ts_time), flush=True)
