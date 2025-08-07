@@ -679,6 +679,11 @@ class CompetingApp(GridAPPSD):
 
 
   def __init__(self, gapps, opt_type, feeder_mrid, simulation_id, interval):
+
+    self.realtimeFlag = True
+    #self.realtimeFlag = False
+    self.realtimeFlag = False
+
     self.gapps = gapps
 
     self.messageQueue = queue.Queue()
@@ -950,11 +955,15 @@ class CompetingApp(GridAPPSD):
     # deltaT is time between timesteps as fractional hours
     # optimization interval seconds is the number of simulation seconds
     # between triggering an optimization and must be a multiple of 3
-    #optIntervalSec = 3 # optimize every GridLAB-D timestamp
-    # 15 seconds is a good number for a real-time simulation
-    optIntervalSec = 15
-    # if attempting non-real-time, something like 600 is reasonable
-    #optIntervalSec = 600
+    # for a real-time simulation
+    if self.realtimeFlag:
+      #optIntervalSec = 3 # optimize every GridLAB-D timestamp
+      # 15 seconds is a good number for a real-time simulation
+      optIntervalSec = 15
+    else:
+      # if attempting non-real-time, something like 600 is reasonable
+      optIntervalSec = 600
+
     if interval != None:
       optIntervalSec = int(interval)
 
@@ -1027,10 +1036,15 @@ class CompetingApp(GridAPPSD):
 
         # If doing real-time simulation must subtract 5 off timestamp to make it
         # evenly divisble by multiples of the 3 second GridLAB-D time interval
-        if (timestamp-5) % optIntervalSec != 0:
-        # If doing non-real-time simulation remove the 5 second offset because
-        # GridLAB-D outputs at 60 second intervals
-        #if timestamp % optIntervalSec != 0:
+        skipFlag = False
+        if self.realtimeFlag:
+          skipFlag = (timestamp-5) % optIntervalSec != 0
+        else:
+          # If doing non-real-time simulation remove the 5 second offset because
+          # GridLAB-D outputs at 60 second intervals
+          skipFlag = timestamp % optIntervalSec != 0
+
+        if skipFlag:
           print('Simulation timestamp (skipping optimization): '+str(timestamp),
                 flush=True)
         else:
