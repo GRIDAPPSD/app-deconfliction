@@ -2213,6 +2213,10 @@ class DeconflictionPipeline(GridAPPSD):
     # for the app scalability task
     self.SolarPVsInfo, self.SolarPVs =AppUtil.getSolarPVs(MethodUtil.sparql_mgr)
 
+    # flag for whether simulation is run in real-time
+    #self.realtimeFlag = True
+    self.realtimeFlag = False
+
     # deltaT is time between timesteps as fractional hours
     # optimization interval seconds is the number of simulation seconds
     # between triggering an optimization and must be a multiple of 3 for a
@@ -2271,10 +2275,6 @@ class DeconflictionPipeline(GridAPPSD):
     self.printAllConflictsResolutionsFlag = False
     self.printAllValidatorFlag = False
     self.printAllDispatchesFlag = False
-
-    # flag for whether simulation is run in real-time
-    #self.realtimeFlag = True
-    self.realtimeFlag = False
 
     # controls whether rules stage deconfliction is done as the first stage
     # using the ConflictMatrix and/or deferred until the last stage before
