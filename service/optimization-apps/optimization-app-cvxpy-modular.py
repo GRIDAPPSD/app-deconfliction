@@ -441,8 +441,11 @@ class CompetingApp(GridAPPSD):
 
       # Battery SoC constraints added as Shiva couldn't identify CVXPY's
       # equivalent to PuLP's lb and ub
+      # OPTDBG: tweak SoC limits so the optimization isn't infeasible
       self.Constraints.append(soc[idx] >= 0.2)
       self.Constraints.append(soc[idx] <= 0.9)
+      #self.Constraints.append(soc[idx] >= 0.0)
+      #self.Constraints.append(soc[idx] <= 1.0)
 
   def optConstraintsLimitsBatteries(self, BatteriesInfo, soc, p_batt):
     print('Setting Some arbitrary limits for batteries')
@@ -1013,6 +1016,7 @@ class CompetingApp(GridAPPSD):
     self.lastTime = now
     print('Optimization time: ' + str(optTime), flush=True)
     print('Optimization time interval: ' + str(optInterval), flush=True)
+    print('OPTDBG: Optimization status: ' + problem.status, flush=True)
 
     return (problem.status  == 'optimal')
 
@@ -1160,13 +1164,13 @@ class CompetingApp(GridAPPSD):
                              measurements[measid]['angle'])
         self.SolarPVsInfo[bus]['p'] = abs(p)
 
-
   def updateBatterySoC(self, measurements):
     for mrid in self.BatteriesInfo:
       measid = self.BatteriesInfo[mrid]['SoC_measid']
       if measid in measurements:
         self.BatteriesInfo[mrid]['SoC'] = measurements[measid]['value']/100.0
         print('Updated SoC for ' + self.BatteriesInfo[mrid]['name'] + ': ' + str(self.BatteriesInfo[mrid]['SoC']), flush=True)
+        print('OPTDBG: updateBatterySoC mrid: ' + mrid + ', SoC: ' + str(self.BatteriesInfo[mrid]['SoC']), flush=True)
 
 
   def updateRegulatorTaps(self, measurements):
@@ -1477,7 +1481,9 @@ class CompetingApp(GridAPPSD):
       optIntervalSec = 15
     else:
       # if attempting non-real-time, something like 600 is reasonable
+      # OPTDBG: add fudge factor to optIntervalSec for deltaT
       optIntervalSec = 600
+      #optIntervalSec = 600 + 300
 
     if self.opt_type!='scalability' and interval!=None:
       optIntervalSec = int(interval)
@@ -1562,6 +1568,7 @@ class CompetingApp(GridAPPSD):
         global ts_time
         ts_unix = int(message['timestamp'])
         ts_time = datetime.utcfromtimestamp(ts_unix).time()
+        print('OPTDBG: timestamp: ' + str(ts_unix) + ', wall time: ' + str(ts_time), flush=True)
 
         # If doing real-time simulation must subtract 5 off timestamp to make it
         # evenly divisble by multiples of the 3 second GridLAB-D time interval
