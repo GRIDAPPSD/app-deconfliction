@@ -33,3 +33,4 @@ else
   #NO LONGER RUNNABLE WITHOUT UPDATES python3 optimization-app-cvxpy.py resilience $SIMID "$SIMREQ" $INTERVAL 2>&1 | tee log/resilience-app.log
 fi
 
+trap - SIGINT SIGTERM EXIT

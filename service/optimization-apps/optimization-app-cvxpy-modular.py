@@ -1508,8 +1508,10 @@ class CompetingApp(GridAPPSD):
 
     # determine whether to send directly to simulation or the deconfliction
     # pipeline
-    deconflictionAsServiceFlag = False
-    #deconflictionAsServiceFlag = True
+    #deconflictionAsServiceFlag = False
+    # GDB 8/25/25: Set as service just to send to simulation for debugging
+    # outside of running deconfliction pipeline
+    deconflictionAsServiceFlag = True
     if deconflictionAsServiceFlag:
       self.sim_publish_topic = simulation_input_topic(simulation_id)
     else:
