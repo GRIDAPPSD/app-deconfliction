@@ -441,11 +441,8 @@ class CompetingApp(GridAPPSD):
 
       # Battery SoC constraints added as Shiva couldn't identify CVXPY's
       # equivalent to PuLP's lb and ub
-      # OPTDBG: tweak SoC limits so the optimization isn't infeasible
       self.Constraints.append(soc[idx] >= 0.2)
       self.Constraints.append(soc[idx] <= 0.9)
-      #self.Constraints.append(soc[idx] >= 0.0)
-      #self.Constraints.append(soc[idx] <= 1.0)
 
   def optConstraintsLimitsBatteries(self, BatteriesInfo, soc, p_batt):
     print('Setting Some arbitrary limits for batteries')
@@ -1016,7 +1013,6 @@ class CompetingApp(GridAPPSD):
     self.lastTime = now
     print('Optimization time: ' + str(optTime), flush=True)
     print('Optimization time interval: ' + str(optInterval), flush=True)
-    print('OPTDBG: Optimization status: ' + problem.status, flush=True)
 
     return (problem.status  == 'optimal')
 
@@ -1046,7 +1042,7 @@ class CompetingApp(GridAPPSD):
             break # assume this will only happen once per regulator
 
       print(tabulate(regulator_taps, headers=['Regulator', 'Tap', 'b_i'],
-                     tablefmt='psql'), '\n', flush=True)
+                     tablefmt='psql'), flush=True)
 
     if includeBatteriesFlag:
       p_batt_setpoints = []
@@ -1170,7 +1166,6 @@ class CompetingApp(GridAPPSD):
       if measid in measurements:
         self.BatteriesInfo[mrid]['SoC'] = measurements[measid]['value']/100.0
         print('Updated SoC for ' + self.BatteriesInfo[mrid]['name'] + ': ' + str(self.BatteriesInfo[mrid]['SoC']), flush=True)
-        print('OPTDBG: updateBatterySoC mrid: ' + mrid + ', SoC: ' + str(self.BatteriesInfo[mrid]['SoC']), flush=True)
 
 
   def updateRegulatorTaps(self, measurements):
@@ -1480,15 +1475,21 @@ class CompetingApp(GridAPPSD):
       # 15 seconds is a good number for a real-time simulation
       optIntervalSec = 15
     else:
-      # if attempting non-real-time, something like 600 is reasonable
-      # OPTDBG: add fudge factor to optIntervalSec for deltaT
-      optIntervalSec = 600
-      #optIntervalSec = 600 + 300
+      # if attempting non-real-time, something like 1200 is reasonable
+      # so the optimization time is safely shorter than the time between
+      # optimizations--otherwise the queue draining won't work right.
+      optIntervalSec = 1200
 
     if self.opt_type!='scalability' and interval!=None:
       optIntervalSec = int(interval)
 
-    self.deltaT = optIntervalSec/3600.0
+    if self.realtimeFlag:
+      self.deltaT = optIntervalSec/3600.0
+    else:
+      # Add compensation factor to optIntervalSec in non-realtime mode
+      # for computing deltaT because of the lag GridLAB-D is taking in
+      # this mode for measurements to reflect DifferenceBuilder messages
+      self.deltaT = (optIntervalSec + 600)/3600.0
 
     self.b_i = np.arange(0.9, 1.1, 0.00625)
 
@@ -1546,10 +1547,30 @@ class CompetingApp(GridAPPSD):
       messageCounter += 1
 
       if 'measurements' in message: # this is a simulation measurements message
+        global ts_time
+        ts_unix = int(message['timestamp'])
+        ts_time = datetime.utcfromtimestamp(ts_unix).time()
+
+        # If doing real-time simulation must subtract 5 off timestamp to make it
+        # evenly divisble by multiples of the 3 second GridLAB-D time interval
+        skipFlag = False
+        if self.realtimeFlag:
+          skipFlag = (ts_unix-5) % optIntervalSec != 0
+        else:
+          # If doing non-real-time simulation remove the 5 second offset because
+          # GridLAB-D outputs at 60 second intervals
+          skipFlag = ts_unix % optIntervalSec != 0
+
+        if skipFlag:
+          print('\nSimulation timestamp (skipping optimization): ' + str(ts_unix) +
+                ', wall time: ' + str(ts_time), flush=True)
+        else:
+          print('\nSimulation timestamp for optimization: ' + str(ts_unix) +
+                ', wall time: ' + str(ts_time), flush=True)
+
         # always update the EnergyConsumers, etc. data structures with new
         # measurements even if we aren't going to do an optimization so
         # they will be up to date with any cooperation messages received
-
         if self.includeEnergyConsumersFlag:
           self.updateEnergyConsumers(message['measurements'])
           #print('Updated EnergyConsumers #' + str(messageCounter) + ': ' + json.dumps(self.EnergyConsumers, indent=2), flush=True)
@@ -1567,25 +1588,7 @@ class CompetingApp(GridAPPSD):
         if not self.includeRegulatorsFlag:
           self.updateRegulatorTaps(message['measurements'])
 
-        global ts_time
-        ts_unix = int(message['timestamp'])
-        ts_time = datetime.utcfromtimestamp(ts_unix).time()
-        print('OPTDBG: timestamp: ' + str(ts_unix) + ', wall time: ' + str(ts_time), flush=True)
-
-        # If doing real-time simulation must subtract 5 off timestamp to make it
-        # evenly divisble by multiples of the 3 second GridLAB-D time interval
-        skipFlag = False
-        if self.realtimeFlag:
-          skipFlag = (ts_unix-5) % optIntervalSec != 0
-        else:
-          # If doing non-real-time simulation remove the 5 second offset because
-          # GridLAB-D outputs at 60 second intervals
-          skipFlag = ts_unix % optIntervalSec != 0
-
-        if skipFlag:
-          print('Simulation timestamp (skipping optimization): '+str(ts_time), flush=True)
-        else:
-          print('Simulation timestamp for optimization: ' + str(ts_time), flush=True)
+        if not skipFlag:
           self.optPerform()
 
       elif self.includeBatteriesFlag or self.includeRegulatorsFlag:
