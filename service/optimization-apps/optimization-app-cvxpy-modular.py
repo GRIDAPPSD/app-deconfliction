@@ -1195,8 +1195,7 @@ class CompetingApp(GridAPPSD):
 
   def __init__(self, gapps, opt_type, feeder_mrid, simulation_id, interval):
 
-    self.realtimeFlag = True
-    #self.realtimeFlag = False
+    #self.realtimeFlag = True
     self.realtimeFlag = False
 
     self.gapps = gapps
@@ -1486,7 +1485,12 @@ class CompetingApp(GridAPPSD):
       # if attempting non-real-time, something like 900 is reasonable
       # so the optimization time is safely shorter than the time between
       # optimizations--otherwise the queue draining won't work right.
-      optIntervalSec = 900
+      # But, at 900 seconds the app falls behind in message processing
+      # because of all the time needed for optimization so 1800 is the
+      # shortest time that keeps it current with messages given the
+      # current design where messages are not procesed in a separate
+      # thread.
+      optIntervalSec = 1800
 
     if self.opt_type!='scalability' and interval!=None:
       optIntervalSec = int(interval)
@@ -1517,10 +1521,10 @@ class CompetingApp(GridAPPSD):
 
     # determine whether to send directly to simulation or the deconfliction
     # pipeline
-    #deconflictionAsServiceFlag = False
+    deconflictionAsServiceFlag = False
     # GDB 8/25/25: Set as service just to send to simulation for debugging
     # outside of running deconfliction pipeline
-    deconflictionAsServiceFlag = True
+    #deconflictionAsServiceFlag = True
     if deconflictionAsServiceFlag:
       self.sim_publish_topic = simulation_input_topic(simulation_id)
     else:
@@ -1570,8 +1574,12 @@ class CompetingApp(GridAPPSD):
           skipFlag = ts_unix % optIntervalSec != 0
 
         if skipFlag:
-          print('\nSimulation timestamp (skipping optimization): ' + str(ts_unix) +
+          print('Simulation timestamp (skipping optimization): ' + str(ts_unix) +
                 ', wall time: ' + str(ts_time), flush=True)
+          # GDB 8/26/25: Don't even do simulation measurement updates to better
+          # keep up with messages
+          continue
+
         else:
           print('\nSimulation timestamp for optimization: ' + str(ts_unix) +
                 ', wall time: ' + str(ts_time), flush=True)
@@ -1596,8 +1604,7 @@ class CompetingApp(GridAPPSD):
         if not self.includeRegulatorsFlag:
           self.updateRegulatorTaps(message['measurements'])
 
-        if not skipFlag:
-          self.optPerform()
+        self.optPerform()
 
       elif self.includeBatteriesFlag or self.includeRegulatorsFlag:
         # this is a cooperation message from deconflictor, but it only
