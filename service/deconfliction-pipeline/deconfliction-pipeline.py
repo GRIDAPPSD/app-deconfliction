@@ -64,7 +64,7 @@ import json
 import math
 import copy
 import queue
-import time
+from time import sleep
 from datetime import datetime
 
 from gridappsd import GridAPPSD
@@ -504,6 +504,8 @@ class DeconflictionPipeline(GridAPPSD):
   def FeasibilityMaintainerForBatteries(self, printAllFeasibilityFlag=False):
     # find the maximum P_batt charge and discharge values per battery to
     # prevent overcharging or undercharging
+    # OPTDBG
+    printAllFeasibilityFlag = True
     for device in self.BatteriesInfo:
       chargeSoCMax = 0.9 - self.BatteriesInfo[device]['SoC']
       self.BatteriesInfo[device]['P_batt_charge_max'] = \
@@ -1402,7 +1404,9 @@ class DeconflictionPipeline(GridAPPSD):
       self.pltFile.write(str(timestamp))
 
     if not printAllMessagesFlag:
-      prlog('ProcessSimulationMessage--timestamp: ' + str(timestamp))
+      ts_time = datetime.utcfromtimestamp(timestamp).time()
+      prlog('ProcessSimulationMessage--timestamp: ' + str(timestamp) + ', wall time: ' +
+            str(ts_time))
 
     self.simMessageCounter += 1
 
@@ -1655,8 +1659,9 @@ class DeconflictionPipeline(GridAPPSD):
 
         # Published IEEE Access Foundational Paper Reference:
         #   Step 4--Setpoint Validator
-        self.SetpointValidatorForBatteries(newResolutionVector,
-                                           self.printAllValidatorFlag)
+        # OPTDBG
+        #self.SetpointValidatorForBatteries(newResolutionVector,
+        #                                   self.printAllValidatorFlag)
         self.SetpointValidatorForRegulators(newResolutionVector,
                                             self.printAllValidatorFlag)
 
@@ -1704,7 +1709,8 @@ class DeconflictionPipeline(GridAPPSD):
 
       # Published IEEE Access Foundational Paper Reference:
       #   Step 2--Feasibility Maintainer
-      self.FeasibilityMaintainerForBatteries(self.printAllFeasibilityFlag)
+      # OPTDBG
+      #self.FeasibilityMaintainerForBatteries(self.printAllFeasibilityFlag)
       self.FeasibilityMaintainerForRegulators(self.printAllFeasibilityFlag)
 
       # Published IEEE Access Foundational Paper Reference:
@@ -1783,8 +1789,9 @@ class DeconflictionPipeline(GridAPPSD):
 
       # Published IEEE Access Foundational Paper Reference:
       #   Step 4--Setpoint Validator
-      self.SetpointValidatorForBatteries(newResolutionVector,
-                                         self.printAllValidatorFlag)
+      # OPTDBG
+      #self.SetpointValidatorForBatteries(newResolutionVector,
+      #                                   self.printAllValidatorFlag)
       self.SetpointValidatorForRegulators(newResolutionVector,
                                           self.printAllValidatorFlag)
 
@@ -1855,8 +1862,9 @@ class DeconflictionPipeline(GridAPPSD):
 
         # Published IEEE Access Foundational Paper Reference:
         #   Step 4--Setpoint Validator
-        self.SetpointValidatorForBatteries(self.TargetResolutionVector,
-                                           self.printAllValidatorFlag)
+        # OPTDBG
+        #self.SetpointValidatorForBatteries(self.TargetResolutionVector,
+        #                                   self.printAllValidatorFlag)
         self.SetpointValidatorForRegulators(self.TargetResolutionVector,
                                             self.printAllValidatorFlag)
 
@@ -2088,8 +2096,9 @@ class DeconflictionPipeline(GridAPPSD):
 
     # Published IEEE Access Foundational Paper Reference:
     #   Step 4--Setpoint Validator
-    self.SetpointValidatorForBatteries(newResolutionVector,
-                                       self.printAllValidatorFlag)
+    # OPTDBG
+    #self.SetpointValidatorForBatteries(newResolutionVector,
+    #                                   self.printAllValidatorFlag)
     self.SetpointValidatorForRegulators(newResolutionVector,
                                         self.printAllValidatorFlag)
 
@@ -2226,8 +2235,13 @@ class DeconflictionPipeline(GridAPPSD):
       # 15 seconds is a good number for a real-time simulation
       optIntervalSec = 15
     else:
-      # if attempting non-real-time, something like 900 is reasonable
-      optIntervalSec = 900
+      # if attempting non-real-time, something like 900 is reasonable, but
+      # with the current single threaded message handling in the current app
+      # design the apps fall way behind in message processing that would
+      # completely break cooperation messaging among other issues. Therefore
+      # until the apps are redesigned to keep up with messaging by using
+      # threads, 1800 should be the minimum interval
+      optIntervalSec = 1800
 
     if interval!=None and interval!='scalability':
       optIntervalSec = int(interval)
@@ -2383,7 +2397,7 @@ class DeconflictionPipeline(GridAPPSD):
 
     while self.keepLoopingFlag:
       if self.messageQueue.qsize() == 0:
-        time.sleep(0.1)
+        sleep(0.1)
         continue
 
       # GDB 5/21/25: This is an "enhanced queue draining" design. It keeps
