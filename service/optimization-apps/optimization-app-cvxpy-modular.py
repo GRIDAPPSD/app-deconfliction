@@ -1475,10 +1475,10 @@ class CompetingApp(GridAPPSD):
       # 15 seconds is a good number for a real-time simulation
       optIntervalSec = 15
     else:
-      # if attempting non-real-time, something like 1200 is reasonable
+      # if attempting non-real-time, something like 900 is reasonable
       # so the optimization time is safely shorter than the time between
       # optimizations--otherwise the queue draining won't work right.
-      optIntervalSec = 1200
+      optIntervalSec = 900
 
     if self.opt_type!='scalability' and interval!=None:
       optIntervalSec = int(interval)
