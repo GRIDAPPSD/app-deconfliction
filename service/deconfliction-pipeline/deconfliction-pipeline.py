@@ -2214,8 +2214,7 @@ class DeconflictionPipeline(GridAPPSD):
     self.SolarPVsInfo, self.SolarPVs =AppUtil.getSolarPVs(MethodUtil.sparql_mgr)
 
     # flag for whether simulation is run in real-time
-    self.realtimeFlag = True
-    #self.realtimeFlag = False
+    #self.realtimeFlag = True
     self.realtimeFlag = False
 
     # deltaT is time between timesteps as fractional hours
@@ -2227,13 +2226,16 @@ class DeconflictionPipeline(GridAPPSD):
       # 15 seconds is a good number for a real-time simulation
       optIntervalSec = 15
     else:
-      # if attempting non-real-time, something like 600 is reasonable
-      optIntervalSec = 600
+      # if attempting non-real-time, something like 900 is reasonable
+      optIntervalSec = 900
 
     if interval!=None and interval!='scalability':
       optIntervalSec = int(interval)
 
-    self.deltaT = optIntervalSec/3600.0
+    if self.realtimeFlag:
+      self.deltaT = optIntervalSec/3600.0
+    else:
+      self.deltaT = (optIntervalSec + 600)/3600.0
 
     self.ConflictMatrix = {}
     self.ResolutionVector = {}
