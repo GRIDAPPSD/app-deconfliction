@@ -441,8 +441,16 @@ class CompetingApp(GridAPPSD):
 
       # Battery SoC constraints added as Shiva couldn't identify CVXPY's
       # equivalent to PuLP's lb and ub
-      self.Constraints.append(soc[idx] >= 0.2)
-      self.Constraints.append(soc[idx] <= 0.9)
+      # GDB 8/25/25: Allow for tweaking the SoC limits based on whether it's
+      # a realtime simulation or not
+      if self.realtimeFlag:
+        self.Constraints.append(soc[idx] >= 0.2)
+        self.Constraints.append(soc[idx] <= 0.9)
+      else:
+        self.Constraints.append(soc[idx] >= 0.2)
+        self.Constraints.append(soc[idx] <= 0.9)
+        #self.Constraints.append(soc[idx] >= 0.25)
+        #self.Constraints.append(soc[idx] <= 0.85)
 
   def optConstraintsLimitsBatteries(self, BatteriesInfo, soc, p_batt):
     print('Setting Some arbitrary limits for batteries')
