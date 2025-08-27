@@ -23,6 +23,11 @@
 # e.g.,
 # ./run-deconfliction.sh 123apps rm
 
+cleanup() {
+  pkill -f "optimization-app-"
+  pkill -f "helicsgossbridge"
+}
+
 if [ "$#" -lt 2 ]; then
   echo "Usage: ./run-deconfliction.sh <model> <apps_code> [--optlib <opt_library>] [--interval <interval_sec>] [--weights <weights_basename>]"
   echo
@@ -112,7 +117,8 @@ if [[ $APPS == *"c"* || $APPS == *"C"* ]]; then
   ./run-cvr.sh $SIMID "$SIMREQ" $OPTLIB $INTERVAL >/dev/null &
 fi
 
+trap cleanup SIGINT SIGTERM EXIT
+
 cd ../deconfliction-pipeline
 ./run-pipeline.sh $SIMID "$SIMREQ" $INTERVAL $WEIGHTS
 
-trap - SIGINT SIGTERM EXIT

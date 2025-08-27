@@ -24,6 +24,8 @@ if [ "$#" -gt 3 ]; then
   INTERVAL=$4
 fi
 
+trap - SIGINT SIGTERM EXIT
+
 mkdir -p log
 if [ "$OPTLIB" = "pulp" ] || [ "$OPTLIB" = "PuLP" ] || [ "$OPTLIB" = "PULP" ]; then
   python3 optimization-app-pulp.py cvr $SIMID "$SIMREQ" $INTERVAL 2>&1 | tee log/cvr-app.log

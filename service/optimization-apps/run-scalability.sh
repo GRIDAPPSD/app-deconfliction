@@ -18,5 +18,7 @@ LINE=`awk NR==$LINENUM $APPSETUP`
 # extract first column to get AppName for log filename
 APPNAME=`echo $LINE | cut -f1 -d,`
 
+trap - SIGINT SIGTERM EXIT
+
 python3 optimization-app-cvxpy-modular.py scalability $SIMID "$SIMREQ" "$LINE" 2>&1 | tee log/$APPNAME-app.log
 
