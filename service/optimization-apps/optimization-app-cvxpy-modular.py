@@ -107,6 +107,8 @@ class CompetingApp(GridAPPSD):
     coop_id = gapps.subscribe(service_output_topic('deconfliction.cooperation',
                               simulation_id), self)
 
+    self.keepLoopingFlag = True
+
     while self.keepLoopingFlag:
       #sleep(0.1)
       sleep(0.5)
@@ -1155,7 +1157,7 @@ class CompetingApp(GridAPPSD):
       status = message['processStatus']
       if status=='COMPLETE' or status=='CLOSED':
         self.keepLoopingFlag = False
-        print('Simulation ' + status + ' message received', flush=True)
+        self.messageQueue.put(message)
 
     elif 'message' in message:
       self.messageQueue.put(message['message'])
@@ -1225,11 +1227,9 @@ class CompetingApp(GridAPPSD):
     # between different processes
     self.messageQueue = Queue()
 
-    # subscribe to simulation log and output messages
+    # subscribe to simulation log and output messages in new process
     # since messages are just going on a queue, subscribe right away to
     # keep from missing any sent during app initialization
-    self.keepLoopingFlag = True
-
     consumer_process = Process(target=self.activemq_consumer_process,
                                args=(simulation_id,))
     consumer_process.start()
@@ -1568,7 +1568,7 @@ class CompetingApp(GridAPPSD):
     currentCoopPhase = None
     self.lastTime = datetime.now()
 
-    while self.keepLoopingFlag:
+    while True:
       if self.messageQueue.qsize() == 0:
         #sleep(0.1)
         sleep(0.5)
@@ -1585,7 +1585,13 @@ class CompetingApp(GridAPPSD):
       message = self.messageQueue.get()
       messageCounter += 1
 
-      if 'measurements' in message: # this is a simulation measurements message
+      if 'processStatus' in message:
+        status = message['processStatus']
+        if status=='COMPLETE' or status=='CLOSED':
+          print('Simulation ' + status + ' message received', flush=True)
+          break # done with all processing
+
+      elif 'measurements' in message: # this is a simulation measurements message
         global ts_time
         ts_unix = int(message['timestamp'])
         ts_time = datetime.utcfromtimestamp(ts_unix).time()
