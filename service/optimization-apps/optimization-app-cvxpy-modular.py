@@ -53,9 +53,12 @@ import math
 import pprint
 import numpy as np
 import csv
-import queue
 import copy
-import threading
+
+# GDB 8/27/25: Magic that puts message handling into its own process
+# as the only way to keep up with simulation measurements when there
+# are long-running optimizations
+from multiprocessing import Process, Queue
 
 from time import sleep
 #import cylp
@@ -94,21 +97,23 @@ import MethodUtil
 
 class CompetingApp(GridAPPSD):
 
-  '''
-  def activemq_consumer_thread(self, simulation_id):
-    out_id = self.gapps.subscribe(simulation_output_topic(simulation_id), self)
-    log_id = self.gapps.subscribe(simulation_log_topic(simulation_id), self)
-    coop_id = self.gapps.subscribe(service_output_topic('deconfliction.cooperation',
-                                   simulation_id), self)
+  def activemq_consumer_process(self, simulation_id):
+    # authenticate with GridAPPS-D Platform
+    gapps = GridAPPSD(simulation_id)
+    assert gapps.connected
+
+    out_id = gapps.subscribe(simulation_output_topic(simulation_id), self)
+    log_id = gapps.subscribe(simulation_log_topic(simulation_id), self)
+    coop_id = gapps.subscribe(service_output_topic('deconfliction.cooperation',
+                              simulation_id), self)
 
     while self.keepLoopingFlag:
       #sleep(0.1)
       sleep(0.5)
 
-    self.gapps.unsubscribe(out_id)
-    self.gapps.unsubscribe(log_id)
-    self.gapps.unsubscribe(coop_id)
-  '''
+    gapps.unsubscribe(out_id)
+    gapps.unsubscribe(log_id)
+    gapps.unsubscribe(coop_id)
 
 
   def optPrelimScalability(self, line):
@@ -1211,32 +1216,29 @@ class CompetingApp(GridAPPSD):
         print('Updated Tap for ' + self.RegulatorsInfo[mrid]['name'] + ': ' + str(pos), flush=True)
 
 
-  def __init__(self, gapps, opt_type, feeder_mrid, simulation_id, interval):
+  def __init__(self, opt_type, feeder_mrid, simulation_id, interval):
 
     #self.realtimeFlag = True
     self.realtimeFlag = False
 
-    self.gapps = gapps
-
-    self.messageQueue = queue.Queue()
+    # GDB 8/27/25: Magic IPC Queue class for sharing ActiveMQ messages
+    # between different processes
+    self.messageQueue = Queue()
 
     # subscribe to simulation log and output messages
     # since messages are just going on a queue, subscribe right away to
     # keep from missing any sent during app initialization
     self.keepLoopingFlag = True
 
-    out_id = gapps.subscribe(simulation_output_topic(simulation_id), self)
-    log_id = gapps.subscribe(simulation_log_topic(simulation_id), self)
-    coop_id = gapps.subscribe(service_output_topic('deconfliction.cooperation',
-                              simulation_id), self)
-    '''
-    consumer_thread = threading.Thread(target=self.activemq_consumer_thread,
-                                       args=(simulation_id,))
-    consumer_thread.start()
-    '''
+    consumer_process = Process(target=self.activemq_consumer_process,
+                               args=(simulation_id,))
+    consumer_process.start()
+
+    self.gapps = GridAPPSD(simulation_id)
+    assert self.gapps.connected
 
     SPARQLManager = getattr(importlib.import_module('sparql'), 'SPARQLManager')
-    sparql_mgr = SPARQLManager(gapps, feeder_mrid, simulation_id)
+    sparql_mgr = SPARQLManager(self.gapps, feeder_mrid, simulation_id)
 
     self.EnergyConsumers = AppUtil.getEnergyConsumers(sparql_mgr)
     #print('Starting EnergyConsumers: ' + json.dumps(self.EnergyConsumers, indent=2), flush=True)
@@ -1912,12 +1914,7 @@ class CompetingApp(GridAPPSD):
         self.gapps.send(self.coop_publish_topic, json.dumps(dispatch_message))
         self.difference_builder.clear()
 
-    gapps.unsubscribe(out_id)
-    gapps.unsubscribe(log_id)
-    gapps.unsubscribe(coop_id)
-    '''
-    consumer_thread.join()
-    '''
+    consumer_process.join()
 
 
 def _main():
@@ -1944,17 +1941,13 @@ def _main():
   sim_request = json.loads(opts.request.replace("\'",""))
   feeder_mrid = sim_request["power_system_config"]["Line_name"]
 
-  # authenticate with GridAPPS-D Platform
   os.environ['GRIDAPPSD_APPLICATION_ID'] = 'gridappsd-competing-app'
   os.environ['GRIDAPPSD_APPLICATION_STATUS'] = 'STARTED'
   os.environ['GRIDAPPSD_USER'] = 'app_user'
   os.environ['GRIDAPPSD_PASSWORD'] = '1234App'
 
-  gapps = GridAPPSD(opts.simulation_id)
-  assert gapps.connected
-
-  competing_app = CompetingApp(gapps, opts.type, feeder_mrid,
-                               opts.simulation_id, opts.interval)
+  competing_app = CompetingApp(opts.type, feeder_mrid, opts.simulation_id,
+                               opts.interval)
 
   print('Goodbye!', flush=True)
 
