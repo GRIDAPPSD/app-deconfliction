@@ -24,6 +24,8 @@
 # ./run-deconfliction.sh 123apps rm
 
 cleanup() {
+  # note that killing these will mean that as soon as the pipeline is done,
+  # everyone will be done (without a choice).
   pkill -f "optimization-app-"
   pkill -f "helicsgossbridge"
 }
