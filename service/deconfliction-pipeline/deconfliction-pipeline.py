@@ -2397,7 +2397,8 @@ class DeconflictionPipeline(GridAPPSD):
 
     while self.keepLoopingFlag:
       if self.messageQueue.qsize() == 0:
-        sleep(0.1)
+        #sleep(0.1)
+        sleep(0.5)
         continue
 
       # GDB 5/21/25: This is an "enhanced queue draining" design. It keeps

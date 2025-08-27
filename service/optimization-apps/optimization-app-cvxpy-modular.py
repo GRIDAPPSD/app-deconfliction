@@ -55,6 +55,7 @@ import numpy as np
 import csv
 import queue
 import copy
+import threading
 
 from time import sleep
 #import cylp
@@ -92,6 +93,23 @@ import MethodUtil
 #2345678901234567890123456789012345678901234567890123456789012345678901234567890
 
 class CompetingApp(GridAPPSD):
+
+  '''
+  def activemq_consumer_thread(self, simulation_id):
+    out_id = self.gapps.subscribe(simulation_output_topic(simulation_id), self)
+    log_id = self.gapps.subscribe(simulation_log_topic(simulation_id), self)
+    coop_id = self.gapps.subscribe(service_output_topic('deconfliction.cooperation',
+                                   simulation_id), self)
+
+    while self.keepLoopingFlag:
+      #sleep(0.1)
+      sleep(0.5)
+
+    self.gapps.unsubscribe(out_id)
+    self.gapps.unsubscribe(log_id)
+    self.gapps.unsubscribe(coop_id)
+  '''
+
 
   def optPrelimScalability(self, line):
     tokens = line.split(',')
@@ -1206,10 +1224,16 @@ class CompetingApp(GridAPPSD):
     # since messages are just going on a queue, subscribe right away to
     # keep from missing any sent during app initialization
     self.keepLoopingFlag = True
+
     out_id = gapps.subscribe(simulation_output_topic(simulation_id), self)
     log_id = gapps.subscribe(simulation_log_topic(simulation_id), self)
     coop_id = gapps.subscribe(service_output_topic('deconfliction.cooperation',
                               simulation_id), self)
+    '''
+    consumer_thread = threading.Thread(target=self.activemq_consumer_thread,
+                                       args=(simulation_id,))
+    consumer_thread.start()
+    '''
 
     SPARQLManager = getattr(importlib.import_module('sparql'), 'SPARQLManager')
     sparql_mgr = SPARQLManager(gapps, feeder_mrid, simulation_id)
@@ -1544,7 +1568,8 @@ class CompetingApp(GridAPPSD):
 
     while self.keepLoopingFlag:
       if self.messageQueue.qsize() == 0:
-        sleep(0.1)
+        #sleep(0.1)
+        sleep(0.5)
         continue
 
       # discard messages other than most recent
@@ -1890,6 +1915,9 @@ class CompetingApp(GridAPPSD):
     gapps.unsubscribe(out_id)
     gapps.unsubscribe(log_id)
     gapps.unsubscribe(coop_id)
+    '''
+    consumer_thread.join()
+    '''
 
 
 def _main():
