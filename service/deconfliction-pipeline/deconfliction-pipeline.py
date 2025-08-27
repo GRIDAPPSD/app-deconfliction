@@ -507,7 +507,7 @@ class DeconflictionPipeline(GridAPPSD):
     # OPTDBG
     printAllFeasibilityFlag = True
     for device in self.BatteriesInfo:
-      chargeSoCMax = 0.9 - self.BatteriesInfo[device]['SoC']
+      chargeSoCMax = max(0.0, (0.9 - self.BatteriesInfo[device]['SoC']))
       self.BatteriesInfo[device]['P_batt_charge_max'] = \
                          (chargeSoCMax*self.BatteriesInfo[device]['ratedE']) / \
                          (self.BatteriesInfo[device]['eff_c']*self.deltaT)
@@ -518,7 +518,7 @@ class DeconflictionPipeline(GridAPPSD):
               ', max charge P_batt: ' +
               str(self.BatteriesInfo[device]['P_batt_charge_max']))
 
-      dischargeSoCMax = 0.2 - self.BatteriesInfo[device]['SoC']
+      dischargeSoCMax = min(0.0, (0.2 - self.BatteriesInfo[device]['SoC']))
       self.BatteriesInfo[device]['P_batt_discharge_max'] = \
                       (dischargeSoCMax*self.BatteriesInfo[device]['ratedE']) / \
                       (1/self.BatteriesInfo[device]['eff_d']*self.deltaT)
@@ -554,7 +554,7 @@ class DeconflictionPipeline(GridAPPSD):
                   'power: ' + str(self.ConflictMatrix[device][app][1]))
 
           # check vs. battery SoC limits
-          if self.ConflictMatrix[device][app][1] > \
+          if -self.ConflictMatrix[device][app][1] > \
              self.BatteriesInfo[device]['P_batt_charge_max']:
             prlog('FeasibilityMaintainerForBatteries--device: ' + name +
                   ', app: ' + app + ', P_batt setpoint above max charge ' +
@@ -564,10 +564,10 @@ class DeconflictionPipeline(GridAPPSD):
                                 self.BatteriesInfo[device]['P_batt_charge_max'])
             prlog('FeasibilityMaintainerForBatteries--device: ' + name +
                   ', app: ' + app + ', P_batt setpoint reset to max charge ' +
-                  'P_batt: ' + str(self.ConflictMatrix[device][app][1]))
+                  'P_batt: ' + str(-self.ConflictMatrix[device][app][1]))
 
-          elif self.ConflictMatrix[device][app][1] < \
-             self.BatteriesInfo[device]['P_batt_discharge_max']:
+          elif -self.ConflictMatrix[device][app][1] < \
+               self.BatteriesInfo[device]['P_batt_discharge_max']:
             prlog('FeasibilityMaintainerForBatteries--device: ' + name +
                   ', app: ' + app + ', P_batt setpoint below max discharge ' +
                   'P_batt: ' + str(self.ConflictMatrix[device][app][1]))
@@ -1710,7 +1710,7 @@ class DeconflictionPipeline(GridAPPSD):
       # Published IEEE Access Foundational Paper Reference:
       #   Step 2--Feasibility Maintainer
       # OPTDBG
-      #self.FeasibilityMaintainerForBatteries(self.printAllFeasibilityFlag)
+      self.FeasibilityMaintainerForBatteries(self.printAllFeasibilityFlag)
       self.FeasibilityMaintainerForRegulators(self.printAllFeasibilityFlag)
 
       # Published IEEE Access Foundational Paper Reference:
