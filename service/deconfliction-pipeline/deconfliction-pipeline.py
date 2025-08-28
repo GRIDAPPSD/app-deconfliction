@@ -63,9 +63,13 @@ import json
 #import pprint
 import math
 import copy
-import queue
 from time import sleep
 from datetime import datetime
+
+# GDB 8/28/25: Magic that puts message handling into its own process
+# to make sure it is keeping up with simulation measurements
+from multiprocessing import Process, Queue
+
 
 from gridappsd import GridAPPSD
 from gridappsd import DifferenceBuilder
@@ -1364,6 +1368,40 @@ class DeconflictionPipeline(GridAPPSD):
     return diffCount
 
 
+  def messageListenerProcess(self, simulation_id):
+    # authenticate with GridAPPS-D Platform
+    gapps = GridAPPSD(simulation_id)
+    assert gapps.connected
+
+    # subscribe to simulation log and output messages
+    out_id = gapps.subscribe(simulation_output_topic(simulation_id),
+                             self.OnSimMessage)
+    log_id = gapps.subscribe(simulation_log_topic(simulation_id),
+                             self.OnSimMessage)
+
+    if deconflictionAsServiceFlag:
+      meas_id = gapps.subscribe(simulation_input_topic(simulation_id),
+                                self.OnMeasSetpointsMessage)
+
+    else:
+      meas_id =gapps.subscribe(service_input_topic('deconfliction.measurements',
+                               simulation_id), self.OnMeasSetpointsMessage)
+
+    coop_id = gapps.subscribe(service_input_topic('deconfliction.cooperation',
+                              simulation_id), self.OnCoopSetpointsMessage)
+
+    self.keepLoopingFlag = True
+
+    while self.keepLoopingFlag:
+      #sleep(0.1)
+      sleep(0.5)
+
+    gapps.unsubscribe(out_id)
+    gapps.unsubscribe(log_id)
+    gapps.unsubscribe(meas_id)
+    gapps.unsubscribe(coop_id)
+
+
   def OnSimMessage(self, header, message):
     #prlog('OnSimMessage--received message: ' + str(message))
     if not self.keepLoopingFlag:
@@ -1373,8 +1411,7 @@ class DeconflictionPipeline(GridAPPSD):
       status = message['processStatus']
       if status=='COMPLETE' or status=='CLOSED':
         self.keepLoopingFlag = False
-        prlog('OnSimMessage--simulation status message received, status: ' +
-              status)
+        self.messageQueue.put((None, None, None, message))
 
     else:
       self.messageQueue.put((None, None, None, message['message']))
@@ -2140,36 +2177,32 @@ class DeconflictionPipeline(GridAPPSD):
           str(timestamp))
 
 
-  def __init__(self, gapps, feeder_mrid, simulation_id, weights_base, interval):
-    self.gapps = gapps
+  def __init__(self, feeder_mrid, simulation_id, weights_base, interval):
 
-    self.messageQueue = queue.Queue()
+    self.messageQueue = Queue()
 
-    # subscribe to simulation log and output messages
-    self.keepLoopingFlag = True
-    out_id = gapps.subscribe(simulation_output_topic(simulation_id),
-                             self.OnSimMessage)
-    log_id = gapps.subscribe(simulation_log_topic(simulation_id),
-                             self.OnSimMessage)
+    # this is referenced in the MessageListener process so need to
+    # set it before creating that
+    self.printAllMessagesFlag = False
 
-    # subscribe to measurements based setpoints messages and cooperation
-    # response messages
+    # subscribe to simulation log and output messages in new process
+    # since messages are just going on a queue, subscribe right away to
+    # keep from missing any sent during pipeline initialization
+    messageListener = Process(target=self.messageListenerProcess,
+                              args=(simulation_id,))
+    messageListener.start()
+
+    self.gapps = GridAPPSD(simulation_id)
+    assert self.gapps.connected
 
     if deconflictionAsServiceFlag:
-      meas_id = gapps.subscribe(simulation_input_topic(simulation_id),
-                                self.OnMeasSetpointsMessage)
       # service topic for sending DifferenceBuilder messages
       self.publish_topic = service_output_topic(
                            'gridappsd-app-deconfliction-service', simulation_id)
 
     else:
-      meas_id =gapps.subscribe(service_input_topic('deconfliction.measurements',
-                               simulation_id), self.OnMeasSetpointsMessage)
       # simulation topic for sending DifferenceBuilder messages
       self.publish_topic = simulation_input_topic(simulation_id)
-
-    coop_id = gapps.subscribe(service_input_topic('deconfliction.cooperation',
-                              simulation_id), self.OnCoopSetpointsMessage)
 
     # service topic for sending target resolution messages to cooperating apps
     self.coop_topic = service_output_topic('deconfliction.cooperation',
@@ -2185,8 +2218,8 @@ class DeconflictionPipeline(GridAPPSD):
     #self.testDeviceName = 'BatteryUnit.battery1'
     #self.testDeviceName = 'RatioTapChanger.reg4b'
 
-    MethodUtil.sparql_mgr = SPARQLManager(gapps, feeder_mrid, simulation_id,
-                                  logFile=logDir+'deconfliction-pipeline.log')
+    MethodUtil.sparql_mgr = SPARQLManager(self.gapps, feeder_mrid,
+                     simulation_id, logFile=logDir+'deconfliction-pipeline.log')
 
     self.BatteriesInfo, BatteriesBus=AppUtil.getBatteries(MethodUtil.sparql_mgr)
     #prlog('Intialialization--starting BatteriesInfo: ' + str(self.BatteriesInfo))
@@ -2278,7 +2311,6 @@ class DeconflictionPipeline(GridAPPSD):
     self.simMessageCounter = 0
 
     # verbose logging control for various deconfliction pipeline aspects
-    self.printAllMessagesFlag = False
     self.printAllFeasibilityFlag = False
     self.printAllRulesFlag = False
     self.printAllMetricsFlag = False
@@ -2388,7 +2420,9 @@ class DeconflictionPipeline(GridAPPSD):
     pendingDeconflictFlag = False
     pendingMeasMsgFlag = False
 
-    while self.keepLoopingFlag:
+    notDoneFlag = True
+
+    while notDoneFlag:
       if self.messageQueue.qsize() == 0:
         #sleep(0.1)
         sleep(0.5)
@@ -2408,6 +2442,13 @@ class DeconflictionPipeline(GridAPPSD):
       app_names = set()
       while self.messageQueue.qsize() > 0:
         app_name, meas_msg_flag, coop_phase, message = self.messageQueue.get()
+
+        if 'processStatus' in message:
+          notDoneFlag = False
+          status = message['processStatus']
+          print('Simulation ' + status + ' message received', flush=True)
+          break # done with all processing
+
         timestamp = message['timestamp']
 
         if app_name == None:
@@ -2443,11 +2484,6 @@ class DeconflictionPipeline(GridAPPSD):
       self.pltFile.close()
       self.cmatFile.close()
 
-    gapps.unsubscribe(out_id)
-    gapps.unsubscribe(log_id)
-    gapps.unsubscribe(meas_id)
-    gapps.unsubscribe(coop_id)
-
     # for SHIVA conflict metric
     #json_file = open('log/ConflictMatrix_' + basename + '.json', 'w')
     #json.dump(self.TimeConflictMatrix, json_file, indent=4)
@@ -2455,6 +2491,8 @@ class DeconflictionPipeline(GridAPPSD):
     #json_file = open('log/ResolutionVector_' + basename + '.json', 'w')
     #json.dump(self.TimeResolutionVector, json_file, indent=4)
     #json_file.close()
+
+    messageListener.join()
 
 
 def _main():
@@ -2475,11 +2513,8 @@ def _main():
   os.environ['GRIDAPPSD_USER'] = 'app_user'
   os.environ['GRIDAPPSD_PASSWORD'] = '1234App'
 
-  gapps = GridAPPSD(opts.simulation_id)
-  assert gapps.connected
-
-  DeconflictionPipeline(gapps, feeder_mrid, opts.simulation_id,
-                        opts.weights, opts.interval)
+  DeconflictionPipeline(feeder_mrid, opts.simulation_id, opts.weights,
+                        opts.interval)
 
   prlog('Goodbye!')
 
