@@ -97,27 +97,6 @@ import MethodUtil
 
 class CompetingApp(GridAPPSD):
 
-  def activemq_consumer_process(self, simulation_id):
-    # authenticate with GridAPPS-D Platform
-    gapps = GridAPPSD(simulation_id)
-    assert gapps.connected
-
-    out_id = gapps.subscribe(simulation_output_topic(simulation_id), self)
-    log_id = gapps.subscribe(simulation_log_topic(simulation_id), self)
-    coop_id = gapps.subscribe(service_output_topic('deconfliction.cooperation',
-                              simulation_id), self)
-
-    self.keepLoopingFlag = True
-
-    while self.keepLoopingFlag:
-      #sleep(0.1)
-      sleep(0.5)
-
-    gapps.unsubscribe(out_id)
-    gapps.unsubscribe(log_id)
-    gapps.unsubscribe(coop_id)
-
-
   def optPrelimScalability(self, line):
     tokens = line.split(',')
 
@@ -1147,6 +1126,27 @@ class CompetingApp(GridAPPSD):
       self.difference_builder.clear()
 
 
+  def messageListenerProcess(self, simulation_id):
+    # authenticate with GridAPPS-D Platform
+    gapps = GridAPPSD(simulation_id)
+    assert gapps.connected
+
+    out_id = gapps.subscribe(simulation_output_topic(simulation_id), self)
+    log_id = gapps.subscribe(simulation_log_topic(simulation_id), self)
+    coop_id = gapps.subscribe(service_output_topic('deconfliction.cooperation',
+                              simulation_id), self)
+
+    self.keepLoopingFlag = True
+
+    while self.keepLoopingFlag:
+      #sleep(0.1)
+      sleep(0.5)
+
+    gapps.unsubscribe(out_id)
+    gapps.unsubscribe(log_id)
+    gapps.unsubscribe(coop_id)
+
+
   def on_message(self, header, message):
     #print('header: ' + str(header), flush=True)
     #print('message: ' + str(message), flush=True)
@@ -1230,9 +1230,9 @@ class CompetingApp(GridAPPSD):
     # subscribe to simulation log and output messages in new process
     # since messages are just going on a queue, subscribe right away to
     # keep from missing any sent during app initialization
-    consumer_process = Process(target=self.activemq_consumer_process,
-                               args=(simulation_id,))
-    consumer_process.start()
+    messageListener = Process(target=self.messageListenerProcess,
+                              args=(simulation_id,))
+    messageListener.start()
 
     self.gapps = GridAPPSD(simulation_id)
     assert self.gapps.connected
@@ -1920,7 +1920,7 @@ class CompetingApp(GridAPPSD):
         self.gapps.send(self.coop_publish_topic, json.dumps(dispatch_message))
         self.difference_builder.clear()
 
-    consumer_process.join()
+    messageListener.join()
 
 
 def _main():
