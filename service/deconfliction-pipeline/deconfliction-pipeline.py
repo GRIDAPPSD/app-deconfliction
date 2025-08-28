@@ -538,8 +538,8 @@ class DeconflictionPipeline(GridAPPSD):
       if name.startswith('BatteryUnit.'):
         for app in self.ConflictMatrix[device]:
           # check vs. battery rated power
-          if abs(self.ConflictMatrix[device][app][1]) > \
-             self.BatteriesInfo[device]['prated']:
+          if abs(round(self.ConflictMatrix[device][app][1])) > \
+             round(self.BatteriesInfo[device]['prated']):
             prlog('FeasibilityMaintainerForBatteries--device: ' + name +
                   ', app: ' + app + ', P_batt setpoint exceeds battery rated ' +
                   'power: ' + str(self.ConflictMatrix[device][app][1]))
@@ -556,8 +556,8 @@ class DeconflictionPipeline(GridAPPSD):
                   'power: ' + str(self.ConflictMatrix[device][app][1]))
 
           # check vs. battery SoC limits
-          if -self.ConflictMatrix[device][app][1] > \
-              self.BatteriesInfo[device]['P_batt_charge_max']:
+          if -round(self.ConflictMatrix[device][app][1]) > \
+              round(self.BatteriesInfo[device]['P_batt_charge_max']):
             prlog('FeasibilityMaintainerForBatteries--device: ' + name +
                   ', app: ' + app + ', P_batt setpoint above max charge ' +
                   'P_batt: ' + str(-self.ConflictMatrix[device][app][1]))
@@ -568,8 +568,8 @@ class DeconflictionPipeline(GridAPPSD):
                   ', app: ' + app + ', P_batt setpoint reset to max charge ' +
                   'P_batt: ' + str(-self.ConflictMatrix[device][app][1]))
 
-          elif -self.ConflictMatrix[device][app][1] < \
-                self.BatteriesInfo[device]['P_batt_discharge_max']:
+          elif -round(self.ConflictMatrix[device][app][1]) < \
+                round(self.BatteriesInfo[device]['P_batt_discharge_max']):
             prlog('FeasibilityMaintainerForBatteries--device: ' + name +
                   ', app: ' + app + ', P_batt setpoint below max discharge ' +
                   'P_batt: ' + str(-self.ConflictMatrix[device][app][1]))
@@ -642,8 +642,8 @@ class DeconflictionPipeline(GridAPPSD):
       name = MethodUtil.DeviceToName[device]
       if name.startswith('BatteryUnit.'):
         # check vs. battery rated power
-        if abs(newResolutionVector[device][1]) > \
-           self.BatteriesInfo[device]['prated']:
+        if abs(round(newResolutionVector[device][1])) > \
+           round(self.BatteriesInfo[device]['prated']):
           prlog('SetpointValidatorForBatteries--device: ' + name +
                 ', P_batt setpoint exceeds battery rated power: ' +
                 str(newResolutionVector[device][1]))
@@ -660,8 +660,8 @@ class DeconflictionPipeline(GridAPPSD):
                 str(newResolutionVector[device][1]))
 
         # check vs. battery SoC limits
-        if -newResolutionVector[device][1] > \
-            self.BatteriesInfo[device]['P_batt_charge_max']:
+        if -round(newResolutionVector[device][1]) > \
+            round(self.BatteriesInfo[device]['P_batt_charge_max']):
           prlog('SetpointValidatorForBatteries--device: ' + name +
                 ', P_batt setpoint above max charge P_batt: ' +
                 str(-newResolutionVector[device][1]))
@@ -672,8 +672,8 @@ class DeconflictionPipeline(GridAPPSD):
                 ', P_batt setpoint reset to max charge P_batt: ' +
                 str(-newResolutionVector[device][1]))
 
-        elif -newResolutionVector[device][1] < \
-              self.BatteriesInfo[device]['P_batt_discharge_max']:
+        elif -round(newResolutionVector[device][1]) < \
+              round(self.BatteriesInfo[device]['P_batt_discharge_max']):
           prlog('SetpointValidatorForBatteries--device: ' + name +
                 ', P_batt setpoint below max discharge P_batt: ' +
                 str(-newResolutionVector[device][1]))
