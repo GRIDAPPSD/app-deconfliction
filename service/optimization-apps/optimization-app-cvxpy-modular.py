@@ -54,13 +54,13 @@ import pprint
 import numpy as np
 import csv
 import copy
+from time import sleep
 
 # GDB 8/27/25: Magic that puts message handling into its own process
 # as the only way to keep up with simulation measurements when there
 # are long-running optimizations
 from multiprocessing import Process, Queue
 
-from time import sleep
 #import cylp
 import cvxpy as cp
 import pandas as pd
@@ -1220,9 +1220,6 @@ class CompetingApp(GridAPPSD):
 
   def __init__(self, opt_type, feeder_mrid, simulation_id, interval):
 
-    #self.realtimeFlag = True
-    self.realtimeFlag = False
-
     # GDB 8/27/25: Magic IPC Queue class for sharing ActiveMQ messages
     # between different processes
     self.messageQueue = Queue()
@@ -1499,6 +1496,10 @@ class CompetingApp(GridAPPSD):
             flush=True)
       exit()
 
+    # flag for whether simulation is run in real-time
+    #self.realtimeFlag = True
+    self.realtimeFlag = False
+
     # deltaT is time between timesteps as fractional hours
     # optimization interval seconds is the number of simulation seconds
     # between triggering an optimization and must be a multiple of 3
@@ -1587,11 +1588,10 @@ class CompetingApp(GridAPPSD):
 
       if 'processStatus' in message:
         status = message['processStatus']
-        if status=='COMPLETE' or status=='CLOSED':
-          print('Simulation ' + status + ' message received', flush=True)
-          break # done with all processing
+        print('Simulation ' + status + ' message received', flush=True)
+        break # done with all processing
 
-      elif 'measurements' in message: # this is a simulation measurements message
+      if 'measurements' in message: # this is a simulation measurements message
         global ts_time
         ts_unix = int(message['timestamp'])
         ts_time = datetime.utcfromtimestamp(ts_unix).time()
