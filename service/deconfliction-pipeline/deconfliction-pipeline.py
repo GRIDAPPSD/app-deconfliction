@@ -504,8 +504,6 @@ class DeconflictionPipeline(GridAPPSD):
   def FeasibilityMaintainerForBatteries(self, printAllFeasibilityFlag=False):
     # find the maximum P_batt charge and discharge values per battery to
     # prevent overcharging or undercharging
-    # OPTDBG
-    printAllFeasibilityFlag = True
     for device in self.BatteriesInfo:
       chargeSoCMax = max(0.0, (0.9 - self.BatteriesInfo[device]['SoC']))
       self.BatteriesInfo[device]['P_batt_charge_max'] = \
@@ -520,8 +518,8 @@ class DeconflictionPipeline(GridAPPSD):
 
       dischargeSoCMax = min(0.0, (0.2 - self.BatteriesInfo[device]['SoC']))
       self.BatteriesInfo[device]['P_batt_discharge_max'] = \
-                      (dischargeSoCMax*self.BatteriesInfo[device]['ratedE']) / \
-                      (1/self.BatteriesInfo[device]['eff_d']*self.deltaT)
+                       (dischargeSoCMax*self.BatteriesInfo[device]['ratedE']) / \
+                       (1/self.BatteriesInfo[device]['eff_d']*self.deltaT)
       if printAllFeasibilityFlag:
         prlog('FeasibilityMaintainerForBatteries--device: ' +
               MethodUtil.DeviceToName[device] +
@@ -555,28 +553,28 @@ class DeconflictionPipeline(GridAPPSD):
 
           # check vs. battery SoC limits
           if -self.ConflictMatrix[device][app][1] > \
-             self.BatteriesInfo[device]['P_batt_charge_max']:
+              self.BatteriesInfo[device]['P_batt_charge_max']:
             prlog('FeasibilityMaintainerForBatteries--device: ' + name +
                   ', app: ' + app + ', P_batt setpoint above max charge ' +
-                  'P_batt: ' + str(self.ConflictMatrix[device][app][1]))
+                  'P_batt: ' + str(-self.ConflictMatrix[device][app][1]))
             self.ConflictMatrix[device][app] = \
                                (self.ConflictMatrix[device][app][0],
-                                self.BatteriesInfo[device]['P_batt_charge_max'])
+                                -self.BatteriesInfo[device]['P_batt_charge_max'])
             prlog('FeasibilityMaintainerForBatteries--device: ' + name +
                   ', app: ' + app + ', P_batt setpoint reset to max charge ' +
                   'P_batt: ' + str(-self.ConflictMatrix[device][app][1]))
 
           elif -self.ConflictMatrix[device][app][1] < \
-               self.BatteriesInfo[device]['P_batt_discharge_max']:
+                self.BatteriesInfo[device]['P_batt_discharge_max']:
             prlog('FeasibilityMaintainerForBatteries--device: ' + name +
                   ', app: ' + app + ', P_batt setpoint below max discharge ' +
-                  'P_batt: ' + str(self.ConflictMatrix[device][app][1]))
+                  'P_batt: ' + str(-self.ConflictMatrix[device][app][1]))
             self.ConflictMatrix[device][app]= \
                                (self.ConflictMatrix[device][app][0],
-                                self.BatteriesInfo[device]['P_batt_discharge_max'])
+                                -self.BatteriesInfo[device]['P_batt_discharge_max'])
             prlog('FeasibilityMaintainerForBatteries--device: ' + name +
                   ', app: ' + app + ', P_batt setpoint reset to max discharge '+
-                  'P_batt: ' + str(self.ConflictMatrix[device][app][1]))
+                  'P_batt: ' + str(-self.ConflictMatrix[device][app][1]))
 
 
   def FeasibilityMaintainerForRegulators(self, printAllFeasibilityFlag=False):
@@ -612,7 +610,7 @@ class DeconflictionPipeline(GridAPPSD):
     # find the maximum P_batt charge and discharge values per battery to
     # prevent overcharging or undercharging
     for device in self.BatteriesInfo:
-      chargeSoCMax = 0.9 - self.BatteriesInfo[device]['SoC']
+      chargeSoCMax = max(0.0, (0.9 - self.BatteriesInfo[device]['SoC']))
       self.BatteriesInfo[device]['P_batt_charge_max'] = \
                          (chargeSoCMax*self.BatteriesInfo[device]['ratedE']) / \
                          (self.BatteriesInfo[device]['eff_c']*self.deltaT)
@@ -623,7 +621,7 @@ class DeconflictionPipeline(GridAPPSD):
               ', max charge P_batt: ' +
               str(self.BatteriesInfo[device]['P_batt_charge_max']))
 
-      dischargeSoCMax = 0.2 - self.BatteriesInfo[device]['SoC']
+      dischargeSoCMax = min(0.0, (0.2 - self.BatteriesInfo[device]['SoC']))
       self.BatteriesInfo[device]['P_batt_discharge_max'] = \
                       (dischargeSoCMax*self.BatteriesInfo[device]['ratedE']) / \
                       (1/self.BatteriesInfo[device]['eff_d']*self.deltaT)
@@ -658,29 +656,29 @@ class DeconflictionPipeline(GridAPPSD):
                 str(newResolutionVector[device][1]))
 
         # check vs. battery SoC limits
-        if newResolutionVector[device][1] > \
-           self.BatteriesInfo[device]['P_batt_charge_max']:
+        if -newResolutionVector[device][1] > \
+            self.BatteriesInfo[device]['P_batt_charge_max']:
           prlog('SetpointValidatorForBatteries--device: ' + name +
                 ', P_batt setpoint above max charge P_batt: ' +
-                str(newResolutionVector[device][1]))
+                str(-newResolutionVector[device][1]))
           newResolutionVector[device] = \
                              (newResolutionVector[device][0],
-                              self.BatteriesInfo[device]['P_batt_charge_max'])
+                              -self.BatteriesInfo[device]['P_batt_charge_max'])
           prlog('SetpointValidatorForBatteries--device: ' + name +
                 ', P_batt setpoint reset to max charge P_batt: ' +
-                str(newResolutionVector[device][1]))
+                str(-newResolutionVector[device][1]))
 
-        elif newResolutionVector[device][1] < \
-           self.BatteriesInfo[device]['P_batt_discharge_max']:
+        elif -newResolutionVector[device][1] < \
+              self.BatteriesInfo[device]['P_batt_discharge_max']:
           prlog('SetpointValidatorForBatteries--device: ' + name +
                 ', P_batt setpoint below max discharge P_batt: ' +
-                str(newResolutionVector[device][1]))
+                str(-newResolutionVector[device][1]))
           newResolutionVector[device] = \
                             (newResolutionVector[device][0],
-                             self.BatteriesInfo[device]['P_batt_discharge_max'])
+                             -self.BatteriesInfo[device]['P_batt_discharge_max'])
           prlog('SetpointValidatorForBatteries--device: ' + name +
                 ', P_batt setpoint reset to max discharge P_batt: '+
-                str(newResolutionVector[device][1]))
+                str(-newResolutionVector[device][1]))
 
         # bail if rules aren't being applied at all
         if self.noValidatorRulesFlag or \
@@ -1659,9 +1657,8 @@ class DeconflictionPipeline(GridAPPSD):
 
         # Published IEEE Access Foundational Paper Reference:
         #   Step 4--Setpoint Validator
-        # OPTDBG
-        #self.SetpointValidatorForBatteries(newResolutionVector,
-        #                                   self.printAllValidatorFlag)
+        self.SetpointValidatorForBatteries(newResolutionVector,
+                                           self.printAllValidatorFlag)
         self.SetpointValidatorForRegulators(newResolutionVector,
                                             self.printAllValidatorFlag)
 
@@ -1709,7 +1706,6 @@ class DeconflictionPipeline(GridAPPSD):
 
       # Published IEEE Access Foundational Paper Reference:
       #   Step 2--Feasibility Maintainer
-      # OPTDBG
       self.FeasibilityMaintainerForBatteries(self.printAllFeasibilityFlag)
       self.FeasibilityMaintainerForRegulators(self.printAllFeasibilityFlag)
 
@@ -1789,9 +1785,8 @@ class DeconflictionPipeline(GridAPPSD):
 
       # Published IEEE Access Foundational Paper Reference:
       #   Step 4--Setpoint Validator
-      # OPTDBG
-      #self.SetpointValidatorForBatteries(newResolutionVector,
-      #                                   self.printAllValidatorFlag)
+      self.SetpointValidatorForBatteries(newResolutionVector,
+                                         self.printAllValidatorFlag)
       self.SetpointValidatorForRegulators(newResolutionVector,
                                           self.printAllValidatorFlag)
 
@@ -1862,9 +1857,8 @@ class DeconflictionPipeline(GridAPPSD):
 
         # Published IEEE Access Foundational Paper Reference:
         #   Step 4--Setpoint Validator
-        # OPTDBG
-        #self.SetpointValidatorForBatteries(self.TargetResolutionVector,
-        #                                   self.printAllValidatorFlag)
+        self.SetpointValidatorForBatteries(self.TargetResolutionVector,
+                                           self.printAllValidatorFlag)
         self.SetpointValidatorForRegulators(self.TargetResolutionVector,
                                             self.printAllValidatorFlag)
 
@@ -2096,9 +2090,8 @@ class DeconflictionPipeline(GridAPPSD):
 
     # Published IEEE Access Foundational Paper Reference:
     #   Step 4--Setpoint Validator
-    # OPTDBG
-    #self.SetpointValidatorForBatteries(newResolutionVector,
-    #                                   self.printAllValidatorFlag)
+    self.SetpointValidatorForBatteries(newResolutionVector,
+                                       self.printAllValidatorFlag)
     self.SetpointValidatorForRegulators(newResolutionVector,
                                         self.printAllValidatorFlag)
 
