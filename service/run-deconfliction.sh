@@ -26,7 +26,7 @@
 cleanup() {
   # note that killing these will mean that as soon as the pipeline is done,
   # everyone will be done (without a choice).
-  sleep 5
+  sleep 3
   pkill -f "optimization-app-"
   pkill -f "helicsgossbridge"
 }
