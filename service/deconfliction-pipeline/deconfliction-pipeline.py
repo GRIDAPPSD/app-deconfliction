@@ -2354,8 +2354,8 @@ class DeconflictionPipeline(GridAPPSD):
     self.rulesRegInnerTimeInterval = 30
     self.rulesRegInnerStepsAllowed = 1
 
-    longSimFlag = False
-    if longSimFlag:
+    # assume a non-realtime simulation will be longer and adjust rules
+    if not self.realtimeFlag:
       self.rulesBattTimeInterval = 60*60*4 # every 4 hours
       self.rulesBattSwitchesAllowed = 1
       self.rulesRegOuterTimeInterval = 60*60*4 # every 4 hours
