@@ -1037,15 +1037,13 @@ class DeconflictionPipeline(GridAPPSD):
                   ', app: ' + app + '--tap pos setpoint: ' +
                   str(self.ConflictMatrix[device][app][1]) +
                   ', above max allowable asset health pos, reset to: ' +
-                  str(self.Regulators[device]['maxStep']) +
-                  ', from: ' + str(self.ConflictMatrix[device][app][1]))
+                  str(self.Regulators[device]['maxStep']))
             if name == self.testDeviceName:
               prlog('~TEST DEBUG RulesForRegulatorsConflict--device: ' + name +
                     ', app: ' + app + '--tap pos setpoint: ' +
                     str(self.ConflictMatrix[device][app][1]) +
                     ', above max allowable asset health pos, reset to: ' +
-                    str(self.Regulators[device]['maxStep']) +
-                    ', from: ' + str(self.ConflictMatrix[device][app][1]))
+                    str(self.Regulators[device]['maxStep']))
             self.ConflictMatrix[device][app] = \
                                (self.ConflictMatrix[device][app][0],
                                 self.Regulators[device]['maxStep'])
@@ -1056,15 +1054,13 @@ class DeconflictionPipeline(GridAPPSD):
                   ', app: ' + app + '--tap pos setpoint: ' +
                   str(self.ConflictMatrix[device][app][1]) +
                   ', below min allowable asset health pos, reset to: ' +
-                  str(self.Regulators[device]['minStep']) +
-                  ', from: ' + str(self.ConflictMatrix[device][app][1]))
+                  str(self.Regulators[device]['minStep']))
             if name == self.testDeviceName:
               prlog('~TEST DEBUG RulesForRegulatorsConflict--device: ' + name +
                     ', app: ' + app + '--tap pos setpoint: ' +
                     str(self.ConflictMatrix[device][app][1]) +
                     ', below min allowable asset health pos, reset to: ' +
-                    str(self.Regulators[device]['minStep']) +
-                    ', from: ' + str(self.ConflictMatrix[device][app][1]))
+                    str(self.Regulators[device]['minStep']))
             self.ConflictMatrix[device][app] = \
                                (self.ConflictMatrix[device][app][0],
                                 self.Regulators[device]['minStep'])
@@ -1127,15 +1123,13 @@ class DeconflictionPipeline(GridAPPSD):
                 ', pos setpoint: ' +
                 str(newResolutionVector[device][1]) +
                 ', above max allowable asset health pos, reset to: ' +
-                str(self.Regulators[device]['maxStep']) +
-                ', from: ' + str(newResolutionVector[device][1]))
+                str(self.Regulators[device]['maxStep']))
           if name == self.testDeviceName:
             prlog('~TEST DEBUG RulesForRegulatorsResolution--device: ' + name +
                   ', pos setpoint: ' +
                   str(newResolutionVector[device][1]) +
                   ', above max allowable asset health pos, reset to: ' +
-                  str(self.Regulators[device]['maxStep']) +
-                  ', from : ' + str(newResolutionVector[device][1]))
+                  str(self.Regulators[device]['maxStep']))
           newResolutionVector[device] = \
                              (newResolutionVector[device][0],
                               self.Regulators[device]['maxStep'])
@@ -1146,15 +1140,13 @@ class DeconflictionPipeline(GridAPPSD):
                 ', pos setpoint: ' +
                 str(newResolutionVector[device][1]) +
                 ', below min allowable asset health pos, reset to: ' +
-                str(self.Regulators[device]['minStep']) +
-                ', from: ' + str(newResolutionVector[device][1]))
+                str(self.Regulators[device]['minStep']))
           if name == self.testDeviceName:
             prlog('~TEST DEBUG RulesForRegulatorsResolution--device: ' + name +
                   ', pos setpoint: ' +
                   str(newResolutionVector[device][1]) +
                   ', below min allowable asset health pos, reset to: ' +
-                  str(self.Regulators[device]['minStep']) +
-                  ', from : ' + str(newResolutionVector[device][1]))
+                  str(self.Regulators[device]['minStep']))
           newResolutionVector[device] = \
                              (newResolutionVector[device][0],
                               self.Regulators[device]['minStep'])
