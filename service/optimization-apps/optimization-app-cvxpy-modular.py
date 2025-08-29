@@ -1508,6 +1508,7 @@ class CompetingApp(GridAPPSD):
       #optIntervalSec = 3 # optimize every GridLAB-D timestamp
       # 15 seconds is a good number for a real-time simulation
       optIntervalSec = 15
+      simLagSec = 0
     else:
       # if attempting non-real-time, something like 900 is reasonable
       # so the optimization time is safely shorter than the time between
@@ -1518,17 +1519,15 @@ class CompetingApp(GridAPPSD):
       # current design where messages are not procesed in a separate
       # thread.
       optIntervalSec = 1800
+      simLagSec = 600
 
     if self.opt_type!='scalability' and interval!=None:
       optIntervalSec = int(interval)
 
-    if self.realtimeFlag:
-      self.deltaT = optIntervalSec/3600.0
-    else:
-      # Add compensation factor to optIntervalSec in non-realtime mode
-      # for computing deltaT because of the lag GridLAB-D is taking in
-      # this mode for measurements to reflect DifferenceBuilder messages
-      self.deltaT = (optIntervalSec + 600)/3600.0
+    # Add compensation factor to optIntervalSec in non-realtime mode
+    # for computing deltaT because of the lag GridLAB-D is taking in
+    # this mode for measurements to reflect DifferenceBuilder messages
+    self.deltaT = (optIntervalSec + simLagSec)/3600.0
 
     self.b_i = np.arange(0.9, 1.1, 0.00625)
 

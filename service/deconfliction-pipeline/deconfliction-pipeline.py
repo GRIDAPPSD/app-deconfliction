@@ -2260,6 +2260,7 @@ class DeconflictionPipeline(GridAPPSD):
       #optIntervalSec = 3 # optimize every GridLAB-D timestamp
       # 15 seconds is a good number for a real-time simulation
       optIntervalSec = 15
+      simLagSec = 0
     else:
       # if attempting non-real-time, something like 900 is reasonable, but
       # with the current single threaded message handling in the current app
@@ -2268,14 +2269,14 @@ class DeconflictionPipeline(GridAPPSD):
       # until the apps are redesigned to keep up with messaging by using
       # threads, 1800 should be the minimum interval
       optIntervalSec = 1800
+      simLagSec = 600
 
     if interval!=None and interval!='scalability':
       optIntervalSec = int(interval)
 
-    if self.realtimeFlag:
-      self.deltaT = optIntervalSec/3600.0
-    else:
-      self.deltaT = (optIntervalSec + 600)/3600.0
+    # deltaT for non-realtime mode simulations needs a factor related to
+    # the lag in measurements reflecting DifferenceBuilder messages
+    self.deltaT = (optIntervalSec + simLagSec)/3600.0
 
     self.ConflictMatrix = {}
     self.ResolutionVector = {}
