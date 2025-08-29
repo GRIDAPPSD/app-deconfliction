@@ -2262,12 +2262,8 @@ class DeconflictionPipeline(GridAPPSD):
       optIntervalSec = 15
       simLagSec = 0
     else:
-      # if attempting non-real-time, something like 900 is reasonable, but
-      # with the current single threaded message handling in the current app
-      # design the apps fall way behind in message processing that would
-      # completely break cooperation messaging among other issues. Therefore
-      # until the apps are redesigned to keep up with messaging by using
-      # threads, 1800 should be the minimum interval
+      # if attempting non-real-time, something like 1800 is reasonable so
+      # apps can complete optimizations safely within that interval
       optIntervalSec = 1800
       simLagSec = 600
 

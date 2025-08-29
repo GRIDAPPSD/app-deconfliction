@@ -1510,14 +1510,9 @@ class CompetingApp(GridAPPSD):
       optIntervalSec = 15
       simLagSec = 0
     else:
-      # if attempting non-real-time, something like 900 is reasonable
+      # if attempting non-real-time, something like 1800 is reasonable
       # so the optimization time is safely shorter than the time between
       # optimizations--otherwise the queue draining won't work right.
-      # But, at 900 seconds the app falls behind in message processing
-      # because of all the time needed for optimization so 1800 is the
-      # shortest time that keeps it current with messages given the
-      # current design where messages are not procesed in a separate
-      # thread.
       optIntervalSec = 1800
       simLagSec = 600
 
