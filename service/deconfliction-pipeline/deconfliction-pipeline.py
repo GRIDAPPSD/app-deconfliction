@@ -2337,10 +2337,10 @@ class DeconflictionPipeline(GridAPPSD):
       self.rulesStageFirstFlag = False
       self.rulesStageLastFlag = False
       self.coopStageFlag = False
-    # for now, never do rules and cooperation
+    # never do rules and cooperation when these are uncommented
     #self.rulesStageFirstFlag = False
     #self.rulesStageLastFlag = False
-    self.coopStageFlag = False
+    #self.coopStageFlag = False
 
     self.refCount = 0 # for debug/verification
 
