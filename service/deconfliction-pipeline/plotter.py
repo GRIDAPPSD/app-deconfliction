@@ -54,6 +54,8 @@ from matplotlib import dates as md
 from matplotlib.ticker import MaxNLocator
 from datetime import datetime
 
+# need to do some magic with the time axis if it's not a realtime simulation
+realtimeFlag = False
 
 def to_datetime(time):
   return datetime(1966, 8, 1, (int(time)-1)//4, 15*((int(time)-1) % 4), 0)
@@ -65,7 +67,13 @@ def make_cm_plot(cm_t_plot, cm_start_plot, cm_rules_plot, cm_coop_plot):
   #ax.xaxis.set_major_formatter(md.DateFormatter('%H:%M'))
   #plt.xlim([AppUtil.to_datetime(1), AppUtil.to_datetime(96)])
   #plt.xticks([AppUtil.to_datetime(1), AppUtil.to_datetime(25), AppUtil.to_datetime(49), AppUtil.to_datetime(73), AppUtil.to_datetime(96)])
-  plt.xlabel('Time (sec)')
+  if realtimeFlag:
+    plt.xlabel('Time (sec)')
+  else:
+    plt.xlim([0, 24])
+    plt.xticks([0, 4, 8, 12, 16, 20, 24])
+    plt.xlabel('Time (hr)')
+
   plt.ylabel('Conflict Metric')
   plt.plot(cm_t_plot, cm_start_plot, label='starting metric')
   plt.plot(cm_t_plot, cm_rules_plot, label='post-rules')
@@ -87,7 +95,13 @@ def make_p_batt_plots(title, prefix, Batteries, t_plot, p_batt_plot):
     #ax.xaxis.set_major_formatter(md.DateFormatter('%H:%M'))
     #plt.xlim([AppUtil.to_datetime(1), AppUtil.to_datetime(96)])
     #plt.xticks([AppUtil.to_datetime(1), AppUtil.to_datetime(25), AppUtil.to_datetime(49), AppUtil.to_datetime(73), AppUtil.to_datetime(96)])
-    plt.xlabel('Time (sec)')
+    if realtimeFlag:
+      plt.xlabel('Time (sec)')
+    else:
+      plt.xlim([0, 24])
+      plt.xticks([0, 4, 8, 12, 16, 20, 24])
+      plt.xlabel('Time (hr)')
+
     plt.ylabel('P_batt (kW)')
     plt.plot(t_plot[:len(p_batt_plot[name])], p_batt_plot[name])
     plt.savefig('log/' + prefix + '_p_batt_' + batname + '.png')
@@ -105,7 +119,13 @@ def make_soc_plots(title, prefix, Batteries, t_plot, soc_plot):
     #ax.xaxis.set_major_formatter(md.DateFormatter('%H:%M'))
     #plt.xlim([AppUtil.to_datetime(1), AppUtil.to_datetime(96)])
     #plt.xticks([AppUtil.to_datetime(1), AppUtil.to_datetime(25), AppUtil.to_datetime(49), AppUtil.to_datetime(73), AppUtil.to_datetime(96)])
-    plt.xlabel('Time (sec)')
+    if realtimeFlag:
+      plt.xlabel('Time (sec)')
+    else:
+      plt.xlim([0, 24])
+      plt.xticks([0, 4, 8, 12, 16, 20, 24])
+      plt.xlabel('Time (hr)')
+
     plt.ylabel('Battery SoC')
     plt.plot(t_plot[:len(soc_plot[name])], soc_plot[name])
     plt.savefig('log/' + prefix + '_soc_' + batname + '.png')
@@ -125,7 +145,13 @@ def make_reg_plots(title, prefix, Regulators, t_plot, reg_plot):
     #ax.xaxis.set_major_formatter(md.DateFormatter('%H:%M'))
     #plt.xlim([AppUtil.to_datetime(1), AppUtil.to_datetime(96)])
     #plt.xticks([AppUtil.to_datetime(1), AppUtil.to_datetime(25), AppUtil.to_datetime(49), AppUtil.to_datetime(73), AppUtil.to_datetime(96)])
-    plt.xlabel('Time (sec)')
+    if realtimeFlag:
+      plt.xlabel('Time (sec)')
+    else:
+      plt.xlim([0, 24])
+      plt.xticks([0, 4, 8, 12, 16, 20, 24])
+      plt.xlabel('Time (hr)')
+
     plt.ylabel('Regulator Tap Pos')
     plt.plot(t_plot[:len(reg_plot[name])], reg_plot[name])
     plt.savefig('log/' + prefix + '_tap_' + regname + '.png')
@@ -147,7 +173,13 @@ def make_p_pv_plots(title, prefix, SolarPVs, t_plot, p_pv_plot):
     #ax.xaxis.set_major_formatter(md.DateFormatter('%H:%M'))
     #plt.xlim([AppUtil.to_datetime(1), AppUtil.to_datetime(96)])
     #plt.xticks([AppUtil.to_datetime(1), AppUtil.to_datetime(25), AppUtil.to_datetime(49), AppUtil.to_datetime(73), AppUtil.to_datetime(96)])
-    plt.xlabel('Time (sec)')
+    if realtimeFlag:
+      plt.xlabel('Time (sec)')
+    else:
+      plt.xlim([0, 24])
+      plt.xticks([0, 4, 8, 12, 16, 20, 24])
+      plt.xlabel('Time (hr)')
+
     plt.ylabel('p_pv (kW)')
     plt.plot(t_plot[:len(p_pv_plot[name])], p_pv_plot[name])
     plt.savefig('log/' + prefix + '_p_pv_' + pvname + '.png')
@@ -169,7 +201,13 @@ def make_q_pv_plots(title, prefix, SolarPVs, t_plot, q_pv_plot):
     #ax.xaxis.set_major_formatter(md.DateFormatter('%H:%M'))
     #plt.xlim([AppUtil.to_datetime(1), AppUtil.to_datetime(96)])
     #plt.xticks([AppUtil.to_datetime(1), AppUtil.to_datetime(25), AppUtil.to_datetime(49), AppUtil.to_datetime(73), AppUtil.to_datetime(96)])
-    plt.xlabel('Time (sec)')
+    if realtimeFlag:
+      plt.xlabel('Time (sec)')
+    else:
+      plt.xlim([0, 24])
+      plt.xticks([0, 4, 8, 12, 16, 20, 24])
+      plt.xlabel('Time (hr)')
+
     plt.ylabel('q_pv (kW)')
     plt.plot(t_plot[:len(q_pv_plot[name])], q_pv_plot[name])
     plt.savefig('log/' + prefix + '_q_pv_' + pvname + '.png')
@@ -211,6 +249,20 @@ def _main():
   cm_rules_plot = []
   cm_coop_plot = []
 
+
+  timex = 1.0
+
+  if not realtimeFlag:
+    # find the last time value for the simulation and call this 24 hours
+    finalsec = 0.0
+    with open('log/plot_data.csv', 'r') as file:
+      for line in file:
+        tokens = line.split(',')
+        if tokens[0] == 'SIMULATION':
+          finalsec = float(tokens[1])
+
+    timex = 24.0/finalsec
+
   app = 'SIMULATION'
   prefix = 'sim'
 
@@ -221,7 +273,7 @@ def _main():
       tokens = line.split(',')
       if tokens[0] == app:
         simhits += 1
-        t_plot.append(float(tokens[1]))
+        t_plot.append(float(tokens[1])*timex)
 
         start = 3
         finish = start + len(Batteries)*3
@@ -246,7 +298,7 @@ def _main():
 
       elif tokens[0] == 'conflict_metric':
         cmhits += 1
-        cm_t_plot.append(float(tokens[1]))
+        cm_t_plot.append(float(tokens[1])*timex)
         cm_start_plot.append(float(tokens[3]))
         cm_rules_plot.append(float(tokens[4]))
         cm_coop_plot.append(float(tokens[5]))
@@ -296,7 +348,7 @@ def _main():
         tokens = line.split(',')
         if tokens[0] == app_list[iapp]:
           hits += 1
-          t_plot.append(float(tokens[1]))
+          t_plot.append(float(tokens[1])*timex)
 
           numdev = len(tokens)
           for it in range(3, numdev, 2):
