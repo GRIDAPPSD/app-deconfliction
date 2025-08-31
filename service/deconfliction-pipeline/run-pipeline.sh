@@ -26,5 +26,8 @@ if [ "$#" -gt 3 ]; then
 fi
 
 mkdir -p log
+# must remove the existing log file if it existst or otherwise it will just
+# append to what is already there
+rm -f log/deconfliction-pipeline.log
 python3 deconfliction-pipeline.py $SIMID "$SIMREQ" $INTERVAL $WEIGHTS
 
