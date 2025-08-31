@@ -285,7 +285,6 @@ class DeconflictionPipeline(GridAPPSD):
 
 
   def ConflictMetricComputation(self, timestamp, printAllMetricsFlag=False):
-
     # GDB 5/21/24: Don't crash with an empty ConflictMatrix
     if len(self.ConflictMatrix) == 0:
       prlog('ConflictMetricComputation--conflict metric undefined ' +
@@ -329,7 +328,12 @@ class DeconflictionPipeline(GridAPPSD):
           # Normalize setpoints by dividing by rated power. A complex number
           # will result and be assigned to apps and device_setpoints, but this
           # will be dealt with later to produce a scalar
-          sigma_d_a = gamma_d_a / self.SolarPVs[device]['ratedS']
+
+          # GDB 8/31/25: original commented out calculation produced centroid
+          # values greater than 1 so abs() is applied to remedy this
+          #sigma_d_a = gamma_d_a / self.SolarPVs[device]['ratedS']
+          sigma_d_a = abs(gamma_d_a) / self.SolarPVs[device]['ratedS']
+
           apps[app][device] = sigma_d_a
           device_setpoints.append(sigma_d_a)
 
@@ -338,6 +342,12 @@ class DeconflictionPipeline(GridAPPSD):
       n_apps_device = len(self.ConflictMatrix[device])
       if n_apps_device > 0:
         centroid[device] = sum(device_setpoints) / n_apps_device
+
+      # CMDBG code
+      if centroid[device] > 1.0:
+        prlog('CMDBG: device: ' + name + ', sigma_d_a: ' +
+              str(device_setpoints) + ', centroid: ' + str(centroid[device]) +
+              ', timestamp: ' + str(timestamp))
 
     # Distance vector:
     # Distance between setpoints requested by each app to the centroid vector
@@ -361,8 +371,12 @@ class DeconflictionPipeline(GridAPPSD):
     conflict_metric = sum(dist_centroid) / n_apps
     # Ensuring 0 <= conflict_metric <= 1
     conflict_metric = conflict_metric * 2 / math.sqrt(n_devices)
-    prlog('ConflictMetricComputation--conflict metric: ' +
-          str(conflict_metric) + ', timestamp: ' + str(timestamp))
+    if conflict_metric > 1.0:
+      prlog('CMDBG: ConflictMetricComputation--conflict metric: ' +
+            str(conflict_metric) + ', timestamp: ' + str(timestamp))
+    else:
+      prlog('ConflictMetricComputation--conflict metric: ' +
+            str(conflict_metric) + ', timestamp: ' + str(timestamp))
 
     return conflict_metric
 
