@@ -2469,7 +2469,7 @@ class DeconflictionPipeline(GridAPPSD):
       # GDB 5/21/25: This is an "enhanced queue draining" design. It keeps
       # up with messages by doing the minimal work needed to take in new
       # simulation measurements and app setpoint requests, but then defers
-      # initiating deconfliction until all all the queue is empty with all
+      # initiating deconfliction until the queue is empty with all
       # messages processed. The enhanced aspect is that it also uses a counter
       # for the number of simulation measurement messages to determine whether
       # to initiate deconfliction because it takes potentially multiple
