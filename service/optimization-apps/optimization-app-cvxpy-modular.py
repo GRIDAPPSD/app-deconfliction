@@ -1893,13 +1893,18 @@ class CompetingApp(GridAPPSD):
 
         else: # cooperation message
           lastCoopMessage = message
+          #break # don't skip processing for any cooperation messages
 
       if notDoneFlag:
+        # GDB 9/1/25: Uncomment this if cooperation uses measurement values
+        # when doing an optimization
+        '''
         if lastMeasMessage!=None and lastCoopMessage!=None:
           # process new measurements
           # note this is really only needed if an optimization is done
           # to respond to cooperation message
           self.processMeasMessage(lastMeasMessage['measurements'])
+        '''
 
         if lastCoopMessage != None:
           if self.includeBatteriesFlag or self.includeRegulatorsFlag or \
@@ -1939,6 +1944,11 @@ class CompetingApp(GridAPPSD):
 
             # perform optimization
             self.optPerform()
+
+        # must reset last messages to None to avoid re-processing them!
+        lastMeasMessage = None
+        lastCoopMessage = None
+
 
     messageListener.join()
 
