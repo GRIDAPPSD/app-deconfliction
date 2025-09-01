@@ -331,8 +331,9 @@ class DeconflictionPipeline(GridAPPSD):
 
           # GDB 8/31/25: original commented out calculation produced centroid
           # values greater than 1 so abs() is applied to remedy this
-          #sigma_d_a = gamma_d_a / self.SolarPVs[device]['ratedS']
-          sigma_d_a = abs(gamma_d_a) / self.SolarPVs[device]['ratedS']
+          # CMDGB code to try to force sigma_d_a to be <= 1 with abs()
+          sigma_d_a = gamma_d_a / self.SolarPVs[device]['ratedS']
+          #sigma_d_a = abs(gamma_d_a) / self.SolarPVs[device]['ratedS']
 
           apps[app][device] = sigma_d_a
           device_setpoints.append(sigma_d_a)
@@ -343,10 +344,11 @@ class DeconflictionPipeline(GridAPPSD):
       if n_apps_device > 0:
         centroid[device] = sum(device_setpoints) / n_apps_device
 
-      # CMDBG code
-      if centroid[device] > 1.0:
+      # CMDBG code--must use abs() if centroid is complex value
+      if abs(centroid[device]) > 1.0:
         prlog('CMDBG: device: ' + name + ', sigma_d_a: ' +
               str(device_setpoints) + ', centroid: ' + str(centroid[device]) +
+              ', abs(centroid): ' + str(abs(centroid[device])) +
               ', timestamp: ' + str(timestamp))
 
     # Distance vector:
@@ -371,6 +373,7 @@ class DeconflictionPipeline(GridAPPSD):
     conflict_metric = sum(dist_centroid) / n_apps
     # Ensuring 0 <= conflict_metric <= 1
     conflict_metric = conflict_metric * 2 / math.sqrt(n_devices)
+    # CMDBG code to catch out of range conflict metric
     if conflict_metric > 1.0:
       prlog('CMDBG: ConflictMetricComputation--conflict metric: ' +
             str(conflict_metric) + ', timestamp: ' + str(timestamp))
