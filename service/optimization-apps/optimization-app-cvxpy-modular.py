@@ -1893,7 +1893,7 @@ class CompetingApp(GridAPPSD):
 
         else: # cooperation message
           lastCoopMessage = message
-          #break # don't skip processing for any cooperation messages
+          break # don't skip processing for any cooperation messages
 
       if notDoneFlag:
         # GDB 9/1/25: Uncomment this if cooperation uses measurement values
@@ -1948,7 +1948,6 @@ class CompetingApp(GridAPPSD):
         # must reset last messages to None to avoid re-processing them!
         lastMeasMessage = None
         lastCoopMessage = None
-
 
     messageListener.join()
 
