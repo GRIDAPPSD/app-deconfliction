@@ -1160,7 +1160,14 @@ class CompetingApp(GridAPPSD):
         self.messageQueue.put(message)
 
     elif 'message' in message:
-      self.messageQueue.put(message['message'])
+      if self.realtimeFlag:
+        self.messageQueue.put(message['message'])
+      else:
+        ts_unix = int(message['message']['timestamp'])
+        # only add every 5th measurement message to the queue to
+        # allow sufficient time for cooperation
+        if ts_unix % 300 == 0:
+          self.messageQueue.put(message['message'])
 
     else:
       self.messageQueue.put(message)
@@ -1219,6 +1226,10 @@ class CompetingApp(GridAPPSD):
 
 
   def __init__(self, opt_type, feeder_mrid, simulation_id, interval):
+
+    # flag for whether simulation is run in real-time
+    #self.realtimeFlag = True
+    self.realtimeFlag = False
 
     # GDB 8/27/25: Magic IPC Queue class for sharing ActiveMQ messages
     # between different processes
@@ -1495,10 +1506,6 @@ class CompetingApp(GridAPPSD):
       print('*** Exiting due to unrecognized optimization type: ' + opt_type,
             flush=True)
       exit()
-
-    # flag for whether simulation is run in real-time
-    #self.realtimeFlag = True
-    self.realtimeFlag = False
 
     # deltaT is time between timesteps as fractional hours
     # optimization interval seconds is the number of simulation seconds
