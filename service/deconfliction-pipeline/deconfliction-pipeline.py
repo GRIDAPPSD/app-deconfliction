@@ -1927,6 +1927,7 @@ class DeconflictionPipeline(GridAPPSD):
                                             self.printAllValidatorFlag)
 
         # COOPDBG start
+        '''
         if self.pltFlag and not self.coopStageFlag:
           self.pltFile.write('conflict_metric,')
           diff = (datetime.now() - self.pltTZero).total_seconds()
@@ -1945,6 +1946,7 @@ class DeconflictionPipeline(GridAPPSD):
             self.pltFile.write(str(self.rulesLastConflictMetric))
             self.pltFile.write(',')
           self.pltFile.write('\n')
+        '''
         # COOPDBG finish
 
         # Published IEEE Access Foundational Paper Reference:
@@ -2381,7 +2383,7 @@ class DeconflictionPipeline(GridAPPSD):
     #self.rulesStageFirstFlag = False
     #self.rulesStageLastFlag = False
     # COOPDBG
-    self.coopStageFlag = False
+    #self.coopStageFlag = False
 
     self.refCount = 0 # for debug/verification
 
