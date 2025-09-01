@@ -1820,7 +1820,8 @@ class CompetingApp(GridAPPSD):
       # if attempting non-real-time, something like 1800 is reasonable
       # so the optimization time is safely shorter than the time between
       # optimizations--otherwise the queue draining won't work right.
-      optIntervalSec = 1800
+      #optIntervalSec = 1800
+      optIntervalSec = 3600
       simLagSec = 600
 
     if self.opt_type!='scalability' and interval!=None:
@@ -1893,7 +1894,7 @@ class CompetingApp(GridAPPSD):
 
         else: # cooperation message
           lastCoopMessage = message
-          break # don't skip processing for any cooperation messages
+          #break # don't skip processing for any cooperation messages
 
       if notDoneFlag:
         # GDB 9/1/25: Uncomment this if cooperation uses measurement values
