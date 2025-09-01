@@ -1749,7 +1749,7 @@ class DeconflictionPipeline(GridAPPSD):
 
     # Published IEEE Access Foundational Paper Reference:
     #   Step 1--Setpoint Processor
-    print('ProcessSetpointsMessage--invoking setpoint processor')
+    prlog('ProcessSetpointsMessage--invoking setpoint processor')
     self.SetpointProcessor(app_name, timestamp, set_points, meas_msg_flag,
                            printAllConflictsResolutionsFlag)
 
@@ -2487,7 +2487,7 @@ class DeconflictionPipeline(GridAPPSD):
         if 'processStatus' in message:
           notDoneFlag = False
           status = message['processStatus']
-          print('Simulation ' + status + ' message received', flush=True)
+          prlog('Simulation ' + status + ' message received')
           break # done with all processing
 
         timestamp = message['timestamp']
