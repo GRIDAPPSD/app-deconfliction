@@ -298,6 +298,10 @@ class DeconflictionPipeline(GridAPPSD):
     for device in self.ConflictMatrix:
       name = MethodUtil.DeviceToName[device]
 
+      # CMDBG code to bypass SolarPVs in computation
+      #if name.startswith('PhotovoltaicUnit.'):
+      #  continue
+
       n_devices += 1
       device_setpoints = []
       for app in self.ConflictMatrix[device]:
@@ -332,8 +336,8 @@ class DeconflictionPipeline(GridAPPSD):
           # GDB 8/31/25: original commented out calculation produced centroid
           # values greater than 1 so abs() is applied to remedy this
           # CMDGB code to try to force sigma_d_a to be <= 1 with abs()
-          sigma_d_a = gamma_d_a / self.SolarPVs[device]['ratedS']
-          #sigma_d_a = abs(gamma_d_a) / self.SolarPVs[device]['ratedS']
+          #sigma_d_a = gamma_d_a / self.SolarPVs[device]['ratedS']
+          sigma_d_a = abs(gamma_d_a) / self.SolarPVs[device]['ratedS']
 
           apps[app][device] = sigma_d_a
           device_setpoints.append(sigma_d_a)
@@ -344,12 +348,12 @@ class DeconflictionPipeline(GridAPPSD):
       if n_apps_device > 0:
         centroid[device] = sum(device_setpoints) / n_apps_device
 
-      # CMDBG code--must use abs() if centroid is complex value
-      if abs(centroid[device]) > 1.0:
-        prlog('CMDBG: device: ' + name + ', sigma_d_a: ' +
-              str(device_setpoints) + ', centroid: ' + str(centroid[device]) +
-              ', abs(centroid): ' + str(abs(centroid[device])) +
-              ', timestamp: ' + str(timestamp))
+        # CMDBG code--must use abs() if centroid is complex value
+        if abs(centroid[device]) > 1.0:
+          prlog('CMDBG: device: ' + name + ', sigma_d_a: ' +
+                str(device_setpoints) + ', centroid: ' + str(centroid[device]) +
+                ', abs(centroid): ' + str(abs(centroid[device])) +
+                ', timestamp: ' + str(timestamp))
 
     # Distance vector:
     # Distance between setpoints requested by each app to the centroid vector
@@ -1399,7 +1403,6 @@ class DeconflictionPipeline(GridAPPSD):
     if deconflictionAsServiceFlag:
       meas_id = gapps.subscribe(simulation_input_topic(simulation_id),
                                 self.OnMeasSetpointsMessage)
-
     else:
       meas_id =gapps.subscribe(service_input_topic('deconfliction.measurements',
                                simulation_id), self.OnMeasSetpointsMessage)
@@ -1431,7 +1434,14 @@ class DeconflictionPipeline(GridAPPSD):
         self.messageQueue.put((None, None, None, message))
 
     else:
-      self.messageQueue.put((None, None, None, message['message']))
+      if self.realtimeFlag:
+        self.messageQueue.put((None, None, None, message['message']))
+      else:
+        ts_unix = int(message['message']['timestamp'])
+        # only add every 5th measurement message to the queue to
+        # allow sufficient time for cooperation
+        if ts_unix % 300 == 0:
+          self.messageQueue.put((None, None, None, message['message']))
 
 
   def pol2cart(self, mag, angle_deg):
@@ -1916,6 +1926,27 @@ class DeconflictionPipeline(GridAPPSD):
         self.SetpointValidatorForRegulators(self.TargetResolutionVector,
                                             self.printAllValidatorFlag)
 
+        # COOPDBG start
+        if self.pltFlag and not self.coopStageFlag:
+          self.pltFile.write('conflict_metric,')
+          diff = (datetime.now() - self.pltTZero).total_seconds()
+          self.pltFile.write(str(diff))
+          self.pltFile.write(',')
+          self.pltFile.write(str(timestamp))
+          self.pltFile.write(',')
+          self.pltFile.write(str(self.startConflictMetric))
+          self.pltFile.write(',')
+          if self.rulesStageFirstFlag:
+            self.pltFile.write(str(self.rulesFirstConflictMetric))
+            self.pltFile.write(',')
+          self.pltFile.write(str(self.rulesFirstConflictMetric))
+          self.pltFile.write(',')
+          if self.rulesStageLastFlag:
+            self.pltFile.write(str(self.rulesLastConflictMetric))
+            self.pltFile.write(',')
+          self.pltFile.write('\n')
+        # COOPDBG finish
+
         # Published IEEE Access Foundational Paper Reference:
         #   Step 5--Device Dispatcher
         dispatchCount = self.DeviceDispatcher(timestamp,
@@ -1933,6 +1964,7 @@ class DeconflictionPipeline(GridAPPSD):
               str(timestamp))
         return
 
+      # COOPDBG start
       # Published IEEE Access Foundational Paper Reference:
       #   Step 3.2--Deconfliction Solution
       # COOPERATION stage deconfliction
@@ -1981,9 +2013,11 @@ class DeconflictionPipeline(GridAPPSD):
       prlog('DeconflictSetpoints--finished processing, timestamp: ' +
             str(timestamp))
       return
+      # COOPDBG finish
 
+    # COOPDBG start
     # coop message with conflict to get here
-    prlog('DeconflictSetpoints--conflict found with with COOP ' +
+    prlog('DeconflictSetpoints--conflict found with COOP ' +
           'message, checking thresholds')
 
     self.coopResponseCounter += 1
@@ -2093,18 +2127,6 @@ class DeconflictionPipeline(GridAPPSD):
             str(perConflictDelta) + ', responses: ' +
             str(self.coopResponseCounter))
 
-      # GDB 6/2/25: Spent too many hours trying to figure out how I could
-      # end up with no change in the conflict metric and eventually determined
-      # it was legitimate based on competing apps not changing their
-      # cooperation response setpoints between iterations. This commented out
-      # logic let me bail when this happens for looking through log files.
-      '''
-      if self.conflictMetric == prevConflictMetric:
-        prlog('DEBUG EXIT with unchanged conflict metric: ' +
-              str(self.conflictMetric))
-        sys.exit(0)
-      '''
-
     # replace running ConflictMatrix with the minimum conflict version and
     # we'll roll with that from this point on
     self.ConflictMatrix = copy.deepcopy(self.MinConflictMatrix)
@@ -2192,9 +2214,14 @@ class DeconflictionPipeline(GridAPPSD):
     self.AppCoopCount.clear()
     prlog('DeconflictSetpoints--finished processing, timestamp: ' +
           str(timestamp))
+    # COOPDBG finish
 
 
   def __init__(self, feeder_mrid, simulation_id, weights_base, interval):
+
+    # flag for whether simulation is run in real-time
+    #self.realtimeFlag = True
+    self.realtimeFlag = False
 
     self.messageQueue = Queue()
 
@@ -2264,10 +2291,6 @@ class DeconflictionPipeline(GridAPPSD):
 
     # for the app scalability task
     self.SolarPVsInfo, self.SolarPVs =AppUtil.getSolarPVs(MethodUtil.sparql_mgr)
-
-    # flag for whether simulation is run in real-time
-    #self.realtimeFlag = True
-    self.realtimeFlag = False
 
     # deltaT is time between timesteps as fractional hours
     # optimization interval seconds is the number of simulation seconds
@@ -2357,7 +2380,8 @@ class DeconflictionPipeline(GridAPPSD):
     # never do rules and cooperation when these are uncommented
     #self.rulesStageFirstFlag = False
     #self.rulesStageLastFlag = False
-    #self.coopStageFlag = False
+    # COOPDBG
+    self.coopStageFlag = False
 
     self.refCount = 0 # for debug/verification
 
@@ -2487,8 +2511,13 @@ class DeconflictionPipeline(GridAPPSD):
       # "device dispatch" of new setpoints. This keeps new setpoints from
       # being dispatched before simulation measurements reflect the
       # previously dispatched setpoints.
-      if pendingDeconflictFlag and \
-         (self.instantSetpointUpdateFlag or self.simMessageCounter>1):
+
+      # GDB 8/31/25: check of simMessageCounter really messes up
+      # processing for non-realtime simulations at least so be very
+      # careful with this code.
+      #if pendingDeconflictFlag and \
+      #   (self.instantSetpointUpdateFlag or self.simMessageCounter>1):
+      if pendingDeconflictFlag:
         self.DeconflictSetpoints(timestamp, app_names, pendingMeasMsgFlag,
                                  self.printAllConflictsResolutionsFlag)
         pendingDeconflictFlag = False
