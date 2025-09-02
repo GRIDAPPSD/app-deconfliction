@@ -2332,14 +2332,18 @@ class DeconflictionPipeline(GridAPPSD):
     self.TargetResolutionVector = {}
 
     # thresholds for concluding cooperation phases
-    self.coopMessagesThreshold = 10
+    # 10 messages is good for letting cooperation drive lower conflict metric
+    # values, but also makes for more cooperation iteration that reduces
+    # scalability
+    #self.coopMessagesThreshold = 10
+    self.coopMessagesThreshold = 6
     self.conflictValueThreshold = 0.2
     # % threshold of 0.5 is a good compromise between good conflict metric
     # values and the number of cooperation responses
-    #self.conflictPercentThreshold = 0.5
+    self.conflictPercentThreshold = 0.5
     # % threshold of 0.2 gives lower conflict metric values from more
-    # cooperation responses, which makes for better plots
-    self.conflictPercentThreshold = 0.2
+    # cooperation responses, which can make for better plots
+    #self.conflictPercentThreshold = 0.2
     # allows multiple cooperation responses to be required with a value > 1
     self.coopMinResponses = 2
     #self.coopMinResponses = 1
