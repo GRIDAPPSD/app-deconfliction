@@ -1824,8 +1824,8 @@ class CompetingApp(GridAPPSD):
       # if attempting non-real-time, something like 1800 is reasonable
       # so the optimization time is safely shorter than the time between
       # optimizations--otherwise the queue draining won't work right.
-      #optIntervalSec = 1800
-      optIntervalSec = 3600
+      optIntervalSec = 1800
+      #optIntervalSec = 3600
       simLagSec = 600
 
     if self.opt_type!='scalability' and interval!=None:

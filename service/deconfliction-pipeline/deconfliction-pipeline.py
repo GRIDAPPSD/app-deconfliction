@@ -1930,9 +1930,9 @@ class DeconflictionPipeline(GridAPPSD):
         self.SetpointValidatorForRegulators(self.TargetResolutionVector,
                                             self.printAllValidatorFlag)
 
-        # COOPDBG start
+        # uncomment to output conflict metric values without cooperation
         '''
-        if self.pltFlag and not self.coopStageFlag:
+        if self.pltFlag:
           self.pltFile.write('conflict_metric,')
           diff = (datetime.now() - self.pltTZero).total_seconds()
           self.pltFile.write(str(diff))
@@ -2118,16 +2118,20 @@ class DeconflictionPipeline(GridAPPSD):
     self.coopConflictFlag = perConflictDelta <= self.conflictPercentThreshold
 
     # thresholds for ending cooperation have been met to get here
+    reason = 'None'
     if coopMaxMessageFlag:
+      reason = 'Max_Cooperation_Responses'
       prlog('>>> DeconflictSetpoints---threshold YES met for max ' +
             'cooperation responses by an app, concluding COOPERATION with ' +
             'app response counts: ' + str(self.AppCoopCount))
     elif self.conflictMetric <= self.conflictValueThreshold:
+      reason = 'Conflict_Metric_Value'
       prlog('>>> DeconflictSetpoints---threshold YES met for conflict ' +
             'metric value, concluding COOPERATION with conflict metric: ' +
             str(self.conflictMetric) + ', responses: ' +
             str(self.coopResponseCounter))
     else:
+      reason = 'Conflict_Metric_Percent_Change'
       prlog('>>> DeconflictSetpoints---threshold YES met for conflict ' +
             'metric % change, concluding COOPERATION with % change: ' +
             str(perConflictDelta) + ', responses: ' +
@@ -2197,6 +2201,8 @@ class DeconflictionPipeline(GridAPPSD):
       self.pltFile.write(str(self.coopResponseCounter))
       self.pltFile.write(',')
       self.pltFile.write(str(perConflictDelta))
+      self.pltFile.write(',')
+      self.pltFile.write(reason)
       self.pltFile.write('\n')
 
     # Published IEEE Access Foundational Paper Reference:
@@ -2310,8 +2316,8 @@ class DeconflictionPipeline(GridAPPSD):
     else:
       # if attempting non-real-time, something like 1800 is reasonable so
       # apps can complete optimizations safely within that interval
-      #optIntervalSec = 1800
-      optIntervalSec = 3600
+      optIntervalSec = 1800
+      #optIntervalSec = 3600
       simLagSec = 600
 
     if interval!=None and interval!='scalability':
@@ -2327,7 +2333,7 @@ class DeconflictionPipeline(GridAPPSD):
 
     # thresholds for concluding cooperation phases
     self.coopMessagesThreshold = 10
-    self.conflictValueThreshold = 0.10
+    self.conflictValueThreshold = 0.2
     # % threshold of 0.5 is a good compromise between good conflict metric
     # values and the number of cooperation responses
     #self.conflictPercentThreshold = 0.5
