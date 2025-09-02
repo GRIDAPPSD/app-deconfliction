@@ -1342,6 +1342,16 @@ class CompetingApp(GridAPPSD):
       else:
         print('DECONFLICTOR COOPERATE batteries coopCount: ALL, diffMax: ' + str(diffMax), flush=True)
 
+      # GDB 9/2/25: Choose between full cooperation or a ratio based on which
+      # of these code blocks is uncommented.
+      for i in range(len_BatteriesInfo):
+        # check if this is a "cooperating" battery
+        if p_batt_diff[i]>0 and p_batt_diff[i]<=diffMax:
+          # full cooperation by setting the greedy value to proposed value
+          self.p_batt_greedy[i] = self.p_batt_proposed[i]
+
+      print('DECONFLICTOR COOPERATE p_batt_coop: ' + str(self.p_batt_greedy), flush=True)
+      '''
       p_batt_denom = [] # just for diagnostic logging
       for i in range(len_BatteriesInfo):
         # check if this is a "cooperating" battery
@@ -1368,6 +1378,7 @@ class CompetingApp(GridAPPSD):
 
       print('DECONFLICTOR COOPERATE p_batt_coop: ' + str(self.p_batt_greedy), flush=True)
       print('DECONFLICTOR COOPERATE p_batt_denom: ' + str(p_batt_denom), flush=True)
+      '''
 
       for mrid in self.BatteriesInfo:
         idx = self.BatteriesInfo[mrid]['idx']
@@ -1410,6 +1421,16 @@ class CompetingApp(GridAPPSD):
       else:
         print('DECONFLICTOR COOPERATE solarPVs coopCount: ALL, diffMax: ' + str(diffMax), flush=True)
 
+      # GDB 9/2/25: Choose between full cooperation or a ratio based on which
+      # of these code blocks is uncommented.
+      for i in range(len_SolarPVsInfo):
+        # check if this is a "cooperating" solarPV
+        if pq_pv_diff[i]>0 and pq_pv_diff[i]<=diffMax:
+          # full cooperation by setting the greedy value to proposed value
+          self.pq_pv_greedy[i] = self.pq_pv_proposed[i]
+
+      print('DECONFLICTOR COOPERATE pq_pv_coop: ' + str(self.pq_pv_greedy), flush=True)
+      '''
       pq_pv_denom = [] # just for diagnostic logging
       for i in range(len_SolarPVsInfo):
         # check if this is a "cooperating" solarPV
@@ -1440,6 +1461,7 @@ class CompetingApp(GridAPPSD):
 
       print('DECONFLICTOR COOPERATE pq_pv_coop: ' + str(self.pq_pv_greedy), flush=True)
       print('DECONFLICTOR COOPERATE pq_pv_denom: ' + str(pq_pv_denom), flush=True)
+      '''
 
       for mrid in self.SolarPVs:
         idx = self.SolarPVs[mrid]['idx']
@@ -1485,6 +1507,16 @@ class CompetingApp(GridAPPSD):
       else:
         print('DECONFLICTOR COOPERATE regulators coopCount: ALL, diffMax: ' + str(diffMax), flush=True)
 
+      # GDB 9/2/25: Choose between full cooperation or a ratio based on which
+      # of these code blocks is uncommented.
+      for i in range(len_RegulatorsInfo):
+        # check if this is a "cooperating" regulator
+        if reg_diff[i]>0 and reg_diff[i]<=diffMax:
+          # full cooperation by setting the greedy value to proposed value
+          self.reg_greedy[i] = self.reg_proposed[i]
+
+      print('DECONFLICTOR COOPERATE reg_coop: ' + str(self.reg_greedy), flush=True)
+      '''
       reg_denom = [] # just for diagnostic logging
       for i in range(len_RegulatorsInfo):
         # check if this is a "cooperating" regulator
@@ -1511,6 +1543,7 @@ class CompetingApp(GridAPPSD):
 
       print('DECONFLICTOR COOPERATE reg_coop: ' + str(self.reg_greedy), flush=True)
       print('DECONFLICTOR COOPERATE reg_denom: ' + str(reg_denom), flush=True)
+      '''
 
       for reg in self.RegulatorsInfo:
         idx = self.RegulatorsInfo[reg]['idx']
@@ -1902,7 +1935,6 @@ class CompetingApp(GridAPPSD):
 
         else: # cooperation message
           lastCoopMessage = message
-          #break # don't skip processing for any cooperation messages
 
       if notDoneFlag:
         # GDB 9/1/25: Uncomment this if cooperation uses measurement values
@@ -1921,7 +1953,7 @@ class CompetingApp(GridAPPSD):
             # respond to cooperation message
             self.processCoopMessage(lastCoopMessage)
 
-        elif lastMeasMessage != None:
+        if lastMeasMessage != None:
           # if it's been >= optItervalSec since last optimization:
           global ts_time
           ts_unix = int(lastMeasMessage['timestamp'])
