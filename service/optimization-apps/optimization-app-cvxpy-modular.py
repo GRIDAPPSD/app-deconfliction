@@ -1125,6 +1125,11 @@ class CompetingApp(GridAPPSD):
 
       self.difference_builder.clear()
 
+      # GDB 9/3/25: increment the cooperation phase so we are ignoring any
+      # cooperation messages associated with the phase prior to these new
+      # setpoints being sent
+      self.coopPhase += 1
+
 
   def messageListenerProcess(self, simulation_id):
     # authenticate with GridAPPS-D Platform
@@ -1275,16 +1280,6 @@ class CompetingApp(GridAPPSD):
 
     #for mrid in targetResolutionVector:
     #  print('DECONFLICTOR COOPERATE mrid ' + mrid + ' target set-point: ' + str(targetResolutionVector[mrid]), flush=True)
-
-    # coopCounter allows diminishing cooperation with each succeeding
-    # solicitation within a phase
-    newCoopPhase = message['coop_phase']
-    if newCoopPhase == self.coopPhase:
-      # comment out incrementing coopCounter to not diminish cooperation
-      self.coopCounter += 1
-    else:
-      self.coopPhase = newCoopPhase
-      self.coopCounter = 0
 
     if self.includeBatteriesFlag:
       for mrid in self.BatteriesInfo:
@@ -1563,7 +1558,7 @@ class CompetingApp(GridAPPSD):
     dispatch_message['app_name'] = self.app_name
     dispatch_message['coop_phase'] = self.coopPhase
     print('Sending Cooperation DifferenceBuilder message with phase: ' +
-          self.coopPhase, flush=True)
+          str(self.coopPhase), flush=True)
     #print('Sending Cooperation DifferenceBuilder message: ' +
     #      json.dumps(dispatch_message), flush=True)
     self.gapps.send(self.coop_publish_topic, json.dumps(dispatch_message))
@@ -1912,8 +1907,16 @@ class CompetingApp(GridAPPSD):
           ' CVXPY optimization competing app, waiting for messages...\n',
           flush=True)
 
-    self.coopPhase = None
+    # GDB 9/3/25: coopPhase keeps track of what cooperation phase is the
+    # one currently being processed in order to determine when to discard
+    # "stale" cooperation messages associated with an earlier phase
+    self.coopPhase = 0
+
+    # coopCounter allows diminishing cooperation with each succeeding
+    # cooperation message solicitation within a phase
     self.coopCounter = 0
+
+    # diagnostic for tracking time between optimizations
     self.lastTime = datetime.now()
 
     # start by discarding any messages that arrived during initialization
@@ -1988,13 +1991,26 @@ class CompetingApp(GridAPPSD):
       if lastCoopMessage != None:
         if self.includeBatteriesFlag or self.includeRegulatorsFlag or \
            self.includeSolarPVsFlag:
-          print('Processing Cooperation message with phase: ' +
-                str(lastCoopMessage['coop_phase']), flush=True)
+          checkPhase = lastCoopMessage['coop_phase']
 
-          # respond to cooperation message
-          self.processCoopMessage(lastCoopMessage)
+          if checkPhase >= self.coopPhase:
+            if checkPhase == self.coopPhase:
+              # comment out incrementing coopCounter to not diminish cooperation
+              self.coopCounter += 1
+            else:
+              self.coopPhase = checkPhase
+              self.coopCounter = 0
 
-      elif lastMeasMessage != None:
+            print('Processing Cooperation message with phase: ' +
+                  str(checkPhase), flush=True)
+            # respond to cooperation message
+            self.processCoopMessage(lastCoopMessage)
+
+          else:
+            print('Discarding Cooperation message with stale phase: ' +
+                  str(checkPhase), flush=True)
+
+      if lastMeasMessage != None:
         global ts_time
         ts_unix = int(lastMeasMessage['timestamp'])
         ts_time = datetime.utcfromtimestamp(ts_unix).time()
