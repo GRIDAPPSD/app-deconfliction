@@ -1940,7 +1940,7 @@ class CompetingApp(GridAPPSD):
 
       else: # cooperation message
         print('Cooperation message on queue discarded with phase: ' +
-              message['coop_phase'], flush=True)
+              str(message['coop_phase']), flush=True)
     print('Queue check post-initialization finish\n', flush=True)
 
     while True:
@@ -1974,7 +1974,7 @@ class CompetingApp(GridAPPSD):
 
         else: # cooperation message
           print('Cooperation message on queue with phase: ' +
-                message['coop_phase'], flush=True)
+                str(message['coop_phase']), flush=True)
           lastCoopMessage = message
       print('Queue check finish', flush=True)
 
