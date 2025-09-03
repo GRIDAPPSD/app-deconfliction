@@ -1665,14 +1665,14 @@ class DeconflictionPipeline(GridAPPSD):
     if not meas_msg_flag and coop_phase!=self.coopCurrentPhase:
       # discard any cooperation messages when not currently cooperating or
       # when from a previous cooperation phase
-      prlog('>>> ProcessSetpointsMessage--immediate discard of nonmatching ' +
-            'COOP message, phase: ' + coop_phase + ', current phase: ' +
+      prlog('>>> ProcessSetpointsMessage--discard of nonmatching ' +
+            'COOP message, phase: ' + str(coop_phase) + ', current phase: ' +
             str(self.coopCurrentPhase))
       prlog('ProcessSetpointsMessage--finished processing, timestamp: ' +
             str(timestamp) + ', app: ' + app_name)
       return False
 
-    if meas_msg_flag and self.coopCurrentPhase!=None:
+    if meas_msg_flag and self.coopCurrentFlag:
       if self.coopTimestamp == timestamp:
         prlog('>>> ProcessSetpointsMessage--special case skipping device ' +
               'dispatch for MEAS message with running COOPERATION initiated ' +
@@ -1736,6 +1736,9 @@ class DeconflictionPipeline(GridAPPSD):
                                               self.printAllDispatchesFlag)
         prlog('>>> ProcessSetpointsMessage--invoked device dispatch for ' +
               'running COOPERATION, # devices dispatched: ' +str(dispatchCount))
+
+        # XXX Somewhere here is where I need to output to plot_data.csv for
+        # a concluded cooperation where it did not reach thresholds
 
         # update the current resolution to the new resolution to be ready for
         # the next dispatch
@@ -1872,7 +1875,7 @@ class DeconflictionPipeline(GridAPPSD):
 
       # zero the cooperation timestamp to indicate no active cooperation
       self.coopTimestamp = 0
-      self.coopCurrentPhase = None
+      self.coopCurrentFlag = False
       # reset running minimums for conflict metric and matrix
       self.minConflictMetric = 1.0
       # reset running counts for cooperation messages
@@ -1994,8 +1997,8 @@ class DeconflictionPipeline(GridAPPSD):
       # competing apps that support cooperation to respond to
       self.coopResponseCounter = 0
       self.coopConflictFlag = False
-      self.coopPhaseCounter += 1
-      self.coopCurrentPhase = 'COOP-' + str(self.coopPhaseCounter)
+      self.coopCurrentPhase += 1
+      self.coopCurrentFlag = True
 
       # can't serialize TargetResolutionVector that contains complex numbers
       # for SolarPV setpoints. Need to translate all of those to tuples
@@ -2009,7 +2012,7 @@ class DeconflictionPipeline(GridAPPSD):
                      'targetResolutionVector': tupleTargetResolutionVector}
       self.gapps.send(self.coop_topic, json.dumps(coopMessage))
       prlog('>>> DeconflictSetpoints--kicked off new COOPERATION phase, ' +
-            'updated current phase: ' + self.coopCurrentPhase)
+            'updated current phase: ' + str(self.coopCurrentPhase))
 
       #self.logConflictReg('coop kickoff')
       #self.logConflictPV('coop kickoff')
@@ -2203,6 +2206,8 @@ class DeconflictionPipeline(GridAPPSD):
       self.pltFile.write(str(perConflictDelta))
       self.pltFile.write(',')
       self.pltFile.write(reason)
+      self.pltFile.write(',Phase:')
+      self.pltFile.write(str(self.coopCurrentPhase))
       self.pltFile.write('\n')
 
     # Published IEEE Access Foundational Paper Reference:
@@ -2219,7 +2224,7 @@ class DeconflictionPipeline(GridAPPSD):
 
     # zero the cooperation timestamp to indicate no active cooperation
     self.coopTimestamp = 0
-    self.coopCurrentPhase = None
+    self.coopCurrentFlag = False
     # reset running minimum for conflict metric
     self.minConflictMetric = 1.0
     # reset running counts for cooperation messages
@@ -2336,7 +2341,7 @@ class DeconflictionPipeline(GridAPPSD):
     # values, but also makes for more cooperation iteration that reduces
     # scalability
     #self.coopMessagesThreshold = 10
-    self.coopMessagesThreshold = 6
+    self.coopMessagesThreshold = 5
     self.conflictValueThreshold = 0.2
     # % threshold of 0.5 is a good compromise between good conflict metric
     # values and the number of cooperation responses
@@ -2358,9 +2363,9 @@ class DeconflictionPipeline(GridAPPSD):
     self.minConflictMetric = 1.0
     self.MinConflictMatrix = {}
     self.AppCoopCount = {}
-    # initialize counter used to uniquely identify cooperation messages
-    self.coopPhaseCounter = 0
-    self.coopCurrentPhase = None
+    # initialize phase counter used to uniquely identify cooperation messages
+    self.coopCurrentPhase = 0
+    self.coopCurrentFlag = False
 
     self.simMessageCounter = 0
 
