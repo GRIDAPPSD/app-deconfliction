@@ -1018,7 +1018,7 @@ class CompetingApp(GridAPPSD):
     problem.solve(solver=cp.GLPK_MI, abstol=1e-3, kktsolver='chol',
                   feastol=1e-3, max_iters=100, verbose=False)
     print('Optimization status:', problem.status, flush=True)
-    print('Optimization Value:', problem.value, flush=True)
+    #print('Optimization value:', problem.value, flush=True)
     now = datetime.now()
     optTime = (now - startTime).total_seconds()
     optInterval= (now - self.lastTime).total_seconds()
@@ -1035,7 +1035,7 @@ class CompetingApp(GridAPPSD):
     if includeVoltagesFlag:
       # volt_sum = sum((self.v_A[i].value + self.v_B[i].value + self.v_C[i].value) for i in range(len(self.BusInfo))) / (2401.77 ** 2)
       volt_sum = sum((self.v_A[i].value + self.v_B[i].value + self.v_C[i].value) for i in range(len(self.BusInfo))) / ((2401.77 ** 2) * (123 * 3))
-      print("Optimized sum of Voltages: {}".format(volt_sum))
+      #print("Optimized sum of Voltages: {}".format(volt_sum))
 
     if includeRegulatorsFlag:
       regulator_taps = []
@@ -1053,8 +1053,8 @@ class CompetingApp(GridAPPSD):
             self.reg_greedy[idx] = k-16
             break # assume this will only happen once per regulator
 
-      print(tabulate(regulator_taps, headers=['Regulator', 'Tap', 'b_i'],
-                     tablefmt='psql'), flush=True)
+      #print(tabulate(regulator_taps, headers=['Regulator', 'Tap', 'b_i'],
+      #               tablefmt='psql'), flush=True)
 
     if includeBatteriesFlag:
       p_batt_setpoints = []
@@ -1097,8 +1097,8 @@ class CompetingApp(GridAPPSD):
         # set pq_pv_greedy with every optimization based on measurements
         self.pq_pv_greedy[idx] = complex(total_p, total_q)
 
-      print(tabulate(pq_pv_setpoints, headers=['SolarPV', 'bus', 'Total p (kW)',
-                     'Total q (kW)'], tablefmt='psql'), flush=True)
+      #print(tabulate(pq_pv_setpoints,headers=['SolarPV', 'bus', 'Total p (kW)',
+      #               'Total q (kW)'], tablefmt='psql'), flush=True)
 
     '''
     if self.includePFlowFlag:
@@ -1157,23 +1157,30 @@ class CompetingApp(GridAPPSD):
     if not self.keepLoopingFlag:
       return
 
-    if 'processStatus' in message:
+    if 'processStatus' in message: # simulation log message
       status = message['processStatus']
       if status=='COMPLETE' or status=='CLOSED':
         self.keepLoopingFlag = False
         self.messageQueue.put(message)
 
-    elif 'message' in message:
+    elif 'message' in message: # simulation output message
+      # if it's been optItervalSec since last optimization:
+      ts_unix = int(message['message']['timestamp'])
+
+      # If doing real-time simulation must subtract 5 off timestamp to make
+      # it evenly divisble by multiples of the 3 second GridLAB-D time
+      # interval
       if self.realtimeFlag:
-        self.messageQueue.put(message['message'])
-      else:
-        ts_unix = int(message['message']['timestamp'])
-        # only add every 5th measurement message to the queue to
-        # allow sufficient time for cooperation
-        if ts_unix % 300 == 0:
+        if (ts_unix-5) % self.optIntervalSec == 0:
           self.messageQueue.put(message['message'])
 
-    else:
+      else:
+        # If doing non-real-time simulation remove the 5 second offset
+        # because GridLAB-D outputs at 60 second intervals
+        if ts_unix % self.optIntervalSec == 0:
+          self.messageQueue.put(message['message'])
+
+    else: # cooperation message
       self.messageQueue.put(message)
 
 
@@ -1307,8 +1314,8 @@ class CompetingApp(GridAPPSD):
     self.optPerform()
     '''
 
-    print('DECONFLICTOR COOPERATE p_batt_greedy: ' + str(self.p_batt_greedy), flush=True)
-    print('DECONFLICTOR COOPERATE p_batt_proposed: ' + str(self.p_batt_proposed), flush=True)
+    #print('DECONFLICTOR COOPERATE p_batt_greedy: ' + str(self.p_batt_greedy), flush=True)
+    #print('DECONFLICTOR COOPERATE p_batt_proposed: ' + str(self.p_batt_proposed), flush=True)
 
     # GDB 9/10/24: Here is the alternative support for cooperation via
     # ranking the differences between proposed and greedy setpoints:
@@ -1319,7 +1326,7 @@ class CompetingApp(GridAPPSD):
       for i in range(len_BatteriesInfo):
         p_batt_diff[i] = abs(self.p_batt_greedy[i] - self.p_batt_proposed[i])
 
-      print('DECONFLICTOR COOPERATE p_batt_diff: ' + str(p_batt_diff), flush=True)
+      #print('DECONFLICTOR COOPERATE p_batt_diff: ' + str(p_batt_diff), flush=True)
 
       # omit any setpoints where proposed == greeedy
       p_batt_sort = []
@@ -1338,9 +1345,9 @@ class CompetingApp(GridAPPSD):
         # find the value associated with the last "cooperating" battery
         diffMax = p_batt_sort[coopCount-1]
 
-        print('DECONFLICTOR COOPERATE batteries coopCount: ' + str(coopCount) + ', diffMax: ' + str(diffMax), flush=True)
-      else:
-        print('DECONFLICTOR COOPERATE batteries coopCount: ALL, diffMax: ' + str(diffMax), flush=True)
+        #print('DECONFLICTOR COOPERATE batteries coopCount: ' + str(coopCount) + ', diffMax: ' + str(diffMax), flush=True)
+      #else:
+        #print('DECONFLICTOR COOPERATE batteries coopCount: ALL, diffMax: ' + str(diffMax), flush=True)
 
       # GDB 9/2/25: Choose between full cooperation or a ratio based on which
       # of these code blocks is uncommented.
@@ -1350,7 +1357,7 @@ class CompetingApp(GridAPPSD):
           # full cooperation by setting the greedy value to proposed value
           self.p_batt_greedy[i] = self.p_batt_proposed[i]
 
-      print('DECONFLICTOR COOPERATE p_batt_coop: ' + str(self.p_batt_greedy), flush=True)
+      #print('DECONFLICTOR COOPERATE p_batt_coop: ' + str(self.p_batt_greedy), flush=True)
       '''
       p_batt_denom = [] # just for diagnostic logging
       for i in range(len_BatteriesInfo):
@@ -1376,8 +1383,8 @@ class CompetingApp(GridAPPSD):
         else:
           p_batt_denom.append(None)
 
-      print('DECONFLICTOR COOPERATE p_batt_coop: ' + str(self.p_batt_greedy), flush=True)
-      print('DECONFLICTOR COOPERATE p_batt_denom: ' + str(p_batt_denom), flush=True)
+      #print('DECONFLICTOR COOPERATE p_batt_coop: ' + str(self.p_batt_greedy), flush=True)
+      #print('DECONFLICTOR COOPERATE p_batt_denom: ' + str(p_batt_denom), flush=True)
       '''
 
       for mrid in self.BatteriesInfo:
@@ -1389,8 +1396,8 @@ class CompetingApp(GridAPPSD):
              'PowerElectronicsConnection.p', -self.p_batt_greedy[idx], None)
 
     if self.includeSolarPVsPFlag:
-      print('DECONFLICTOR COOPERATE pq_pv_greedy: ' + str(self.pq_pv_greedy), flush=True)
-      print('DECONFLICTOR COOPERATE pq_pv_proposed: ' + str(self.pq_pv_proposed), flush=True)
+      #print('DECONFLICTOR COOPERATE pq_pv_greedy: ' + str(self.pq_pv_greedy), flush=True)
+      #print('DECONFLICTOR COOPERATE pq_pv_proposed: ' + str(self.pq_pv_proposed), flush=True)
       len_SolarPVsInfo = len(self.SolarPVsInfo)
       pq_pv_diff = [None] * len_SolarPVsInfo
       for i in range(len_SolarPVsInfo):
@@ -1398,7 +1405,7 @@ class CompetingApp(GridAPPSD):
         # even though the greedy and proposed vectors are complex
         pq_pv_diff[i] = abs(self.pq_pv_greedy[i] - self.pq_pv_proposed[i])
 
-      print('DECONFLICTOR COOPERATE pq_pv_diff: ' + str(pq_pv_diff), flush=True)
+      #print('DECONFLICTOR COOPERATE pq_pv_diff: ' + str(pq_pv_diff), flush=True)
 
       # omit any setpoints where proposed == greeedy
       pq_pv_sort = []
@@ -1417,9 +1424,9 @@ class CompetingApp(GridAPPSD):
         # find the value associated with the last "cooperating" battery
         diffMax = pq_pv_sort[coopCount-1]
 
-        print('DECONFLICTOR COOPERATE solarPVs coopCount: ' + str(coopCount) + ', diffMax: ' + str(diffMax), flush=True)
-      else:
-        print('DECONFLICTOR COOPERATE solarPVs coopCount: ALL, diffMax: ' + str(diffMax), flush=True)
+        #print('DECONFLICTOR COOPERATE solarPVs coopCount: ' + str(coopCount) + ', diffMax: ' + str(diffMax), flush=True)
+      #else:
+        #print('DECONFLICTOR COOPERATE solarPVs coopCount: ALL, diffMax: ' + str(diffMax), flush=True)
 
       # GDB 9/2/25: Choose between full cooperation or a ratio based on which
       # of these code blocks is uncommented.
@@ -1429,7 +1436,7 @@ class CompetingApp(GridAPPSD):
           # full cooperation by setting the greedy value to proposed value
           self.pq_pv_greedy[i] = self.pq_pv_proposed[i]
 
-      print('DECONFLICTOR COOPERATE pq_pv_coop: ' + str(self.pq_pv_greedy), flush=True)
+      #print('DECONFLICTOR COOPERATE pq_pv_coop: ' + str(self.pq_pv_greedy), flush=True)
       '''
       pq_pv_denom = [] # just for diagnostic logging
       for i in range(len_SolarPVsInfo):
@@ -1459,8 +1466,8 @@ class CompetingApp(GridAPPSD):
         else:
           pq_pv_denom.append(None)
 
-      print('DECONFLICTOR COOPERATE pq_pv_coop: ' + str(self.pq_pv_greedy), flush=True)
-      print('DECONFLICTOR COOPERATE pq_pv_denom: ' + str(pq_pv_denom), flush=True)
+      #print('DECONFLICTOR COOPERATE pq_pv_coop: ' + str(self.pq_pv_greedy), flush=True)
+      #print('DECONFLICTOR COOPERATE pq_pv_denom: ' + str(pq_pv_denom), flush=True)
       '''
 
       for mrid in self.SolarPVs:
@@ -1475,15 +1482,15 @@ class CompetingApp(GridAPPSD):
 
     if self.includeRegulatorsFlag:
       # now do the same for regulators
-      print('DECONFLICTOR COOPERATE reg_greedy: ' + str(self.reg_greedy), flush=True)
-      print('DECONFLICTOR COOPERATE reg_proposed: ' + str(self.reg_proposed), flush=True)
+      #print('DECONFLICTOR COOPERATE reg_greedy: ' + str(self.reg_greedy), flush=True)
+      #print('DECONFLICTOR COOPERATE reg_proposed: ' + str(self.reg_proposed), flush=True)
 
       len_RegulatorsInfo = len(self.RegulatorsInfo)
       reg_diff = [None] * len_RegulatorsInfo
       for i in range(len_RegulatorsInfo):
         reg_diff[i] = abs(self.reg_greedy[i] - self.reg_proposed[i])
 
-      print('DECONFLICTOR COOPERATE reg_diff: ' + str(reg_diff), flush=True)
+      #print('DECONFLICTOR COOPERATE reg_diff: ' + str(reg_diff), flush=True)
 
       # omit any setpoints where proposed == greeedy
       reg_sort = []
@@ -1503,9 +1510,9 @@ class CompetingApp(GridAPPSD):
         # find the value associated with the last "cooperating" regulator
         diffMax = reg_sort[coopCount-1]
 
-        print('DECONFLICTOR COOPERATE regulators coopCount: ' + str(coopCount) + ', diffMax: ' + str(diffMax), flush=True)
-      else:
-        print('DECONFLICTOR COOPERATE regulators coopCount: ALL, diffMax: ' + str(diffMax), flush=True)
+        #print('DECONFLICTOR COOPERATE regulators coopCount: ' + str(coopCount) + ', diffMax: ' + str(diffMax), flush=True)
+      #else:
+        #print('DECONFLICTOR COOPERATE regulators coopCount: ALL, diffMax: ' + str(diffMax), flush=True)
 
       # GDB 9/2/25: Choose between full cooperation or a ratio based on which
       # of these code blocks is uncommented.
@@ -1515,7 +1522,7 @@ class CompetingApp(GridAPPSD):
           # full cooperation by setting the greedy value to proposed value
           self.reg_greedy[i] = self.reg_proposed[i]
 
-      print('DECONFLICTOR COOPERATE reg_coop: ' + str(self.reg_greedy), flush=True)
+      #print('DECONFLICTOR COOPERATE reg_coop: ' + str(self.reg_greedy), flush=True)
       '''
       reg_denom = [] # just for diagnostic logging
       for i in range(len_RegulatorsInfo):
@@ -1541,8 +1548,8 @@ class CompetingApp(GridAPPSD):
         else:
           reg_denom.append(None)
 
-      print('DECONFLICTOR COOPERATE reg_coop: ' + str(self.reg_greedy), flush=True)
-      print('DECONFLICTOR COOPERATE reg_denom: ' + str(reg_denom), flush=True)
+      #print('DECONFLICTOR COOPERATE reg_coop: ' + str(self.reg_greedy), flush=True)
+      #print('DECONFLICTOR COOPERATE reg_denom: ' + str(reg_denom), flush=True)
       '''
 
       for reg in self.RegulatorsInfo:
@@ -1555,7 +1562,8 @@ class CompetingApp(GridAPPSD):
     dispatch_message = self.difference_builder.get_message()
     dispatch_message['app_name'] = self.app_name
     dispatch_message['coop_phase'] = self.coopPhase
-    print('Sending Cooperation DifferenceBuilder message!', flush=True)
+    print('Sending Cooperation DifferenceBuilder message with phase: ' +
+          self.coopPhase, flush=True)
     #print('Sending Cooperation DifferenceBuilder message: ' +
     #      json.dumps(dispatch_message), flush=True)
     self.gapps.send(self.coop_publish_topic, json.dumps(dispatch_message))
@@ -1564,9 +1572,47 @@ class CompetingApp(GridAPPSD):
 
   def __init__(self, opt_type, feeder_mrid, simulation_id, interval):
 
+    if opt_type.startswith('r') or opt_type.startswith('R'):
+      self.opt_type = 'resilience'
+    elif opt_type.startswith('m') or opt_type.startswith('M'):
+      self.opt_type = 'max_local'
+    elif opt_type.startswith('c') or opt_type.startswith('C'):
+      self.opt_type = 'cvr'
+    elif opt_type.startswith('s') or opt_type.startswith('S'):
+      self.opt_type = 'scalability'
+    else:
+      print('*** Exiting due to unrecognized optimization type: ' + opt_type,
+            flush=True)
+      exit()
+
     # flag for whether simulation is run in real-time
     #self.realtimeFlag = True
     self.realtimeFlag = False
+
+    # deltaT is time between timesteps as fractional hours
+    # optimization interval seconds is the number of simulation seconds
+    # between triggering an optimization and must be a multiple of 3
+    # for a real-time simulation
+    if self.realtimeFlag:
+      #self.optIntervalSec = 3 # optimize every GridLAB-D timestamp
+      # 15 seconds is a good number for a real-time simulation
+      self.optIntervalSec = 15
+      simLagSec = 0
+    else:
+      # if attempting non-real-time, something like 1800 is reasonable
+      # so the optimization time is safely shorter than the time between
+      # optimizations--otherwise the queue draining won't work right.
+      self.optIntervalSec = 1800
+      #self.optIntervalSec = 3600
+      simLagSec = 600
+
+    if self.opt_type!='scalability' and interval!=None:
+      self.optIntervalSec = int(interval)
+
+    # Add compensation factor to optIntervalSec in non-realtime mode
+    # for computing deltaT because of the lag GridLAB-D is taking in
+    # this mode for measurements to reflect DifferenceBuilder messages
+    self.deltaT = (self.optIntervalSec + simLagSec)/3600.0
 
     # GDB 8/27/25: Magic IPC Queue class for sharing ActiveMQ messages
     # between different processes
@@ -1831,44 +1877,6 @@ class CompetingApp(GridAPPSD):
 
     print('\nBranchInfo phase count: ' + str(n_line_phase), flush=True)
 
-    if opt_type.startswith('r') or opt_type.startswith('R'):
-      self.opt_type = 'resilience'
-    elif opt_type.startswith('m') or opt_type.startswith('M'):
-      self.opt_type = 'max_local'
-    elif opt_type.startswith('c') or opt_type.startswith('C'):
-      self.opt_type = 'cvr'
-    elif opt_type.startswith('s') or opt_type.startswith('S'):
-      self.opt_type = 'scalability'
-    else:
-      print('*** Exiting due to unrecognized optimization type: ' + opt_type,
-            flush=True)
-      exit()
-
-    # deltaT is time between timesteps as fractional hours
-    # optimization interval seconds is the number of simulation seconds
-    # between triggering an optimization and must be a multiple of 3
-    # for a real-time simulation
-    if self.realtimeFlag:
-      #optIntervalSec = 3 # optimize every GridLAB-D timestamp
-      # 15 seconds is a good number for a real-time simulation
-      optIntervalSec = 15
-      simLagSec = 0
-    else:
-      # if attempting non-real-time, something like 1800 is reasonable
-      # so the optimization time is safely shorter than the time between
-      # optimizations--otherwise the queue draining won't work right.
-      optIntervalSec = 1800
-      #optIntervalSec = 3600
-      simLagSec = 600
-
-    if self.opt_type!='scalability' and interval!=None:
-      optIntervalSec = int(interval)
-
-    # Add compensation factor to optIntervalSec in non-realtime mode
-    # for computing deltaT because of the lag GridLAB-D is taking in
-    # this mode for measurements to reflect DifferenceBuilder messages
-    self.deltaT = (optIntervalSec + simLagSec)/3600.0
-
     self.b_i = np.arange(0.9, 1.1, 0.00625)
 
     if self.opt_type == 'scalability':
@@ -1907,90 +1915,98 @@ class CompetingApp(GridAPPSD):
     self.coopPhase = None
     self.coopCounter = 0
     self.lastTime = datetime.now()
-    notDoneFlag = True
 
-    while notDoneFlag:
-      if self.messageQueue.qsize() == 0:
+    # start by discarding any messages that arrived during initialization
+    # as we don't want to process anything that's stale
+    print('Queue check post-initialization start', flush=True)
+    while self.messageQueue.qsize() > 0:
+      message = self.messageQueue.get()
+
+      if 'processStatus' in message: # simulation log message
+        # this would be weird to get this early, but it could happen
+        status = message['processStatus']
+        print('Simulation ' + status + ' message received', flush=True)
+
+        # wait for messageListener process to finish
+        messageListener.join()
+        return # done with all processing
+
+      if 'measurements' in message: # simulation output message
+        print('Simulation measurements message on queue discarded with ' +
+              'timestamp: ' + str(message['timestamp']), flush=True)
+
+      else: # cooperation message
+        print('Cooperation message on queue discarded with phase: ' +
+              message['coop_phase'], flush=True)
+    print('Queue check post-initialization finish\n', flush=True)
+
+    while True:
+      while self.messageQueue.qsize() == 0:
         # GDB 9/2/25: Warning: increasing the sleep duration above 0.1 such as
         # 0.5 can lead to bad things. With two processes sleeping on both ends
         # (apps and deconfliction pipeline) that's 4 sleep statements that are
         # part of processing messages leading to a potential 2 second total
         # delay (with 0.5 sleeps), which is horrible for cooperation messages.
         sleep(0.1)
-        continue
 
       lastMeasMessage = None
       lastCoopMessage = None
+
+      print('Queue check start', flush=True)
       while self.messageQueue.qsize() > 0:
         message = self.messageQueue.get()
 
-        if 'processStatus' in message: # sim log message
-          notDoneFlag = False
+        if 'processStatus' in message: # simulation log message
           status = message['processStatus']
           print('Simulation ' + status + ' message received', flush=True)
-          break # done with all processing
 
-        if 'measurements' in message: # sim measurements message
+          # wait for messageListener process to finish
+          messageListener.join()
+          return # done with all processing
+
+        if 'measurements' in message: # simulation output message
+          print('Simulation measurements message on queue with timestamp: ' +
+                str(message['timestamp']), flush=True)
           lastMeasMessage = message
 
         else: # cooperation message
+          print('Cooperation message on queue with phase: ' +
+                message['coop_phase'], flush=True)
           lastCoopMessage = message
+      print('Queue check finish', flush=True)
 
-      if notDoneFlag:
-        # GDB 9/1/25: Uncomment this if cooperation uses measurement values
-        # when doing an optimization
-        '''
-        if lastMeasMessage!=None and lastCoopMessage!=None:
-          # process new measurements
-          # note this is really only needed if an optimization is done
-          # to respond to cooperation message
-          self.processMeasMessage(lastMeasMessage['measurements'])
-        '''
+      # GDB 9/1/25: Uncomment this if cooperation uses measurement values
+      # when doing an optimization
+      '''
+      if lastMeasMessage!=None and lastCoopMessage!=None:
+        # process new measurements
+        # note this is really only needed if an optimization is done
+        # to respond to cooperation message
+        self.processMeasMessage(lastMeasMessage['measurements'])
+      '''
 
-        if lastCoopMessage != None:
-          if self.includeBatteriesFlag or self.includeRegulatorsFlag or \
-             self.includeSolarPVsFlag:
-            # respond to cooperation message
-            self.processCoopMessage(lastCoopMessage)
+      if lastCoopMessage != None:
+        if self.includeBatteriesFlag or self.includeRegulatorsFlag or \
+           self.includeSolarPVsFlag:
+          print('Processing Cooperation message with phase: ' +
+                str(lastCoopMessage['coop_phase']), flush=True)
 
-        if lastMeasMessage != None:
-          # if it's been >= optItervalSec since last optimization:
-          global ts_time
-          ts_unix = int(lastMeasMessage['timestamp'])
-          ts_time = datetime.utcfromtimestamp(ts_unix).time()
+          # respond to cooperation message
+          self.processCoopMessage(lastCoopMessage)
 
-          # If doing real-time simulation must subtract 5 off timestamp to make
-          # it evenly divisble by multiples of the 3 second GridLAB-D time
-          # interval
-          skipFlag = False
-          if self.realtimeFlag:
-            skipFlag = (ts_unix-5) % optIntervalSec != 0
-          else:
-            # If doing non-real-time simulation remove the 5 second offset
-            # because GridLAB-D outputs at 60 second intervals
-            skipFlag = ts_unix % optIntervalSec != 0
+      elif lastMeasMessage != None:
+        global ts_time
+        ts_unix = int(lastMeasMessage['timestamp'])
+        ts_time = datetime.utcfromtimestamp(ts_unix).time()
 
-          if skipFlag:
-            print('Simulation timestamp (skipping optimization): ' +
-                  str(ts_unix) + ', wall time: ' + str(ts_time), flush=True)
-            # GDB 8/26/25: Don't even do simulation measurement updates to
-            # better keep up with messages
+        print('\nSimulation timestamp for optimization: ' + str(ts_unix) +
+              ', wall time: ' + str(ts_time), flush=True)
 
-          else:
-            print('\nSimulation timestamp for optimization: ' + str(ts_unix) +
-                  ', wall time: ' + str(ts_time), flush=True)
+        # process new measurements
+        self.processMeasMessage(lastMeasMessage['measurements'])
 
-            # process new measurements
-            self.processMeasMessage(lastMeasMessage['measurements'])
-
-            # perform optimization
-            self.optPerform()
-
-        # must reset last messages to None to avoid re-processing them!
-        lastMeasMessage = None
-        lastCoopMessage = None
-
-    messageListener.join()
+        # perform optimization
+        self.optPerform()
 
 
 def _main():
