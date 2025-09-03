@@ -1660,7 +1660,7 @@ class DeconflictionPipeline(GridAPPSD):
             str(timestamp) + ', app: ' + app_name)
     else:
       prlog('>>>\n>>> ProcessSetpointsMessage--COOP message timestamp: ' +
-            str(timestamp) + ', app: ' + app_name + ', phase:' +str(coop_phase))
+            str(timestamp) + ', app: ' + app_name + ', phase: '+str(coop_phase))
 
     if not meas_msg_flag and coop_phase!=self.coopCurrentPhase:
       # discard any cooperation messages when not currently cooperating or
@@ -1685,6 +1685,9 @@ class DeconflictionPipeline(GridAPPSD):
         prlog('>>> ProcessSetpointsMessage--conclude running COOPERATION ' +
               'phase with new MEAS message received, coopTimestamp: ' +
               str(self.coopTimestamp))
+
+        self.coopTimestamp = 0
+        self.coopCurrentFlag = False
 
         # we were cooperating when a measurement message arrived so need to
         # conclude that cooperation before processing the new message
@@ -1730,15 +1733,38 @@ class DeconflictionPipeline(GridAPPSD):
         self.SetpointValidatorForRegulators(newResolutionVector,
                                             self.printAllValidatorFlag)
 
+        # Output conflict metric data to plot_data.csv for a concluded
+        # cooperation where it hasn't reached thresholds
+        if self.pltFlag:
+          self.pltFile.write('conflict_metric,')
+          diff = (datetime.now() - self.pltTZero).total_seconds()
+          self.pltFile.write(str(diff))
+          self.pltFile.write(',')
+          self.pltFile.write(str(timestamp))
+          self.pltFile.write(',')
+          self.pltFile.write(str(self.startConflictMetric))
+          self.pltFile.write(',')
+          if self.rulesStageFirstFlag:
+            self.pltFile.write(str(self.rulesFirstConflictMetric))
+            self.pltFile.write(',')
+          self.pltFile.write(str(self.conflictMetric))
+          self.pltFile.write(',')
+          if self.rulesStageLastFlag:
+            self.pltFile.write(str(self.rulesLastConflictMetric))
+            self.pltFile.write(',')
+          self.pltFile.write(str(self.coopResponseCounter))
+          self.pltFile.write(',0.0')
+          self.pltFile.write(',New_Optimization_Setpoints')
+          self.pltFile.write(',Phase:')
+          self.pltFile.write(str(self.coopCurrentPhase))
+          self.pltFile.write('\n')
+
         # Published IEEE Access Foundational Paper Reference:
         #   Step 5--Device Dispatcher
         dispatchCount = self.DeviceDispatcher(timestamp, newResolutionVector,
                                               self.printAllDispatchesFlag)
         prlog('>>> ProcessSetpointsMessage--invoked device dispatch for ' +
               'running COOPERATION, # devices dispatched: ' +str(dispatchCount))
-
-        # XXX Somewhere here is where I need to output to plot_data.csv for
-        # a concluded cooperation where it did not reach thresholds
 
         # update the current resolution to the new resolution to be ready for
         # the next dispatch
@@ -2113,6 +2139,10 @@ class DeconflictionPipeline(GridAPPSD):
             str(timestamp))
       return
 
+    # zero the cooperation timestamp to indicate no active cooperation
+    self.coopTimestamp = 0
+    self.coopCurrentFlag = False
+
     # flag for whether to conclude cooperation the first time the % conflict
     # change is below the threshold or if it needs to happen twice
     # Hardwire value to false so the first check can conclude cooperation and
@@ -2222,9 +2252,6 @@ class DeconflictionPipeline(GridAPPSD):
     self.ResolutionVector.clear()
     self.ResolutionVector = newResolutionVector
 
-    # zero the cooperation timestamp to indicate no active cooperation
-    self.coopTimestamp = 0
-    self.coopCurrentFlag = False
     # reset running minimum for conflict metric
     self.minConflictMetric = 1.0
     # reset running counts for cooperation messages
@@ -2544,8 +2571,12 @@ class DeconflictionPipeline(GridAPPSD):
       #if pendingDeconflictFlag and \
       #   (self.instantSetpointUpdateFlag or self.simMessageCounter>1):
       if pendingDeconflictFlag:
-        self.DeconflictSetpoints(timestamp, app_names, pendingMeasMsgFlag,
-                                 self.printAllConflictsResolutionsFlag)
+        # GDB 9/3/25: without this check to see if there is a current
+        # cooperation phase, device dispatches can happen multiple times
+        # in quick succession for the same cooperation phase
+        if pendingMeasMsgFlag or self.coopCurrentFlag:
+          self.DeconflictSetpoints(timestamp, app_names, pendingMeasMsgFlag,
+                                   self.printAllConflictsResolutionsFlag)
         pendingDeconflictFlag = False
         pendingMeasMsgFlag = False
 
