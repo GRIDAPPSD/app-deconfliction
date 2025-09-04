@@ -1696,6 +1696,10 @@ class DeconflictionPipeline(GridAPPSD):
         # we'll roll with that from this point on
         self.ConflictMatrix = copy.deepcopy(self.MinConflictMatrix)
 
+        # set the final conflict metric value to the minimum achieved to
+        # correspond to the minimum ConflictMatrix
+        self.conflictMetric = min(self.conflictMetric, self.minConflictMetric)
+
         # Published IEEE Access Foundational Paper Reference:
         #   Step 3.2--Deconfliction Solution
         #   Step 3.3--Resolution
@@ -1819,6 +1823,11 @@ class DeconflictionPipeline(GridAPPSD):
         self.logConflictTest('start deconfliction after first rules stage')
 
         self.rulesFirstConflictMetric =self.ConflictMetricComputation(timestamp)
+
+        # save the conflict metric/matrix after applying rules since sometimes
+        # cooperation can't do any better than this so we need to go with this
+        self.minConflictMetric = self.rulesFirstConflictMetric
+        self.MinConflictMatrix = copy.deepcopy(self.ConflictMatrix)
 
     # Published IEEE Access Foundational Paper Reference:
     #   Step 3--Deconflictor
@@ -2173,6 +2182,10 @@ class DeconflictionPipeline(GridAPPSD):
     # replace running ConflictMatrix with the minimum conflict version and
     # we'll roll with that from this point on
     self.ConflictMatrix = copy.deepcopy(self.MinConflictMatrix)
+
+    # set the final conflict metric value to the minimum achieved to
+    # correspond to the minimum ConflictMatrix
+    self.conflictMetric = min(self.conflictMetric, self.minConflictMetric)
 
     # Published IEEE Access Foundational Paper Reference:
     #   Step 3.2--Deconfliction Solution
