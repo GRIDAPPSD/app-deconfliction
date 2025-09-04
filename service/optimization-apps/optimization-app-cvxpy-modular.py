@@ -376,23 +376,10 @@ class CompetingApp(GridAPPSD):
     self.lambda_c = cp.Variable(len_BatteriesInfo, boolean=True, name='lambda_c')
     self.lambda_d = cp.Variable(len_BatteriesInfo, boolean=True, name='lambda_d')
 
-      # cooperation variables
-      # since these are held constant, I don't need to define them with
-      # cp.Variable calls, but as fixed length vectors. It's still convenient
-      # though to define them along with the other optimization variables.
-    self.p_batt_proposed = [None] * len_BatteriesInfo
-    self.p_batt_greedy = [None] * len_BatteriesInfo
-
     if includeRegulatorsFlag:
       len_RegulatorsInfo = len(self.RegulatorsInfo)
       self.reg_taps = cp.Variable((len_RegulatorsInfo, 32), boolean=True,
                                   name='reg_taps')
-      # cooperation variables
-      # since these are held constant, I don't need to define them with
-      # cp.Variable calls, but as fixed length vectors. It's still convenient
-      # though to define them along with the other optimization variables.
-      self.reg_proposed = [None] * len_RegulatorsInfo
-      self.reg_greedy = [None] * len_RegulatorsInfo
     else:
       # if not including regulators in optimization problem then we need a
       # dictionary to track the current tap position from measurements
@@ -406,13 +393,6 @@ class CompetingApp(GridAPPSD):
     self.q_pv_A = cp.Variable(len_SolarPVsInfo, integer=False,name='q_pv_A')
     self.q_pv_B = cp.Variable(len_SolarPVsInfo, integer=False,name='q_pv_B')
     self.q_pv_C = cp.Variable(len_SolarPVsInfo, integer=False,name='q_pv_C')
-
-      # cooperation variables
-      # since these are held constant, I don't need to define them with
-      # cp.Variable calls, but as fixed length vectors. It's still convenient
-      # though to define them along with the other optimization variables.
-    self.pq_pv_proposed = [None] * len_SolarPVsInfo
-    self.pq_pv_greedy = [None] * len_SolarPVsInfo
 
     self.Psub = cp.Variable(integer=False, name='P_sub')
     self.Psub_mod = cp.Variable(integer=False, name='P_sub_mod')
@@ -1125,10 +1105,14 @@ class CompetingApp(GridAPPSD):
 
       self.difference_builder.clear()
 
+      # GDB 9/4/25: cooperation now done in the message listener process
+      # and this is the main process
+      '''
       # GDB 9/3/25: increment the cooperation phase so we are ignoring any
       # cooperation messages associated with the phase prior to these new
       # setpoints being sent
       self.coopPhase += 1
+      '''
 
 
   def messageListenerProcess(self, simulation_id):
@@ -1140,6 +1124,77 @@ class CompetingApp(GridAPPSD):
     log_id = gapps.subscribe(simulation_log_topic(simulation_id), self)
     coop_id = gapps.subscribe(service_output_topic('deconfliction.cooperation',
                               simulation_id), self)
+
+    # GDB 9/3/25: coopPhase keeps track of what cooperation phase is the
+    # one currently being processed in order to determine when to discard
+    # "stale" cooperation messages associated with an earlier phase
+    self.coopPhase = 0
+
+    # coopCounter allows diminishing cooperation with each succeeding
+    # cooperation message solicitation within a phase
+    self.coopCounter = 0
+
+    # HACK HACK HACK
+    if self.app_name == 'resilience-app':
+      self.reg_greedy[0] = 0
+      self.reg_greedy[1] = -15
+      self.reg_greedy[2] = -16
+      self.reg_greedy[3] = -16
+      self.reg_greedy[4] = -16
+      self.reg_greedy[5] = 15
+      self.reg_greedy[6] = -16
+
+      self.p_batt_greedy[0] = 125000.0
+      self.p_batt_greedy[1] = 200000.0
+      self.p_batt_greedy[2] = 100000.0
+      self.p_batt_greedy[3] = -19774.4375649907
+      self.p_batt_greedy[4] = 199099.36434655948
+
+      self.pq_pv_greedy[0] = complex(84852.81374238567,84852.81374238571)
+      self.pq_pv_greedy[1] = complex(89117.85458511699,213086.17598125123)
+      self.pq_pv_greedy[2] = complex(7946.866180859902,296708.3002495237)
+      self.pq_pv_greedy[3] = complex(0.0,-400000)
+      self.pq_pv_greedy[4] = complex(106066.01717798211,106066.01717798217)
+      self.pq_pv_greedy[5] = complex(177138.330058,31648.644388975925)
+      self.pq_pv_greedy[6] = complex(91923.88155425119,91923.88155425119)
+      self.pq_pv_greedy[7] = complex(84852.81374238571,84852.81374238568)
+      self.pq_pv_greedy[8] = complex(183847.76310850235,183847.76310850237)
+      self.pq_pv_greedy[9] = complex(0.0,-39828.015502446855)
+      self.pq_pv_greedy[10] = complex(0.0,280000)
+      self.pq_pv_greedy[11] = complex(3.092281986027956e-11,150000)
+      self.pq_pv_greedy[12] = complex(212132.03435596428,212132.03435596422)
+      self.pq_pv_greedy[13] = complex(247487.37341529166,247487.37341529154)
+
+    elif self.app_name == 'max_local-app':
+      self.reg_greedy[0] = 0
+      self.reg_greedy[1] = -15
+      self.reg_greedy[2] = -12
+      self.reg_greedy[3] = -6
+      self.reg_greedy[4] = 15
+      self.reg_greedy[5] = 15
+      self.reg_greedy[6] = -4
+
+      self.p_batt_greedy[0] = -125000.0
+      self.p_batt_greedy[1] = -178000.36702049128
+      self.p_batt_greedy[2] = -61642.5836798471
+      self.p_batt_greedy[3] = -150000.0
+      self.p_batt_greedy[4] = -250000.0
+
+      self.pq_pv_greedy[0] = complex(84852.81374238567,84852.81374238571)
+      self.pq_pv_greedy[1] = complex(0.0,250000)
+      self.pq_pv_greedy[2] = complex(212132.03435596425,212132.03435596422)
+      self.pq_pv_greedy[3] = complex(282842.71247461904,282842.7124746189)
+      self.pq_pv_greedy[4] = complex(106066.01717798211,106066.01717798217)
+      self.pq_pv_greedy[5] = complex(176776.6952966369,176776.69529663684)
+      self.pq_pv_greedy[6] = complex(91923.88155425117,91923.88155425119)
+      self.pq_pv_greedy[7] = complex(0.0,120000)
+      self.pq_pv_greedy[8] = complex(0.0,260000)
+      self.pq_pv_greedy[9] = complex(0.0,250611.90927991143)
+      self.pq_pv_greedy[10] = complex(197989.8987322333,197989.89873223327)
+      self.pq_pv_greedy[11] = complex(0.0,128581.7271401608)
+      self.pq_pv_greedy[12] = complex(0.0,300000)
+      self.pq_pv_greedy[13] = complex(64331.728116345264,53283.847166392254)
+    # END HACK
 
     self.keepLoopingFlag = True
 
@@ -1186,7 +1241,31 @@ class CompetingApp(GridAPPSD):
           self.messageQueue.put(message['message'])
 
     else: # cooperation message
+      # GDB 9/4/25: was putting cooperation messages on the queue for main
+      # process handling, but now they are handled in the listener process
+      '''
       self.messageQueue.put(message)
+      '''
+      if self.includeBatteriesFlag or self.includeRegulatorsFlag or \
+         self.includeSolarPVsFlag:
+        checkPhase = message['coop_phase']
+
+        if checkPhase >= self.coopPhase:
+          if checkPhase == self.coopPhase:
+            # comment out incrementing coopCounter to not diminish cooperation
+            self.coopCounter += 1
+          else:
+            self.coopPhase = checkPhase
+            self.coopCounter = 0
+
+          print('Processing Cooperation message with phase: ' +
+                str(checkPhase), flush=True)
+          # respond to cooperation message
+          self.processCoopMessage(message)
+
+        else:
+          print('Discarding Cooperation message with stale phase: ' +
+                str(checkPhase), flush=True)
 
 
   def pol2cart(self, mag, angle_deg):
@@ -1654,6 +1733,25 @@ class CompetingApp(GridAPPSD):
     print('RegulatorsInfo: ' + str(self.RegulatorsInfo), flush=True)
     print('RegulatorsIdx: ' + str(self.RegulatorsIdx), flush=True)
 
+    if self.opt_type == 'scalability':
+      # the interval value is actually the app_setup.csv line
+      self.optPrelimScalability(interval)
+    else:
+      self.optPrelimClassic()
+
+    # cooperation variables
+    len_BatteriesInfo = len(self.BatteriesInfo)
+    self.p_batt_proposed = [None] * len_BatteriesInfo
+    self.p_batt_greedy = [None] * len_BatteriesInfo
+
+    len_RegulatorsInfo = len(self.RegulatorsInfo)
+    self.reg_proposed = [None] * len_RegulatorsInfo
+    self.reg_greedy = [None] * len_RegulatorsInfo
+
+    len_SolarPVsInfo = len(self.SolarPVsInfo)
+    self.pq_pv_proposed = [None] * len_SolarPVsInfo
+    self.pq_pv_greedy = [None] * len_SolarPVsInfo
+
     # topic for sending out cooperation responses
     self.coop_publish_topic = service_input_topic('deconfliction.cooperation',
                                                   simulation_id)
@@ -1896,12 +1994,6 @@ class CompetingApp(GridAPPSD):
 
     self.b_i = np.arange(0.9, 1.1, 0.00625)
 
-    if self.opt_type == 'scalability':
-      # the interval value is actually the app_setup.csv line
-      self.optPrelimScalability(interval)
-    else:
-      self.optPrelimClassic()
-
     self.optDefineVariables(self.includePFlowFlag, self.includeQFlowFlag,
                           self.includeVoltagesFlag, self.includeBatteriesFlag,
                           self.includeRegulatorsFlag, self.includeSolarPVsPFlag)
@@ -1910,6 +2002,9 @@ class CompetingApp(GridAPPSD):
           ' CVXPY optimization competing app, waiting for messages...\n',
           flush=True)
 
+    # GDB 9/4/25: these are now defined in the listener process since that's
+    # where cooperation messages are handled
+    '''
     # GDB 9/3/25: coopPhase keeps track of what cooperation phase is the
     # one currently being processed in order to determine when to discard
     # "stale" cooperation messages associated with an earlier phase
@@ -1918,6 +2013,7 @@ class CompetingApp(GridAPPSD):
     # coopCounter allows diminishing cooperation with each succeeding
     # cooperation message solicitation within a phase
     self.coopCounter = 0
+    '''
 
     # diagnostic for tracking time between optimizations
     self.lastTime = datetime.now()
@@ -1941,9 +2037,12 @@ class CompetingApp(GridAPPSD):
         print('Simulation measurements message on queue discarded with ' +
               'timestamp: ' + str(message['timestamp']), flush=True)
 
+      # GDB 9/24/25: no longer handling cooperation messages in main process
+      '''
       else: # cooperation message
         print('Cooperation message on queue discarded with phase: ' +
               str(message['coop_phase']), flush=True)
+      '''
     print('Queue check post-initialization finish\n', flush=True)
 
     while True:
@@ -1956,7 +2055,10 @@ class CompetingApp(GridAPPSD):
         sleep(0.1)
 
       lastMeasMessage = None
+      # GDB 9/24/25: no longer handling cooperation messages in main process
+      '''
       lastCoopMessage = None
+      '''
 
       print('Queue check start', flush=True)
       while self.messageQueue.qsize() > 0:
@@ -1975,10 +2077,13 @@ class CompetingApp(GridAPPSD):
                 str(message['timestamp']), flush=True)
           lastMeasMessage = message
 
+        # GDB 9/24/25: no longer handling cooperation messages in main process
+        '''
         else: # cooperation message
           print('Cooperation message on queue with phase: ' +
                 str(message['coop_phase']), flush=True)
           lastCoopMessage = message
+        '''
       print('Queue check finish', flush=True)
 
       # GDB 9/1/25: Uncomment this if cooperation uses measurement values
@@ -1991,6 +2096,8 @@ class CompetingApp(GridAPPSD):
         self.processMeasMessage(lastMeasMessage['measurements'])
       '''
 
+      # GDB 9/24/25: no longer handling cooperation messages in main process
+      '''
       if lastCoopMessage != None:
         if self.includeBatteriesFlag or self.includeRegulatorsFlag or \
            self.includeSolarPVsFlag:
@@ -2012,6 +2119,7 @@ class CompetingApp(GridAPPSD):
           else:
             print('Discarding Cooperation message with stale phase: ' +
                   str(checkPhase), flush=True)
+      '''
 
       if lastMeasMessage != None:
         global ts_time
