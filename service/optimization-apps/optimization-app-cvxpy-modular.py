@@ -59,7 +59,7 @@ from time import sleep
 # GDB 8/27/25: Magic that puts message handling into its own process
 # as the only way to keep up with simulation measurements when there
 # are long-running optimizations
-from multiprocessing import Process, Queue
+from multiprocessing import Process, Queue, Array
 
 #import cylp
 import cvxpy as cp
@@ -1074,8 +1074,10 @@ class CompetingApp(GridAPPSD):
 
         pq_pv_setpoints.append([name, bus, total_p/1000, total_q/1000])
 
-        # set pq_pv_greedy with every optimization based on measurements
-        self.pq_pv_greedy[idx] = complex(total_p, total_q)
+        # set p_pv_greedy and q_pv_greedy with every optimization based
+        # on measurements
+        self.p_pv_greedy[idx] = total_p
+        self.q_pv_greedy[idx] = total_q
 
       #print(tabulate(pq_pv_setpoints,headers=['SolarPV', 'bus', 'Total p (kW)',
       #               'Total q (kW)'], tablefmt='psql'), flush=True)
@@ -1133,68 +1135,6 @@ class CompetingApp(GridAPPSD):
     # coopCounter allows diminishing cooperation with each succeeding
     # cooperation message solicitation within a phase
     self.coopCounter = 0
-
-    # HACK HACK HACK
-    if self.app_name == 'resilience-app':
-      self.reg_greedy[0] = 0
-      self.reg_greedy[1] = -15
-      self.reg_greedy[2] = -16
-      self.reg_greedy[3] = -16
-      self.reg_greedy[4] = -16
-      self.reg_greedy[5] = 15
-      self.reg_greedy[6] = -16
-
-      self.p_batt_greedy[0] = 125000.0
-      self.p_batt_greedy[1] = 200000.0
-      self.p_batt_greedy[2] = 100000.0
-      self.p_batt_greedy[3] = -19774.4375649907
-      self.p_batt_greedy[4] = 199099.36434655948
-
-      self.pq_pv_greedy[0] = complex(84852.81374238567,84852.81374238571)
-      self.pq_pv_greedy[1] = complex(89117.85458511699,213086.17598125123)
-      self.pq_pv_greedy[2] = complex(7946.866180859902,296708.3002495237)
-      self.pq_pv_greedy[3] = complex(0.0,-400000)
-      self.pq_pv_greedy[4] = complex(106066.01717798211,106066.01717798217)
-      self.pq_pv_greedy[5] = complex(177138.330058,31648.644388975925)
-      self.pq_pv_greedy[6] = complex(91923.88155425119,91923.88155425119)
-      self.pq_pv_greedy[7] = complex(84852.81374238571,84852.81374238568)
-      self.pq_pv_greedy[8] = complex(183847.76310850235,183847.76310850237)
-      self.pq_pv_greedy[9] = complex(0.0,-39828.015502446855)
-      self.pq_pv_greedy[10] = complex(0.0,280000)
-      self.pq_pv_greedy[11] = complex(3.092281986027956e-11,150000)
-      self.pq_pv_greedy[12] = complex(212132.03435596428,212132.03435596422)
-      self.pq_pv_greedy[13] = complex(247487.37341529166,247487.37341529154)
-
-    elif self.app_name == 'max_local-app':
-      self.reg_greedy[0] = 0
-      self.reg_greedy[1] = -15
-      self.reg_greedy[2] = -12
-      self.reg_greedy[3] = -6
-      self.reg_greedy[4] = 15
-      self.reg_greedy[5] = 15
-      self.reg_greedy[6] = -4
-
-      self.p_batt_greedy[0] = -125000.0
-      self.p_batt_greedy[1] = -178000.36702049128
-      self.p_batt_greedy[2] = -61642.5836798471
-      self.p_batt_greedy[3] = -150000.0
-      self.p_batt_greedy[4] = -250000.0
-
-      self.pq_pv_greedy[0] = complex(84852.81374238567,84852.81374238571)
-      self.pq_pv_greedy[1] = complex(0.0,250000)
-      self.pq_pv_greedy[2] = complex(212132.03435596425,212132.03435596422)
-      self.pq_pv_greedy[3] = complex(282842.71247461904,282842.7124746189)
-      self.pq_pv_greedy[4] = complex(106066.01717798211,106066.01717798217)
-      self.pq_pv_greedy[5] = complex(176776.6952966369,176776.69529663684)
-      self.pq_pv_greedy[6] = complex(91923.88155425117,91923.88155425119)
-      self.pq_pv_greedy[7] = complex(0.0,120000)
-      self.pq_pv_greedy[8] = complex(0.0,260000)
-      self.pq_pv_greedy[9] = complex(0.0,250611.90927991143)
-      self.pq_pv_greedy[10] = complex(197989.8987322333,197989.89873223327)
-      self.pq_pv_greedy[11] = complex(0.0,128581.7271401608)
-      self.pq_pv_greedy[12] = complex(0.0,300000)
-      self.pq_pv_greedy[13] = complex(64331.728116345264,53283.847166392254)
-    # END HACK
 
     self.keepLoopingFlag = True
 
@@ -1470,14 +1410,16 @@ class CompetingApp(GridAPPSD):
              'PowerElectronicsConnection.p', -self.p_batt_greedy[idx], None)
 
     if self.includeSolarPVsPFlag:
-      #print('DECONFLICTOR COOPERATE pq_pv_greedy: ' + str(self.pq_pv_greedy), flush=True)
+      #print('DECONFLICTOR COOPERATE p_pv_greedy: ' + str(self.p_pv_greedy), flush=True)
+      #print('DECONFLICTOR COOPERATE q_pv_greedy: ' + str(self.q_pv_greedy), flush=True)
       #print('DECONFLICTOR COOPERATE pq_pv_proposed: ' + str(self.pq_pv_proposed), flush=True)
       len_SolarPVsInfo = len(self.SolarPVsInfo)
       pq_pv_diff = [None] * len_SolarPVsInfo
       for i in range(len_SolarPVsInfo):
         # note this is the same difference code for SolarPVs as the others
         # even though the greedy and proposed vectors are complex
-        pq_pv_diff[i] = abs(self.pq_pv_greedy[i] - self.pq_pv_proposed[i])
+        pq_pv_diff[i] = abs(complex(self.p_pv_greedy[i], self.q_pv_greedy[i]) -\
+                            self.pq_pv_proposed[i])
 
       #print('DECONFLICTOR COOPERATE pq_pv_diff: ' + str(pq_pv_diff), flush=True)
 
@@ -1508,16 +1450,19 @@ class CompetingApp(GridAPPSD):
         # check if this is a "cooperating" solarPV
         if pq_pv_diff[i]>0 and pq_pv_diff[i]<=diffMax:
           # full cooperation by setting the greedy value to proposed value
-          self.pq_pv_greedy[i] = self.pq_pv_proposed[i]
+          self.p_pv_greedy[i] = self.pq_pv_proposed[i].real
+          self.q_pv_greedy[i] = self.pq_pv_proposed[i].imag
 
-      #print('DECONFLICTOR COOPERATE pq_pv_coop: ' + str(self.pq_pv_greedy), flush=True)
+      #print('DECONFLICTOR COOPERATE p_pv_coop: ' + str(self.p_pv_greedy), flush=True)
+      #print('DECONFLICTOR COOPERATE q_pv_coop: ' + str(self.q_pv_greedy), flush=True)
       '''
       pq_pv_denom = [] # just for diagnostic logging
       for i in range(len_SolarPVsInfo):
         # check if this is a "cooperating" solarPV
         if pq_pv_diff[i]>0 and pq_pv_diff[i]<=diffMax:
           # full cooperation by setting the greedy value to proposed value
-          #self.pq_pv_greedy[i] = self.pq_pv_proposed[i]
+          #self.p_pv_greedy[i] = self.pq_pv_proposed[i].real
+          #self.q_pv_greedy[i] = self.pq_pv_proposed[i].imag
           # adjust cooperation level based on difference
           # find which entry this p_batt_diff is within p_batt_sort to
           # determine how much to cooperate. This is tricky code in that
@@ -1533,14 +1478,17 @@ class CompetingApp(GridAPPSD):
           # is done to each of them giving a complex result that is then
           # added to the original complex number. This is equivalent to
           # breaking up the work into the real and imag components.
-          ratio = (self.pq_pv_proposed[i] - self.pq_pv_greedy[i])/ \
+          ratio = (self.pq_pv_proposed[i] - \
+                   complex(self.p_pv_greedy[i], self.q_pv_greedy[i]))/ \
                   float(fcoop + self.coopCounter)
-          self.pq_pv_greedy[i] += ratio
+          self.p_pv_greedy[i] += ratio.real
+          self.q_pv_greedy[i] += ratio.imag
           pq_pv_denom.append((fcoop, self.coopCounter))
         else:
           pq_pv_denom.append(None)
 
-      #print('DECONFLICTOR COOPERATE pq_pv_coop: ' + str(self.pq_pv_greedy), flush=True)
+      #print('DECONFLICTOR COOPERATE p_pv_coop: ' + str(self.p_pv_greedy), flush=True)
+      #print('DECONFLICTOR COOPERATE q_pv_coop: ' + str(self.q_pv_greedy), flush=True)
       #print('DECONFLICTOR COOPERATE pq_pv_denom: ' + str(pq_pv_denom), flush=True)
       '''
 
@@ -1550,9 +1498,9 @@ class CompetingApp(GridAPPSD):
         # note the p and q values are negated for the GridLAB-D
         # DifferenceBuilder message
         self.difference_builder.add_difference(mrid,
-         'PowerElectronicsConnection.p', -self.pq_pv_greedy[idx].real, None)
+         'PowerElectronicsConnection.p', -self.p_pv_greedy[idx], None)
         self.difference_builder.add_difference(mrid,
-         'PowerElectronicsConnection.q', -self.pq_pv_greedy[idx].imag, None)
+         'PowerElectronicsConnection.q', -self.q_pv_greedy[idx], None)
 
     if self.includeRegulatorsFlag:
       # now do the same for regulators
@@ -1740,17 +1688,19 @@ class CompetingApp(GridAPPSD):
       self.optPrelimClassic()
 
     # cooperation variables
+    # for the greedy values these use multiprocessing shared memory
     len_BatteriesInfo = len(self.BatteriesInfo)
     self.p_batt_proposed = [None] * len_BatteriesInfo
-    self.p_batt_greedy = [None] * len_BatteriesInfo
+    self.p_batt_greedy = Array('d', [0.0] * len_BatteriesInfo)
 
     len_RegulatorsInfo = len(self.RegulatorsInfo)
     self.reg_proposed = [None] * len_RegulatorsInfo
-    self.reg_greedy = [None] * len_RegulatorsInfo
+    self.reg_greedy = Array('i', [0] * len_RegulatorsInfo)
 
     len_SolarPVsInfo = len(self.SolarPVsInfo)
     self.pq_pv_proposed = [None] * len_SolarPVsInfo
-    self.pq_pv_greedy = [None] * len_SolarPVsInfo
+    self.p_pv_greedy = Array('d', [0.0] * len_SolarPVsInfo)
+    self.q_pv_greedy = Array('d', [0.0] * len_SolarPVsInfo)
 
     # topic for sending out cooperation responses
     self.coop_publish_topic = service_input_topic('deconfliction.cooperation',
