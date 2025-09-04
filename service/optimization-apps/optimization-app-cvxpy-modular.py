@@ -1613,13 +1613,6 @@ class CompetingApp(GridAPPSD):
     # between different processes
     self.messageQueue = Queue()
 
-    # subscribe to simulation log and output messages in new process
-    # since messages are just going on a queue, subscribe right away to
-    # keep from missing any sent during app initialization
-    messageListener = Process(target=self.messageListenerProcess,
-                              args=(simulation_id,))
-    messageListener.start()
-
     self.gapps = GridAPPSD(simulation_id)
     assert self.gapps.connected
 
@@ -1648,6 +1641,47 @@ class CompetingApp(GridAPPSD):
     #   print('LinearShuntCompensator: ' + str(item), flush=True)
 
     #SynchronousMachines = AppUtil.getSynchronousMachines(sparql_mgr)
+
+    self.RegulatorsInfo, self.RegulatorsIdx = AppUtil.getCombineRegulators(sparql_mgr)
+
+    # Need a way to map from a measid to the mrid for regulators in order
+    # to process tap position changes in new measurements
+    RegsForMeasID = AppUtil.getRegulators(sparql_mgr)
+    for mrid in self.RegulatorsInfo:
+      if mrid in RegsForMeasID:
+        self.RegulatorsInfo[mrid]['measid'] = RegsForMeasID[mrid]['measid']
+
+    print('RegulatorsInfo: ' + str(self.RegulatorsInfo), flush=True)
+    print('RegulatorsIdx: ' + str(self.RegulatorsIdx), flush=True)
+
+    # topic for sending out cooperation responses
+    self.coop_publish_topic = service_input_topic('deconfliction.cooperation',
+                                                  simulation_id)
+
+    # determine whether to send directly to simulation or the deconfliction
+    # pipeline
+    deconflictionAsServiceFlag = False
+    # GDB 8/25/25: Set as service just to send to simulation for debugging
+    # outside of running deconfliction pipeline
+    #deconflictionAsServiceFlag = True
+    if deconflictionAsServiceFlag:
+      self.sim_publish_topic = simulation_input_topic(simulation_id)
+    else:
+      self.sim_publish_topic = service_input_topic('deconfliction.measurements',
+                                                   simulation_id)
+
+    # create DifferenceBuilder once and reuse it throughout the simulation
+    self.difference_builder = DifferenceBuilder(simulation_id)
+
+    # Subscribe to simulation and cooperation messages in new process
+    # in order to handle messages in a timely fashion outside of the main
+    # process that performs long-running numerical optimizations.
+    # Cooperation messages are completely handled inside this messageListener
+    # process so need to have everything that code needs defined before
+    # creating this process such as the device info dictionaries.
+    messageListener = Process(target=self.messageListenerProcess,
+                              args=(simulation_id,))
+    messageListener.start()
 
     self.EnergySource = AppUtil.getEnergySource(sparql_mgr)
 
@@ -1724,18 +1758,6 @@ class CompetingApp(GridAPPSD):
       #print(name + ': ' + str(self.BranchInfo[name]))
       #print(obj)
       idx += 1
-
-    self.RegulatorsInfo, self.RegulatorsIdx = AppUtil.getCombineRegulators(sparql_mgr)
-
-    # Need a way to map from a measid to the mrid for regulators in order
-    # to process tap position changes in new measurements
-    RegsForMeasID = AppUtil.getRegulators(sparql_mgr)
-    for mrid in self.RegulatorsInfo:
-      if mrid in RegsForMeasID:
-        self.RegulatorsInfo[mrid]['measid'] = RegsForMeasID[mrid]['measid']
-
-    print('RegulatorsInfo: ' + str(self.RegulatorsInfo), flush=True)
-    print('RegulatorsIdx: ' + str(self.RegulatorsIdx), flush=True)
 
     bindings = sparql_mgr.power_transformer_connectivity_query()
     print('\nCount of PowerTransformers: ' + str(len(bindings)), flush=True)
@@ -1883,25 +1905,6 @@ class CompetingApp(GridAPPSD):
     self.optDefineVariables(self.includePFlowFlag, self.includeQFlowFlag,
                           self.includeVoltagesFlag, self.includeBatteriesFlag,
                           self.includeRegulatorsFlag, self.includeSolarPVsPFlag)
-
-    # topic for sending out cooperation responses
-    self.coop_publish_topic = service_input_topic('deconfliction.cooperation',
-                                                  simulation_id)
-
-    # determine whether to send directly to simulation or the deconfliction
-    # pipeline
-    deconflictionAsServiceFlag = False
-    # GDB 8/25/25: Set as service just to send to simulation for debugging
-    # outside of running deconfliction pipeline
-    #deconflictionAsServiceFlag = True
-    if deconflictionAsServiceFlag:
-      self.sim_publish_topic = simulation_input_topic(simulation_id)
-    else:
-      self.sim_publish_topic = service_input_topic('deconfliction.measurements',
-                                                   simulation_id)
-
-    # create DifferenceBuilder once and reuse it throughout the simulation
-    self.difference_builder = DifferenceBuilder(simulation_id)
 
     print('\nInitialized modularized ' + opt_type +
           ' CVXPY optimization competing app, waiting for messages...\n',
