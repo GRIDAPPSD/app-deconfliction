@@ -1365,6 +1365,7 @@ class CompetingApp(GridAPPSD):
 
       # GDB 9/2/25: Choose between full cooperation or a ratio based on which
       # of these code blocks is uncommented.
+      '''
       for i in range(len_BatteriesInfo):
         # check if this is a "cooperating" battery
         if p_batt_diff[i]>0 and p_batt_diff[i]<=diffMax:
@@ -1399,7 +1400,6 @@ class CompetingApp(GridAPPSD):
 
       #print('DECONFLICTOR COOPERATE p_batt_coop: ' + str(self.p_batt_greedy), flush=True)
       #print('DECONFLICTOR COOPERATE p_batt_denom: ' + str(p_batt_denom), flush=True)
-      '''
 
       for mrid in self.BatteriesInfo:
         idx = self.BatteriesInfo[mrid]['idx']
@@ -1446,6 +1446,7 @@ class CompetingApp(GridAPPSD):
 
       # GDB 9/2/25: Choose between full cooperation or a ratio based on which
       # of these code blocks is uncommented.
+      '''
       for i in range(len_SolarPVsInfo):
         # check if this is a "cooperating" solarPV
         if pq_pv_diff[i]>0 and pq_pv_diff[i]<=diffMax:
@@ -1490,7 +1491,6 @@ class CompetingApp(GridAPPSD):
       #print('DECONFLICTOR COOPERATE p_pv_coop: ' + str(self.p_pv_greedy), flush=True)
       #print('DECONFLICTOR COOPERATE q_pv_coop: ' + str(self.q_pv_greedy), flush=True)
       #print('DECONFLICTOR COOPERATE pq_pv_denom: ' + str(pq_pv_denom), flush=True)
-      '''
 
       for mrid in self.SolarPVs:
         idx = self.SolarPVs[mrid]['idx']
@@ -1538,6 +1538,7 @@ class CompetingApp(GridAPPSD):
 
       # GDB 9/2/25: Choose between full cooperation or a ratio based on which
       # of these code blocks is uncommented.
+      '''
       for i in range(len_RegulatorsInfo):
         # check if this is a "cooperating" regulator
         if reg_diff[i]>0 and reg_diff[i]<=diffMax:
@@ -1572,7 +1573,6 @@ class CompetingApp(GridAPPSD):
 
       #print('DECONFLICTOR COOPERATE reg_coop: ' + str(self.reg_greedy), flush=True)
       #print('DECONFLICTOR COOPERATE reg_denom: ' + str(reg_denom), flush=True)
-      '''
 
       for reg in self.RegulatorsInfo:
         idx = self.RegulatorsInfo[reg]['idx']
