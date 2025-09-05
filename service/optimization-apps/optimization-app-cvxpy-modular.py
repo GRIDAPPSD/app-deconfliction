@@ -1285,8 +1285,8 @@ class CompetingApp(GridAPPSD):
   def processCoopMessage(self, message):
     # choose the desired level of app cooperation by uncommenting one of
     # the coopLevel settings
-    #coopLevel = 4 # high cooperation
-    coopLevel = 3 # medium-high cooperation
+    coopLevel = 4 # high cooperation
+    #coopLevel = 3 # medium-high cooperation
     #coopLevel = 2 # medium-low cooperation
     #coopLevel = 1 # low cooperation
 

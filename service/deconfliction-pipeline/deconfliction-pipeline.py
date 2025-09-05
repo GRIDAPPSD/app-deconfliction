@@ -2383,14 +2383,14 @@ class DeconflictionPipeline(GridAPPSD):
     # may impact scalability
 
     # 1) Drive minimum cooperation:
-    #self.coopMessagesThreshold = 5
-    #self.conflictPercentThreshold = 0.5
-    #self.conflictValueThreshold = 0.20
+    self.coopMessagesThreshold = 5
+    self.conflictPercentThreshold = 0.5
+    self.conflictValueThreshold = 0.20
 
     # 2) Drive mid-level cooperation:
-    self.coopMessagesThreshold = 8
-    self.conflictPercentThreshold = 0.3
-    self.conflictValueThreshold = 0.15
+    #self.coopMessagesThreshold = 8
+    #self.conflictPercentThreshold = 0.3
+    #self.conflictValueThreshold = 0.15
 
     # 3) Drive maximum cooperation:
     #self.coopMessagesThreshold = 10
