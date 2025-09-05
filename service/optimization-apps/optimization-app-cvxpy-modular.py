@@ -1116,16 +1116,10 @@ class CompetingApp(GridAPPSD):
       self.coopPhase += 1
       '''
 
-
-  def messageListenerProcess(self, simulation_id):
+  def cooperationHandlerProcess(self, simulation_id):
     # authenticate with GridAPPS-D Platform
-    gapps = GridAPPSD(simulation_id)
-    assert gapps.connected
-
-    out_id = gapps.subscribe(simulation_output_topic(simulation_id), self)
-    log_id = gapps.subscribe(simulation_log_topic(simulation_id), self)
-    coop_id = gapps.subscribe(service_output_topic('deconfliction.cooperation',
-                              simulation_id), self)
+    self.gapps = GridAPPSD(simulation_id)
+    assert self.gapps.connected
 
     # GDB 9/3/25: coopPhase keeps track of what cooperation phase is the
     # one currently being processed in order to determine when to discard
@@ -1135,6 +1129,70 @@ class CompetingApp(GridAPPSD):
     # coopCounter allows diminishing cooperation with each succeeding
     # cooperation message solicitation within a phase
     self.coopCounter = 0
+
+    while True:
+      while self.coopQueue.qsize() == 0:
+        # GDB 9/2/25: Warning: increasing the sleep duration above 0.1 such as
+        # 0.5 can lead to bad things. With two processes sleeping on both ends
+        # (apps and deconfliction pipeline) that's 4 sleep statements that are
+        # part of processing messages leading to a potential 2 second total
+        # delay (with 0.5 sleeps), which is horrible for cooperation messages.
+        sleep(0.1)
+
+      lastCoopMessage = None
+
+      print('Cooperation queue check start', flush=True)
+      while self.coopQueue.qsize() > 0:
+        message = self.coopQueue.get()
+
+        if 'processStatus' in message: # simulation log message
+          status = message['processStatus']
+          print('Simulation ' + status + ' message received', flush=True)
+
+          return # done with all processing
+
+        else:
+          print('Cooperation message on queue with phase: ' +
+                str(message['coop_phase']), flush=True)
+          lastCoopMessage = message
+      print('Cooperation queue check finish', flush=True)
+
+      if lastCoopMessage != None:
+        if self.includeBatteriesFlag or self.includeRegulatorsFlag or \
+           self.includeSolarPVsFlag:
+          checkPhase = lastCoopMessage['coop_phase']
+
+          if checkPhase >= self.coopPhase:
+            if checkPhase == self.coopPhase:
+              # comment out incrementing coopCounter to not diminish
+              # cooperation for each new solicitation during a phase
+              self.coopCounter += 1
+            else:
+              self.coopPhase = checkPhase
+              self.coopCounter = 0
+
+            print('Processing Cooperation message with phase: ' +
+                  str(checkPhase), flush=True)
+            # respond to cooperation message
+            self.processCoopMessage(lastCoopMessage)
+
+          else:
+            print('Discarding Cooperation message with stale phase: ' +
+                  str(checkPhase), flush=True)
+
+
+  def messageListenerProcess(self, simulation_id):
+    # authenticate with GridAPPS-D Platform
+    gapps = GridAPPSD(simulation_id)
+    assert gapps.connected
+
+    out_id = gapps.subscribe(simulation_output_topic(simulation_id),
+                             self.OnSimOutputMessage)
+    log_id = gapps.subscribe(simulation_log_topic(simulation_id),
+                             self.OnSimLogMessage)
+    coop_id = gapps.subscribe(service_output_topic(
+                              'deconfliction.cooperation', simulation_id),
+                              self.OnCoopMessage)
 
     self.keepLoopingFlag = True
 
@@ -1151,61 +1209,48 @@ class CompetingApp(GridAPPSD):
     gapps.unsubscribe(coop_id)
 
 
-  def on_message(self, header, message):
+  def OnSimOutputMessage(self, header, message):
     #print('header: ' + str(header), flush=True)
     #print('message: ' + str(message), flush=True)
     if not self.keepLoopingFlag:
       return
 
-    if 'processStatus' in message: # simulation log message
-      status = message['processStatus']
-      if status=='COMPLETE' or status=='CLOSED':
-        self.keepLoopingFlag = False
-        self.messageQueue.put(message)
+    # if it's been optItervalSec since last optimization:
+    ts_unix = int(message['message']['timestamp'])
 
-    elif 'message' in message: # simulation output message
-      # if it's been optItervalSec since last optimization:
-      ts_unix = int(message['message']['timestamp'])
+    if self.realtimeFlag:
+      # If doing real-time simulation must subtract 5 off timestamp to make it
+      # evenly divisble by multiples of the 3 second GridLAB-D time interval
+      if (ts_unix-5) % self.optIntervalSec == 0:
+        self.simQueue.put(message['message'])
+    else:
+      # If doing non-real-time simulation remove the 5 second offset because
+      # GridLAB-D outputs at even 60 second intervals
+      if ts_unix % self.optIntervalSec == 0:
+        self.simQueue.put(message['message'])
 
-      # If doing real-time simulation must subtract 5 off timestamp to make
-      # it evenly divisble by multiples of the 3 second GridLAB-D time
-      # interval
-      if self.realtimeFlag:
-        if (ts_unix-5) % self.optIntervalSec == 0:
-          self.messageQueue.put(message['message'])
 
-      else:
-        # If doing non-real-time simulation remove the 5 second offset
-        # because GridLAB-D outputs at 60 second intervals
-        if ts_unix % self.optIntervalSec == 0:
-          self.messageQueue.put(message['message'])
+  def OnSimLogMessage(self, header, message):
+    #print('header: ' + str(header), flush=True)
+    #print('message: ' + str(message), flush=True)
+    if not self.keepLoopingFlag:
+      return
 
-    else: # cooperation message
-      # GDB 9/4/25: was putting cooperation messages on the queue for main
-      # process handling, but now they are handled in the listener process
-      '''
-      self.messageQueue.put(message)
-      '''
-      if self.includeBatteriesFlag or self.includeRegulatorsFlag or \
-         self.includeSolarPVsFlag:
-        checkPhase = message['coop_phase']
+    status = message['processStatus']
+    if status=='COMPLETE' or status=='CLOSED':
+      self.keepLoopingFlag = False
+      # both simulation and cooperation queues need this message
+      self.simQueue.put(message)
+      self.coopQueue.put(message)
 
-        if checkPhase >= self.coopPhase:
-          if checkPhase == self.coopPhase:
-            # comment out incrementing coopCounter to not diminish cooperation
-            self.coopCounter += 1
-          else:
-            self.coopPhase = checkPhase
-            self.coopCounter = 0
 
-          print('Processing Cooperation message with phase: ' +
-                str(checkPhase), flush=True)
-          # respond to cooperation message
-          self.processCoopMessage(message)
+  def OnCoopMessage(self, header, message):
+    #print('header: ' + str(header), flush=True)
+    #print('message: ' + str(message), flush=True)
+    if not self.keepLoopingFlag:
+      return
 
-        else:
-          print('Discarding Cooperation message with stale phase: ' +
-                str(checkPhase), flush=True)
+    self.coopQueue.put(message)
 
 
   def pol2cart(self, mag, angle_deg):
@@ -1597,7 +1642,6 @@ class CompetingApp(GridAPPSD):
 
 
   def __init__(self, opt_type, feeder_mrid, simulation_id, interval):
-
     if opt_type.startswith('r') or opt_type.startswith('R'):
       self.opt_type = 'resilience'
     elif opt_type.startswith('m') or opt_type.startswith('M'):
@@ -1642,7 +1686,15 @@ class CompetingApp(GridAPPSD):
 
     # GDB 8/27/25: Magic IPC Queue class for sharing ActiveMQ messages
     # between different processes
-    self.messageQueue = Queue()
+    self.simQueue = Queue()
+    self.coopQueue = Queue()
+
+    # Subscribe to simulation and cooperation messages in new process
+    # in order to handle messages in a timely fashion outside of the
+    # processes that perform long-running numerical optimizations.
+    messageListener = Process(target=self.messageListenerProcess,
+                              args=(simulation_id,))
+    messageListener.start()
 
     self.gapps = GridAPPSD(simulation_id)
     assert self.gapps.connected
@@ -1725,15 +1777,12 @@ class CompetingApp(GridAPPSD):
     # create DifferenceBuilder once and reuse it throughout the simulation
     self.difference_builder = DifferenceBuilder(simulation_id)
 
-    # Subscribe to simulation and cooperation messages in new process
-    # in order to handle messages in a timely fashion outside of the main
-    # process that performs long-running numerical optimizations.
-    # Cooperation messages are completely handled inside this messageListener
-    # process so need to have everything that code needs defined before
-    # creating this process such as the device info dictionaries.
-    messageListener = Process(target=self.messageListenerProcess,
-                              args=(simulation_id,))
-    messageListener.start()
+    # Cooperation is handled in a third process so need to have everything
+    # that code needs defined before creating this process such as the
+    # device info dictionaries.
+    cooperationHandler = Process(target=self.cooperationHandlerProcess,
+                                 args=(simulation_id,))
+    cooperationHandler.start()
 
     self.EnergySource = AppUtil.getEnergySource(sparql_mgr)
 
@@ -1952,31 +2001,11 @@ class CompetingApp(GridAPPSD):
                           self.includeVoltagesFlag, self.includeBatteriesFlag,
                           self.includeRegulatorsFlag, self.includeSolarPVsPFlag)
 
-    print('\nInitialized modularized ' + opt_type +
-          ' CVXPY optimization competing app, waiting for messages...\n',
-          flush=True)
-
-    # GDB 9/4/25: these are now defined in the listener process since that's
-    # where cooperation messages are handled
-    '''
-    # GDB 9/3/25: coopPhase keeps track of what cooperation phase is the
-    # one currently being processed in order to determine when to discard
-    # "stale" cooperation messages associated with an earlier phase
-    self.coopPhase = 0
-
-    # coopCounter allows diminishing cooperation with each succeeding
-    # cooperation message solicitation within a phase
-    self.coopCounter = 0
-    '''
-
-    # diagnostic for tracking time between optimizations
-    self.lastTime = datetime.now()
-
     # start by discarding any messages that arrived during initialization
     # as we don't want to process anything that's stale
-    print('Queue check post-initialization start', flush=True)
-    while self.messageQueue.qsize() > 0:
-      message = self.messageQueue.get()
+    print('Simulation queue check after initialization start', flush=True)
+    while self.simQueue.qsize() > 0:
+      message = self.simQueue.get()
 
       if 'processStatus' in message: # simulation log message
         # this would be weird to get this early, but it could happen
@@ -1985,22 +2014,26 @@ class CompetingApp(GridAPPSD):
 
         # wait for messageListener process to finish
         messageListener.join()
+
+        # wait for coperationHandler process to finish
+        cooperationHandler.join()
+
         return # done with all processing
 
       if 'measurements' in message: # simulation output message
         print('Simulation measurements message on queue discarded with ' +
               'timestamp: ' + str(message['timestamp']), flush=True)
+    print('Simulation queue check after initialization finish\n', flush=True)
 
-      # GDB 9/24/25: no longer handling cooperation messages in main process
-      '''
-      else: # cooperation message
-        print('Cooperation message on queue discarded with phase: ' +
-              str(message['coop_phase']), flush=True)
-      '''
-    print('Queue check post-initialization finish\n', flush=True)
+    print('Initialized modularized ' + opt_type +
+          ' CVXPY optimization competing app, waiting for messages...\n',
+          flush=True)
+
+    # diagnostic for tracking time between optimizations
+    self.lastTime = datetime.now()
 
     while True:
-      while self.messageQueue.qsize() == 0:
+      while self.simQueue.qsize() == 0:
         # GDB 9/2/25: Warning: increasing the sleep duration above 0.1 such as
         # 0.5 can lead to bad things. With two processes sleeping on both ends
         # (apps and deconfliction pipeline) that's 4 sleep statements that are
@@ -2009,14 +2042,10 @@ class CompetingApp(GridAPPSD):
         sleep(0.1)
 
       lastMeasMessage = None
-      # GDB 9/24/25: no longer handling cooperation messages in main process
-      '''
-      lastCoopMessage = None
-      '''
 
-      print('Queue check start', flush=True)
-      while self.messageQueue.qsize() > 0:
-        message = self.messageQueue.get()
+      print('Simulation queue check start', flush=True)
+      while self.simQueue.qsize() > 0:
+        message = self.simQueue.get()
 
         if 'processStatus' in message: # simulation log message
           status = message['processStatus']
@@ -2024,60 +2053,21 @@ class CompetingApp(GridAPPSD):
 
           # wait for messageListener process to finish
           messageListener.join()
+
+          # wait for cooperationHandler process to finish
+          cooperationHandler.join()
+
           return # done with all processing
 
         if 'measurements' in message: # simulation output message
           print('Simulation measurements message on queue with timestamp: ' +
                 str(message['timestamp']), flush=True)
           lastMeasMessage = message
-
-        # GDB 9/24/25: no longer handling cooperation messages in main process
-        '''
-        else: # cooperation message
-          print('Cooperation message on queue with phase: ' +
-                str(message['coop_phase']), flush=True)
-          lastCoopMessage = message
-        '''
-      print('Queue check finish', flush=True)
-
-      # GDB 9/1/25: Uncomment this if cooperation uses measurement values
-      # when doing an optimization
-      '''
-      if lastMeasMessage!=None and lastCoopMessage!=None:
-        # process new measurements
-        # note this is really only needed if an optimization is done
-        # to respond to cooperation message
-        self.processMeasMessage(lastMeasMessage['measurements'])
-      '''
-
-      # GDB 9/24/25: no longer handling cooperation messages in main process
-      '''
-      if lastCoopMessage != None:
-        if self.includeBatteriesFlag or self.includeRegulatorsFlag or \
-           self.includeSolarPVsFlag:
-          checkPhase = lastCoopMessage['coop_phase']
-
-          if checkPhase >= self.coopPhase:
-            if checkPhase == self.coopPhase:
-              # comment out incrementing coopCounter to not diminish cooperation
-              self.coopCounter += 1
-            else:
-              self.coopPhase = checkPhase
-              self.coopCounter = 0
-
-            print('Processing Cooperation message with phase: ' +
-                  str(checkPhase), flush=True)
-            # respond to cooperation message
-            self.processCoopMessage(lastCoopMessage)
-
-          else:
-            print('Discarding Cooperation message with stale phase: ' +
-                  str(checkPhase), flush=True)
-      '''
+      print('Simulation queue check finish', flush=True)
 
       if lastMeasMessage != None:
-        global ts_time
         ts_unix = int(lastMeasMessage['timestamp'])
+        global ts_time
         ts_time = datetime.utcfromtimestamp(ts_unix).time()
 
         print('\nSimulation timestamp for optimization: ' + str(ts_unix) +
