@@ -99,18 +99,29 @@ class CompetingApp(GridAPPSD):
 
   # start of message listener process methods
 
+  # GDB 9/5/25 NOTE: I have been on the struggle bus for days regarding
+  # cooperation message responses not being properly synchronized with
+  # requests leading to cooperation being cutoff by new measurement setpoints.
+  # This is why I put cooperation into a separate process than the main
+  # process that does optimizations. But, it still was happening and my most
+  # recent attempt to eliminate it was making sure there are no print
+  # calls from either the message listener process or the coooperation handler
+  # process just to make sure these prints weren't blocking and holding up
+  # cooperation replies. These prints have double pound signs before them
+  # instead of single pound signs for regular comments.
+
   def messageListenerProcess(self, simulation_id):
     # authenticate with GridAPPS-D Platform
-    gapps = GridAPPSD(simulation_id)
-    assert gapps.connected
+    self.msg_gapps = GridAPPSD(simulation_id)
+    assert self.msg_gapps.connected
 
-    out_id = gapps.subscribe(simulation_output_topic(simulation_id),
-                             self.OnSimOutputMessage)
-    log_id = gapps.subscribe(simulation_log_topic(simulation_id),
-                             self.OnSimLogMessage)
-    coop_id = gapps.subscribe(service_output_topic(
-                              'deconfliction.cooperation', simulation_id),
-                              self.OnCoopMessage)
+    out_id = self.msg_gapps.subscribe(simulation_output_topic(simulation_id),
+                                      self.OnSimOutputMessage)
+    log_id = self.msg_gapps.subscribe(simulation_log_topic(simulation_id),
+                                      self.OnSimLogMessage)
+    coop_id = self.msg_gapps.subscribe(service_output_topic(
+                                       'deconfliction.cooperation',
+                                       simulation_id), self.OnCoopMessage)
 
     self.keepLoopingFlag = True
 
@@ -122,9 +133,9 @@ class CompetingApp(GridAPPSD):
       # delay (with 0.5 sleeps), which is horrible for cooperation messages.
       sleep(0.1)
 
-    gapps.unsubscribe(out_id)
-    gapps.unsubscribe(log_id)
-    gapps.unsubscribe(coop_id)
+    self.msg_gapps.unsubscribe(out_id)
+    self.msg_gapps.unsubscribe(log_id)
+    self.msg_gapps.unsubscribe(coop_id)
 
 
   def OnSimOutputMessage(self, header, message):
@@ -176,8 +187,8 @@ class CompetingApp(GridAPPSD):
 
   def cooperationHandlerProcess(self, simulation_id):
     # authenticate with GridAPPS-D Platform
-    self.gapps = GridAPPSD(simulation_id)
-    assert self.gapps.connected
+    self.coop_gapps = GridAPPSD(simulation_id)
+    assert self.coop_gapps.connected
 
     # GDB 9/3/25: coopPhase keeps track of what cooperation phase is the
     # one currently being processed in order to determine when to discard
@@ -199,21 +210,21 @@ class CompetingApp(GridAPPSD):
 
       lastCoopMessage = None
 
-      print('Cooperation queue check start', flush=True)
+      #print('Cooperation queue check start', flush=True)
       while self.coopQueue.qsize() > 0:
         message = self.coopQueue.get()
 
         if 'processStatus' in message: # simulation log message
           status = message['processStatus']
-          print('Simulation ' + status + ' message received', flush=True)
+          ##print('Simulation ' + status + ' message received', flush=True)
 
           return # done with all processing
 
         else:
-          print('Cooperation message on queue with phase: ' +
-                str(message['coop_phase']), flush=True)
+          ##print('Cooperation message on queue with phase: ' +
+          ##      str(message['coop_phase']), flush=True)
           lastCoopMessage = message
-      print('Cooperation queue check finish', flush=True)
+      ##print('Cooperation queue check finish', flush=True)
 
       if lastCoopMessage != None:
         if self.includeBatteriesFlag or self.includeRegulatorsFlag or \
@@ -229,14 +240,15 @@ class CompetingApp(GridAPPSD):
               self.coopPhase = checkPhase
               self.coopCounter = 0
 
-            print('Processing Cooperation message with phase: ' +
-                  str(checkPhase), flush=True)
+            ##print('Processing Cooperation message with phase: ' +
+            ##      str(checkPhase), flush=True)
             # respond to cooperation message
             self.processCoopMessage(lastCoopMessage)
 
           else:
-            print('Discarding Cooperation message with stale phase: ' +
-                  str(checkPhase), flush=True)
+            ##print('Discarding Cooperation message with stale phase: ' +
+            ##      str(checkPhase), flush=True)
+            pass
 
 
   def processCoopMessage(self, message):
@@ -545,11 +557,11 @@ class CompetingApp(GridAPPSD):
     dispatch_message = self.difference_builder.get_message()
     dispatch_message['app_name'] = self.app_name
     dispatch_message['coop_phase'] = self.coopPhase
-    print('Sending Cooperation DifferenceBuilder message with phase: ' +
-          str(self.coopPhase), flush=True)
+    ##print('Sending Cooperation DifferenceBuilder message with phase: ' +
+    ##      str(self.coopPhase), flush=True)
     #print('Sending Cooperation DifferenceBuilder message: ' +
     #      json.dumps(dispatch_message), flush=True)
-    self.gapps.send(self.coop_publish_topic, json.dumps(dispatch_message))
+    self.coop_gapps.send(self.coop_publish_topic, json.dumps(dispatch_message))
     self.difference_builder.clear()
 
   # end of cooperation handler process methods
@@ -1560,7 +1572,7 @@ class CompetingApp(GridAPPSD):
 
       # these can go either to the simulation or the deconfliction pipeline
       # based on the deconflictionAsServiceFlag value
-      self.gapps.send(self.sim_publish_topic, json.dumps(dispatch_message))
+      self.sim_gapps.send(self.sim_publish_topic, json.dumps(dispatch_message))
 
       self.difference_builder.clear()
 
@@ -1694,11 +1706,11 @@ class CompetingApp(GridAPPSD):
                               args=(simulation_id,))
     messageListener.start()
 
-    self.gapps = GridAPPSD(simulation_id)
-    assert self.gapps.connected
+    self.sim_gapps = GridAPPSD(simulation_id)
+    assert self.sim_gapps.connected
 
     SPARQLManager = getattr(importlib.import_module('sparql'), 'SPARQLManager')
-    sparql_mgr = SPARQLManager(self.gapps, feeder_mrid, simulation_id)
+    sparql_mgr = SPARQLManager(self.sim_gapps, feeder_mrid, simulation_id)
 
     self.EnergyConsumers = AppUtil.getEnergyConsumers(sparql_mgr)
     #print('Starting EnergyConsumers: ' + json.dumps(self.EnergyConsumers, indent=2), flush=True)
