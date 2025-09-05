@@ -124,6 +124,91 @@ from sparql import SPARQLManager
 
 class DeconflictionPipeline(GridAPPSD):
 
+  # start of message listener process methods
+
+  def messageListenerProcess(self, simulation_id):
+    # authenticate with GridAPPS-D Platform
+    gapps = GridAPPSD(simulation_id)
+    assert gapps.connected
+
+    # subscribe to simulation log and output messages
+    out_id = gapps.subscribe(simulation_output_topic(simulation_id),
+                             self.OnSimOutputMessage)
+    log_id = gapps.subscribe(simulation_log_topic(simulation_id),
+                             self.OnSimLogMessage)
+
+    if deconflictionAsServiceFlag:
+      meas_id = gapps.subscribe(simulation_input_topic(simulation_id),
+                                self.OnMeasSetpointsMessage)
+    else:
+      meas_id =gapps.subscribe(service_input_topic('deconfliction.measurements',
+                               simulation_id), self.OnMeasSetpointsMessage)
+
+    coop_id = gapps.subscribe(service_input_topic('deconfliction.cooperation',
+                              simulation_id), self.OnCoopSetpointsMessage)
+
+    self.keepLoopingFlag = True
+
+    while self.keepLoopingFlag:
+      # GDB 9/2/25: Warning: increasing the sleep duration above 0.1 such as
+      # 0.5 can lead to bad things. With two processes sleeping on both ends
+      # (apps and deconfliction pipeline) that's 4 sleep statements that are
+      # part of processing messages leading to a potential 2 second total
+      # delay (with 0.5 sleeps), which is horrible for cooperation messages.
+      sleep(0.1)
+
+    gapps.unsubscribe(out_id)
+    gapps.unsubscribe(log_id)
+    gapps.unsubscribe(meas_id)
+    gapps.unsubscribe(coop_id)
+
+
+  def OnSimOutputMessage(self, header, message):
+    #prlog('OnSimOutputMessage--received message: ' + str(message))
+    if not self.keepLoopingFlag:
+      return
+
+    if self.realtimeFlag:
+      self.messageQueue.put((None, None, None, message['message']))
+    else:
+      ts_unix = int(message['message']['timestamp'])
+      # only add every 5th measurement message to the queue to
+      # allow sufficient time for cooperation
+      if ts_unix % 300 == 0:
+        self.messageQueue.put((None, None, None, message['message']))
+
+
+  def OnSimLogMessage(self, header, message):
+    #prlog('OnSimLogMessage--received message: ' + str(message))
+    if not self.keepLoopingFlag:
+      return
+
+    status = message['processStatus']
+    if status=='COMPLETE' or status=='CLOSED':
+      self.keepLoopingFlag = False
+      self.messageQueue.put((None, None, None, message))
+
+
+  def OnMeasSetpointsMessage(self, header, message):
+    if self.printAllMessagesFlag:
+      prlog('OnMeasSetpointsMessage--received message: ' + str(message))
+      prlog('OnMeasSetpointsMessage--received header: ' + str(header))
+
+    self.messageQueue.put((message['app_name'], True, None,
+                           message['input']['message']))
+
+
+  def OnCoopSetpointsMessage(self, header, message):
+    if self.printAllMessagesFlag:
+      prlog('OnCoopSetpointsMessage--received message: ' + str(message))
+      prlog('OnCoopSetpointsMessage--received header: ' + str(header))
+
+    self.messageQueue.put((message['app_name'], False, message['coop_phase'],
+                           message['input']['message']))
+
+  # end of message listener process methods
+
+
   def SetpointProcessor(self, app_name, timestamp, set_points, meas_msg_flag,
                         printAllConflictsResolutionsFlag=False):
     # Update ConflictMatrix with newly provided set-points
@@ -1389,65 +1474,6 @@ class DeconflictionPipeline(GridAPPSD):
     return diffCount
 
 
-  def messageListenerProcess(self, simulation_id):
-    # authenticate with GridAPPS-D Platform
-    gapps = GridAPPSD(simulation_id)
-    assert gapps.connected
-
-    # subscribe to simulation log and output messages
-    out_id = gapps.subscribe(simulation_output_topic(simulation_id),
-                             self.OnSimMessage)
-    log_id = gapps.subscribe(simulation_log_topic(simulation_id),
-                             self.OnSimMessage)
-
-    if deconflictionAsServiceFlag:
-      meas_id = gapps.subscribe(simulation_input_topic(simulation_id),
-                                self.OnMeasSetpointsMessage)
-    else:
-      meas_id =gapps.subscribe(service_input_topic('deconfliction.measurements',
-                               simulation_id), self.OnMeasSetpointsMessage)
-
-    coop_id = gapps.subscribe(service_input_topic('deconfliction.cooperation',
-                              simulation_id), self.OnCoopSetpointsMessage)
-
-    self.keepLoopingFlag = True
-
-    while self.keepLoopingFlag:
-      # GDB 9/2/25: Warning: increasing the sleep duration above 0.1 such as
-      # 0.5 can lead to bad things. With two processes sleeping on both ends
-      # (apps and deconfliction pipeline) that's 4 sleep statements that are
-      # part of processing messages leading to a potential 2 second total
-      # delay (with 0.5 sleeps), which is horrible for cooperation messages.
-      sleep(0.1)
-
-    gapps.unsubscribe(out_id)
-    gapps.unsubscribe(log_id)
-    gapps.unsubscribe(meas_id)
-    gapps.unsubscribe(coop_id)
-
-
-  def OnSimMessage(self, header, message):
-    #prlog('OnSimMessage--received message: ' + str(message))
-    if not self.keepLoopingFlag:
-      return
-
-    if 'processStatus' in message:
-      status = message['processStatus']
-      if status=='COMPLETE' or status=='CLOSED':
-        self.keepLoopingFlag = False
-        self.messageQueue.put((None, None, None, message))
-
-    else:
-      if self.realtimeFlag:
-        self.messageQueue.put((None, None, None, message['message']))
-      else:
-        ts_unix = int(message['message']['timestamp'])
-        # only add every 5th measurement message to the queue to
-        # allow sufficient time for cooperation
-        if ts_unix % 300 == 0:
-          self.messageQueue.put((None, None, None, message['message']))
-
-
   def pol2cart(self, mag, angle_deg):
         # Convert degrees to radians. GridAPPS-D spits angle in degrees
         angle_rad =  math.radians(angle_deg)
@@ -1633,24 +1659,6 @@ class DeconflictionPipeline(GridAPPSD):
         prlog('~TEST simulation updated PQ_pv_inv for device name: ' +
               self.testDeviceName + ', timestamp: ' + str(timestamp)+
               ', PQ_pv_inv: ' + str(self.SolarPVs[device]['PQ_pv_inv']))
-
-
-  def OnMeasSetpointsMessage(self, header, message):
-    if self.printAllMessagesFlag:
-      prlog('OnMeasSetpointsMessage--received message: ' + str(message))
-      prlog('OnMeasSetpointsMessage--received header: ' + str(header))
-
-    self.messageQueue.put((message['app_name'], True, None,
-                           message['input']['message']))
-
-
-  def OnCoopSetpointsMessage(self, header, message):
-    if self.printAllMessagesFlag:
-      prlog('OnCoopSetpointsMessage--received message: ' + str(message))
-      prlog('OnCoopSetpointsMessage--received header: ' + str(header))
-
-    self.messageQueue.put((message['app_name'], False, message['coop_phase'],
-                           message['input']['message']))
 
 
   def ProcessSetpointsMessage(self, message, timestamp, app_name, meas_msg_flag,
