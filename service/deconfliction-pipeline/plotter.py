@@ -63,6 +63,10 @@ def to_datetime(time):
 
 def make_cm_plot(cm_t_plot, cm_start_plot, cm_rules_plot, cm_coop_plot):
   plt.title('Conflict Metric', pad=15.0)
+
+  # GDB 9/5/25: make plot wider than default to uncompress data
+  plt.figure().set_size_inches(10, 5)
+
   #ax = plt.figure().gca()
   #ax.xaxis.set_major_formatter(md.DateFormatter('%H:%M'))
   #plt.xlim([AppUtil.to_datetime(1), AppUtil.to_datetime(96)])
