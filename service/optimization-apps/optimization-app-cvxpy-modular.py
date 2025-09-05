@@ -1283,6 +1283,19 @@ class CompetingApp(GridAPPSD):
 
 
   def processCoopMessage(self, message):
+    # choose the desired level of app cooperation by uncommenting one of
+    # the coopLevel settings
+    #coopLevel = 4 # high cooperation
+    coopLevel = 3 # medium-high cooperation
+    #coopLevel = 2 # medium-low cooperation
+    #coopLevel = 1 # low cooperation
+
+    coopRatioDenom = 2.0 # for coopLevel 3
+    if coopLevel == 1:
+      coopRatioDenom = 1.0
+    elif coopLevel == 2:
+      coopRatioDenom = 1.5
+
     # message consists of a target ResolutionVector that is a dictionary
     # with device mrid keys and target set-point values
     targetResolutionVector = message['targetResolutionVector']
@@ -1363,43 +1376,40 @@ class CompetingApp(GridAPPSD):
       #else:
         #print('DECONFLICTOR COOPERATE batteries coopCount: ALL, diffMax: ' + str(diffMax), flush=True)
 
-      # GDB 9/2/25: Choose between full cooperation or a ratio based on which
-      # of these code blocks is uncommented.
-      '''
-      for i in range(len_BatteriesInfo):
-        # check if this is a "cooperating" battery
-        if p_batt_diff[i]>0 and p_batt_diff[i]<=diffMax:
-          # full cooperation by setting the greedy value to proposed value
-          self.p_batt_greedy[i] = self.p_batt_proposed[i]
+      if coopLevel == 4:
+        for i in range(len_BatteriesInfo):
+          # check if this is a "cooperating" battery
+          if p_batt_diff[i]>0 and p_batt_diff[i]<=diffMax:
+            # full cooperation by setting the greedy value to proposed value
+            self.p_batt_greedy[i] = self.p_batt_proposed[i]
 
-      #print('DECONFLICTOR COOPERATE p_batt_coop: ' + str(self.p_batt_greedy), flush=True)
-      '''
-      p_batt_denom = [] # just for diagnostic logging
-      for i in range(len_BatteriesInfo):
-        # check if this is a "cooperating" battery
-        if p_batt_diff[i]>0 and p_batt_diff[i]<=diffMax:
-          # full cooperation by setting the greedy value to proposed value
-          #self.p_batt_greedy[i] = self.p_batt_proposed[i]
-          # adjust cooperation level based on difference
-          # find which entry this p_batt_diff is within p_batt_sort to
-          # determine how much to cooperate. This is tricky code in that
-          # a loop iterator varible is referenced after the loop.
-          for ic in range(len(p_batt_sort)):
-            if p_batt_diff[i] == p_batt_sort[ic]:
-              break
-          fcoop = float(ic/2.0) + 1.0 # more cooperation
-          #fcoop = float(ic/1.5) + 1.0 # in-between cooperation
-          #fcoop = float(ic/1.0) + 1.0 # less cooperation
+        #print('DECONFLICTOR COOPERATE p_batt_coop: ' + str(self.p_batt_greedy), flush=True)
 
-          ratio = (self.p_batt_proposed[i] - self.p_batt_greedy[i])/ \
-                  float(fcoop + self.coopCounter)
-          self.p_batt_greedy[i] += ratio
-          p_batt_denom.append((fcoop, self.coopCounter))
-        else:
-          p_batt_denom.append(None)
+      else:
+        p_batt_denom = [] # just for diagnostic logging
+        for i in range(len_BatteriesInfo):
+          # check if this is a "cooperating" battery
+          if p_batt_diff[i]>0 and p_batt_diff[i]<=diffMax:
+            # full cooperation by setting the greedy value to proposed value
+            #self.p_batt_greedy[i] = self.p_batt_proposed[i]
+            # adjust cooperation level based on difference
+            # find which entry this p_batt_diff is within p_batt_sort to
+            # determine how much to cooperate. This is tricky code in that
+            # a loop iterator varible is referenced after the loop.
+            for ic in range(len(p_batt_sort)):
+              if p_batt_diff[i] == p_batt_sort[ic]:
+                break
+            fcoop = float(ic/coopRatioDenom) + 1.0
 
-      #print('DECONFLICTOR COOPERATE p_batt_coop: ' + str(self.p_batt_greedy), flush=True)
-      #print('DECONFLICTOR COOPERATE p_batt_denom: ' + str(p_batt_denom), flush=True)
+            ratio = (self.p_batt_proposed[i] - self.p_batt_greedy[i])/ \
+                    float(fcoop + self.coopCounter)
+            self.p_batt_greedy[i] += ratio
+            p_batt_denom.append((fcoop, self.coopCounter))
+          else:
+            p_batt_denom.append(None)
+
+        #print('DECONFLICTOR COOPERATE p_batt_coop: ' + str(self.p_batt_greedy), flush=True)
+        #print('DECONFLICTOR COOPERATE p_batt_denom: ' + str(p_batt_denom), flush=True)
 
       for mrid in self.BatteriesInfo:
         idx = self.BatteriesInfo[mrid]['idx']
@@ -1444,53 +1454,50 @@ class CompetingApp(GridAPPSD):
       #else:
         #print('DECONFLICTOR COOPERATE solarPVs coopCount: ALL, diffMax: ' + str(diffMax), flush=True)
 
-      # GDB 9/2/25: Choose between full cooperation or a ratio based on which
-      # of these code blocks is uncommented.
-      '''
-      for i in range(len_SolarPVsInfo):
-        # check if this is a "cooperating" solarPV
-        if pq_pv_diff[i]>0 and pq_pv_diff[i]<=diffMax:
-          # full cooperation by setting the greedy value to proposed value
-          self.p_pv_greedy[i] = self.pq_pv_proposed[i].real
-          self.q_pv_greedy[i] = self.pq_pv_proposed[i].imag
+      if coopLevel == 4:
+        for i in range(len_SolarPVsInfo):
+          # check if this is a "cooperating" solarPV
+          if pq_pv_diff[i]>0 and pq_pv_diff[i]<=diffMax:
+            # full cooperation by setting the greedy value to proposed value
+            self.p_pv_greedy[i] = self.pq_pv_proposed[i].real
+            self.q_pv_greedy[i] = self.pq_pv_proposed[i].imag
 
-      #print('DECONFLICTOR COOPERATE p_pv_coop: ' + str(self.p_pv_greedy), flush=True)
-      #print('DECONFLICTOR COOPERATE q_pv_coop: ' + str(self.q_pv_greedy), flush=True)
-      '''
-      pq_pv_denom = [] # just for diagnostic logging
-      for i in range(len_SolarPVsInfo):
-        # check if this is a "cooperating" solarPV
-        if pq_pv_diff[i]>0 and pq_pv_diff[i]<=diffMax:
-          # full cooperation by setting the greedy value to proposed value
-          #self.p_pv_greedy[i] = self.pq_pv_proposed[i].real
-          #self.q_pv_greedy[i] = self.pq_pv_proposed[i].imag
-          # adjust cooperation level based on difference
-          # find which entry this p_batt_diff is within p_batt_sort to
-          # determine how much to cooperate. This is tricky code in that
-          # a loop iterator varible is referenced after the loop.
-          for ic in range(len(pq_pv_sort)):
-            if pq_pv_diff[i] == pq_pv_sort[ic]:
-              break
-          fcoop = float(ic/2.0) + 1.0 # more cooperation
-          #fcoop = float(ic/1.5) + 1.0 # in-between cooperation
-          #fcoop = float(ic/1.0) + 1.0 # less cooperation
+        #print('DECONFLICTOR COOPERATE p_pv_coop: ' + str(self.p_pv_greedy), flush=True)
+        #print('DECONFLICTOR COOPERATE q_pv_coop: ' + str(self.q_pv_greedy), flush=True)
 
-          # again, these are complex numbers, but division by a scalar
-          # is done to each of them giving a complex result that is then
-          # added to the original complex number. This is equivalent to
-          # breaking up the work into the real and imag components.
-          ratio = (self.pq_pv_proposed[i] - \
-                   complex(self.p_pv_greedy[i], self.q_pv_greedy[i]))/ \
-                  float(fcoop + self.coopCounter)
-          self.p_pv_greedy[i] += ratio.real
-          self.q_pv_greedy[i] += ratio.imag
-          pq_pv_denom.append((fcoop, self.coopCounter))
-        else:
-          pq_pv_denom.append(None)
+      else:
+        pq_pv_denom = [] # just for diagnostic logging
+        for i in range(len_SolarPVsInfo):
+          # check if this is a "cooperating" solarPV
+          if pq_pv_diff[i]>0 and pq_pv_diff[i]<=diffMax:
+            # full cooperation by setting the greedy value to proposed value
+            #self.p_pv_greedy[i] = self.pq_pv_proposed[i].real
+            #self.q_pv_greedy[i] = self.pq_pv_proposed[i].imag
+            # adjust cooperation level based on difference
+            # find which entry this p_batt_diff is within p_batt_sort to
+            # determine how much to cooperate. This is tricky code in that
+            # a loop iterator varible is referenced after the loop.
+            for ic in range(len(pq_pv_sort)):
+              if pq_pv_diff[i] == pq_pv_sort[ic]:
+                break
+            fcoop = float(ic/coopRatioDenom) + 1.0
 
-      #print('DECONFLICTOR COOPERATE p_pv_coop: ' + str(self.p_pv_greedy), flush=True)
-      #print('DECONFLICTOR COOPERATE q_pv_coop: ' + str(self.q_pv_greedy), flush=True)
-      #print('DECONFLICTOR COOPERATE pq_pv_denom: ' + str(pq_pv_denom), flush=True)
+            # again, these are complex numbers, but division by a scalar
+            # is done to each of them giving a complex result that is then
+            # added to the original complex number. This is equivalent to
+            # breaking up the work into the real and imag components.
+            ratio = (self.pq_pv_proposed[i] - \
+                     complex(self.p_pv_greedy[i], self.q_pv_greedy[i]))/ \
+                    float(fcoop + self.coopCounter)
+            self.p_pv_greedy[i] += ratio.real
+            self.q_pv_greedy[i] += ratio.imag
+            pq_pv_denom.append((fcoop, self.coopCounter))
+          else:
+            pq_pv_denom.append(None)
+
+        #print('DECONFLICTOR COOPERATE p_pv_coop: ' + str(self.p_pv_greedy), flush=True)
+        #print('DECONFLICTOR COOPERATE q_pv_coop: ' + str(self.q_pv_greedy), flush=True)
+        #print('DECONFLICTOR COOPERATE pq_pv_denom: ' + str(pq_pv_denom), flush=True)
 
       for mrid in self.SolarPVs:
         idx = self.SolarPVs[mrid]['idx']
@@ -1536,43 +1543,40 @@ class CompetingApp(GridAPPSD):
       #else:
         #print('DECONFLICTOR COOPERATE regulators coopCount: ALL, diffMax: ' + str(diffMax), flush=True)
 
-      # GDB 9/2/25: Choose between full cooperation or a ratio based on which
-      # of these code blocks is uncommented.
-      '''
-      for i in range(len_RegulatorsInfo):
-        # check if this is a "cooperating" regulator
-        if reg_diff[i]>0 and reg_diff[i]<=diffMax:
-          # full cooperation by setting the greedy value to proposed value
-          self.reg_greedy[i] = self.reg_proposed[i]
+      if coopLevel == 4:
+        for i in range(len_RegulatorsInfo):
+          # check if this is a "cooperating" regulator
+          if reg_diff[i]>0 and reg_diff[i]<=diffMax:
+            # full cooperation by setting the greedy value to proposed value
+            self.reg_greedy[i] = self.reg_proposed[i]
 
-      #print('DECONFLICTOR COOPERATE reg_coop: ' + str(self.reg_greedy), flush=True)
-      '''
-      reg_denom = [] # just for diagnostic logging
-      for i in range(len_RegulatorsInfo):
-        # check if this is a "cooperating" regulator
-        if reg_diff[i]>0 and reg_diff[i]<=diffMax:
-          # full cooperation by setting the greedy value to proposed value
-          #self.reg_greedy[i] = self.reg_proposed[i]
-          # adjust cooperation level based on difference
-          # find which entry this p_batt_diff is within p_batt_sort to
-          # determine how much to cooperate. This is tricky code in that
-          # a loop iterator varible is referenced after the loop.
-          for ic in range(len(reg_sort)):
-            if reg_diff[i] == reg_sort[ic]:
-              break
-          fcoop = float(ic/2.0) + 1.0 # more cooperation
-          #fcoop = float(ic/1.5) + 1.0 # in-between cooperation
-          #fcoop = float(ic/1.0) + 1.0 # less cooperation
+        #print('DECONFLICTOR COOPERATE reg_coop: ' + str(self.reg_greedy), flush=True)
 
-          ratio = int((self.reg_proposed[i] - self.reg_greedy[i])/ \
-                      (fcoop + self.coopCounter))
-          self.reg_greedy[i] += ratio
-          reg_denom.append((fcoop, self.coopCounter))
-        else:
-          reg_denom.append(None)
+      else:
+        reg_denom = [] # just for diagnostic logging
+        for i in range(len_RegulatorsInfo):
+          # check if this is a "cooperating" regulator
+          if reg_diff[i]>0 and reg_diff[i]<=diffMax:
+            # full cooperation by setting the greedy value to proposed value
+            #self.reg_greedy[i] = self.reg_proposed[i]
+            # adjust cooperation level based on difference
+            # find which entry this p_batt_diff is within p_batt_sort to
+            # determine how much to cooperate. This is tricky code in that
+            # a loop iterator varible is referenced after the loop.
+            for ic in range(len(reg_sort)):
+              if reg_diff[i] == reg_sort[ic]:
+                break
+            fcoop = float(ic/coopRatioDenom) + 1.0
 
-      #print('DECONFLICTOR COOPERATE reg_coop: ' + str(self.reg_greedy), flush=True)
-      #print('DECONFLICTOR COOPERATE reg_denom: ' + str(reg_denom), flush=True)
+            ratio = int((self.reg_proposed[i] - self.reg_greedy[i])/ \
+                        (fcoop + self.coopCounter))
+            self.reg_greedy[i] += ratio
+            reg_denom.append((fcoop, self.coopCounter))
+          else:
+            reg_denom.append(None)
+
+        #print('DECONFLICTOR COOPERATE reg_coop: ' + str(self.reg_greedy), flush=True)
+        #print('DECONFLICTOR COOPERATE reg_denom: ' + str(reg_denom), flush=True)
 
       for reg in self.RegulatorsInfo:
         idx = self.RegulatorsInfo[reg]['idx']
