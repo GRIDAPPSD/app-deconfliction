@@ -2361,8 +2361,8 @@ class DeconflictionPipeline(GridAPPSD):
     else:
       # if attempting non-real-time, something like 1800 is reasonable so
       # apps can complete optimizations safely within that interval
-      optIntervalSec = 1800
-      #optIntervalSec = 3600
+      optIntervalSec = 1800 # 30 minutes
+      #optIntervalSec = 3600 # 1 hour
       simLagSec = 600
 
     if interval!=None and interval!='scalability':
@@ -2377,19 +2377,27 @@ class DeconflictionPipeline(GridAPPSD):
     self.TargetResolutionVector = {}
 
     # thresholds for concluding cooperation phases
-    # 10 messages is good for letting cooperation drive lower conflict metric
-    # values, but also makes for more cooperation iteration that reduces
-    # scalability
+    # choose one of these groups of settings depending on  the desired
+    # level of cooperation
+    # note that driving more cooperation means more time needed, which
+    # may impact scalability
+
+    # 1) Drive minimum cooperation:
+    #self.coopMessagesThreshold = 5
+    #self.conflictPercentThreshold = 0.5
+    #self.conflictValueThreshold = 0.20
+
+    # 2) Drive mid-level cooperation:
+    self.coopMessagesThreshold = 8
+    self.conflictPercentThreshold = 0.3
+    self.conflictValueThreshold = 0.15
+
+    # 3) Drive maximum cooperation:
     #self.coopMessagesThreshold = 10
-    self.coopMessagesThreshold = 5
-    self.conflictValueThreshold = 0.2
-    # % threshold of 0.5 is a good compromise between good conflict metric
-    # values and the number of cooperation responses
-    self.conflictPercentThreshold = 0.5
-    # % threshold of 0.2 gives lower conflict metric values from more
-    # cooperation responses, which can make for better plots
     #self.conflictPercentThreshold = 0.2
-    # allows multiple cooperation responses to be required with a value > 1
+    #self.conflictValueThreshold = 0.10
+
+    # multiple cooperation responses are required with a value > 1
     self.coopMinResponses = 2
     #self.coopMinResponses = 1
 
