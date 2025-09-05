@@ -97,6 +97,463 @@ import MethodUtil
 
 class CompetingApp(GridAPPSD):
 
+  # start of message listener process methods
+
+  def messageListenerProcess(self, simulation_id):
+    # authenticate with GridAPPS-D Platform
+    gapps = GridAPPSD(simulation_id)
+    assert gapps.connected
+
+    out_id = gapps.subscribe(simulation_output_topic(simulation_id),
+                             self.OnSimOutputMessage)
+    log_id = gapps.subscribe(simulation_log_topic(simulation_id),
+                             self.OnSimLogMessage)
+    coop_id = gapps.subscribe(service_output_topic(
+                              'deconfliction.cooperation', simulation_id),
+                              self.OnCoopMessage)
+
+    self.keepLoopingFlag = True
+
+    while self.keepLoopingFlag:
+      # GDB 9/2/25: Warning: increasing the sleep duration above 0.1 such as
+      # 0.5 can lead to bad things. With two processes sleeping on both ends
+      # (apps and deconfliction pipeline) that's 4 sleep statements that are
+      # part of processing messages leading to a potential 2 second total
+      # delay (with 0.5 sleeps), which is horrible for cooperation messages.
+      sleep(0.1)
+
+    gapps.unsubscribe(out_id)
+    gapps.unsubscribe(log_id)
+    gapps.unsubscribe(coop_id)
+
+
+  def OnSimOutputMessage(self, header, message):
+    #print('header: ' + str(header), flush=True)
+    #print('message: ' + str(message), flush=True)
+    if not self.keepLoopingFlag:
+      return
+
+    # if it's been optItervalSec since last optimization:
+    ts_unix = int(message['message']['timestamp'])
+
+    if self.realtimeFlag:
+      # If doing real-time simulation must subtract 5 off timestamp to make it
+      # evenly divisble by multiples of the 3 second GridLAB-D time interval
+      if (ts_unix-5) % self.optIntervalSec == 0:
+        self.simQueue.put(message['message'])
+    else:
+      # If doing non-real-time simulation remove the 5 second offset because
+      # GridLAB-D outputs at even 60 second intervals
+      if ts_unix % self.optIntervalSec == 0:
+        self.simQueue.put(message['message'])
+
+
+  def OnSimLogMessage(self, header, message):
+    #print('header: ' + str(header), flush=True)
+    #print('message: ' + str(message), flush=True)
+    if not self.keepLoopingFlag:
+      return
+
+    status = message['processStatus']
+    if status=='COMPLETE' or status=='CLOSED':
+      self.keepLoopingFlag = False
+      # both simulation and cooperation queues need this message
+      self.simQueue.put(message)
+      self.coopQueue.put(message)
+
+
+  def OnCoopMessage(self, header, message):
+    #print('header: ' + str(header), flush=True)
+    #print('message: ' + str(message), flush=True)
+    if not self.keepLoopingFlag:
+      return
+
+    self.coopQueue.put(message)
+
+  # end of message listener process methods
+
+  # start of cooperation handler process methods
+
+  def cooperationHandlerProcess(self, simulation_id):
+    # authenticate with GridAPPS-D Platform
+    self.gapps = GridAPPSD(simulation_id)
+    assert self.gapps.connected
+
+    # GDB 9/3/25: coopPhase keeps track of what cooperation phase is the
+    # one currently being processed in order to determine when to discard
+    # "stale" cooperation messages associated with an earlier phase
+    self.coopPhase = 0
+
+    # coopCounter allows diminishing cooperation with each succeeding
+    # cooperation message solicitation within a phase
+    self.coopCounter = 0
+
+    while True:
+      while self.coopQueue.qsize() == 0:
+        # GDB 9/2/25: Warning: increasing the sleep duration above 0.1 such as
+        # 0.5 can lead to bad things. With two processes sleeping on both ends
+        # (apps and deconfliction pipeline) that's 4 sleep statements that are
+        # part of processing messages leading to a potential 2 second total
+        # delay (with 0.5 sleeps), which is horrible for cooperation messages.
+        sleep(0.1)
+
+      lastCoopMessage = None
+
+      print('Cooperation queue check start', flush=True)
+      while self.coopQueue.qsize() > 0:
+        message = self.coopQueue.get()
+
+        if 'processStatus' in message: # simulation log message
+          status = message['processStatus']
+          print('Simulation ' + status + ' message received', flush=True)
+
+          return # done with all processing
+
+        else:
+          print('Cooperation message on queue with phase: ' +
+                str(message['coop_phase']), flush=True)
+          lastCoopMessage = message
+      print('Cooperation queue check finish', flush=True)
+
+      if lastCoopMessage != None:
+        if self.includeBatteriesFlag or self.includeRegulatorsFlag or \
+           self.includeSolarPVsFlag:
+          checkPhase = lastCoopMessage['coop_phase']
+
+          if checkPhase >= self.coopPhase:
+            if checkPhase == self.coopPhase:
+              # comment out incrementing coopCounter to not diminish
+              # cooperation for each new solicitation during a phase
+              self.coopCounter += 1
+            else:
+              self.coopPhase = checkPhase
+              self.coopCounter = 0
+
+            print('Processing Cooperation message with phase: ' +
+                  str(checkPhase), flush=True)
+            # respond to cooperation message
+            self.processCoopMessage(lastCoopMessage)
+
+          else:
+            print('Discarding Cooperation message with stale phase: ' +
+                  str(checkPhase), flush=True)
+
+
+  def processCoopMessage(self, message):
+    # choose the desired level of app cooperation by uncommenting one of
+    # the coopLevel settings
+    coopLevel = 4 # high cooperation
+    #coopLevel = 3 # medium-high cooperation
+    #coopLevel = 2 # medium-low cooperation
+    #coopLevel = 1 # low cooperation
+
+    coopRatioDenom = 2.0 # for coopLevel 3
+    if coopLevel == 1:
+      coopRatioDenom = 1.0
+    elif coopLevel == 2:
+      coopRatioDenom = 1.5
+
+    # message consists of a target ResolutionVector that is a dictionary
+    # with device mrid keys and target set-point values
+    targetResolutionVector = message['targetResolutionVector']
+
+    # except for SolarPVs the set-point values are tuples and they are
+    # easier to work with as complex numbers so do that translation now
+    for mrid, value in targetResolutionVector.items():
+      # I create tuples for the complex SolarPV setpoints for serialization,
+      # but JSON serializes those as lists so the reverse deserialization
+      # needs to check for lists rather than tuples
+      if isinstance(value[1], list):
+        targetResolutionVector[mrid] = (value[0],
+                                        complex(value[1][0], value[1][1]))
+
+    #for mrid in targetResolutionVector:
+    #  print('DECONFLICTOR COOPERATE mrid ' + mrid + ' target set-point: ' + str(targetResolutionVector[mrid]), flush=True)
+
+    if self.includeBatteriesFlag:
+      for mrid in self.BatteriesInfo:
+        if mrid in targetResolutionVector:
+          idx = self.BatteriesInfo[mrid]['idx']
+          self.p_batt_proposed[idx] = -targetResolutionVector[mrid][1]
+
+    if self.includeRegulatorsFlag:
+      for reg in self.RegulatorsInfo:
+        if reg in targetResolutionVector:
+          idx = self.RegulatorsInfo[reg]['idx']
+          self.reg_proposed[idx] = targetResolutionVector[reg][1]
+
+    if self.includeSolarPVsPFlag:
+      for mrid in self.SolarPVs:
+        if mrid in targetResolutionVector:
+          idx = self.SolarPVs[mrid]['idx']
+          self.pq_pv_proposed[idx] = -targetResolutionVector[mrid][1]
+
+    # Need to define the full optimization problem each time anything
+    # changes for CVXPY to be happy
+    # GDB 9/9/24: Can't do a new optimization for cooperation because
+    # the objective function is non-linear/non-convex so we have an
+    # alternative workflow implementation for supporting cooperation in
+    # order to meet the FY24 deconfliction service deliverable
+    '''
+    self.optPerform()
+    '''
+
+    #print('DECONFLICTOR COOPERATE p_batt_greedy: ' + str(self.p_batt_greedy), flush=True)
+    #print('DECONFLICTOR COOPERATE p_batt_proposed: ' + str(self.p_batt_proposed), flush=True)
+
+    # GDB 9/10/24: Here is the alternative support for cooperation via
+    # ranking the differences between proposed and greedy setpoints:
+    if self.includeBatteriesFlag:
+      # first, create a list of differences
+      len_BatteriesInfo = len(self.BatteriesInfo)
+      p_batt_diff = [None] * len_BatteriesInfo
+      for i in range(len_BatteriesInfo):
+        p_batt_diff[i] = abs(self.p_batt_greedy[i] - self.p_batt_proposed[i])
+
+      #print('DECONFLICTOR COOPERATE p_batt_diff: ' + str(p_batt_diff), flush=True)
+
+      # omit any setpoints where proposed == greeedy
+      p_batt_sort = []
+      for i in range(len_BatteriesInfo):
+        if p_batt_diff[i] > 0:
+          p_batt_sort.append(p_batt_diff[i])
+
+      # sorts in place
+      p_batt_sort.sort()
+
+      # GDB 3/25/25: Handle the case of only proposed == greedy
+      diffMax = 0
+      if len(p_batt_sort) > 0:
+        coopCount = max(1, -(len(p_batt_sort)//-2)) # integer "ceiling" division
+
+        # find the value associated with the last "cooperating" battery
+        diffMax = p_batt_sort[coopCount-1]
+
+        #print('DECONFLICTOR COOPERATE batteries coopCount: ' + str(coopCount) + ', diffMax: ' + str(diffMax), flush=True)
+      #else:
+        #print('DECONFLICTOR COOPERATE batteries coopCount: ALL, diffMax: ' + str(diffMax), flush=True)
+
+      if coopLevel == 4:
+        for i in range(len_BatteriesInfo):
+          # check if this is a "cooperating" battery
+          if p_batt_diff[i]>0 and p_batt_diff[i]<=diffMax:
+            # full cooperation by setting the greedy value to proposed value
+            self.p_batt_greedy[i] = self.p_batt_proposed[i]
+
+        #print('DECONFLICTOR COOPERATE p_batt_coop: ' + str(self.p_batt_greedy), flush=True)
+
+      else:
+        p_batt_denom = [] # just for diagnostic logging
+        for i in range(len_BatteriesInfo):
+          # check if this is a "cooperating" battery
+          if p_batt_diff[i]>0 and p_batt_diff[i]<=diffMax:
+            # full cooperation by setting the greedy value to proposed value
+            #self.p_batt_greedy[i] = self.p_batt_proposed[i]
+            # adjust cooperation level based on difference
+            # find which entry this p_batt_diff is within p_batt_sort to
+            # determine how much to cooperate. This is tricky code in that
+            # a loop iterator varible is referenced after the loop.
+            for ic in range(len(p_batt_sort)):
+              if p_batt_diff[i] == p_batt_sort[ic]:
+                break
+            fcoop = float(ic/coopRatioDenom) + 1.0
+
+            ratio = (self.p_batt_proposed[i] - self.p_batt_greedy[i])/ \
+                    float(fcoop + self.coopCounter)
+            self.p_batt_greedy[i] += ratio
+            p_batt_denom.append((fcoop, self.coopCounter))
+          else:
+            p_batt_denom.append(None)
+
+        #print('DECONFLICTOR COOPERATE p_batt_coop: ' + str(self.p_batt_greedy), flush=True)
+        #print('DECONFLICTOR COOPERATE p_batt_denom: ' + str(p_batt_denom), flush=True)
+
+      for mrid in self.BatteriesInfo:
+        idx = self.BatteriesInfo[mrid]['idx']
+        # new value before old value for DifferenceBuilder
+        # note the p_batt value is negated for the GridLAB-D
+        # DifferenceBuilder message
+        self.difference_builder.add_difference(mrid,
+             'PowerElectronicsConnection.p', -self.p_batt_greedy[idx], None)
+
+    if self.includeSolarPVsPFlag:
+      #print('DECONFLICTOR COOPERATE p_pv_greedy: ' + str(self.p_pv_greedy), flush=True)
+      #print('DECONFLICTOR COOPERATE q_pv_greedy: ' + str(self.q_pv_greedy), flush=True)
+      #print('DECONFLICTOR COOPERATE pq_pv_proposed: ' + str(self.pq_pv_proposed), flush=True)
+      len_SolarPVsInfo = len(self.SolarPVsInfo)
+      pq_pv_diff = [None] * len_SolarPVsInfo
+      for i in range(len_SolarPVsInfo):
+        # note this is the same difference code for SolarPVs as the others
+        # even though the greedy and proposed vectors are complex
+        pq_pv_diff[i] = abs(complex(self.p_pv_greedy[i], self.q_pv_greedy[i]) -\
+                            self.pq_pv_proposed[i])
+
+      #print('DECONFLICTOR COOPERATE pq_pv_diff: ' + str(pq_pv_diff), flush=True)
+
+      # omit any setpoints where proposed == greeedy
+      pq_pv_sort = []
+      for i in range(len_SolarPVsInfo):
+        if pq_pv_diff[i] > 0:
+          pq_pv_sort.append(pq_pv_diff[i])
+
+      # sorts in place
+      pq_pv_sort.sort()
+
+      # handle the case of only proposed == greedy
+      diffMax = 0
+      if len(pq_pv_sort) > 0:
+        coopCount = max(1, -(len(pq_pv_sort)//-2)) # integer "ceiling" division
+
+        # find the value associated with the last "cooperating" battery
+        diffMax = pq_pv_sort[coopCount-1]
+
+        #print('DECONFLICTOR COOPERATE solarPVs coopCount: ' + str(coopCount) + ', diffMax: ' + str(diffMax), flush=True)
+      #else:
+        #print('DECONFLICTOR COOPERATE solarPVs coopCount: ALL, diffMax: ' + str(diffMax), flush=True)
+
+      if coopLevel == 4:
+        for i in range(len_SolarPVsInfo):
+          # check if this is a "cooperating" solarPV
+          if pq_pv_diff[i]>0 and pq_pv_diff[i]<=diffMax:
+            # full cooperation by setting the greedy value to proposed value
+            self.p_pv_greedy[i] = self.pq_pv_proposed[i].real
+            self.q_pv_greedy[i] = self.pq_pv_proposed[i].imag
+
+        #print('DECONFLICTOR COOPERATE p_pv_coop: ' + str(self.p_pv_greedy), flush=True)
+        #print('DECONFLICTOR COOPERATE q_pv_coop: ' + str(self.q_pv_greedy), flush=True)
+
+      else:
+        pq_pv_denom = [] # just for diagnostic logging
+        for i in range(len_SolarPVsInfo):
+          # check if this is a "cooperating" solarPV
+          if pq_pv_diff[i]>0 and pq_pv_diff[i]<=diffMax:
+            # full cooperation by setting the greedy value to proposed value
+            #self.p_pv_greedy[i] = self.pq_pv_proposed[i].real
+            #self.q_pv_greedy[i] = self.pq_pv_proposed[i].imag
+            # adjust cooperation level based on difference
+            # find which entry this p_batt_diff is within p_batt_sort to
+            # determine how much to cooperate. This is tricky code in that
+            # a loop iterator varible is referenced after the loop.
+            for ic in range(len(pq_pv_sort)):
+              if pq_pv_diff[i] == pq_pv_sort[ic]:
+                break
+            fcoop = float(ic/coopRatioDenom) + 1.0
+
+            # again, these are complex numbers, but division by a scalar
+            # is done to each of them giving a complex result that is then
+            # added to the original complex number. This is equivalent to
+            # breaking up the work into the real and imag components.
+            ratio = (self.pq_pv_proposed[i] - \
+                     complex(self.p_pv_greedy[i], self.q_pv_greedy[i]))/ \
+                    float(fcoop + self.coopCounter)
+            self.p_pv_greedy[i] += ratio.real
+            self.q_pv_greedy[i] += ratio.imag
+            pq_pv_denom.append((fcoop, self.coopCounter))
+          else:
+            pq_pv_denom.append(None)
+
+        #print('DECONFLICTOR COOPERATE p_pv_coop: ' + str(self.p_pv_greedy), flush=True)
+        #print('DECONFLICTOR COOPERATE q_pv_coop: ' + str(self.q_pv_greedy), flush=True)
+        #print('DECONFLICTOR COOPERATE pq_pv_denom: ' + str(pq_pv_denom), flush=True)
+
+      for mrid in self.SolarPVs:
+        idx = self.SolarPVs[mrid]['idx']
+        # new value before old value for DifferenceBuilder
+        # note the p and q values are negated for the GridLAB-D
+        # DifferenceBuilder message
+        self.difference_builder.add_difference(mrid,
+         'PowerElectronicsConnection.p', -self.p_pv_greedy[idx], None)
+        self.difference_builder.add_difference(mrid,
+         'PowerElectronicsConnection.q', -self.q_pv_greedy[idx], None)
+
+    if self.includeRegulatorsFlag:
+      # now do the same for regulators
+      #print('DECONFLICTOR COOPERATE reg_greedy: ' + str(self.reg_greedy), flush=True)
+      #print('DECONFLICTOR COOPERATE reg_proposed: ' + str(self.reg_proposed), flush=True)
+
+      len_RegulatorsInfo = len(self.RegulatorsInfo)
+      reg_diff = [None] * len_RegulatorsInfo
+      for i in range(len_RegulatorsInfo):
+        reg_diff[i] = abs(self.reg_greedy[i] - self.reg_proposed[i])
+
+      #print('DECONFLICTOR COOPERATE reg_diff: ' + str(reg_diff), flush=True)
+
+      # omit any setpoints where proposed == greeedy
+      reg_sort = []
+      for i in range(len_RegulatorsInfo):
+        if reg_diff[i] > 0:
+          reg_sort.append(reg_diff[i])
+
+      # sorts in place
+      reg_sort.sort()
+
+      # GDB 3/25/25: Handle the case of only proposed == greedy
+      diffMax = 0
+      if len(reg_sort) > 0:
+        # determine the number of regulators that will "cooperate"
+        coopCount = max(1, -(len(reg_sort)//-2)) # integer "ceiling" division
+
+        # find the value associated with the last "cooperating" regulator
+        diffMax = reg_sort[coopCount-1]
+
+        #print('DECONFLICTOR COOPERATE regulators coopCount: ' + str(coopCount) + ', diffMax: ' + str(diffMax), flush=True)
+      #else:
+        #print('DECONFLICTOR COOPERATE regulators coopCount: ALL, diffMax: ' + str(diffMax), flush=True)
+
+      if coopLevel == 4:
+        for i in range(len_RegulatorsInfo):
+          # check if this is a "cooperating" regulator
+          if reg_diff[i]>0 and reg_diff[i]<=diffMax:
+            # full cooperation by setting the greedy value to proposed value
+            self.reg_greedy[i] = self.reg_proposed[i]
+
+        #print('DECONFLICTOR COOPERATE reg_coop: ' + str(self.reg_greedy), flush=True)
+
+      else:
+        reg_denom = [] # just for diagnostic logging
+        for i in range(len_RegulatorsInfo):
+          # check if this is a "cooperating" regulator
+          if reg_diff[i]>0 and reg_diff[i]<=diffMax:
+            # full cooperation by setting the greedy value to proposed value
+            #self.reg_greedy[i] = self.reg_proposed[i]
+            # adjust cooperation level based on difference
+            # find which entry this p_batt_diff is within p_batt_sort to
+            # determine how much to cooperate. This is tricky code in that
+            # a loop iterator varible is referenced after the loop.
+            for ic in range(len(reg_sort)):
+              if reg_diff[i] == reg_sort[ic]:
+                break
+            fcoop = float(ic/coopRatioDenom) + 1.0
+
+            ratio = int((self.reg_proposed[i] - self.reg_greedy[i])/ \
+                        (fcoop + self.coopCounter))
+            self.reg_greedy[i] += ratio
+            reg_denom.append((fcoop, self.coopCounter))
+          else:
+            reg_denom.append(None)
+
+        #print('DECONFLICTOR COOPERATE reg_coop: ' + str(self.reg_greedy), flush=True)
+        #print('DECONFLICTOR COOPERATE reg_denom: ' + str(reg_denom), flush=True)
+
+      for reg in self.RegulatorsInfo:
+        idx = self.RegulatorsInfo[reg]['idx']
+        # new value before old value for DifferenceBuilder
+        self.difference_builder.add_difference(reg, 'TapChanger.step',
+                                               self.reg_greedy[idx], None)
+
+    # finally, send out the cooperation setpoints via DifferenceBuilder msg
+    dispatch_message = self.difference_builder.get_message()
+    dispatch_message['app_name'] = self.app_name
+    dispatch_message['coop_phase'] = self.coopPhase
+    print('Sending Cooperation DifferenceBuilder message with phase: ' +
+          str(self.coopPhase), flush=True)
+    #print('Sending Cooperation DifferenceBuilder message: ' +
+    #      json.dumps(dispatch_message), flush=True)
+    self.gapps.send(self.coop_publish_topic, json.dumps(dispatch_message))
+    self.difference_builder.clear()
+
+  # end of cooperation handler process methods
+
   def optPrelimScalability(self, line):
     tokens = line.split(',')
 
@@ -1107,151 +1564,6 @@ class CompetingApp(GridAPPSD):
 
       self.difference_builder.clear()
 
-      # GDB 9/4/25: cooperation now done in the message listener process
-      # and this is the main process
-      '''
-      # GDB 9/3/25: increment the cooperation phase so we are ignoring any
-      # cooperation messages associated with the phase prior to these new
-      # setpoints being sent
-      self.coopPhase += 1
-      '''
-
-  def cooperationHandlerProcess(self, simulation_id):
-    # authenticate with GridAPPS-D Platform
-    self.gapps = GridAPPSD(simulation_id)
-    assert self.gapps.connected
-
-    # GDB 9/3/25: coopPhase keeps track of what cooperation phase is the
-    # one currently being processed in order to determine when to discard
-    # "stale" cooperation messages associated with an earlier phase
-    self.coopPhase = 0
-
-    # coopCounter allows diminishing cooperation with each succeeding
-    # cooperation message solicitation within a phase
-    self.coopCounter = 0
-
-    while True:
-      while self.coopQueue.qsize() == 0:
-        # GDB 9/2/25: Warning: increasing the sleep duration above 0.1 such as
-        # 0.5 can lead to bad things. With two processes sleeping on both ends
-        # (apps and deconfliction pipeline) that's 4 sleep statements that are
-        # part of processing messages leading to a potential 2 second total
-        # delay (with 0.5 sleeps), which is horrible for cooperation messages.
-        sleep(0.1)
-
-      lastCoopMessage = None
-
-      print('Cooperation queue check start', flush=True)
-      while self.coopQueue.qsize() > 0:
-        message = self.coopQueue.get()
-
-        if 'processStatus' in message: # simulation log message
-          status = message['processStatus']
-          print('Simulation ' + status + ' message received', flush=True)
-
-          return # done with all processing
-
-        else:
-          print('Cooperation message on queue with phase: ' +
-                str(message['coop_phase']), flush=True)
-          lastCoopMessage = message
-      print('Cooperation queue check finish', flush=True)
-
-      if lastCoopMessage != None:
-        if self.includeBatteriesFlag or self.includeRegulatorsFlag or \
-           self.includeSolarPVsFlag:
-          checkPhase = lastCoopMessage['coop_phase']
-
-          if checkPhase >= self.coopPhase:
-            if checkPhase == self.coopPhase:
-              # comment out incrementing coopCounter to not diminish
-              # cooperation for each new solicitation during a phase
-              self.coopCounter += 1
-            else:
-              self.coopPhase = checkPhase
-              self.coopCounter = 0
-
-            print('Processing Cooperation message with phase: ' +
-                  str(checkPhase), flush=True)
-            # respond to cooperation message
-            self.processCoopMessage(lastCoopMessage)
-
-          else:
-            print('Discarding Cooperation message with stale phase: ' +
-                  str(checkPhase), flush=True)
-
-
-  def messageListenerProcess(self, simulation_id):
-    # authenticate with GridAPPS-D Platform
-    gapps = GridAPPSD(simulation_id)
-    assert gapps.connected
-
-    out_id = gapps.subscribe(simulation_output_topic(simulation_id),
-                             self.OnSimOutputMessage)
-    log_id = gapps.subscribe(simulation_log_topic(simulation_id),
-                             self.OnSimLogMessage)
-    coop_id = gapps.subscribe(service_output_topic(
-                              'deconfliction.cooperation', simulation_id),
-                              self.OnCoopMessage)
-
-    self.keepLoopingFlag = True
-
-    while self.keepLoopingFlag:
-      # GDB 9/2/25: Warning: increasing the sleep duration above 0.1 such as
-      # 0.5 can lead to bad things. With two processes sleeping on both ends
-      # (apps and deconfliction pipeline) that's 4 sleep statements that are
-      # part of processing messages leading to a potential 2 second total
-      # delay (with 0.5 sleeps), which is horrible for cooperation messages.
-      sleep(0.1)
-
-    gapps.unsubscribe(out_id)
-    gapps.unsubscribe(log_id)
-    gapps.unsubscribe(coop_id)
-
-
-  def OnSimOutputMessage(self, header, message):
-    #print('header: ' + str(header), flush=True)
-    #print('message: ' + str(message), flush=True)
-    if not self.keepLoopingFlag:
-      return
-
-    # if it's been optItervalSec since last optimization:
-    ts_unix = int(message['message']['timestamp'])
-
-    if self.realtimeFlag:
-      # If doing real-time simulation must subtract 5 off timestamp to make it
-      # evenly divisble by multiples of the 3 second GridLAB-D time interval
-      if (ts_unix-5) % self.optIntervalSec == 0:
-        self.simQueue.put(message['message'])
-    else:
-      # If doing non-real-time simulation remove the 5 second offset because
-      # GridLAB-D outputs at even 60 second intervals
-      if ts_unix % self.optIntervalSec == 0:
-        self.simQueue.put(message['message'])
-
-
-  def OnSimLogMessage(self, header, message):
-    #print('header: ' + str(header), flush=True)
-    #print('message: ' + str(message), flush=True)
-    if not self.keepLoopingFlag:
-      return
-
-    status = message['processStatus']
-    if status=='COMPLETE' or status=='CLOSED':
-      self.keepLoopingFlag = False
-      # both simulation and cooperation queues need this message
-      self.simQueue.put(message)
-      self.coopQueue.put(message)
-
-
-  def OnCoopMessage(self, header, message):
-    #print('header: ' + str(header), flush=True)
-    #print('message: ' + str(message), flush=True)
-    if not self.keepLoopingFlag:
-      return
-
-    self.coopQueue.put(message)
-
 
   def pol2cart(self, mag, angle_deg):
         # Convert degrees to radians. GridAPPS-D spits angle in degrees
@@ -1325,320 +1637,6 @@ class CompetingApp(GridAPPSD):
     # positions as part of the optimization problem
     if not self.includeRegulatorsFlag:
       self.updateRegulatorTaps(measurements)
-
-
-  def processCoopMessage(self, message):
-    # choose the desired level of app cooperation by uncommenting one of
-    # the coopLevel settings
-    coopLevel = 4 # high cooperation
-    #coopLevel = 3 # medium-high cooperation
-    #coopLevel = 2 # medium-low cooperation
-    #coopLevel = 1 # low cooperation
-
-    coopRatioDenom = 2.0 # for coopLevel 3
-    if coopLevel == 1:
-      coopRatioDenom = 1.0
-    elif coopLevel == 2:
-      coopRatioDenom = 1.5
-
-    # message consists of a target ResolutionVector that is a dictionary
-    # with device mrid keys and target set-point values
-    targetResolutionVector = message['targetResolutionVector']
-
-    # except for SolarPVs the set-point values are tuples and they are
-    # easier to work with as complex numbers so do that translation now
-    for mrid, value in targetResolutionVector.items():
-      # I create tuples for the complex SolarPV setpoints for serialization,
-      # but JSON serializes those as lists so the reverse deserialization
-      # needs to check for lists rather than tuples
-      if isinstance(value[1], list):
-        targetResolutionVector[mrid] = (value[0],
-                                        complex(value[1][0], value[1][1]))
-
-    #for mrid in targetResolutionVector:
-    #  print('DECONFLICTOR COOPERATE mrid ' + mrid + ' target set-point: ' + str(targetResolutionVector[mrid]), flush=True)
-
-    if self.includeBatteriesFlag:
-      for mrid in self.BatteriesInfo:
-        if mrid in targetResolutionVector:
-          idx = self.BatteriesInfo[mrid]['idx']
-          self.p_batt_proposed[idx] = -targetResolutionVector[mrid][1]
-
-    if self.includeRegulatorsFlag:
-      for reg in self.RegulatorsInfo:
-        if reg in targetResolutionVector:
-          idx = self.RegulatorsInfo[reg]['idx']
-          self.reg_proposed[idx] = targetResolutionVector[reg][1]
-
-    if self.includeSolarPVsPFlag:
-      for mrid in self.SolarPVs:
-        if mrid in targetResolutionVector:
-          idx = self.SolarPVs[mrid]['idx']
-          self.pq_pv_proposed[idx] = -targetResolutionVector[mrid][1]
-
-    # Need to define the full optimization problem each time anything
-    # changes for CVXPY to be happy
-    # GDB 9/9/24: Can't do a new optimization for cooperation because
-    # the objective function is non-linear/non-convex so we have an
-    # alternative workflow implementation for supporting cooperation in
-    # order to meet the FY24 deconfliction service deliverable
-    '''
-    self.optPerform()
-    '''
-
-    #print('DECONFLICTOR COOPERATE p_batt_greedy: ' + str(self.p_batt_greedy), flush=True)
-    #print('DECONFLICTOR COOPERATE p_batt_proposed: ' + str(self.p_batt_proposed), flush=True)
-
-    # GDB 9/10/24: Here is the alternative support for cooperation via
-    # ranking the differences between proposed and greedy setpoints:
-    if self.includeBatteriesFlag:
-      # first, create a list of differences
-      len_BatteriesInfo = len(self.BatteriesInfo)
-      p_batt_diff = [None] * len_BatteriesInfo
-      for i in range(len_BatteriesInfo):
-        p_batt_diff[i] = abs(self.p_batt_greedy[i] - self.p_batt_proposed[i])
-
-      #print('DECONFLICTOR COOPERATE p_batt_diff: ' + str(p_batt_diff), flush=True)
-
-      # omit any setpoints where proposed == greeedy
-      p_batt_sort = []
-      for i in range(len_BatteriesInfo):
-        if p_batt_diff[i] > 0:
-          p_batt_sort.append(p_batt_diff[i])
-
-      # sorts in place
-      p_batt_sort.sort()
-
-      # GDB 3/25/25: Handle the case of only proposed == greedy
-      diffMax = 0
-      if len(p_batt_sort) > 0:
-        coopCount = max(1, -(len(p_batt_sort)//-2)) # integer "ceiling" division
-
-        # find the value associated with the last "cooperating" battery
-        diffMax = p_batt_sort[coopCount-1]
-
-        #print('DECONFLICTOR COOPERATE batteries coopCount: ' + str(coopCount) + ', diffMax: ' + str(diffMax), flush=True)
-      #else:
-        #print('DECONFLICTOR COOPERATE batteries coopCount: ALL, diffMax: ' + str(diffMax), flush=True)
-
-      if coopLevel == 4:
-        for i in range(len_BatteriesInfo):
-          # check if this is a "cooperating" battery
-          if p_batt_diff[i]>0 and p_batt_diff[i]<=diffMax:
-            # full cooperation by setting the greedy value to proposed value
-            self.p_batt_greedy[i] = self.p_batt_proposed[i]
-
-        #print('DECONFLICTOR COOPERATE p_batt_coop: ' + str(self.p_batt_greedy), flush=True)
-
-      else:
-        p_batt_denom = [] # just for diagnostic logging
-        for i in range(len_BatteriesInfo):
-          # check if this is a "cooperating" battery
-          if p_batt_diff[i]>0 and p_batt_diff[i]<=diffMax:
-            # full cooperation by setting the greedy value to proposed value
-            #self.p_batt_greedy[i] = self.p_batt_proposed[i]
-            # adjust cooperation level based on difference
-            # find which entry this p_batt_diff is within p_batt_sort to
-            # determine how much to cooperate. This is tricky code in that
-            # a loop iterator varible is referenced after the loop.
-            for ic in range(len(p_batt_sort)):
-              if p_batt_diff[i] == p_batt_sort[ic]:
-                break
-            fcoop = float(ic/coopRatioDenom) + 1.0
-
-            ratio = (self.p_batt_proposed[i] - self.p_batt_greedy[i])/ \
-                    float(fcoop + self.coopCounter)
-            self.p_batt_greedy[i] += ratio
-            p_batt_denom.append((fcoop, self.coopCounter))
-          else:
-            p_batt_denom.append(None)
-
-        #print('DECONFLICTOR COOPERATE p_batt_coop: ' + str(self.p_batt_greedy), flush=True)
-        #print('DECONFLICTOR COOPERATE p_batt_denom: ' + str(p_batt_denom), flush=True)
-
-      for mrid in self.BatteriesInfo:
-        idx = self.BatteriesInfo[mrid]['idx']
-        # new value before old value for DifferenceBuilder
-        # note the p_batt value is negated for the GridLAB-D
-        # DifferenceBuilder message
-        self.difference_builder.add_difference(mrid,
-             'PowerElectronicsConnection.p', -self.p_batt_greedy[idx], None)
-
-    if self.includeSolarPVsPFlag:
-      #print('DECONFLICTOR COOPERATE p_pv_greedy: ' + str(self.p_pv_greedy), flush=True)
-      #print('DECONFLICTOR COOPERATE q_pv_greedy: ' + str(self.q_pv_greedy), flush=True)
-      #print('DECONFLICTOR COOPERATE pq_pv_proposed: ' + str(self.pq_pv_proposed), flush=True)
-      len_SolarPVsInfo = len(self.SolarPVsInfo)
-      pq_pv_diff = [None] * len_SolarPVsInfo
-      for i in range(len_SolarPVsInfo):
-        # note this is the same difference code for SolarPVs as the others
-        # even though the greedy and proposed vectors are complex
-        pq_pv_diff[i] = abs(complex(self.p_pv_greedy[i], self.q_pv_greedy[i]) -\
-                            self.pq_pv_proposed[i])
-
-      #print('DECONFLICTOR COOPERATE pq_pv_diff: ' + str(pq_pv_diff), flush=True)
-
-      # omit any setpoints where proposed == greeedy
-      pq_pv_sort = []
-      for i in range(len_SolarPVsInfo):
-        if pq_pv_diff[i] > 0:
-          pq_pv_sort.append(pq_pv_diff[i])
-
-      # sorts in place
-      pq_pv_sort.sort()
-
-      # handle the case of only proposed == greedy
-      diffMax = 0
-      if len(pq_pv_sort) > 0:
-        coopCount = max(1, -(len(pq_pv_sort)//-2)) # integer "ceiling" division
-
-        # find the value associated with the last "cooperating" battery
-        diffMax = pq_pv_sort[coopCount-1]
-
-        #print('DECONFLICTOR COOPERATE solarPVs coopCount: ' + str(coopCount) + ', diffMax: ' + str(diffMax), flush=True)
-      #else:
-        #print('DECONFLICTOR COOPERATE solarPVs coopCount: ALL, diffMax: ' + str(diffMax), flush=True)
-
-      if coopLevel == 4:
-        for i in range(len_SolarPVsInfo):
-          # check if this is a "cooperating" solarPV
-          if pq_pv_diff[i]>0 and pq_pv_diff[i]<=diffMax:
-            # full cooperation by setting the greedy value to proposed value
-            self.p_pv_greedy[i] = self.pq_pv_proposed[i].real
-            self.q_pv_greedy[i] = self.pq_pv_proposed[i].imag
-
-        #print('DECONFLICTOR COOPERATE p_pv_coop: ' + str(self.p_pv_greedy), flush=True)
-        #print('DECONFLICTOR COOPERATE q_pv_coop: ' + str(self.q_pv_greedy), flush=True)
-
-      else:
-        pq_pv_denom = [] # just for diagnostic logging
-        for i in range(len_SolarPVsInfo):
-          # check if this is a "cooperating" solarPV
-          if pq_pv_diff[i]>0 and pq_pv_diff[i]<=diffMax:
-            # full cooperation by setting the greedy value to proposed value
-            #self.p_pv_greedy[i] = self.pq_pv_proposed[i].real
-            #self.q_pv_greedy[i] = self.pq_pv_proposed[i].imag
-            # adjust cooperation level based on difference
-            # find which entry this p_batt_diff is within p_batt_sort to
-            # determine how much to cooperate. This is tricky code in that
-            # a loop iterator varible is referenced after the loop.
-            for ic in range(len(pq_pv_sort)):
-              if pq_pv_diff[i] == pq_pv_sort[ic]:
-                break
-            fcoop = float(ic/coopRatioDenom) + 1.0
-
-            # again, these are complex numbers, but division by a scalar
-            # is done to each of them giving a complex result that is then
-            # added to the original complex number. This is equivalent to
-            # breaking up the work into the real and imag components.
-            ratio = (self.pq_pv_proposed[i] - \
-                     complex(self.p_pv_greedy[i], self.q_pv_greedy[i]))/ \
-                    float(fcoop + self.coopCounter)
-            self.p_pv_greedy[i] += ratio.real
-            self.q_pv_greedy[i] += ratio.imag
-            pq_pv_denom.append((fcoop, self.coopCounter))
-          else:
-            pq_pv_denom.append(None)
-
-        #print('DECONFLICTOR COOPERATE p_pv_coop: ' + str(self.p_pv_greedy), flush=True)
-        #print('DECONFLICTOR COOPERATE q_pv_coop: ' + str(self.q_pv_greedy), flush=True)
-        #print('DECONFLICTOR COOPERATE pq_pv_denom: ' + str(pq_pv_denom), flush=True)
-
-      for mrid in self.SolarPVs:
-        idx = self.SolarPVs[mrid]['idx']
-        # new value before old value for DifferenceBuilder
-        # note the p and q values are negated for the GridLAB-D
-        # DifferenceBuilder message
-        self.difference_builder.add_difference(mrid,
-         'PowerElectronicsConnection.p', -self.p_pv_greedy[idx], None)
-        self.difference_builder.add_difference(mrid,
-         'PowerElectronicsConnection.q', -self.q_pv_greedy[idx], None)
-
-    if self.includeRegulatorsFlag:
-      # now do the same for regulators
-      #print('DECONFLICTOR COOPERATE reg_greedy: ' + str(self.reg_greedy), flush=True)
-      #print('DECONFLICTOR COOPERATE reg_proposed: ' + str(self.reg_proposed), flush=True)
-
-      len_RegulatorsInfo = len(self.RegulatorsInfo)
-      reg_diff = [None] * len_RegulatorsInfo
-      for i in range(len_RegulatorsInfo):
-        reg_diff[i] = abs(self.reg_greedy[i] - self.reg_proposed[i])
-
-      #print('DECONFLICTOR COOPERATE reg_diff: ' + str(reg_diff), flush=True)
-
-      # omit any setpoints where proposed == greeedy
-      reg_sort = []
-      for i in range(len_RegulatorsInfo):
-        if reg_diff[i] > 0:
-          reg_sort.append(reg_diff[i])
-
-      # sorts in place
-      reg_sort.sort()
-
-      # GDB 3/25/25: Handle the case of only proposed == greedy
-      diffMax = 0
-      if len(reg_sort) > 0:
-        # determine the number of regulators that will "cooperate"
-        coopCount = max(1, -(len(reg_sort)//-2)) # integer "ceiling" division
-
-        # find the value associated with the last "cooperating" regulator
-        diffMax = reg_sort[coopCount-1]
-
-        #print('DECONFLICTOR COOPERATE regulators coopCount: ' + str(coopCount) + ', diffMax: ' + str(diffMax), flush=True)
-      #else:
-        #print('DECONFLICTOR COOPERATE regulators coopCount: ALL, diffMax: ' + str(diffMax), flush=True)
-
-      if coopLevel == 4:
-        for i in range(len_RegulatorsInfo):
-          # check if this is a "cooperating" regulator
-          if reg_diff[i]>0 and reg_diff[i]<=diffMax:
-            # full cooperation by setting the greedy value to proposed value
-            self.reg_greedy[i] = self.reg_proposed[i]
-
-        #print('DECONFLICTOR COOPERATE reg_coop: ' + str(self.reg_greedy), flush=True)
-
-      else:
-        reg_denom = [] # just for diagnostic logging
-        for i in range(len_RegulatorsInfo):
-          # check if this is a "cooperating" regulator
-          if reg_diff[i]>0 and reg_diff[i]<=diffMax:
-            # full cooperation by setting the greedy value to proposed value
-            #self.reg_greedy[i] = self.reg_proposed[i]
-            # adjust cooperation level based on difference
-            # find which entry this p_batt_diff is within p_batt_sort to
-            # determine how much to cooperate. This is tricky code in that
-            # a loop iterator varible is referenced after the loop.
-            for ic in range(len(reg_sort)):
-              if reg_diff[i] == reg_sort[ic]:
-                break
-            fcoop = float(ic/coopRatioDenom) + 1.0
-
-            ratio = int((self.reg_proposed[i] - self.reg_greedy[i])/ \
-                        (fcoop + self.coopCounter))
-            self.reg_greedy[i] += ratio
-            reg_denom.append((fcoop, self.coopCounter))
-          else:
-            reg_denom.append(None)
-
-        #print('DECONFLICTOR COOPERATE reg_coop: ' + str(self.reg_greedy), flush=True)
-        #print('DECONFLICTOR COOPERATE reg_denom: ' + str(reg_denom), flush=True)
-
-      for reg in self.RegulatorsInfo:
-        idx = self.RegulatorsInfo[reg]['idx']
-        # new value before old value for DifferenceBuilder
-        self.difference_builder.add_difference(reg, 'TapChanger.step',
-                                               self.reg_greedy[idx], None)
-
-    # finally, send out the cooperation setpoints via DifferenceBuilder msg
-    dispatch_message = self.difference_builder.get_message()
-    dispatch_message['app_name'] = self.app_name
-    dispatch_message['coop_phase'] = self.coopPhase
-    print('Sending Cooperation DifferenceBuilder message with phase: ' +
-          str(self.coopPhase), flush=True)
-    #print('Sending Cooperation DifferenceBuilder message: ' +
-    #      json.dumps(dispatch_message), flush=True)
-    self.gapps.send(self.coop_publish_topic, json.dumps(dispatch_message))
-    self.difference_builder.clear()
 
 
   def __init__(self, opt_type, feeder_mrid, simulation_id, interval):
