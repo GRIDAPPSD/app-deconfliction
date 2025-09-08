@@ -2450,16 +2450,12 @@ class DeconflictionPipeline(GridAPPSD):
     # the pipeline it is an app scalability test. Commenting out this code
     # block will invoke rules and cooperation stages based on the flag
     # settings above.
-    scalabilityFlag = interval!=None and interval=='scalability'
-    if scalabilityFlag:
-      self.rulesStageFirstFlag = False
-      self.rulesStageLastFlag = False
-      self.coopStageFlag = False
-    # never do rules and cooperation when these are uncommented
-    #self.rulesStageFirstFlag = False
-    #self.rulesStageLastFlag = False
-    # COOPDBG
-    #self.coopStageFlag = False
+    # GDB 9/8/25: enable rules/cooperation for scalability runs
+    #scalabilityFlag = interval!=None and interval=='scalability'
+    #if scalabilityFlag:
+    #  self.rulesStageFirstFlag = False
+    #  self.rulesStageLastFlag = False
+    #  self.coopStageFlag = False
 
     self.refCount = 0 # for debug/verification
 
