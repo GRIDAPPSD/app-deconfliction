@@ -338,6 +338,7 @@ def _main():
 
   #app_list = ['resilience-app', 'max_local-app', 'cvr-app']
   app_list = ['resilience-app', 'max_local-app']
+  #app_list = [] # use this for scalability runs to skip app plotting
   #app_list = ['resilience-app']
   #app_list = ['max_local-app']
   #prefix_list = ['resil', 'max_local', 'cvr']
