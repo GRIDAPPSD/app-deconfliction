@@ -13,7 +13,7 @@ The Centralized Deconfliction Service builds on the FY23 prototype following the
 
 The deconfliction workflow kicks off with GridLAB-D simulation measurement messages that provide updated device setpoints and battery SoC data. Competing apps subscribe to the GridLAB-D measurements to carry out their work (optimizations) determining and publishing new device setpoint requests via CIM DifferenceBuilder messages. The deconfliction service intercepts these DifferenceBuilder messages from competings apps to perform the steps described in the Foundational and Alternatives Analysis papers producing deconflicted setpoints dispatched to devices also through CIM DifferenceBuilder messages. The service exchanges messages with competing apps during an iterative stage of deconfliction that incentivizes apps to cooperate in trying to reach consensus setpoint values. Subsequent GridLAB-D simulation measurement messages reflect these deconflicted setpoints and are processed by competing apps, thus completing the deconfliction workflow loop.
 
-For details on the combined/staged deconfliction methodology implemented in the FY24/FY25 Centralized Deconfliction Service, please see the Functional Specification document for the service at <https://github.com/GRIDAPPSD/gridappsd-training/blob/main/module-content/docs/source/services/app-deconfliction/FY24ServiceFunctionalSpecsFinal.md>.
+For details on the combined/staged deconfliction methodology implemented in the FY24/FY25 Centralized Deconfliction Service, please see the Functional Specification document for the service at <https://github.com/GRIDAPPSD/gridappsd-training/blob/main/module-content/docs/source/services/app-deconfliction/FY24ServiceFunctionalSpecFinal.md>.
 
 ## Directory layout
 
