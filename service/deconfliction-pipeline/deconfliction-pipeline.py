@@ -1697,6 +1697,14 @@ class DeconflictionPipeline(GridAPPSD):
         self.coopTimestamp = 0
         self.coopCurrentFlag = False
 
+        # GDB 9/10/25: If we don't want to do the device dispatch if cooperation
+        # was interrupted by a new measurements based setpoints request, comment
+        # out code starting here until the comment below with the same date tag.
+        # The danger in doing this if the schedule for optimizations or the
+        # time they take in relation to the interval between optimizations is
+        # such that cooperation thresholds aren't being met, then there won't
+        # be any device dispatches.
+
         # we were cooperating when a measurement message arrived so need to
         # conclude that cooperation before processing the new message
 
@@ -1782,6 +1790,10 @@ class DeconflictionPipeline(GridAPPSD):
         # the next dispatch
         self.ResolutionVector.clear()
         self.ResolutionVector = newResolutionVector
+
+        # GDB 9/10/25: End of code to comment out for no devices dispatches
+        # when a cooperation phase is interrupted by a new measurements based
+        # setpoint message
 
         # reset running minimums for conflict metric and matrix
         self.minConflictMetric = 1.0
