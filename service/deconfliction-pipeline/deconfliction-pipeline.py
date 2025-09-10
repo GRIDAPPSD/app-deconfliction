@@ -1308,6 +1308,66 @@ class DeconflictionPipeline(GridAPPSD):
     return ResolutionVector
 
 
+  def CoopOptimization(self, timestamp, ConflictMatrix):
+    TargetResolutionVector = {}
+
+    # GDB 9/10/25: This version to call for generating a target resolution
+    # vector for cooperation checks to see if there is conflict for a device
+    # or not. If not, then that device isn't included in the target because
+    # there is no need/desire for solicitating cooperation when there is
+    # already agreement.
+
+    # This should work whether the conflict matrix setpoint values are
+    # scalars as with batteries and regulators or complex numbers as with
+    # solarPVs. Storing those SolarPV p,q values as complex numbers pays
+    # off here.
+    for device in ConflictMatrix:
+      conflictFlag = False
+      setpoint = None
+      for app in ConflictMatrix[device]:
+        # this is a weird/clever way of determining if any of the setpoints
+        # are different by comparing each one with the previous one, which
+        # isn't the intuitive way to do it, but it is fast and compact
+        if setpoint!=None and setpoint!=ConflictMatrix[device][app][1]:
+          conflictFlag = True
+          break
+        setpoint = self.ConflictMatrix[device][app][1]
+
+      if conflictFlag:
+        optTimestamp = 0
+        optNumerator = 0.0
+        optDenominator = 0.0
+
+        for app in ConflictMatrix[device]:
+          optTimestamp = max(optTimestamp, ConflictMatrix[device][app][0])
+
+          if app in self.OptDevWeights and device in self.OptDevWeights[app]:
+            optNumerator += ConflictMatrix[device][app][1] * \
+                            self.OptDevWeights[app][device]
+            optDenominator += self.OptDevWeights[app][device]
+
+          elif app in self.OptAppWeights:
+            optNumerator += ConflictMatrix[device][app][1] * \
+                            self.OptAppWeights[app]
+            optDenominator += self.OptAppWeights[app]
+
+          else:
+            optNumerator += ConflictMatrix[device][app][1]
+            optDenominator += 1.0
+
+        if optDenominator > 0.0:
+          name = MethodUtil.DeviceToName[device]
+          if name.startswith('RatioTapChanger.'):
+            # note round() function yields an int
+            TargetResolutionVector[device] = (optTimestamp,
+                                              round(optNumerator/optDenominator))
+          else:
+            TargetResolutionVector[device] = (optTimestamp,
+                                              optNumerator/optDenominator)
+
+    return TargetResolutionVector
+
+
   def DeviceDispatcher(self, timestamp, newResolutionVector,
                        printAllDispatchesFlag=False):
     # Iterate over resolution and send set-points to devices that have
@@ -1944,8 +2004,8 @@ class DeconflictionPipeline(GridAPPSD):
     if meas_msg_flag:
       # start with a "target" resolution vector using the optimization code
       # that computes a centroid/target per device
-      self.TargetResolutionVector = self.Optimization(timestamp,
-                                                      self.ConflictMatrix)
+      self.TargetResolutionVector = self.CoopOptimization(timestamp,
+                                                          self.ConflictMatrix)
 
       # if we are not performing cooperation state deconfliction, use the
       # target resolution vector as the final one and proceed to dispatch
@@ -2148,8 +2208,8 @@ class DeconflictionPipeline(GridAPPSD):
 
       # start with a "target" resolution vector using the optimization code
       # that computes a weighted centroid per device
-      newTargetResolutionVector = self.Optimization(timestamp,
-                                                    self.ConflictMatrix)
+      newTargetResolutionVector = self.CoopOptimization(timestamp,
+                                                        self.ConflictMatrix)
 
       # can't serialize TargetResolutionVector that contains complex numbers
       # for SolarPV setpoints. Need to translate all of those to tuples, which

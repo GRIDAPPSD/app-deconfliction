@@ -283,18 +283,37 @@ class CompetingApp(GridAPPSD):
     #  print('DECONFLICTOR COOPERATE mrid ' + mrid + ' target set-point: ' + str(targetResolutionVector[mrid]), flush=True)
 
     if self.includeBatteriesFlag:
+      # GDB 9/10/25: initialize proposed to greedy because there may be
+      # missing devices in the proposed setpoints
+      len_BatteriesInfo = len(self.BatteriesInfo)
+      for i in range(len_BatteriesInfo):
+        self.p_batt_proposed[i] = self.p_batt_greedy[i]
+
       for mrid in self.BatteriesInfo:
         if mrid in targetResolutionVector:
           idx = self.BatteriesInfo[mrid]['idx']
           self.p_batt_proposed[idx] = -targetResolutionVector[mrid][1]
 
     if self.includeRegulatorsFlag:
+      # GDB 9/10/25: initialize proposed to greedy because there may be
+      # missing devices in the proposed setpoints
+      len_RegulatorsInfo = len(self.RegulatorsInfo)
+      for i in range(len_RegulatorsInfo):
+        self.reg_proposed[i] = self.reg_greedy[i]
+
       for reg in self.RegulatorsInfo:
         if reg in targetResolutionVector:
           idx = self.RegulatorsInfo[reg]['idx']
           self.reg_proposed[idx] = targetResolutionVector[reg][1]
 
     if self.includeSolarPVsPFlag:
+      # GDB 9/10/25: initialize proposed to greedy because there may be
+      # missing devices in the proposed setpoints
+      len_SolarPVsInfo = len(self.SolarPVsInfo)
+      for i in range(len_SolarPVsInfo):
+        self.pq_pv_proposed[i] = complex(self.p_pv_greedy[i],
+                                         self.q_pv_greedy[i])
+
       for mrid in self.SolarPVs:
         if mrid in targetResolutionVector:
           idx = self.SolarPVs[mrid]['idx']
@@ -317,7 +336,6 @@ class CompetingApp(GridAPPSD):
     # ranking the differences between proposed and greedy setpoints:
     if self.includeBatteriesFlag:
       # first, create a list of differences
-      len_BatteriesInfo = len(self.BatteriesInfo)
       p_batt_diff = [None] * len_BatteriesInfo
       for i in range(len_BatteriesInfo):
         p_batt_diff[i] = abs(self.p_batt_greedy[i] - self.p_batt_proposed[i])
@@ -392,7 +410,6 @@ class CompetingApp(GridAPPSD):
       #print('DECONFLICTOR COOPERATE p_pv_greedy: ' + str(self.p_pv_greedy), flush=True)
       #print('DECONFLICTOR COOPERATE q_pv_greedy: ' + str(self.q_pv_greedy), flush=True)
       #print('DECONFLICTOR COOPERATE pq_pv_proposed: ' + str(self.pq_pv_proposed), flush=True)
-      len_SolarPVsInfo = len(self.SolarPVsInfo)
       pq_pv_diff = [None] * len_SolarPVsInfo
       for i in range(len_SolarPVsInfo):
         # note this is the same difference code for SolarPVs as the others
@@ -483,7 +500,6 @@ class CompetingApp(GridAPPSD):
       #print('DECONFLICTOR COOPERATE reg_greedy: ' + str(self.reg_greedy), flush=True)
       #print('DECONFLICTOR COOPERATE reg_proposed: ' + str(self.reg_proposed), flush=True)
 
-      len_RegulatorsInfo = len(self.RegulatorsInfo)
       reg_diff = [None] * len_RegulatorsInfo
       for i in range(len_RegulatorsInfo):
         reg_diff[i] = abs(self.reg_greedy[i] - self.reg_proposed[i])
