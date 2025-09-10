@@ -283,11 +283,10 @@ class CompetingApp(GridAPPSD):
     #  print('DECONFLICTOR COOPERATE mrid ' + mrid + ' target set-point: ' + str(targetResolutionVector[mrid]), flush=True)
 
     if self.includeBatteriesFlag:
-      # GDB 9/10/25: initialize proposed to greedy because there may be
+      # GDB 9/10/25: initialize proposed to None because there may be
       # missing devices in the proposed setpoints
       len_BatteriesInfo = len(self.BatteriesInfo)
-      for i in range(len_BatteriesInfo):
-        self.p_batt_proposed[i] = self.p_batt_greedy[i]
+      self.p_batt_proposed = [None] * len_BatteriesInfo
 
       for mrid in self.BatteriesInfo:
         if mrid in targetResolutionVector:
@@ -295,11 +294,10 @@ class CompetingApp(GridAPPSD):
           self.p_batt_proposed[idx] = -targetResolutionVector[mrid][1]
 
     if self.includeRegulatorsFlag:
-      # GDB 9/10/25: initialize proposed to greedy because there may be
+      # GDB 9/10/25: initialize proposed to None because there may be
       # missing devices in the proposed setpoints
       len_RegulatorsInfo = len(self.RegulatorsInfo)
-      for i in range(len_RegulatorsInfo):
-        self.reg_proposed[i] = self.reg_greedy[i]
+      self.reg_proposed[i] = [None] * len_RegulatorsInfo
 
       for reg in self.RegulatorsInfo:
         if reg in targetResolutionVector:
@@ -307,12 +305,10 @@ class CompetingApp(GridAPPSD):
           self.reg_proposed[idx] = targetResolutionVector[reg][1]
 
     if self.includeSolarPVsPFlag:
-      # GDB 9/10/25: initialize proposed to greedy because there may be
+      # GDB 9/10/25: initialize proposed to None because there may be
       # missing devices in the proposed setpoints
       len_SolarPVsInfo = len(self.SolarPVsInfo)
-      for i in range(len_SolarPVsInfo):
-        self.pq_pv_proposed[i] = complex(self.p_pv_greedy[i],
-                                         self.q_pv_greedy[i])
+      self.pq_pv_proposed[i] = [None] * len_SolarPVsInfo
 
       for mrid in self.SolarPVs:
         if mrid in targetResolutionVector:
@@ -338,14 +334,15 @@ class CompetingApp(GridAPPSD):
       # first, create a list of differences
       p_batt_diff = [None] * len_BatteriesInfo
       for i in range(len_BatteriesInfo):
-        p_batt_diff[i] = abs(self.p_batt_greedy[i] - self.p_batt_proposed[i])
+        if self.p_batt_proposed[i] != None:
+          p_batt_diff[i] = abs(self.p_batt_greedy[i] - self.p_batt_proposed[i])
 
       #print('DECONFLICTOR COOPERATE p_batt_diff: ' + str(p_batt_diff), flush=True)
 
       # omit any setpoints where proposed == greeedy
       p_batt_sort = []
       for i in range(len_BatteriesInfo):
-        if p_batt_diff[i] > 0:
+        if p_batt_diff[i]!=None and p_batt_diff[i]>0:
           p_batt_sort.append(p_batt_diff[i])
 
       # sorts in place
@@ -366,7 +363,8 @@ class CompetingApp(GridAPPSD):
       if coopLevel == 4:
         for i in range(len_BatteriesInfo):
           # check if this is a "cooperating" battery
-          if p_batt_diff[i]>0 and p_batt_diff[i]<=diffMax:
+          if p_batt_diff[i]!=None and p_batt_diff[i]>0 and \
+             p_batt_diff[i]<=diffMax:
             # full cooperation by setting the greedy value to proposed value
             self.p_batt_greedy[i] = self.p_batt_proposed[i]
 
@@ -376,7 +374,8 @@ class CompetingApp(GridAPPSD):
         p_batt_denom = [] # just for diagnostic logging
         for i in range(len_BatteriesInfo):
           # check if this is a "cooperating" battery
-          if p_batt_diff[i]>0 and p_batt_diff[i]<=diffMax:
+          if p_batt_diff[i]!=None and p_batt_diff[i]>0 and \
+             p_batt_diff[i]<=diffMax:
             # full cooperation by setting the greedy value to proposed value
             #self.p_batt_greedy[i] = self.p_batt_proposed[i]
             # adjust cooperation level based on difference
@@ -403,8 +402,9 @@ class CompetingApp(GridAPPSD):
         # new value before old value for DifferenceBuilder
         # note the p_batt value is negated for the GridLAB-D
         # DifferenceBuilder message
-        self.difference_builder.add_difference(mrid,
-             'PowerElectronicsConnection.p', -self.p_batt_greedy[idx], None)
+        if self.p_batt_proposed[idx] != None:
+          self.difference_builder.add_difference(mrid,
+               'PowerElectronicsConnection.p', -self.p_batt_greedy[idx], None)
 
     if self.includeSolarPVsPFlag:
       #print('DECONFLICTOR COOPERATE p_pv_greedy: ' + str(self.p_pv_greedy), flush=True)
@@ -414,15 +414,16 @@ class CompetingApp(GridAPPSD):
       for i in range(len_SolarPVsInfo):
         # note this is the same difference code for SolarPVs as the others
         # even though the greedy and proposed vectors are complex
-        pq_pv_diff[i] = abs(complex(self.p_pv_greedy[i], self.q_pv_greedy[i]) -\
-                            self.pq_pv_proposed[i])
+        if self.pq_pv_proposed[i] != None:
+          pq_pv_diff[i] = abs(complex(self.p_pv_greedy[i], self.q_pv_greedy[i])\
+                               - self.pq_pv_proposed[i])
 
       #print('DECONFLICTOR COOPERATE pq_pv_diff: ' + str(pq_pv_diff), flush=True)
 
       # omit any setpoints where proposed == greeedy
       pq_pv_sort = []
       for i in range(len_SolarPVsInfo):
-        if pq_pv_diff[i] > 0:
+        if pq_pv_diff[i]!=None and pq_pv_diff[i]>0:
           pq_pv_sort.append(pq_pv_diff[i])
 
       # sorts in place
@@ -443,7 +444,7 @@ class CompetingApp(GridAPPSD):
       if coopLevel == 4:
         for i in range(len_SolarPVsInfo):
           # check if this is a "cooperating" solarPV
-          if pq_pv_diff[i]>0 and pq_pv_diff[i]<=diffMax:
+          if pq_pv_diff[i]!=None and pq_pv_diff[i]>0 and pq_pv_diff[i]<=diffMax:
             # full cooperation by setting the greedy value to proposed value
             self.p_pv_greedy[i] = self.pq_pv_proposed[i].real
             self.q_pv_greedy[i] = self.pq_pv_proposed[i].imag
@@ -455,7 +456,7 @@ class CompetingApp(GridAPPSD):
         pq_pv_denom = [] # just for diagnostic logging
         for i in range(len_SolarPVsInfo):
           # check if this is a "cooperating" solarPV
-          if pq_pv_diff[i]>0 and pq_pv_diff[i]<=diffMax:
+          if pq_pv_diff[i]!=None and pq_pv_diff[i]>0 and pq_pv_diff[i]<=diffMax:
             # full cooperation by setting the greedy value to proposed value
             #self.p_pv_greedy[i] = self.pq_pv_proposed[i].real
             #self.q_pv_greedy[i] = self.pq_pv_proposed[i].imag
@@ -490,10 +491,11 @@ class CompetingApp(GridAPPSD):
         # new value before old value for DifferenceBuilder
         # note the p and q values are negated for the GridLAB-D
         # DifferenceBuilder message
-        self.difference_builder.add_difference(mrid,
-         'PowerElectronicsConnection.p', -self.p_pv_greedy[idx], None)
-        self.difference_builder.add_difference(mrid,
-         'PowerElectronicsConnection.q', -self.q_pv_greedy[idx], None)
+        if self.pq_pv_proposed[idx] != None:
+          self.difference_builder.add_difference(mrid,
+           'PowerElectronicsConnection.p', -self.p_pv_greedy[idx], None)
+          self.difference_builder.add_difference(mrid,
+           'PowerElectronicsConnection.q', -self.q_pv_greedy[idx], None)
 
     if self.includeRegulatorsFlag:
       # now do the same for regulators
@@ -502,14 +504,15 @@ class CompetingApp(GridAPPSD):
 
       reg_diff = [None] * len_RegulatorsInfo
       for i in range(len_RegulatorsInfo):
-        reg_diff[i] = abs(self.reg_greedy[i] - self.reg_proposed[i])
+        if self.reg_proposed[i] != None:
+          reg_diff[i] = abs(self.reg_greedy[i] - self.reg_proposed[i])
 
       #print('DECONFLICTOR COOPERATE reg_diff: ' + str(reg_diff), flush=True)
 
       # omit any setpoints where proposed == greeedy
       reg_sort = []
       for i in range(len_RegulatorsInfo):
-        if reg_diff[i] > 0:
+        if reg_diff[i]!=None and reg_diff[i]>0:
           reg_sort.append(reg_diff[i])
 
       # sorts in place
@@ -531,7 +534,7 @@ class CompetingApp(GridAPPSD):
       if coopLevel == 4:
         for i in range(len_RegulatorsInfo):
           # check if this is a "cooperating" regulator
-          if reg_diff[i]>0 and reg_diff[i]<=diffMax:
+          if reg_diff[i]!=None and reg_diff[i]>0 and reg_diff[i]<=diffMax:
             # full cooperation by setting the greedy value to proposed value
             self.reg_greedy[i] = self.reg_proposed[i]
 
@@ -541,7 +544,7 @@ class CompetingApp(GridAPPSD):
         reg_denom = [] # just for diagnostic logging
         for i in range(len_RegulatorsInfo):
           # check if this is a "cooperating" regulator
-          if reg_diff[i]>0 and reg_diff[i]<=diffMax:
+          if reg_diff[i]!=None and reg_diff[i]>0 and reg_diff[i]<=diffMax:
             # full cooperation by setting the greedy value to proposed value
             #self.reg_greedy[i] = self.reg_proposed[i]
             # adjust cooperation level based on difference
@@ -566,8 +569,9 @@ class CompetingApp(GridAPPSD):
       for reg in self.RegulatorsInfo:
         idx = self.RegulatorsInfo[reg]['idx']
         # new value before old value for DifferenceBuilder
-        self.difference_builder.add_difference(reg, 'TapChanger.step',
-                                               self.reg_greedy[idx], None)
+        if self.reg_proposed[idx] != None:
+          self.difference_builder.add_difference(reg, 'TapChanger.step',
+                                                 self.reg_greedy[idx], None)
 
     # finally, send out the cooperation setpoints via DifferenceBuilder msg
     dispatch_message = self.difference_builder.get_message()
