@@ -1838,9 +1838,6 @@ class DeconflictionPipeline(GridAPPSD):
             self.pltFile.write(',')
           self.pltFile.write(str(self.conflictMetric))
           self.pltFile.write(',')
-          if self.rulesStageLastFlag:
-            self.pltFile.write(str(self.rulesLastConflictMetric))
-            self.pltFile.write(',')
           self.pltFile.write('Responses:' + str(self.coopResponseCounter))
           self.pltFile.write(',Delta:N/A')
           self.pltFile.write(',Phase:')
@@ -2076,9 +2073,6 @@ class DeconflictionPipeline(GridAPPSD):
             self.pltFile.write(',')
           self.pltFile.write(str(self.rulesFirstConflictMetric))
           self.pltFile.write(',')
-          if self.rulesStageLastFlag:
-            self.pltFile.write(str(self.rulesLastConflictMetric))
-            self.pltFile.write(',')
           self.pltFile.write('\n')
         '''
         # COOPDBG finish
@@ -2309,8 +2303,6 @@ class DeconflictionPipeline(GridAPPSD):
                                         self.printAllRulesFlag)
       self.logResolutionTest('COOPERATION and OPTIMIZATION stages done after last rules stage', newResolutionVector)
 
-      self.rulesLastConflictMetric = self.ConflictMetricComputation(timestamp)
-
     # Published IEEE Access Foundational Paper Reference:
     #   Step 4--Setpoint Validator
     self.SetpointValidatorForBatteries(newResolutionVector,
@@ -2332,9 +2324,6 @@ class DeconflictionPipeline(GridAPPSD):
         self.pltFile.write(',')
       self.pltFile.write(str(self.conflictMetric))
       self.pltFile.write(',')
-      if self.rulesStageLastFlag:
-        self.pltFile.write(str(self.rulesLastConflictMetric))
-        self.pltFile.write(',')
       self.pltFile.write('Responses:' + str(self.coopResponseCounter))
       self.pltFile.write(',Delta:')
       self.pltFile.write(str(perConflictDelta))
