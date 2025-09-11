@@ -2004,8 +2004,11 @@ class DeconflictionPipeline(GridAPPSD):
     if meas_msg_flag:
       # start with a "target" resolution vector using the optimization code
       # that computes a centroid/target per device
-      self.TargetResolutionVector = self.CoopOptimization(timestamp,
-                                                          self.ConflictMatrix)
+      # GDB 9/10/25: something broken with CoopOptimization so don't call it
+      #self.TargetResolutionVector = self.CoopOptimization(timestamp,
+      #                                                    self.ConflictMatrix)
+      self.TargetResolutionVector = self.Optimization(timestamp,
+                                                      self.ConflictMatrix)
 
       # if we are not performing cooperation state deconfliction, use the
       # target resolution vector as the final one and proceed to dispatch
@@ -2208,8 +2211,11 @@ class DeconflictionPipeline(GridAPPSD):
 
       # start with a "target" resolution vector using the optimization code
       # that computes a weighted centroid per device
-      newTargetResolutionVector = self.CoopOptimization(timestamp,
-                                                        self.ConflictMatrix)
+      # GDB 9/10/25: something broken with CoopOptimization so don't call it
+      #newTargetResolutionVector = self.CoopOptimization(timestamp,
+      #                                                  self.ConflictMatrix)
+      newTargetResolutionVector = self.Optimization(timestamp,
+                                                    self.ConflictMatrix)
 
       # can't serialize TargetResolutionVector that contains complex numbers
       # for SolarPV setpoints. Need to translate all of those to tuples, which
