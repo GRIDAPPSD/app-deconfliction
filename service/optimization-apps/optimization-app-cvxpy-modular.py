@@ -265,22 +265,21 @@ class CompetingApp(GridAPPSD):
     elif coopLevel == 2:
       coopRatioDenom = 1.5
 
-    # message consists of a target ResolutionVector that is a dictionary
-    # with device mrid keys and target set-point values
-    targetResolutionVector = message['targetResolutionVector']
+    # message consists of a proposed dictionary with device mrid keys and
+    # proposed set-point values
+    coopProposed = message['coop_proposed']
 
     # except for SolarPVs the set-point values are tuples and they are
     # easier to work with as complex numbers so do that translation now
-    for mrid, value in targetResolutionVector.items():
+    for mrid, value in coopProposed.items():
       # I create tuples for the complex SolarPV setpoints for serialization,
       # but JSON serializes those as lists so the reverse deserialization
       # needs to check for lists rather than tuples
       if isinstance(value[1], list):
-        targetResolutionVector[mrid] = (value[0],
-                                        complex(value[1][0], value[1][1]))
+        coopProposed[mrid] = (value[0], complex(value[1][0], value[1][1]))
 
-    #for mrid in targetResolutionVector:
-    #  print('DECONFLICTOR COOPERATE mrid ' + mrid + ' target set-point: ' + str(targetResolutionVector[mrid]), flush=True)
+    #for mrid in coopProposed:
+    #  print('DECONFLICTOR COOPERATE mrid ' + mrid + ' proposed set-point: ' + str(coopProposed[mrid]), flush=True)
 
     if self.includeBatteriesFlag:
       # GDB 9/10/25: initialize proposed to None because there may be
@@ -289,9 +288,9 @@ class CompetingApp(GridAPPSD):
       self.p_batt_proposed = [None] * len_BatteriesInfo
 
       for mrid in self.BatteriesInfo:
-        if mrid in targetResolutionVector:
+        if mrid in coopProposed:
           idx = self.BatteriesInfo[mrid]['idx']
-          self.p_batt_proposed[idx] = -targetResolutionVector[mrid][1]
+          self.p_batt_proposed[idx] = -coopProposed[mrid][1]
 
     if self.includeRegulatorsFlag:
       # GDB 9/10/25: initialize proposed to None because there may be
@@ -300,9 +299,9 @@ class CompetingApp(GridAPPSD):
       self.reg_proposed = [None] * len_RegulatorsInfo
 
       for reg in self.RegulatorsInfo:
-        if reg in targetResolutionVector:
+        if reg in coopProposed:
           idx = self.RegulatorsInfo[reg]['idx']
-          self.reg_proposed[idx] = targetResolutionVector[reg][1]
+          self.reg_proposed[idx] = coopProposed[reg][1]
 
     if self.includeSolarPVsPFlag:
       # GDB 9/10/25: initialize proposed to None because there may be
@@ -311,9 +310,9 @@ class CompetingApp(GridAPPSD):
       self.pq_pv_proposed = [None] * len_SolarPVsInfo
 
       for mrid in self.SolarPVs:
-        if mrid in targetResolutionVector:
+        if mrid in coopProposed:
           idx = self.SolarPVs[mrid]['idx']
-          self.pq_pv_proposed[idx] = -targetResolutionVector[mrid][1]
+          self.pq_pv_proposed[idx] = -coopProposed[mrid][1]
 
     # Need to define the full optimization problem each time anything
     # changes for CVXPY to be happy

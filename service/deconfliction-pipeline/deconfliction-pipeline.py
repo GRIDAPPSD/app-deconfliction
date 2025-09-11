@@ -1310,6 +1310,7 @@ class DeconflictionPipeline(GridAPPSD):
 
   def CoopOptimization(self, timestamp, ConflictMatrix):
     TargetResolutionVector = {}
+    CoopProposed = {}
 
     # GDB 9/10/25: This version to call for generating a target resolution
     # vector for cooperation checks to see if there is conflict for a device
@@ -1333,39 +1334,47 @@ class DeconflictionPipeline(GridAPPSD):
           break
         setpoint = self.ConflictMatrix[device][app][1]
 
-      if conflictFlag:
-        optTimestamp = 0
-        optNumerator = 0.0
-        optDenominator = 0.0
+      optTimestamp = 0
+      optNumerator = 0.0
+      optDenominator = 0.0
 
-        for app in ConflictMatrix[device]:
-          optTimestamp = max(optTimestamp, ConflictMatrix[device][app][0])
+      for app in ConflictMatrix[device]:
+        optTimestamp = max(optTimestamp, ConflictMatrix[device][app][0])
 
-          if app in self.OptDevWeights and device in self.OptDevWeights[app]:
-            optNumerator += ConflictMatrix[device][app][1] * \
-                            self.OptDevWeights[app][device]
-            optDenominator += self.OptDevWeights[app][device]
+        if app in self.OptDevWeights and device in self.OptDevWeights[app]:
+          optNumerator += ConflictMatrix[device][app][1] * \
+                          self.OptDevWeights[app][device]
+          optDenominator += self.OptDevWeights[app][device]
 
-          elif app in self.OptAppWeights:
-            optNumerator += ConflictMatrix[device][app][1] * \
-                            self.OptAppWeights[app]
-            optDenominator += self.OptAppWeights[app]
+        elif app in self.OptAppWeights:
+          optNumerator += ConflictMatrix[device][app][1] * \
+                          self.OptAppWeights[app]
+          optDenominator += self.OptAppWeights[app]
 
-          else:
-            optNumerator += ConflictMatrix[device][app][1]
-            optDenominator += 1.0
+        else:
+          optNumerator += ConflictMatrix[device][app][1]
+          optDenominator += 1.0
 
-        if optDenominator > 0.0:
-          name = MethodUtil.DeviceToName[device]
-          if name.startswith('RatioTapChanger.'):
-            # note round() function yields an int
-            TargetResolutionVector[device] = (optTimestamp,
-                                              round(optNumerator/optDenominator))
-          else:
-            TargetResolutionVector[device] = (optTimestamp,
-                                              optNumerator/optDenominator)
+      if optDenominator > 0.0:
+        name = MethodUtil.DeviceToName[device]
+        if name.startswith('RatioTapChanger.'):
+          # note round() function yields an int
+          TargetResolutionVector[device] = (optTimestamp,
+                                            round(optNumerator/optDenominator))
+        else:
+          TargetResolutionVector[device] = (optTimestamp,
+                                            optNumerator/optDenominator)
 
-    return TargetResolutionVector
+      if conflictFlag and device in TargetResolutionVector:
+        value = TargetResolutionVector[device]
+        # can't serialize complex numbers for SolarPV setpoints so need
+        # to translate all of those to tuples
+        if isinstance(value[1], complex):
+          CoopProposed[device] = (value[0], (value[1].real, value[1].imag))
+        else:
+          CoopProposed[device] = value
+
+    return TargetResolutionVector, CoopProposed
 
 
   def DeviceDispatcher(self, timestamp, newResolutionVector,
@@ -2005,8 +2014,8 @@ class DeconflictionPipeline(GridAPPSD):
       # start with a "target" resolution vector using the optimization code
       # that computes a centroid/target per device
       # GDB 9/10/25: something broken with CoopOptimization so don't call it
-      #self.TargetResolutionVector = self.CoopOptimization(timestamp,
-      #                                                    self.ConflictMatrix)
+      #self.TargetResolutionVector, coopProposed = self.CoopOptimization(
+      #                                          timestamp, self.ConflictMatrix)
       self.TargetResolutionVector = self.Optimization(timestamp,
                                                       self.ConflictMatrix)
 
@@ -2120,14 +2129,13 @@ class DeconflictionPipeline(GridAPPSD):
 
       # can't serialize TargetResolutionVector that contains complex numbers
       # for SolarPV setpoints. Need to translate all of those to tuples
-      tupleTargetResolutionVector = copy.deepcopy(self.TargetResolutionVector)
-      for device, value in tupleTargetResolutionVector.items():
+      coopProposed = copy.deepcopy(self.TargetResolutionVector)
+      for device, value in coopProposed.items():
         if isinstance(value[1], complex):
-          tupleTargetResolutionVector[device] = (value[0],
-                                                 (value[1].real, value[1].imag))
+          coopProposed[device] = (value[0], (value[1].real, value[1].imag))
 
       coopMessage = {'coop_phase': self.coopCurrentPhase,
-                     'targetResolutionVector': tupleTargetResolutionVector}
+                     'coop_proposed': coopProposed}
       self.gapps.send(self.coop_topic, json.dumps(coopMessage))
       prlog('>>> DeconflictSetpoints--kicked off new COOPERATION phase, ' +
             'updated current phase: ' + str(self.coopCurrentPhase))
@@ -2212,23 +2220,20 @@ class DeconflictionPipeline(GridAPPSD):
       # start with a "target" resolution vector using the optimization code
       # that computes a weighted centroid per device
       # GDB 9/10/25: something broken with CoopOptimization so don't call it
-      #newTargetResolutionVector = self.CoopOptimization(timestamp,
-      #                                                  self.ConflictMatrix)
-      newTargetResolutionVector = self.Optimization(timestamp,
-                                                    self.ConflictMatrix)
+      #newTargetResolutionVector, coopProposed =self.CoopOptimization(timestamp,
+      #                                                     self.ConflictMatrix)
+      coopProposed = self.Optimization(timestamp, self.ConflictMatrix)
 
-      # can't serialize TargetResolutionVector that contains complex numbers
-      # for SolarPV setpoints. Need to translate all of those to tuples, which
-      # I can do in-place this time since we aren't keeping this version.
-      for device, value in newTargetResolutionVector.items():
+      # can't serialize complex numbers for SolarPV setpoints so need to
+      # translate all of those to tuples
+      for device, value in coopProposed.items():
         if isinstance(value[1], complex):
-          newTargetResolutionVector[device] = (value[0],
-                                               (value[1].real, value[1].imag))
+          coopProposed[device] = (value[0], (value[1].real, value[1].imag))
 
-      # publish this target resolution vector to the cooperation topic for
+      # publish this proposed setpoint vector to the cooperation topic for
       # competing apps that support cooperation to respond to
       coopMessage = {'coop_phase': self.coopCurrentPhase,
-                     'targetResolutionVector': newTargetResolutionVector}
+                     'coop_proposed': coopProposed}
       self.gapps.send(self.coop_topic, json.dumps(coopMessage))
       prlog('DeconflictSetpoints--finished processing, timestamp: ' +
             str(timestamp))
