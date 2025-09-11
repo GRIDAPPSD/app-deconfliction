@@ -297,7 +297,7 @@ class CompetingApp(GridAPPSD):
       # GDB 9/10/25: initialize proposed to None because there may be
       # missing devices in the proposed setpoints
       len_RegulatorsInfo = len(self.RegulatorsInfo)
-      self.reg_proposed[i] = [None] * len_RegulatorsInfo
+      self.reg_proposed = [None] * len_RegulatorsInfo
 
       for reg in self.RegulatorsInfo:
         if reg in targetResolutionVector:
@@ -308,7 +308,7 @@ class CompetingApp(GridAPPSD):
       # GDB 9/10/25: initialize proposed to None because there may be
       # missing devices in the proposed setpoints
       len_SolarPVsInfo = len(self.SolarPVsInfo)
-      self.pq_pv_proposed[i] = [None] * len_SolarPVsInfo
+      self.pq_pv_proposed = [None] * len_SolarPVsInfo
 
       for mrid in self.SolarPVs:
         if mrid in targetResolutionVector:
