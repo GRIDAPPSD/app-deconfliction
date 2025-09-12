@@ -2547,8 +2547,8 @@ class DeconflictionPipeline(GridAPPSD):
     if not self.realtimeFlag:
       self.rulesBattTimeInterval = 60*60*4 # every 4 hours
       self.rulesBattSwitchesAllowed = 1
-      self.rulesRegOuterTimeInterval = 60*60*4 # every 4 hours
-      self.rulesRegOuterStepsAllowed = 16
+      self.rulesRegOuterTimeInterval = 60*60*6 # every 6 hours
+      self.rulesRegOuterStepsAllowed = 8
 
     # for SHIVA conflict metric testing
     #self.TimeConflictMatrix = {}
