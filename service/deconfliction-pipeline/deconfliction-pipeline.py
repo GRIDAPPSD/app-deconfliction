@@ -423,6 +423,10 @@ class DeconflictionPipeline(GridAPPSD):
           # CMDGB code to try to force sigma_d_a to be <= 1 with abs()
           #sigma_d_a = gamma_d_a / self.SolarPVs[device]['ratedS']
           sigma_d_a = abs(gamma_d_a) / self.SolarPVs[device]['ratedS']
+          ### MM 09/12/25: Updating scaling to account for kW and kVAR spans of PVs
+          sigma_d_a_real = (gamma_d_a.real / self.SolarPVs[device]['ratedS'])
+          sigma_d_a_imag = (gamma_d_a.imag / (2*self.SolarPVs[device]['ratedS']))
+          sigma_d_a = complex(sigma_d_a_real, sigma_d_a_imag)
 
           apps[app][device] = sigma_d_a
           device_setpoints.append(sigma_d_a)
