@@ -423,9 +423,10 @@ class DeconflictionPipeline(GridAPPSD):
           # CMDGB code to try to force sigma_d_a to be <= 1 with abs()
           #sigma_d_a = gamma_d_a / self.SolarPVs[device]['ratedS']
           #sigma_d_a = abs(gamma_d_a) / self.SolarPVs[device]['ratedS']
-          ### MM 09/12/25: Updating scaling to account for kW and kVAR spans of PVs
-          sigma_d_a_real = (gamma_d_a.real / self.SolarPVs[device]['ratedS'])
-          sigma_d_a_imag = (gamma_d_a.imag / (2*self.SolarPVs[device]['ratedS']))
+          ### MM 09/12/25: Updating scaling to account for kW and kVAR
+          # spans of PVs
+          sigma_d_a_real = gamma_d_a.real / self.SolarPVs[device]['ratedS']
+          sigma_d_a_imag = gamma_d_a.imag / (2*self.SolarPVs[device]['ratedS'])
           sigma_d_a = complex(sigma_d_a_real, sigma_d_a_imag)
 
           apps[app][device] = sigma_d_a
@@ -502,7 +503,12 @@ class DeconflictionPipeline(GridAPPSD):
 
       elif name.startswith('PhotovoltaicUnit.'):
         # Normalize setpoints using rated power
-        sigma_d_t[device] = gamma_d_t / self.SolarPVs[device]['ratedS']
+        #sigma_d_t[device] = gamma_d_t / self.SolarPVs[device]['ratedS']
+        ### MM 09/12/25: Updating scaling to account for kW and kVAR
+        # spans of PVs
+        sigma_d_t_real = gamma_d_t.real / self.SolarPVs[device]['ratedS']
+        sigma_d_t_imag = gamma_d_t.imag / (2*self.SolarPVs[device]['ratedS'])
+        sigma_d_t[device] = complex(sigma_d_t_real, sigma_d_t_imag)
 
       # while we are iterating over devices, build up a list of apps we
       # need to compute weights for since that's buried down a level within
@@ -542,7 +548,13 @@ class DeconflictionPipeline(GridAPPSD):
 
           elif name.startswith('PhotovoltaicUnit.'):
             # Normalize setpoints using rated power
-            sigma = gamma_d_a / self.SolarPVs[device]['ratedS']
+            #sigma = gamma_d_a / self.SolarPVs[device]['ratedS']
+            ### MM 09/12/25: Updating scaling to account for kW and kVAR
+            # spans of PVs
+            sigma_real = gamma_d_a.real / self.SolarPVs[device]['ratedS']
+            sigma_imag = gamma_d_a.imag / (2*self.SolarPVs[device]['ratedS'])
+            sigma = complex(sigma_real, sigma_imag)
+
             sigma_d_a[device] = sigma
             centroid[device] = (sigma + sigma_d_t[device]) / 2
 
