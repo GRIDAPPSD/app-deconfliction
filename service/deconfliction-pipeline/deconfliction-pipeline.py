@@ -582,11 +582,14 @@ class DeconflictionPipeline(GridAPPSD):
       #prlog('CooperationWeightsUpdate--timestamp: ' + str(timestamp) +
       #   ', app: ' + app + ', initial weight: ' + str(self.OptAppWeights[app]))
 
-      # compute lowest weight over all apps to make adjustments later
-      # block comment out from here to end of function to bypass adjustments
+      # compute lowest weight over all apps to make adjustments below
       minWeight = min(minWeight, self.OptAppWeights[app])
 
     # Adjust weights to give even more incentive for better cooperating apps
+    # If we didn't "boost" the incentive then apps would not be provided any
+    # real benefit because they have already compromised with their preferred
+    # setpoints and they'd only be given compensation for that compromise
+    # not extra to make it "worth their while"
     weightLoss = 0.75 * minWeight # boost the incentive
     for app in app_list:
       self.OptAppWeights[app] -= weightLoss
@@ -633,7 +636,7 @@ class DeconflictionPipeline(GridAPPSD):
     for device in self.BatteriesInfo:
       chargeSoCMax = max(0.0, (0.9 - self.BatteriesInfo[device]['SoC']))
       self.BatteriesInfo[device]['P_batt_charge_max'] = \
-                         (chargeSoCMax*self.BatteriesInfo[device]['ratedE']) / \
+                         (chargeSoCMax*self.BatteriesInfo[device]['ratedE']) /\
                          (self.BatteriesInfo[device]['eff_c']*self.deltaT)
       if printAllFeasibilityFlag:
         prlog('FeasibilityMaintainerForBatteries--device: ' +
@@ -644,7 +647,7 @@ class DeconflictionPipeline(GridAPPSD):
 
       dischargeSoCMax = min(0.0, (0.2 - self.BatteriesInfo[device]['SoC']))
       self.BatteriesInfo[device]['P_batt_discharge_max'] = \
-                       (dischargeSoCMax*self.BatteriesInfo[device]['ratedE']) / \
+                       (dischargeSoCMax*self.BatteriesInfo[device]['ratedE']) /\
                        (1/self.BatteriesInfo[device]['eff_d']*self.deltaT)
       if printAllFeasibilityFlag:
         prlog('FeasibilityMaintainerForBatteries--device: ' +
@@ -660,47 +663,48 @@ class DeconflictionPipeline(GridAPPSD):
       if name.startswith('BatteryUnit.'):
         for app in self.ConflictMatrix[device]:
           # check vs. battery rated power
-          if abs(round(self.ConflictMatrix[device][app][1])) > \
+          if round(self.ConflictMatrix[device][app][1]) > \
              round(self.BatteriesInfo[device]['prated']):
             prlog('FeasibilityMaintainerForBatteries--device: ' + name +
                   ', app: ' + app + ', P_batt setpoint exceeds battery rated ' +
-                  'power: ' + str(self.ConflictMatrix[device][app][1]))
-            if self.ConflictMatrix[device][app][1] > 0:
-              self.ConflictMatrix[device][app] = \
+                  'power: ' + str(self.ConflictMatrix[device][app][1]) +
+                  ', reset to rated power: ' +
+                  str(self.BatteriesInfo[device]['prated']))
+            self.ConflictMatrix[device][app] = \
                                          (self.ConflictMatrix[device][app][0],
                                           self.BatteriesInfo[device]['prated'])
-            else:
-              self.ConflictMatrix[device][app] = \
+          elif -round(self.ConflictMatrix[device][app][1]) > \
+                round(self.BatteriesInfo[device]['prated']):
+            prlog('FeasibilityMaintainerForBatteries--device: ' + name +
+                  ', app: ' + app + ', P_batt setpoint exceeds battery rated ' +
+                  'power: ' + str(self.ConflictMatrix[device][app][1]) +
+                  ', reset to rated power: ' +
+                  str(-self.BatteriesInfo[device]['prated']))
+            self.ConflictMatrix[device][app] = \
                                          (self.ConflictMatrix[device][app][0],
                                           -self.BatteriesInfo[device]['prated'])
-            prlog('FeasibilityMaintainerForBatteries--device: ' + name +
-                  ', app: ' + app + ', P_batt setpoint reset to battery rated '+
-                  'power: ' + str(self.ConflictMatrix[device][app][1]))
 
           # check vs. battery SoC limits
           if -round(self.ConflictMatrix[device][app][1]) > \
               round(self.BatteriesInfo[device]['P_batt_charge_max']):
             prlog('FeasibilityMaintainerForBatteries--device: ' + name +
                   ', app: ' + app + ', P_batt setpoint above max charge ' +
-                  'P_batt: ' + str(-self.ConflictMatrix[device][app][1]))
+                  'P_batt: ' + str(-self.ConflictMatrix[device][app][1]) +
+                  ', reset to max charge P_batt: ' +
+                  str(-self.BatteriesInfo[device]['P_batt_charge_max']))
             self.ConflictMatrix[device][app] = \
-                               (self.ConflictMatrix[device][app][0],
-                                -self.BatteriesInfo[device]['P_batt_charge_max'])
-            prlog('FeasibilityMaintainerForBatteries--device: ' + name +
-                  ', app: ' + app + ', P_batt setpoint reset to max charge ' +
-                  'P_batt: ' + str(-self.ConflictMatrix[device][app][1]))
-
+                              (self.ConflictMatrix[device][app][0],
+                               -self.BatteriesInfo[device]['P_batt_charge_max'])
           elif -round(self.ConflictMatrix[device][app][1]) < \
                 round(self.BatteriesInfo[device]['P_batt_discharge_max']):
             prlog('FeasibilityMaintainerForBatteries--device: ' + name +
                   ', app: ' + app + ', P_batt setpoint below max discharge ' +
-                  'P_batt: ' + str(-self.ConflictMatrix[device][app][1]))
+                  'P_batt: ' + str(-self.ConflictMatrix[device][app][1]) +
+                  ', reset to max discharge P_batt: ' +
+                  str(-self.BatteriesInfo[device]['P_batt_discharge_max']))
             self.ConflictMatrix[device][app]= \
-                               (self.ConflictMatrix[device][app][0],
-                                -self.BatteriesInfo[device]['P_batt_discharge_max'])
-            prlog('FeasibilityMaintainerForBatteries--device: ' + name +
-                  ', app: ' + app + ', P_batt setpoint reset to max discharge '+
-                  'P_batt: ' + str(-self.ConflictMatrix[device][app][1]))
+                           (self.ConflictMatrix[device][app][0],
+                            -self.BatteriesInfo[device]['P_batt_discharge_max'])
 
 
   def FeasibilityMaintainerForRegulators(self, printAllFeasibilityFlag=False):
@@ -713,22 +717,18 @@ class DeconflictionPipeline(GridAPPSD):
           if self.ConflictMatrix[device][app][1] > 16:
             prlog('FeasibilityMaintainerForRegulators--device: ' + name +
                   ', app: ' + app + '--tap pos setpoint above max feasible ' +
-                  'pos: ' + str(self.ConflictMatrix[device][app][1]))
+                  'pos: ' + str(self.ConflictMatrix[device][app][1]) +
+                  ', reset to max feasible pos: 16')
             self.ConflictMatrix[device][app] = \
                                (self.ConflictMatrix[device][app][0], 16)
-            prlog('FeasibilityMaintainerForRegulators--device: ' + name +
-                  ', app: ' + app + '--tap pos setpoint reset to max feasible '+
-                  'pos: ' + str(self.ConflictMatrix[device][app][1]))
 
           elif self.ConflictMatrix[device][app][1] < -16:
             prlog('FeasibilityMaintainerForRegulators--device: ' + name +
                   ', app: ' + app + '--tap pos setpoint below min feasible ' +
-                  'pos: ' + str(self.ConflictMatrix[device][app][1]))
+                  'pos: ' + str(self.ConflictMatrix[device][app][1]) +
+                  ', reset to min feasible pos: -16')
             self.ConflictMatrix[device][app] = \
                                (self.ConflictMatrix[device][app][0], -16)
-            prlog('FeasibilityMaintainerForRegulators--device: ' + name +
-                  ', app: ' + app + '--tap pos setpoint reset to min feasible '+
-                  'pos: ' + str(self.ConflictMatrix[device][app][1]))
 
 
   def SetpointValidatorForBatteries(self, newResolutionVector,
@@ -764,47 +764,47 @@ class DeconflictionPipeline(GridAPPSD):
       name = MethodUtil.DeviceToName[device]
       if name.startswith('BatteryUnit.'):
         # check vs. battery rated power
-        if abs(round(newResolutionVector[device][1])) > \
+        if round(newResolutionVector[device][1]) > \
            round(self.BatteriesInfo[device]['prated']):
           prlog('SetpointValidatorForBatteries--device: ' + name +
                 ', P_batt setpoint exceeds battery rated power: ' +
-                str(newResolutionVector[device][1]))
-          if newResolutionVector[device][1] > 0:
-            newResolutionVector[device] = \
-                                       (newResolutionVector[device][0],
-                                        self.BatteriesInfo[device]['prated'])
-          else:
-            newResolutionVector[device] = \
-                                       (newResolutionVector[device][0],
-                                        -self.BatteriesInfo[device]['prated'])
+                str(newResolutionVector[device][1]) +
+                ', reset to rated power: ' +
+                str(self.BatteriesInfo[device]['prated']))
+          newResolutionVector[device] = (newResolutionVector[device][0],
+                                         self.BatteriesInfo[device]['prated'])
+        elif -round(newResolutionVector[device][1]) > \
+              round(self.BatteriesInfo[device]['prated']):
           prlog('SetpointValidatorForBatteries--device: ' + name +
-                ', P_batt setpoint reset to battery rated power: '+
-                str(newResolutionVector[device][1]))
+                ', P_batt setpoint exceeds battery rated power: ' +
+                str(newResolutionVector[device][1]) +
+                ', reset to rated power: ' +
+                str(-self.BatteriesInfo[device]['prated']))
+          newResolutionVector[device] = (newResolutionVector[device][0],
+                                         -self.BatteriesInfo[device]['prated'])
 
         # check vs. battery SoC limits
         if -round(newResolutionVector[device][1]) > \
             round(self.BatteriesInfo[device]['P_batt_charge_max']):
           prlog('SetpointValidatorForBatteries--device: ' + name +
                 ', P_batt setpoint above max charge P_batt: ' +
-                str(-newResolutionVector[device][1]))
+                str(-newResolutionVector[device][1]) +
+                ', reset to max charge P_batt: ' +
+                str(-self.BatteriesInfo[device]['P_batt_charge_max']))
           newResolutionVector[device] = \
                              (newResolutionVector[device][0],
                               -self.BatteriesInfo[device]['P_batt_charge_max'])
-          prlog('SetpointValidatorForBatteries--device: ' + name +
-                ', P_batt setpoint reset to max charge P_batt: ' +
-                str(-newResolutionVector[device][1]))
 
         elif -round(newResolutionVector[device][1]) < \
               round(self.BatteriesInfo[device]['P_batt_discharge_max']):
           prlog('SetpointValidatorForBatteries--device: ' + name +
                 ', P_batt setpoint below max discharge P_batt: ' +
-                str(-newResolutionVector[device][1]))
+                str(-newResolutionVector[device][1]) +
+                ', reset to max discharge P_batt: ' +
+                str(-self.BatteriesInfo[device]['P_batt_discharge_max']))
           newResolutionVector[device] = \
-                            (newResolutionVector[device][0],
-                             -self.BatteriesInfo[device]['P_batt_discharge_max'])
-          prlog('SetpointValidatorForBatteries--device: ' + name +
-                ', P_batt setpoint reset to max discharge P_batt: '+
-                str(-newResolutionVector[device][1]))
+                           (newResolutionVector[device][0],
+                            -self.BatteriesInfo[device]['P_batt_discharge_max'])
 
         # bail if rules aren't being applied at all
         if self.noValidatorRulesFlag or \
@@ -838,20 +838,16 @@ class DeconflictionPipeline(GridAPPSD):
         if newResolutionVector[device][1] > 16:
           prlog('SetpointValidatorForRegulators--device: ' + name +
                 '--tap pos setpoint above max feasible pos: ' +
-                str(newResolutionVector[device][1]))
+                str(newResolutionVector[device][1]) +
+                ', reset to max feasible pos: 16')
           newResolutionVector[device] = (newResolutionVector[device][0], 16)
-          prlog('SetpointValidatorForRegulators--device: ' + name +
-                '--tap pos setpoint reset to max feasible pos: '+
-                str(newResolutionVector[device][1]))
 
         elif newResolutionVector[device][1] < -16:
           prlog('SetpointValidatorForRegulators--device: ' + name +
                 '--tap pos setpoint below min feasible pos: ' +
-                str(newResolutionVector[device][1]))
+                str(newResolutionVector[device][1]) +
+                ', reset to min feasible pos: -16')
           newResolutionVector[device] = (newResolutionVector[device][0], -16)
-          prlog('SetpointValidatorForRegulators--device: ' + name +
-                '--tap pos setpoint reset to min feasible pos: '+
-                str(newResolutionVector[device][1]))
 
         # bail if rules aren't being applied at all
         if self.noValidatorRulesFlag or \
@@ -864,23 +860,21 @@ class DeconflictionPipeline(GridAPPSD):
              self.Regulators[device]['maxStep']:
             prlog('SetpointValidatorForRegulators--device: ' + name +
                   '--tap pos setpoint above max rules pos: ' +
-                  str(newResolutionVector[device][1]))
+                  str(newResolutionVector[device][1]) +
+                  ', reset to max rules pos: ' +
+                  str(self.Regulators[device]['maxStep']))
             newResolutionVector[device] = (newResolutionVector[device][0],
                                            self.Regulators[device]['maxStep'])
-            prlog('SetpointValidatorForRegulators--device: ' + name +
-                  '--tap pos setpoint reset to max rules pos: '+
-                  str(self.Regulators[device]['maxStep']))
 
           elif newResolutionVector[device][1] < \
              self.Regulators[device]['minStep']:
             prlog('SetpointValidatorForRegulators--device: ' + name +
                   '--tap pos setpoint below min rules pos: ' +
-                  str(newResolutionVector[device][1]))
+                  str(newResolutionVector[device][1]) +
+                  ', reset to min rules pos: ' +
+                  str(self.Regulators[device]['minStep']))
             newResolutionVector[device] = (newResolutionVector[device][0],
                                            self.Regulators[device]['minStep'])
-            prlog('SetpointValidatorForRegulators--device: ' + name +
-                  '--tap pos setpoint reset to min rules pos: '+
-                  str(self.Regulators[device]['minStep']))
 
 
   def RulesForBatteriesConflict(self, printAllRulesFlag=False):
@@ -928,14 +922,13 @@ class DeconflictionPipeline(GridAPPSD):
               prlog('RulesForBatteriesConflict--device: ' + name + ', app: ' +
                      app + ', P_batt setpoint attempted to change ' +
                      'charge/discharge state: ' +
-                     str(self.ConflictMatrix[device][app][1]))
+                     str(self.ConflictMatrix[device][app][1]) +
+                     ', P_batt setpoint reset to zero')
               # this is pretty harsh to force the setpoint request back to zero
               # to avoid a possible change in charge/discharge state, but no
               # other choice when the rule is applied before other stages
               self.ConflictMatrix[device][app]= \
                                   (self.ConflictMatrix[device][app][0], 0.0)
-              prlog('RulesForBatteriesConflict--device: ' + name + ', app: ' +
-                    app + ', P_batt setpoint reset to zero')
 
 
   def RulesForBatteriesResolution(self, newResolutionVector,
@@ -982,13 +975,12 @@ class DeconflictionPipeline(GridAPPSD):
              (prev_P_batt_inv<0 and newResolutionVector[device][1]>0):
             prlog('RulesForBatteriesResolution--device: ' + name +
               ', P_batt setpoint attempted to change charge/discharge state: ' +
-              str(newResolutionVector[device][1]))
+              str(newResolutionVector[device][1]) +
+              ', P_batt setpoint reset to zero')
             # force the setpoint request back to zero to avoid a change in
             # charge/discharge state
             newResolutionVector[device] = \
                                 (newResolutionVector[device][0], 0.0)
-            prlog('RulesForBatteriesResolution--device: ' + name +
-                  ', P_batt setpoint reset to zero')
 
 
   def logConflictReg(self, msg):
@@ -1256,8 +1248,7 @@ class DeconflictionPipeline(GridAPPSD):
                              (newResolutionVector[device][0],
                               self.Regulators[device]['maxStep'])
 
-        elif newResolutionVector[device][1] < \
-             self.Regulators[device]['minStep']:
+        elif newResolutionVector[device][1] <self.Regulators[device]['minStep']:
           prlog('RulesForRegulatorsResolution--device: ' + name +
                 ', pos setpoint: ' +
                 str(newResolutionVector[device][1]) +
@@ -1288,7 +1279,7 @@ class DeconflictionPipeline(GridAPPSD):
 
     # This should work whether the conflict matrix setpoint values are
     # scalars as with batteries and regulators or complex numbers as with
-    # solarPVs. Storing those SolarPV p,q values as complex numbers pays
+    # solarPVs. Storing those solarPV p,q values as complex numbers pays
     # off here.
     for device in ConflictMatrix:
       optTimestamp = 0
@@ -1582,8 +1573,8 @@ class DeconflictionPipeline(GridAPPSD):
 
     if not printAllMessagesFlag:
       ts_time = datetime.utcfromtimestamp(timestamp).time()
-      prlog('ProcessSimulationMessage--timestamp: ' + str(timestamp) + ', wall time: ' +
-            str(ts_time))
+      prlog('ProcessSimulationMessage--timestamp: ' + str(timestamp) +
+            ', wall time: ' + str(ts_time))
 
     self.simMessageCounter += 1
 
@@ -1693,7 +1684,6 @@ class DeconflictionPipeline(GridAPPSD):
           self.pltFile.write(',')
           self.pltFile.write(str(self.Regulators[device]['step']))
 
-    # for the app scalability task
     for bus in self.SolarPVsInfo:
       measid = self.SolarPVsInfo[bus]['measid']
       if measid in measurements:
@@ -2092,7 +2082,6 @@ class DeconflictionPipeline(GridAPPSD):
           self.pltFile.write(',')
           self.pltFile.write('\n')
         '''
-        # COOPDBG finish
 
         # Published IEEE Access Foundational Paper Reference:
         #   Step 5--Device Dispatcher
@@ -2111,7 +2100,6 @@ class DeconflictionPipeline(GridAPPSD):
               str(timestamp))
         return
 
-      # COOPDBG start
       # Published IEEE Access Foundational Paper Reference:
       #   Step 3.2--Deconfliction Solution
       # COOPERATION stage deconfliction
@@ -2159,9 +2147,7 @@ class DeconflictionPipeline(GridAPPSD):
       prlog('DeconflictSetpoints--finished processing, timestamp: ' +
             str(timestamp))
       return
-      # COOPDBG finish
 
-    # COOPDBG start
     # coop message with conflict to get here
     prlog('DeconflictSetpoints--conflict found with COOP ' +
           'message, checking thresholds')
@@ -2369,7 +2355,6 @@ class DeconflictionPipeline(GridAPPSD):
     self.AppCoopCount.clear()
     prlog('DeconflictSetpoints--finished processing, timestamp: ' +
           str(timestamp))
-    # COOPDBG finish
 
 
   def __init__(self, feeder_mrid, simulation_id, weights_base, interval):
