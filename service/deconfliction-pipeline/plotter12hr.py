@@ -208,7 +208,7 @@ def make_q_pv_plots(title, prefix, SolarPVs, t_plot, q_pv_plot):
       plt.xticks([0, 2, 4, 6, 8, 10, 12])
       plt.xlabel('Time (hr)')
 
-    plt.ylabel('q_pv (kW)')
+    plt.ylabel('q_pv (kVAR)')
     plt.plot(t_plot[:len(q_pv_plot[name])], q_pv_plot[name])
     plt.savefig('log/' + prefix + '_q_pv_' + pvname + '.png')
     #plot.show()
