@@ -61,38 +61,17 @@ def to_datetime(time):
   return datetime(1966, 8, 1, (int(time)-1)//4, 15*((int(time)-1) % 4), 0)
 
 
-def make_cm_plot(cm_t_plot, cm_start_plot, cm_rules_plot, cm_coop_plot):
-  plt.title('Conflict Metric', pad=15.0)
-
-  # GDB 9/5/25: make plot wider than default to uncompress data
-  plt.figure().set_size_inches(10, 5)
-
-  #ax = plt.figure().gca()
-  #ax.xaxis.set_major_formatter(md.DateFormatter('%H:%M'))
-  #plt.xlim([AppUtil.to_datetime(1), AppUtil.to_datetime(96)])
-  #plt.xticks([AppUtil.to_datetime(1), AppUtil.to_datetime(25), AppUtil.to_datetime(49), AppUtil.to_datetime(73), AppUtil.to_datetime(96)])
-  if realtimeFlag:
-    plt.xlabel('Time (sec)')
-  else:
-    plt.xlim([0, 24])
-    plt.xticks([0, 4, 8, 12, 16, 20, 24])
-    plt.xlabel('Time (hr)')
-
-  plt.ylabel('Conflict Metric')
-  plt.plot(cm_t_plot, cm_start_plot, label='starting metric')
-  plt.plot(cm_t_plot, cm_rules_plot, label='post-rules')
-  plt.plot(cm_t_plot, cm_coop_plot, label='post-cooperation')
-  plt.legend()
-  plt.grid(True)
-  plt.savefig('log/conflict_metric.png')
-  #plot.show()
-  plt.close()
-
-
-def make_p_batt_plots(title, prefix, Batteries, t_plot, p_batt_plot):
+def make_p_batt_plots(title, prefix, Batteries, t_plot_r, p_batt_plot_r, t_plot_m, p_batt_plot_m, t_plot_c, p_batt_plot_c):
   for name in Batteries:
-    if len(t_plot) != len(p_batt_plot[name]):
-      print('*** Mismatched data points for plot ' + title + ' P_batt ' + name + ', time len: ' + str(len(t_plot)) + ', p_batt len: ' + str(len(p_batt_plot[name])), flush=True)
+    if len(t_plot_r) != len(p_batt_plot_r[name]):
+      print('*** Mismatched data points for resilience plot ' + title + ' P_batt ' + name + ', time len: ' + str(len(t_plot_r)) + ', p_batt len: ' + str(len(p_batt_plot_r[name])), flush=True)
+
+    if len(t_plot_m) != len(p_batt_plot_m[name]):
+      print('*** Mismatched data points for max-local plot ' + title + ' P_batt ' + name + ', time len: ' + str(len(t_plot_m)) + ', p_batt len: ' + str(len(p_batt_plot_m[name])), flush=True)
+
+    if len(t_plot_c) != len(p_batt_plot_c[name]):
+      print('*** Mismatched data points for cvr plot ' + title + ' P_batt ' + name + ', time len: ' + str(len(t_plot_c)) + ', p_batt len: ' + str(len(p_batt_plot_c[name])), flush=True)
+
     batname = name[12:] # extract just the name for tidier plots
     plt.title(title + ' P_batt:  ' + batname, pad=15.0)
     #ax = plt.figure().gca()
@@ -107,16 +86,27 @@ def make_p_batt_plots(title, prefix, Batteries, t_plot, p_batt_plot):
       plt.xlabel('Time (hr)')
 
     plt.ylabel('P_batt (kW)')
-    plt.plot(t_plot[:len(p_batt_plot[name])], p_batt_plot[name])
+    plt.plot(t_plot_r[:len(p_batt_plot_r[name])], p_batt_plot_r[name], label='Resilience')
+    plt.plot(t_plot_m[:len(p_batt_plot_m[name])], p_batt_plot_m[name], label='Max Local')
+    plt.plot(t_plot_c[:len(p_batt_plot_c[name])], p_batt_plot_c[name], label='CVR')
+    plt.legend()
+    plt.grid(True)
     plt.savefig('log/' + prefix + '_p_batt_' + batname + '.png')
     #plot.show()
     plt.close()
 
 
-def make_soc_plots(title, prefix, Batteries, t_plot, soc_plot):
+def make_soc_plots(title, prefix, Batteries, t_plot_r, soc_plot_r, t_plot_m, soc_plot_m, t_plot_c, soc_plot_c):
   for name in Batteries:
-    if len(t_plot) != len(soc_plot[name]):
-      print('*** Mismatched data points for plot ' + title + ' SoC ' + name + ', time len: ' + str(len(t_plot)) + ', soc len: ' + str(len(soc_plot[name])), flush=True)
+    if len(t_plot_r) != len(soc_plot_r[name]):
+      print('*** Mismatched data points for resilience plot ' + title + ' SoC ' + name + ', time len: ' + str(len(t_plot_r)) + ', soc len: ' + str(len(soc_plot_r[name])), flush=True)
+
+    if len(t_plot_m) != len(soc_plot_m[name]):
+      print('*** Mismatched data points for max-local plot ' + title + ' SoC ' + name + ', time len: ' + str(len(t_plot_m)) + ', soc len: ' + str(len(soc_plot_m[name])), flush=True)
+
+    if len(t_plot_c) != len(soc_plot_c[name]):
+      print('*** Mismatched data points for cvr plot ' + title + ' SoC ' + name + ', time len: ' + str(len(t_plot_c)) + ', soc len: ' + str(len(soc_plot_c[name])), flush=True)
+
     batname = name[12:] # extract just the name for tidier plots
     plt.title(title + ' SoC:  ' + batname, pad=15.0)
     #ax = plt.figure().gca()
@@ -131,16 +121,27 @@ def make_soc_plots(title, prefix, Batteries, t_plot, soc_plot):
       plt.xlabel('Time (hr)')
 
     plt.ylabel('Battery SoC')
-    plt.plot(t_plot[:len(soc_plot[name])], soc_plot[name])
+    plt.plot(t_plot_r[:len(soc_plot_r[name])], soc_plot_r[name], label='Resilience')
+    plt.plot(t_plot_m[:len(soc_plot_m[name])], soc_plot_m[name], label='Max Local')
+    plt.plot(t_plot_c[:len(soc_plot_c[name])], soc_plot_c[name], label='CVR')
+    plt.legend()
+    plt.grid(True)
     plt.savefig('log/' + prefix + '_soc_' + batname + '.png')
     #plot.show()
     plt.close()
 
 
-def make_reg_plots(title, prefix, Regulators, t_plot, reg_plot):
+def make_reg_plots(title, prefix, Regulators, t_plot_r, reg_plot_r, t_plot_m, reg_plot_m, t_plot_c, reg_plot_c):
   for name in Regulators:
-    if len(t_plot) != len(reg_plot[name]):
-      print('*** Mismatched data points for plot ' + title + ' ' + name + ', time len: ' + str(len(t_plot)) + ', reg len: ' + str(len(reg_plot[name])), flush=True)
+    if len(t_plot_r) != len(reg_plot_r[name]):
+      print('*** Mismatched data points for resilience plot ' + title + ' ' + name + ', time len: ' + str(len(t_plot_r)) + ', reg len: ' + str(len(reg_plot_r[name])), flush=True)
+
+    if len(t_plot_m) != len(reg_plot_m[name]):
+      print('*** Mismatched data points for max-local plot ' + title + ' ' + name + ', time len: ' + str(len(t_plot_m)) + ', reg len: ' + str(len(reg_plot_m[name])), flush=True)
+
+    if len(t_plot_c) != len(reg_plot_c[name]):
+      print('*** Mismatched data points for cvr plot ' + title + ' ' + name + ', time len: ' + str(len(t_plot_c)) + ', reg len: ' + str(len(reg_plot_c[name])), flush=True)
+
     regname = name[16:] # extract just the name for tidier plots
     plt.title(title + ' Tap Pos:  ' + regname, pad=15.0)
     ax = plt.figure().gca()
@@ -157,20 +158,31 @@ def make_reg_plots(title, prefix, Regulators, t_plot, reg_plot):
       plt.xlabel('Time (hr)')
 
     plt.ylabel('Regulator Tap Pos')
-    plt.plot(t_plot[:len(reg_plot[name])], reg_plot[name])
+    plt.plot(t_plot_r[:len(reg_plot_r[name])], reg_plot_r[name], label='Resilience')
+    plt.plot(t_plot_m[:len(reg_plot_m[name])], reg_plot_m[name], label='Max Local')
+    plt.plot(t_plot_c[:len(reg_plot_c[name])], reg_plot_c[name], label='CVR')
+    plt.legend()
+    plt.grid(True)
     plt.savefig('log/' + prefix + '_tap_' + regname + '.png')
     #plot.show()
     plt.close()
 
 
-def make_p_pv_plots(title, prefix, SolarPVs, t_plot, p_pv_plot):
+def make_p_pv_plots(title, prefix, SolarPVs, t_plot_r, p_pv_plot_r, t_plot_m, p_pv_plot_m, t_plot_c, p_pv_plot_c):
   for name in SolarPVs:
     # just bail if there is no SolarPV data
-    if len(p_pv_plot[name]) == 0:
+    if len(p_pv_plot_r[name]) == 0:
       return
 
-    if len(t_plot) != len(p_pv_plot[name]):
-      print('*** Mismatched data points for plot ' + title + ' p_pv ' + name + ', time len: ' + str(len(t_plot)) + ', p_pv len: ' + str(len(p_pv_plot[name])), flush=True)
+    if len(t_plot_r) != len(p_pv_plot_r[name]):
+      print('*** Mismatched data points for resilience plot ' + title + ' p_pv ' + name + ', time len: ' + str(len(t_plot_r)) + ', p_pv len: ' + str(len(p_pv_plot_r[name])), flush=True)
+
+    if len(t_plot_m) != len(p_pv_plot_m[name]):
+      print('*** Mismatched data points for max-local plot ' + title + ' p_pv ' + name + ', time len: ' + str(len(t_plot_m)) + ', p_pv len: ' + str(len(p_pv_plot_m[name])), flush=True)
+
+    if len(t_plot_c) != len(p_pv_plot_c[name]):
+      print('*** Mismatched data points for cvr plot ' + title + ' p_pv ' + name + ', time len: ' + str(len(t_plot_c)) + ', p_pv len: ' + str(len(p_pv_plot_c[name])), flush=True)
+
     pvname = name[17:] # extract just the name for tidier plots
     plt.title(title + ' p_pv:  ' + pvname, pad=15.0)
     #ax = plt.figure().gca()
@@ -185,20 +197,31 @@ def make_p_pv_plots(title, prefix, SolarPVs, t_plot, p_pv_plot):
       plt.xlabel('Time (hr)')
 
     plt.ylabel('p_pv (kW)')
-    plt.plot(t_plot[:len(p_pv_plot[name])], p_pv_plot[name])
+    plt.plot(t_plot_r[:len(p_pv_plot_r[name])], p_pv_plot_r[name], label='Resilience')
+    plt.plot(t_plot_m[:len(p_pv_plot_m[name])], p_pv_plot_m[name], label='Max Local')
+    plt.plot(t_plot_c[:len(p_pv_plot_c[name])], p_pv_plot_c[name], label='CVR')
+    plt.legend()
+    plt.grid(True)
     plt.savefig('log/' + prefix + '_p_pv_' + pvname + '.png')
     #plot.show()
     plt.close()
 
 
-def make_q_pv_plots(title, prefix, SolarPVs, t_plot, q_pv_plot):
+def make_q_pv_plots(title, prefix, SolarPVs, t_plot_r, q_pv_plot_r, t_plot_m, q_pv_plot_m, t_plot_c, q_pv_plot_c):
   for name in SolarPVs:
     # just bail if there is no SolarPV data
-    if len(q_pv_plot[name]) == 0:
+    if len(q_pv_plot_r[name]) == 0:
       return
 
-    if len(t_plot) != len(q_pv_plot[name]):
-      print('*** Mismatched data points for plot ' + title + ' q_pv ' + name + ', time len: ' + str(len(t_plot)) + ', q_pv len: ' + str(len(q_pv_plot[name])), flush=True)
+    if len(t_plot_r) != len(q_pv_plot_r[name]):
+      print('*** Mismatched data points for resilience plot ' + title + ' q_pv ' + name + ', time len: ' + str(len(t_plot_r)) + ', q_pv len: ' + str(len(q_pv_plot_r[name])), flush=True)
+
+    if len(t_plot_m) != len(q_pv_plot_m[name]):
+      print('*** Mismatched data points for max-local plot ' + title + ' q_pv ' + name + ', time len: ' + str(len(t_plot_m)) + ', q_pv len: ' + str(len(q_pv_plot_m[name])), flush=True)
+
+    if len(t_plot_c) != len(q_pv_plot_c[name]):
+      print('*** Mismatched data points for cvr plot ' + title + ' q_pv ' + name + ', time len: ' + str(len(t_plot_c)) + ', q_pv len: ' + str(len(q_pv_plot_c[name])), flush=True)
+
     pvname = name[17:] # extract just the name for tidier plots
     plt.title(title + ' q_pv:  ' + pvname, pad=15.0)
     #ax = plt.figure().gca()
@@ -213,7 +236,11 @@ def make_q_pv_plots(title, prefix, SolarPVs, t_plot, q_pv_plot):
       plt.xlabel('Time (hr)')
 
     plt.ylabel('q_pv (kVAR)')
-    plt.plot(t_plot[:len(q_pv_plot[name])], q_pv_plot[name])
+    plt.plot(t_plot_r[:len(q_pv_plot_r[name])], q_pv_plot_r[name], label='Resilience')
+    plt.plot(t_plot_m[:len(q_pv_plot_m[name])], q_pv_plot_m[name], label='Max Local')
+    plt.plot(t_plot_c[:len(q_pv_plot_c[name])], q_pv_plot_c[name], label='CVR')
+    plt.legend()
+    plt.grid(True)
     plt.savefig('log/' + prefix + '_q_pv_' + pvname + '.png')
     #plot.show()
     plt.close()
@@ -272,13 +299,6 @@ def _main():
     p_pv_plot_c[pv] = []
     q_pv_plot_c[pv] = []
 
-  '''
-  cm_t_plot = []
-  cm_start_plot = []
-  cm_rules_plot = []
-  cm_coop_plot = []
-  '''
-
   timex_r = 1.0
   timex_m = 1.0
   timex_c = 1.0
@@ -313,7 +333,6 @@ def _main():
   prefix = 'sim'
 
   simhits = 0
-  #cmhits = 0
   with open('log/resil1app/plot_data.csv', 'r') as file:
     for line in file:
       tokens = line.split(',')
@@ -342,20 +361,9 @@ def _main():
           p_pv_plot_r[pv].append(cmplx.real)
           q_pv_plot_r[pv].append(cmplx.imag)
 
-      '''
-      elif tokens[0] == 'conflict_metric':
-        cmhits += 1
-        cm_t_plot.append(float(tokens[1])*timex)
-        cm_start_plot.append(float(tokens[3]))
-        cm_rules_plot.append(float(tokens[4]))
-        cm_coop_plot.append(float(tokens[5]))
-      '''
-
   print(app + ' resilience hits: ' + str(simhits), flush=True)
-  #print('conflict_metric hits: ' + str(cmhits), flush=True)
 
   simhits = 0
-  #cmhits = 0
   with open('log/maxlocal1app/plot_data.csv', 'r') as file:
     for line in file:
       tokens = line.split(',')
@@ -384,20 +392,9 @@ def _main():
           p_pv_plot_m[pv].append(cmplx.real)
           q_pv_plot_m[pv].append(cmplx.imag)
 
-      '''
-      elif tokens[0] == 'conflict_metric':
-        cmhits += 1
-        cm_t_plot.append(float(tokens[1])*timex)
-        cm_start_plot.append(float(tokens[3]))
-        cm_rules_plot.append(float(tokens[4]))
-        cm_coop_plot.append(float(tokens[5]))
-      '''
-
   print(app + ' max_local hits: ' + str(simhits), flush=True)
-  #print('conflict_metric hits: ' + str(cmhits), flush=True)
 
   simhits = 0
-  #cmhits = 0
   with open('log/cvr1app/plot_data.csv', 'r') as file:
     for line in file:
       tokens = line.split(',')
@@ -426,17 +423,7 @@ def _main():
           p_pv_plot_c[pv].append(cmplx.real)
           q_pv_plot_c[pv].append(cmplx.imag)
 
-      '''
-      elif tokens[0] == 'conflict_metric':
-        cmhits += 1
-        cm_t_plot.append(float(tokens[1])*timex)
-        cm_start_plot.append(float(tokens[3]))
-        cm_rules_plot.append(float(tokens[4]))
-        cm_coop_plot.append(float(tokens[5]))
-      '''
-
   print(app + ' cvr hits: ' + str(simhits), flush=True)
-  #print('conflict_metric hits: ' + str(cmhits), flush=True)
 
   make_p_batt_plots(app, prefix, Batteries, t_plot_r, p_batt_plot_r, t_plot_m, p_batt_plot_m, t_plot_c, p_batt_plot_c)
   make_soc_plots(app, prefix, Batteries, t_plot_r, soc_plot_r, t_plot_m, soc_plot_m, t_plot_c, soc_plot_c)
@@ -468,15 +455,6 @@ def _main():
     q_pv_plot_m[pv].clear()
     p_pv_plot_c[pv].clear()
     q_pv_plot_c[pv].clear()
-
-  '''
-  make_cm_plot(cm_t_plot, cm_start_plot, cm_rules_plot, cm_coop_plot)
-
-  cm_t_plot.clear()
-  cm_start_plot.clear()
-  cm_rules_plot.clear()
-  cm_coop_plot.clear()
-  '''
 
   # bail for now after sim measurement plots
   return
