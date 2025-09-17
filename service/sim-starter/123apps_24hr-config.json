@@ -11,6 +11,7 @@
   "simulation_config": {
     "start_time": "1704207000",
     "orig_start_time": "1704207000",
+    "eight_am_start_time": "1704096000",
     "shiva_orig_start_time": "1744196455",
     "shiva_new_start_time": "1744196457",
     "duration": "86400",
