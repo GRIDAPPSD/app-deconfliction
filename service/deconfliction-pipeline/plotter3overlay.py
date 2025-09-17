@@ -456,58 +456,105 @@ def _main():
     p_pv_plot_c[pv].clear()
     q_pv_plot_c[pv].clear()
 
-  # bail for now after sim measurement plots
-  return
+  app = 'resilience-app'
+  hits = 0
+  with open('log/resil1app/plot_data.csv', 'r') as file:
+    for line in file:
+      tokens = line.split(',')
+      if tokens[0] == app:
+        hits += 1
+        t_plot_r.append(float(tokens[1])*timex_r)
 
-  app_list = ['resilience-app', 'max_local-app', 'cvr-app']
-  #app_list = ['resilience-app', 'max_local-app']
-  #app_list = [] # use this for scalability runs to skip app plotting
-  #app_list = ['resilience-app']
-  #app_list = ['max_local-app']
-  prefix_list = ['resil', 'max_local', 'cvr']
-  #prefix_list = ['resil', 'max_local']
-  #prefix_list = ['resil']
-  #prefix_list = ['max_local']
+        numdev = len(tokens)
+        for it in range(3, numdev, 2):
+          dev = tokens[it]
+          if dev.startswith('BatteryUnit.'):
+            p_batt_plot_r[dev].append(float(tokens[it+1])/1000.0)
+          elif dev.startswith('RatioTapChanger.'):
+            reg_plot_r[dev].append(int(tokens[it+1]))
+          elif dev.startswith('PhotovoltaicUnit.'):
+            cmplx = complex(tokens[it+1])/1000.0
+            p_pv_plot_r[dev].append(cmplx.real)
+            q_pv_plot_r[dev].append(cmplx.imag)
 
-  for iapp in range(len(app_list)):
-    hits = 0
-    with open('log/plot_data.csv', 'r') as file:
-      for line in file:
-        tokens = line.split(',')
-        if tokens[0] == app_list[iapp]:
-          hits += 1
-          t_plot.append(float(tokens[1])*timex)
+  print(app + ' resilience hits: ' + str(hits), flush=True)
 
-          numdev = len(tokens)
-          for it in range(3, numdev, 2):
-            dev = tokens[it]
-            if dev.startswith('BatteryUnit.'):
-              p_batt_plot[dev].append(float(tokens[it+1])/1000.0)
-            elif dev.startswith('RatioTapChanger.'):
-              reg_plot[dev].append(int(tokens[it+1]))
-            elif dev.startswith('PhotovoltaicUnit.'):
-              cmplx = complex(tokens[it+1])/1000.0
-              p_pv_plot[dev].append(cmplx.real)
-              q_pv_plot[dev].append(cmplx.imag)
+  app = 'max_local-app'
+  hits = 0
+  with open('log/maxlocal1app/plot_data.csv', 'r') as file:
+    for line in file:
+      tokens = line.split(',')
+      if tokens[0] == app:
+        hits += 1
+        t_plot_m.append(float(tokens[1])*timex_m)
 
-    print(app_list[iapp] + ' hits: ' + str(hits), flush=True)
+        numdev = len(tokens)
+        for it in range(3, numdev, 2):
+          dev = tokens[it]
+          if dev.startswith('BatteryUnit.'):
+            p_batt_plot_m[dev].append(float(tokens[it+1])/1000.0)
+          elif dev.startswith('RatioTapChanger.'):
+            reg_plot_m[dev].append(int(tokens[it+1]))
+          elif dev.startswith('PhotovoltaicUnit.'):
+            cmplx = complex(tokens[it+1])/1000.0
+            p_pv_plot_m[dev].append(cmplx.real)
+            q_pv_plot_m[dev].append(cmplx.imag)
 
-    make_p_batt_plots(app_list[iapp], prefix_list[iapp], Batteries, t_plot, p_batt_plot)
-    make_reg_plots(app_list[iapp], prefix_list[iapp], Regulators, t_plot, reg_plot)
-    make_p_pv_plots(app_list[iapp], prefix_list[iapp], SolarPVs, t_plot, p_pv_plot)
-    make_q_pv_plots(app_list[iapp], prefix_list[iapp], SolarPVs, t_plot, q_pv_plot)
+  print(app + ' max_local hits: ' + str(hits), flush=True)
 
-    t_plot.clear()
+  app = 'cvr-app'
+  hits = 0
+  with open('log/cvr1app/plot_data.csv', 'r') as file:
+    for line in file:
+      tokens = line.split(',')
+      if tokens[0] == app:
+        hits += 1
+        t_plot_c.append(float(tokens[1])*timex_c)
 
-    for batt in Batteries:
-      p_batt_plot[batt].clear()
+        numdev = len(tokens)
+        for it in range(3, numdev, 2):
+          dev = tokens[it]
+          if dev.startswith('BatteryUnit.'):
+            p_batt_plot_c[dev].append(float(tokens[it+1])/1000.0)
+          elif dev.startswith('RatioTapChanger.'):
+            reg_plot_c[dev].append(int(tokens[it+1]))
+          elif dev.startswith('PhotovoltaicUnit.'):
+            cmplx = complex(tokens[it+1])/1000.0
+            p_pv_plot_c[dev].append(cmplx.real)
+            q_pv_plot_c[dev].append(cmplx.imag)
 
-    for reg in Regulators:
-      reg_plot[reg].clear()
+  print(app + ' cvr hits: ' + str(hits), flush=True)
 
-    for pv in SolarPVs:
-      p_pv_plot[pv].clear()
-      q_pv_plot[pv].clear()
+  prefix = 'setpt'
+  make_p_batt_plots(app, prefix, Batteries, t_plot_r, p_batt_plot_r, t_plot_m, p_batt_plot_m, t_plot_c, p_batt_plot_c)
+  make_reg_plots(app, prefix, Regulators, t_plot_r, reg_plot_r, t_plot_m, reg_plot_m, t_plot_c, reg_plot_c)
+  make_p_pv_plots(app, prefix, SolarPVs, t_plot_r, p_pv_plot_r, t_plot_m, p_pv_plot_m, t_plot_c, p_pv_plot_c)
+  make_q_pv_plots(app, prefix, SolarPVs, t_plot_r, q_pv_plot_r, t_plot_m, q_pv_plot_m, t_plot_c, q_pv_plot_c)
+
+  t_plot_r.clear()
+  t_plot_m.clear()
+  t_plot_c.clear()
+
+  for batt in Batteries:
+    p_batt_plot_r[batt].clear()
+    soc_plot_r[batt].clear()
+    p_batt_plot_m[batt].clear()
+    soc_plot_m[batt].clear()
+    p_batt_plot_c[batt].clear()
+    soc_plot_c[batt].clear()
+
+  for reg in Regulators:
+    reg_plot_r[reg].clear()
+    reg_plot_m[reg].clear()
+    reg_plot_c[reg].clear()
+
+  for pv in SolarPVs:
+    p_pv_plot_r[pv].clear()
+    q_pv_plot_r[pv].clear()
+    p_pv_plot_m[pv].clear()
+    q_pv_plot_m[pv].clear()
+    p_pv_plot_c[pv].clear()
+    q_pv_plot_c[pv].clear()
 
   print('Goodbye!')
 
