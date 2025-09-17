@@ -1553,12 +1553,12 @@ class CompetingApp(GridAPPSD):
 
         total_p = self.p_pv_A[idx].value + self.p_pv_B[idx].value + \
                   self.p_pv_C[idx].value
-        self.difference_builder.add_difference(mrid,
-             'PowerElectronicsConnection.p', -total_p, None)
+        #self.difference_builder.add_difference(mrid,
+        #     'PowerElectronicsConnection.p', -total_p, None)
         total_q = self.q_pv_A[idx].value + self.q_pv_B[idx].value + \
                   self.q_pv_C[idx].value
-        self.difference_builder.add_difference(mrid,
-             'PowerElectronicsConnection.q', -total_q, None)
+        #self.difference_builder.add_difference(mrid,
+        #     'PowerElectronicsConnection.q', -total_q, None)
 
         pq_pv_setpoints.append([name, bus, total_p/1000, total_q/1000])
 
@@ -1567,8 +1567,8 @@ class CompetingApp(GridAPPSD):
         self.p_pv_greedy[idx] = total_p
         self.q_pv_greedy[idx] = total_q
 
-      #print(tabulate(pq_pv_setpoints,headers=['SolarPV', 'bus', 'Total p (kW)',
-      #               'Total q (kW)'], tablefmt='psql'), flush=True)
+      print(tabulate(pq_pv_setpoints,headers=['SolarPV', 'bus', 'Total p (kW)',
+                     'Total q (kVAR)'], tablefmt='psql'), flush=True)
 
     '''
     if self.includePFlowFlag:
