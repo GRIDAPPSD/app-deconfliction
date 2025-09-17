@@ -492,9 +492,9 @@ class CompetingApp(GridAPPSD):
         # DifferenceBuilder message
         if self.pq_pv_proposed[idx] != None:
           self.difference_builder.add_difference(mrid,
-           'PowerElectronicsConnection.p', -self.p_pv_greedy[idx], None)
+           'PowerElectronicsConnection.p', self.p_pv_greedy[idx], None)
           self.difference_builder.add_difference(mrid,
-           'PowerElectronicsConnection.q', -self.q_pv_greedy[idx], None)
+           'PowerElectronicsConnection.q', self.q_pv_greedy[idx], None)
 
     if self.includeRegulatorsFlag:
       # now do the same for regulators
@@ -813,7 +813,8 @@ class CompetingApp(GridAPPSD):
 
     else:
       if self.objectiveResilienceFlag:
-        objective = self.optObjectiveForResilience(self.BatteriesInfo, self.soc)
+        objective = self.optObjectiveForResilience(self.BatteriesInfo, self.soc,
+                       self.SolarPVsInfo, self.p_pv_A, self.p_pv_B, self.p_pv_C)
 
       if self.objectiveCVRFlag:
         objective = self.optObjectiveForCVR(self.BusInfo,
@@ -1304,12 +1305,28 @@ class CompetingApp(GridAPPSD):
     self.Constraints.append(v_C[BusInfo[sourcebus]['idx']] == v_source ** 2)
 
 
-  def optObjectiveForResilience(self, BatteriesInfo, soc):
+  def optObjectiveForResilience(self, BatteriesInfo, soc, SolarPVsInfo,
+                                p_pv_A, p_pv_B, p_pv_C):
     # SHIVA magic scaling factor for SoC that causes the optmization to
     # come up with the correct results where -soc[i] doesn't.
     # Shiva will be investigating why this happens since we don't want
     # to be dependent on magic
     objective = sum(-100 * soc[i] for i in range(len(BatteriesInfo)))
+
+    # MM 9/17/25
+    #### Adding additional term to minimize active power curtailment
+    objective_pv = 0
+    for bus in SolarPVsInfo:
+      idx = SolarPVsInfo[bus]['idx']
+      if 'A' in SolarPVsInfo[bus]['phase']:
+        objective_pv += p_pv_A[idx]
+      if 'B' in SolarPVsInfo[bus]['phase']:
+        objective_pv += p_pv_B[idx]
+      if 'C' in SolarPVsInfo[bus]['phase']:
+        objective_pv += p_pv_C[idx]
+
+    objective -= objective_pv/1e+6
+
     return objective
 
 
@@ -1521,8 +1538,8 @@ class CompetingApp(GridAPPSD):
             self.reg_greedy[idx] = k-16
             break # assume this will only happen once per regulator
 
-      #print(tabulate(regulator_taps, headers=['Regulator', 'Tap', 'b_i'],
-      #               tablefmt='psql'), flush=True)
+      print(tabulate(regulator_taps, headers=['Regulator', 'Tap', 'b_i'],
+                     tablefmt='psql'), flush=True)
 
     if includeBatteriesFlag:
       p_batt_setpoints = []
@@ -1553,12 +1570,12 @@ class CompetingApp(GridAPPSD):
 
         total_p = self.p_pv_A[idx].value + self.p_pv_B[idx].value + \
                   self.p_pv_C[idx].value
-        #self.difference_builder.add_difference(mrid,
-        #     'PowerElectronicsConnection.p', -total_p, None)
+        self.difference_builder.add_difference(mrid,
+             'PowerElectronicsConnection.p', total_p, None)
         total_q = self.q_pv_A[idx].value + self.q_pv_B[idx].value + \
                   self.q_pv_C[idx].value
-        #self.difference_builder.add_difference(mrid,
-        #     'PowerElectronicsConnection.q', -total_q, None)
+        self.difference_builder.add_difference(mrid,
+             'PowerElectronicsConnection.q', total_q, None)
 
         pq_pv_setpoints.append([name, bus, total_p/1000, total_q/1000])
 
