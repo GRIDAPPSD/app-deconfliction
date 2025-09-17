@@ -2065,7 +2065,6 @@ class DeconflictionPipeline(GridAPPSD):
                                             self.printAllValidatorFlag)
 
         # uncomment to output conflict metric values without cooperation
-        '''
         if self.pltFlag:
           self.pltFile.write('conflict_metric,')
           diff = (datetime.now() - self.pltTZero).total_seconds()
@@ -2078,10 +2077,8 @@ class DeconflictionPipeline(GridAPPSD):
           if self.rulesStageFirstFlag:
             self.pltFile.write(str(self.rulesFirstConflictMetric))
             self.pltFile.write(',')
-          self.pltFile.write(str(self.rulesFirstConflictMetric))
-          self.pltFile.write(',')
+          self.pltFile.write('BYPASS_COOPERATION')
           self.pltFile.write('\n')
-        '''
 
         # Published IEEE Access Foundational Paper Reference:
         #   Step 5--Device Dispatcher

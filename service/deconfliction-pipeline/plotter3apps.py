@@ -81,7 +81,8 @@ def make_cm_plot(cm_t_plot, cm_start_plot, cm_rules_plot, cm_coop_plot):
   plt.ylabel('Conflict Metric')
   plt.plot(cm_t_plot, cm_start_plot, label='starting metric')
   plt.plot(cm_t_plot, cm_rules_plot, label='post-rules')
-  plt.plot(cm_t_plot, cm_coop_plot, label='post-cooperation')
+  if len(cm_coop_plot) > 0:
+    plt.plot(cm_t_plot, cm_coop_plot, label='post-cooperation')
   plt.legend()
   plt.grid(True)
   plt.savefig('log/conflict_metric.png')
@@ -253,7 +254,6 @@ def _main():
   cm_rules_plot = []
   cm_coop_plot = []
 
-
   timex = 1.0
 
   if not realtimeFlag:
@@ -305,7 +305,8 @@ def _main():
         cm_t_plot.append(float(tokens[1])*timex)
         cm_start_plot.append(float(tokens[3]))
         cm_rules_plot.append(float(tokens[4]))
-        cm_coop_plot.append(float(tokens[5]))
+        if tokens[5] != 'BYPASS_COOPERATION\n':
+          cm_coop_plot.append(float(tokens[5]))
 
   print(app + ' hits: ' + str(simhits), flush=True)
   print('conflict_metric hits: ' + str(cmhits), flush=True)
