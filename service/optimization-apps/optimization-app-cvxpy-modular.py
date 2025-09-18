@@ -962,8 +962,9 @@ class CompetingApp(GridAPPSD):
       coeff = math.sqrt(2) - 1 ### Coefficient for Octagon Constraints
 
       if 'A' in SolarPVsInfo[bus]['phase']:
-        self.Constraints.append(p_pv_A[idx] <= ratedP)
-        self.Constraints.append(p_pv_A[idx] >= 0)
+        self.Constraints.append(p_pv_A[idx] == ratedP)
+        #self.Constraints.append(p_pv_A[idx] <= ratedP)
+        #self.Constraints.append(p_pv_A[idx] >= 0)
 
         if includeSolarPVsQFlag:
           self.Constraints.append(q_pv_A[idx] <= ratedS)
@@ -977,8 +978,9 @@ class CompetingApp(GridAPPSD):
 
 
       if 'B' in SolarPVsInfo[bus]['phase']:
-        self.Constraints.append(p_pv_B[idx] <= ratedP)
-        self.Constraints.append(p_pv_B[idx] >= 0)
+        self.Constraints.append(p_pv_B[idx] == ratedP)
+        #self.Constraints.append(p_pv_B[idx] <= ratedP)
+        #self.Constraints.append(p_pv_B[idx] >= 0)
 
         if includeSolarPVsQFlag:
           self.Constraints.append(q_pv_B[idx] <=  ratedS)
@@ -991,8 +993,9 @@ class CompetingApp(GridAPPSD):
           self.Constraints.append(q_pv_B[idx] == 0)
 
       if 'C' in SolarPVsInfo[bus]['phase']:
-        self.Constraints.append(p_pv_C[idx] <= ratedP)
-        self.Constraints.append(p_pv_C[idx] >= 0)
+        self.Constraints.append(p_pv_C[idx] == ratedP)
+        #self.Constraints.append(p_pv_C[idx] <= ratedP)
+        #self.Constraints.append(p_pv_C[idx] >= 0)
 
         if includeSolarPVsQFlag:
           self.Constraints.append(q_pv_C[idx] <=  ratedS)
@@ -1315,6 +1318,7 @@ class CompetingApp(GridAPPSD):
 
     # MM 9/17/25
     #### Adding additional term to minimize active power curtailment
+    '''
     objective_pv = 0
     for bus in SolarPVsInfo:
       idx = SolarPVsInfo[bus]['idx']
@@ -1326,6 +1330,7 @@ class CompetingApp(GridAPPSD):
         objective_pv += p_pv_C[idx]
 
     objective -= objective_pv/1e+6
+    '''
 
     return objective
 
@@ -1570,8 +1575,8 @@ class CompetingApp(GridAPPSD):
 
         total_p = self.p_pv_A[idx].value + self.p_pv_B[idx].value + \
                   self.p_pv_C[idx].value
-        self.difference_builder.add_difference(mrid,
-             'PowerElectronicsConnection.p', total_p, None)
+        #self.difference_builder.add_difference(mrid,
+        #     'PowerElectronicsConnection.p', total_p, None)
         total_q = self.q_pv_A[idx].value + self.q_pv_B[idx].value + \
                   self.q_pv_C[idx].value
         self.difference_builder.add_difference(mrid,
