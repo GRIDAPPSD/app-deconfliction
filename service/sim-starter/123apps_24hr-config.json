@@ -9,8 +9,9 @@
     ]
   },
   "simulation_config": {
-    "start_time": "1704207000",
+    "start_time": "1704067200",
     "orig_start_time": "1704207000",
+    "midnight_start_time": "1704067200",
     "five_am_start_time": "1704085200",
     "eight_am_start_time": "1704096000",
     "shiva_orig_start_time": "1744196455",
