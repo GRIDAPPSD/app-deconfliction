@@ -425,6 +425,8 @@ def _main():
 
   print(app + ' cvr hits: ' + str(simhits), flush=True)
 
+  app = 'Simulation'
+
   make_p_batt_plots(app, prefix, Batteries, t_plot_r, p_batt_plot_r, t_plot_m, p_batt_plot_m, t_plot_c, p_batt_plot_c)
   make_soc_plots(app, prefix, Batteries, t_plot_r, soc_plot_r, t_plot_m, soc_plot_m, t_plot_c, soc_plot_c)
   make_reg_plots(app, prefix, Regulators, t_plot_r, reg_plot_r, t_plot_m, reg_plot_m, t_plot_c, reg_plot_c)
@@ -525,6 +527,7 @@ def _main():
 
   print(app + ' cvr hits: ' + str(hits), flush=True)
 
+  app = 'App Preferred'
   prefix = 'setpt'
   make_p_batt_plots(app, prefix, Batteries, t_plot_r, p_batt_plot_r, t_plot_m, p_batt_plot_m, t_plot_c, p_batt_plot_c)
   make_reg_plots(app, prefix, Regulators, t_plot_r, reg_plot_r, t_plot_m, reg_plot_m, t_plot_c, reg_plot_c)
