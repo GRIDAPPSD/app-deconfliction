@@ -1575,8 +1575,8 @@ class CompetingApp(GridAPPSD):
 
         total_p = self.p_pv_A[idx].value + self.p_pv_B[idx].value + \
                   self.p_pv_C[idx].value
-        #self.difference_builder.add_difference(mrid,
-        #     'PowerElectronicsConnection.p', total_p, None)
+        self.difference_builder.add_difference(mrid,
+             'PowerElectronicsConnection.p', total_p, None)
         total_q = self.q_pv_A[idx].value + self.q_pv_B[idx].value + \
                   self.q_pv_C[idx].value
         self.difference_builder.add_difference(mrid,
