@@ -2511,12 +2511,14 @@ class DeconflictionPipeline(GridAPPSD):
     # controls whether rules stage deconfliction is done as the first stage
     # using the ConflictMatrix and/or deferred until the last stage before
     # device dispatch using the ResolutionVector
-    self.rulesStageFirstFlag = True
+    #self.rulesStageFirstFlag = True
+    self.rulesStageFirstFlag = False
     self.rulesStageLastFlag = False
     self.noValidatorRulesFlag = True
 
     # controls where cooperation stage deconfliction is done
-    self.coopStageFlag = True
+    #self.coopStageFlag = True
+    self.coopStageFlag = False
 
     # APP SCALABILITY: to streamline the deconfliction workflow when focused
     # on running large numbers of apps rather than on the deconfliction
