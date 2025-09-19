@@ -228,7 +228,7 @@ class CompetingApp(GridAPPSD):
 
       if lastCoopMessage != None:
         if self.includeBatteriesFlag or self.includeRegulatorsFlag or \
-           self.includeSolarPVsFlag:
+           self.includeSolarPVsPFlag:
           checkPhase = lastCoopMessage['coop_phase']
 
           if checkPhase >= self.coopPhase:
@@ -721,7 +721,7 @@ class CompetingApp(GridAPPSD):
       self.includeQFlowFlag = True
 
 
-  def optPerform(self):
+  def optPerform(self, ts_datetime):
     self.Constraints = []
 
     if self.includeBatteriesFlag:
@@ -740,7 +740,8 @@ class CompetingApp(GridAPPSD):
       self.optConstraintsDERWithSolarPVs(self.SolarPVsInfo,
                                          self.includeSolarPVsQFlag,
                                          self.p_pv_A, self.p_pv_B, self.p_pv_C,
-                                         self.q_pv_A, self.q_pv_B, self.q_pv_C)
+                                         self.q_pv_A, self.q_pv_B, self.q_pv_C,
+                                         ts_datetime)
 
     if self.includePFlowFlag:
       self.optConstraintsNetworkWithPFlow(self.includeBatteriesFlag,
@@ -948,7 +949,11 @@ class CompetingApp(GridAPPSD):
 
   def optConstraintsDERWithSolarPVs(self, SolarPVsInfo, includeSolarPVsQFlag,
                                     p_pv_A, p_pv_B, p_pv_C,
-                                    q_pv_A, q_pv_B, q_pv_C):
+                                    q_pv_A, q_pv_B, q_pv_C, ts_datetime):
+    ts_target = pd.to_datetime(str(ts_datetime))
+    idx_profile = abs(self.solar_profile['Timestamp'] - ts_target).idxmin()
+    pv_profile_now = self.solar_profile['PV_profile'][idx_profile]
+
     for bus in SolarPVsInfo:
       idx = SolarPVsInfo[bus]['idx']
 
@@ -956,15 +961,14 @@ class CompetingApp(GridAPPSD):
       if 'N' in SolarPVsInfo[bus]['phase']:
         numphases -= 1
 
-      ratedS = SolarPVsInfo[bus]['ratedS']/numphases
-      ratedP = SolarPVsInfo[bus]['p']/numphases
+      ratedS = pv_profile_now * (SolarPVsInfo[bus]['ratedS']/numphases)
+      #ratedP = SolarPVsInfo[bus]['p']/numphases
 
       coeff = math.sqrt(2) - 1 ### Coefficient for Octagon Constraints
 
       if 'A' in SolarPVsInfo[bus]['phase']:
-        self.Constraints.append(p_pv_A[idx] == ratedP)
-        #self.Constraints.append(p_pv_A[idx] <= ratedP)
-        #self.Constraints.append(p_pv_A[idx] >= 0)
+        self.Constraints.append(p_pv_A[idx] <= ratedS)
+        self.Constraints.append(p_pv_A[idx] >= 0)
 
         if includeSolarPVsQFlag:
           self.Constraints.append(q_pv_A[idx] <= ratedS)
@@ -978,9 +982,8 @@ class CompetingApp(GridAPPSD):
 
 
       if 'B' in SolarPVsInfo[bus]['phase']:
-        self.Constraints.append(p_pv_B[idx] == ratedP)
-        #self.Constraints.append(p_pv_B[idx] <= ratedP)
-        #self.Constraints.append(p_pv_B[idx] >= 0)
+        self.Constraints.append(p_pv_B[idx] <= ratedS)
+        self.Constraints.append(p_pv_B[idx] >= 0)
 
         if includeSolarPVsQFlag:
           self.Constraints.append(q_pv_B[idx] <=  ratedS)
@@ -993,9 +996,8 @@ class CompetingApp(GridAPPSD):
           self.Constraints.append(q_pv_B[idx] == 0)
 
       if 'C' in SolarPVsInfo[bus]['phase']:
-        self.Constraints.append(p_pv_C[idx] == ratedP)
-        #self.Constraints.append(p_pv_C[idx] <= ratedP)
-        #self.Constraints.append(p_pv_C[idx] >= 0)
+        self.Constraints.append(p_pv_C[idx] <= ratedS)
+        self.Constraints.append(p_pv_C[idx] >= 0)
 
         if includeSolarPVsQFlag:
           self.Constraints.append(q_pv_C[idx] <=  ratedS)
@@ -1318,7 +1320,6 @@ class CompetingApp(GridAPPSD):
 
     # MM 9/17/25
     #### Adding additional term to minimize active power curtailment
-    '''
     objective_pv = 0
     for bus in SolarPVsInfo:
       idx = SolarPVsInfo[bus]['idx']
@@ -1330,7 +1331,6 @@ class CompetingApp(GridAPPSD):
         objective_pv += p_pv_C[idx]
 
     objective -= objective_pv/1e+6
-    '''
 
     return objective
 
@@ -1794,6 +1794,13 @@ class CompetingApp(GridAPPSD):
     else:
       self.optPrelimClassic()
 
+    # MM 9/19/25: load the solarPV profile data to be able to do quick
+    # lookups for the current timestamp each time an optimization is done
+    if self.includeSolarPVsPFlag:
+      self.solar_profile = pd.read_csv('solar_profile.csv')
+      self.solar_profile['Timestamp'] = pd.to_datetime(
+                                           self.solar_profile['Timestamp'])
+
     # cooperation variables
     # for the greedy values these use multiprocessing shared memory
     len_BatteriesInfo = len(self.BatteriesInfo)
@@ -2128,7 +2135,7 @@ class CompetingApp(GridAPPSD):
         self.processMeasMessage(lastMeasMessage['measurements'])
 
         # perform optimization
-        self.optPerform()
+        self.optPerform(datetime.utcfromtimestamp(ts_unix))
 
 
 def _main():
