@@ -1505,8 +1505,9 @@ class CompetingApp(GridAPPSD):
     startTime = datetime.now()
     #problem.solve(solver=cp.MOSEK, verbose=True) # commercial solver
     #problem.solve(solver=cp.CBC, verbose=False)
+    # GDB 9/19/25: Set 20 second time limit before bailing
     problem.solve(solver=cp.GLPK_MI, abstol=1e-3, kktsolver='chol',
-                  feastol=1e-3, max_iters=100, verbose=False)
+                  feastol=1e-3, max_iters=100, tm_lim=20000, verbose=False)
     print('Optimization status:', problem.status, flush=True)
     #print('Optimization value:', problem.value, flush=True)
     now = datetime.now()
