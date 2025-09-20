@@ -1505,9 +1505,12 @@ class CompetingApp(GridAPPSD):
     startTime = datetime.now()
     #problem.solve(solver=cp.MOSEK, verbose=True) # commercial solver
     #problem.solve(solver=cp.CBC, verbose=False)
-    # GDB 9/19/25: Set 20 second time limit before bailing
+    # GDB 9/19/25: Set 15 second time limit before bailing because sometimes
+    # it really gets stuck and falls so far behind that the results are
+    # useless by the time they are computed and then the app is way behind
+    # in missing all the data while it was stuck.
     problem.solve(solver=cp.GLPK_MI, abstol=1e-3, kktsolver='chol',
-                  feastol=1e-3, max_iters=100, tm_lim=20000, verbose=False)
+                  feastol=1e-3, max_iters=100, tm_lim=15000, verbose=False)
     print('Optimization status:', problem.status, flush=True)
     #print('Optimization value:', problem.value, flush=True)
     now = datetime.now()
@@ -1517,7 +1520,8 @@ class CompetingApp(GridAPPSD):
     print('Optimization time: ' + str(optTime), flush=True)
     print('Optimization time interval: ' + str(optInterval), flush=True)
 
-    return (problem.status  == 'optimal')
+    # GDB 9/19/25: Treat an optimal_inaccurate status the same as optimal
+    return (problem.status.startswith('optimal'))
 
 
   def optDispatch(self, includeRegulatorsFlag, includeBatteriesFlag,
