@@ -341,14 +341,14 @@ def _main():
   ##app_list = ['resilience-app', 'max_local-app', 'cvr-app']
   #app_list = ['resilience-app', 'max_local-app']
   #app_list = [] # use this for scalability runs to skip app plotting
-  #app_list = ['resilience-app']
+  app_list = ['resilience-app']
   #app_list = ['max_local-app']
-  app_list = ['cvr-app']
+  #app_list = ['cvr-app']
   #prefix_list = ['resil', 'max_local', 'cvr']
   #prefix_list = ['resil', 'max_local']
-  #prefix_list = ['resil']
+  prefix_list = ['resil']
   #prefix_list = ['max_local']
-  prefix_list = ['cvr']
+  #prefix_list = ['cvr']
 
   for iapp in range(len(app_list)):
     hits = 0
