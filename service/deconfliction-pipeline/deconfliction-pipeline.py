@@ -203,7 +203,7 @@ class DeconflictionPipeline(GridAPPSD):
       prlog('OnCoopSetpointsMessage--received message: ' + str(message))
       prlog('OnCoopSetpointsMessage--received header: ' + str(header))
 
-    self.messageQueue.put((message['app_name'], False, message['coop_phase'],
+    self.messageQueue.put((message['app_name'], False, message['coop_series'],
                            message['input']['message']))
 
   # end of message listener process methods
@@ -673,6 +673,7 @@ class DeconflictionPipeline(GridAPPSD):
             self.ConflictMatrix[device][app] = \
                                          (self.ConflictMatrix[device][app][0],
                                           self.BatteriesInfo[device]['prated'])
+
           elif -round(self.ConflictMatrix[device][app][1]) > \
                 round(self.BatteriesInfo[device]['prated']):
             prlog('FeasibilityMaintainerForBatteries--device: ' + name +
@@ -688,20 +689,21 @@ class DeconflictionPipeline(GridAPPSD):
           if -round(self.ConflictMatrix[device][app][1]) > \
               round(self.BatteriesInfo[device]['P_batt_charge_max']):
             prlog('FeasibilityMaintainerForBatteries--device: ' + name +
-                  ', app: ' + app + ', P_batt setpoint above max charge ' +
-                  'P_batt: ' + str(-self.ConflictMatrix[device][app][1]) +
-                  ', reset to max charge P_batt: ' +
-                  str(-self.BatteriesInfo[device]['P_batt_charge_max']))
+                  ', app: ' + app + ', P_batt setpoint would exceeed 0.9 SoC ' +
+                  'limit: ' + str(-self.ConflictMatrix[device][app][1]) +
+                  ', reset to max allowed charge P_batt: ' +
+                  str(self.BatteriesInfo[device]['P_batt_charge_max']))
             self.ConflictMatrix[device][app] = \
                               (self.ConflictMatrix[device][app][0],
                                -self.BatteriesInfo[device]['P_batt_charge_max'])
+
           elif -round(self.ConflictMatrix[device][app][1]) < \
                 round(self.BatteriesInfo[device]['P_batt_discharge_max']):
             prlog('FeasibilityMaintainerForBatteries--device: ' + name +
-                  ', app: ' + app + ', P_batt setpoint below max discharge ' +
-                  'P_batt: ' + str(-self.ConflictMatrix[device][app][1]) +
-                  ', reset to max discharge P_batt: ' +
-                  str(-self.BatteriesInfo[device]['P_batt_discharge_max']))
+                  ', app: ' + app + ', P_batt setpoint would fall below 0.2 ' +
+                  'SoC limit: ' + str(-self.ConflictMatrix[device][app][1]) +
+                  ', reset to max allowed discharge P_batt: ' +
+                  str(self.BatteriesInfo[device]['P_batt_discharge_max']))
             self.ConflictMatrix[device][app]= \
                            (self.ConflictMatrix[device][app][0],
                             -self.BatteriesInfo[device]['P_batt_discharge_max'])
@@ -773,6 +775,7 @@ class DeconflictionPipeline(GridAPPSD):
                 str(self.BatteriesInfo[device]['prated']))
           newResolutionVector[device] = (newResolutionVector[device][0],
                                          self.BatteriesInfo[device]['prated'])
+
         elif -round(newResolutionVector[device][1]) > \
               round(self.BatteriesInfo[device]['prated']):
           prlog('SetpointValidatorForBatteries--device: ' + name +
@@ -787,21 +790,22 @@ class DeconflictionPipeline(GridAPPSD):
         if -round(newResolutionVector[device][1]) > \
             round(self.BatteriesInfo[device]['P_batt_charge_max']):
           prlog('SetpointValidatorForBatteries--device: ' + name +
-                ', P_batt setpoint above max charge P_batt: ' +
+                ', P_batt setpoint would exceed 0.9 SoC limit: ' +
                 str(-newResolutionVector[device][1]) +
-                ', reset to max charge P_batt: ' +
-                str(-self.BatteriesInfo[device]['P_batt_charge_max']))
+                ', reset to max allowed charge P_batt: ' +
+                str(self.BatteriesInfo[device]['P_batt_charge_max']))
           newResolutionVector[device] = \
                              (newResolutionVector[device][0],
                               -self.BatteriesInfo[device]['P_batt_charge_max'])
 
+        # XXX check if we need to flip < to >
         elif -round(newResolutionVector[device][1]) < \
               round(self.BatteriesInfo[device]['P_batt_discharge_max']):
           prlog('SetpointValidatorForBatteries--device: ' + name +
-                ', P_batt setpoint below max discharge P_batt: ' +
+                ', P_batt setpoint would fall below 0.2 SoC limit: ' +
                 str(-newResolutionVector[device][1]) +
-                ', reset to max discharge P_batt: ' +
-                str(-self.BatteriesInfo[device]['P_batt_discharge_max']))
+                ', reset to max allowed discharge P_batt: ' +
+                str(self.BatteriesInfo[device]['P_batt_discharge_max']))
           newResolutionVector[device] = \
                            (newResolutionVector[device][0],
                             -self.BatteriesInfo[device]['P_batt_discharge_max'])
@@ -1740,20 +1744,21 @@ class DeconflictionPipeline(GridAPPSD):
 
 
   def ProcessSetpointsMessage(self, message, timestamp, app_name, meas_msg_flag,
-                              coop_phase, printAllConflictsResolutionsFlag):
+                              coop_series, printAllConflictsResolutionsFlag):
     if meas_msg_flag:
       prlog('>>>\n>>> ProcessSetpointsMessage--MEAS message timestamp: ' +
             str(timestamp) + ', app: ' + app_name)
     else:
       prlog('>>>\n>>> ProcessSetpointsMessage--COOP message timestamp: ' +
-            str(timestamp) + ', app: ' + app_name + ', phase: '+str(coop_phase))
+            str(timestamp) + ', app: ' + app_name + ', series: '+
+            str(coop_series))
 
-    if not meas_msg_flag and coop_phase!=self.coopCurrentPhase:
+    if not meas_msg_flag and coop_series!=self.coopCurrentSeries:
       # discard any cooperation messages when not currently cooperating or
-      # when from a previous cooperation phase
+      # when from a previous cooperation series
       prlog('>>> ProcessSetpointsMessage--discard of nonmatching ' +
-            'COOP message, phase: ' + str(coop_phase) + ', current phase: ' +
-            str(self.coopCurrentPhase))
+            'COOP message, series: ' + str(coop_series) + ', current series: ' +
+            str(self.coopCurrentSeries))
       prlog('ProcessSetpointsMessage--finished processing, timestamp: ' +
             str(timestamp) + ', app: ' + app_name)
       return False
@@ -1766,10 +1771,10 @@ class DeconflictionPipeline(GridAPPSD):
 
       else:
         # checking for coopTimestamp!=timestamp fixes a special case where we've
-        # already ended the last phase of cooperation but then more meas
+        # already ended the last series of cooperation but then more meas
         # messages arrive and we don't want to immediately do further dispatches
         prlog('>>> ProcessSetpointsMessage--conclude running COOPERATION ' +
-              'phase with new MEAS message received, coopTimestamp: ' +
+              'series with new MEAS message received, coopTimestamp: ' +
               str(self.coopTimestamp))
 
         self.coopTimestamp = 0
@@ -1850,8 +1855,8 @@ class DeconflictionPipeline(GridAPPSD):
           self.pltFile.write('Delta:N/A')
           self.pltFile.write(',Responses:' + str(self.coopResponseCounter))
           self.pltFile.write(',AppCounts:' + str(self.AppCoopCount))
-          self.pltFile.write(',Phase:')
-          self.pltFile.write(str(self.coopCurrentPhase))
+          self.pltFile.write(',Series:')
+          self.pltFile.write(str(self.coopCurrentSeries))
           self.pltFile.write(',Reason:New_Optimization_Setpoints')
           self.pltFile.write('\n')
 
@@ -1868,7 +1873,7 @@ class DeconflictionPipeline(GridAPPSD):
         self.ResolutionVector = newResolutionVector
 
         # GDB 9/10/25: End of code to comment out for no devices dispatches
-        # when a cooperation phase is interrupted by a new measurements based
+        # when a cooperation series is interrupted by a new measurements based
         # setpoint message
 
         # reset running minimums for conflict metric and matrix
@@ -2110,7 +2115,7 @@ class DeconflictionPipeline(GridAPPSD):
       self.conflictMetric = self.ConflictMetricComputation(timestamp,
                                                        self.printAllMetricsFlag)
 
-      # clear incentive weights before kicking off cooperation phase because
+      # clear incentive weights before kicking off cooperation series because
       # we always start from scratch
       self.CooperationWeightsClear(timestamp, self.ConflictMatrix)
 
@@ -2123,7 +2128,7 @@ class DeconflictionPipeline(GridAPPSD):
       # competing apps that support cooperation to respond to
       self.coopResponseCounter = 0
       self.coopConflictFlag = False
-      self.coopCurrentPhase += 1
+      self.coopCurrentSeries += 1
       self.coopCurrentFlag = True
 
       # can't serialize TargetResolutionVector that contains complex numbers
@@ -2133,11 +2138,11 @@ class DeconflictionPipeline(GridAPPSD):
         if isinstance(value[1], complex):
           coopProposed[device] = (value[0], (value[1].real, value[1].imag))
 
-      coopMessage = {'coop_phase': self.coopCurrentPhase,
+      coopMessage = {'coop_series': self.coopCurrentSeries,
                      'coop_proposed': coopProposed}
       self.gapps.send(self.coop_topic, json.dumps(coopMessage))
-      prlog('>>> DeconflictSetpoints--kicked off new COOPERATION phase, ' +
-            'updated current phase: ' + str(self.coopCurrentPhase))
+      prlog('>>> DeconflictSetpoints--kicked off new COOPERATION series, ' +
+            'updated current series: ' + str(self.coopCurrentSeries))
 
       #self.logConflictReg('coop kickoff')
       #self.logConflictPV('coop kickoff')
@@ -2169,7 +2174,7 @@ class DeconflictionPipeline(GridAPPSD):
                                                        self.printAllMetricsFlag)
 
     # save the running minimum conflict metric and associated conflict matrix
-    # during a cooperation phase as the one to use when cooperation concludes
+    # during a cooperation series as the one to use when cooperation concludes
     if self.conflictMetric <= self.minConflictMetric:
       self.minConflictMetric = self.conflictMetric
       self.MinConflictMatrix = copy.deepcopy(self.ConflictMatrix)
@@ -2229,7 +2234,7 @@ class DeconflictionPipeline(GridAPPSD):
 
       # publish this proposed setpoint vector to the cooperation topic for
       # competing apps that support cooperation to respond to
-      coopMessage = {'coop_phase': self.coopCurrentPhase,
+      coopMessage = {'coop_series': self.coopCurrentSeries,
                      'coop_proposed': coopProposed}
       self.gapps.send(self.coop_topic, json.dumps(coopMessage))
       prlog('DeconflictSetpoints--finished processing, timestamp: ' +
@@ -2331,8 +2336,8 @@ class DeconflictionPipeline(GridAPPSD):
       self.pltFile.write(str(perConflictDelta))
       self.pltFile.write(',Responses:' + str(self.coopResponseCounter))
       self.pltFile.write(',AppCounts:' + str(self.AppCoopCount))
-      self.pltFile.write(',Phase:')
-      self.pltFile.write(str(self.coopCurrentPhase))
+      self.pltFile.write(',Series:')
+      self.pltFile.write(str(self.coopCurrentSeries))
       self.pltFile.write(',Reason:')
       self.pltFile.write(reason)
       self.pltFile.write('\n')
@@ -2459,7 +2464,7 @@ class DeconflictionPipeline(GridAPPSD):
     self.ResolutionVector = {}
     self.TargetResolutionVector = {}
 
-    # thresholds for concluding cooperation phases
+    # thresholds for concluding cooperation series
     # choose one of these groups of settings depending on  the desired
     # level of cooperation
     # note that driving more cooperation means more time needed, which
@@ -2494,8 +2499,8 @@ class DeconflictionPipeline(GridAPPSD):
     self.minConflictMetric = 1.0
     self.MinConflictMatrix = {}
     self.AppCoopCount = {}
-    # initialize phase counter used to uniquely identify cooperation messages
-    self.coopCurrentPhase = 0
+    # initialize series counter used to uniquely identify cooperation messages
+    self.coopCurrentSeries = 0
     self.coopCurrentFlag = False
 
     self.simMessageCounter = 0
@@ -2634,7 +2639,7 @@ class DeconflictionPipeline(GridAPPSD):
       # old data.
       app_names = set()
       while self.messageQueue.qsize() > 0:
-        app_name, meas_msg_flag, coop_phase, message = self.messageQueue.get()
+        app_name, meas_msg_flag, coop_series, message = self.messageQueue.get()
 
         if 'processStatus' in message:
           notDoneFlag = False
@@ -2650,7 +2655,7 @@ class DeconflictionPipeline(GridAPPSD):
 
         else:
           deconflictFlag = self.ProcessSetpointsMessage(message, timestamp,
-                                          app_name, meas_msg_flag, coop_phase,
+                                          app_name, meas_msg_flag, coop_series,
                                           self.printAllConflictsResolutionsFlag)
 
           if deconflictFlag and not self.bypassDeconflictionFlag:
@@ -2674,8 +2679,8 @@ class DeconflictionPipeline(GridAPPSD):
       #   (self.instantSetpointUpdateFlag or self.simMessageCounter>1):
       if pendingDeconflictFlag:
         # GDB 9/3/25: without this check to see if there is a current
-        # cooperation phase, device dispatches can happen multiple times
-        # in quick succession for the same cooperation phase
+        # cooperation series, device dispatches can happen multiple times
+        # in quick succession for the same cooperation series
         if pendingMeasMsgFlag or self.coopCurrentFlag:
           self.DeconflictSetpoints(timestamp, app_names, pendingMeasMsgFlag,
                                    self.printAllConflictsResolutionsFlag)
