@@ -190,13 +190,13 @@ class CompetingApp(GridAPPSD):
     self.coop_gapps = GridAPPSD(simulation_id)
     assert self.coop_gapps.connected
 
-    # GDB 9/3/25: coopPhase keeps track of what cooperation phase is the
+    # GDB 9/3/25: coopSeries keeps track of what cooperation series is the
     # one currently being processed in order to determine when to discard
-    # "stale" cooperation messages associated with an earlier phase
-    self.coopPhase = 0
+    # "stale" cooperation messages associated with an earlier series
+    self.coopSeries = 0
 
     # coopCounter allows diminishing cooperation with each succeeding
-    # cooperation message solicitation within a phase
+    # cooperation message solicitation within a series
     self.coopCounter = 0
 
     while True:
@@ -221,33 +221,33 @@ class CompetingApp(GridAPPSD):
           return # done with all processing
 
         else:
-          ##print('Cooperation message on queue with phase: ' +
-          ##      str(message['coop_phase']), flush=True)
+          ##print('Cooperation message on queue with series: ' +
+          ##      str(message['coop_series']), flush=True)
           lastCoopMessage = message
       ##print('Cooperation queue check finish', flush=True)
 
       if lastCoopMessage != None:
         if self.includeBatteriesFlag or self.includeRegulatorsFlag or \
            self.includeSolarPVsPFlag:
-          checkPhase = lastCoopMessage['coop_phase']
+          checkSeries = lastCoopMessage['coop_series']
 
-          if checkPhase >= self.coopPhase:
-            if checkPhase == self.coopPhase:
+          if checkSeries >= self.coopSeries:
+            if checkSeries == self.coopSeries:
               # comment out incrementing coopCounter to not diminish
-              # cooperation for each new solicitation during a phase
+              # cooperation for each new solicitation during a series
               self.coopCounter += 1
             else:
-              self.coopPhase = checkPhase
+              self.coopSeries = checkSeries
               self.coopCounter = 0
 
-            ##print('Processing Cooperation message with phase: ' +
-            ##      str(checkPhase), flush=True)
+            ##print('Processing Cooperation message with series: ' +
+            ##      str(checkSeries), flush=True)
             # respond to cooperation message
             self.processCoopMessage(lastCoopMessage)
 
           else:
-            ##print('Discarding Cooperation message with stale phase: ' +
-            ##      str(checkPhase), flush=True)
+            ##print('Discarding Cooperation message with stale series: ' +
+            ##      str(checkSeries), flush=True)
             pass
 
 
@@ -575,9 +575,9 @@ class CompetingApp(GridAPPSD):
     # finally, send out the cooperation setpoints via DifferenceBuilder msg
     dispatch_message = self.difference_builder.get_message()
     dispatch_message['app_name'] = self.app_name
-    dispatch_message['coop_phase'] = self.coopPhase
-    ##print('Sending Cooperation DifferenceBuilder message with phase: ' +
-    ##      str(self.coopPhase), flush=True)
+    dispatch_message['coop_series'] = self.coopSeries
+    ##print('Sending Cooperation DifferenceBuilder message with series: ' +
+    ##      str(self.coopSeries), flush=True)
     #print('Sending Cooperation DifferenceBuilder message: ' +
     #      json.dumps(dispatch_message), flush=True)
     self.coop_gapps.send(self.coop_publish_topic, json.dumps(dispatch_message))
