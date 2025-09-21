@@ -83,7 +83,7 @@ def make_p_batt_plots(title, prefix, Batteries, t_plot_r, p_batt_plot_r, t_plot_
     else:
       plt.xlim([0, 24])
       plt.xticks([0, 4, 8, 12, 16, 20, 24])
-      plt.xlabel('Time (hours from midnight)')
+      plt.xlabel('Time (hours starting at midnight)')
 
     plt.ylabel('P_batt (kW)')
     plt.plot(t_plot_r[:len(p_batt_plot_r[name])], p_batt_plot_r[name], label='Resilience')
@@ -118,7 +118,7 @@ def make_soc_plots(title, prefix, Batteries, t_plot_r, soc_plot_r, t_plot_m, soc
     else:
       plt.xlim([0, 24])
       plt.xticks([0, 4, 8, 12, 16, 20, 24])
-      plt.xlabel('Time (hours from midnight)')
+      plt.xlabel('Time (hours starting at midnight)')
 
     plt.ylabel('Battery SoC')
     plt.plot(t_plot_r[:len(soc_plot_r[name])], soc_plot_r[name], label='Resilience')
@@ -155,7 +155,7 @@ def make_reg_plots(title, prefix, Regulators, t_plot_r, reg_plot_r, t_plot_m, re
     else:
       plt.xlim([0, 24])
       plt.xticks([0, 4, 8, 12, 16, 20, 24])
-      plt.xlabel('Time (hours from midnight)')
+      plt.xlabel('Time (hours starting at midnight)')
 
     plt.ylabel('Regulator Tap Pos')
     plt.plot(t_plot_r[:len(reg_plot_r[name])], reg_plot_r[name], label='Resilience')
@@ -194,7 +194,7 @@ def make_p_pv_plots(title, prefix, SolarPVs, t_plot_r, p_pv_plot_r, t_plot_m, p_
     else:
       plt.xlim([0, 24])
       plt.xticks([0, 4, 8, 12, 16, 20, 24])
-      plt.xlabel('Time (hours from midnight)')
+      plt.xlabel('Time (hours starting at midnight)')
 
     plt.ylabel('p_pv (kW)')
     plt.plot(t_plot_r[:len(p_pv_plot_r[name])], p_pv_plot_r[name], label='Resilience')
@@ -233,7 +233,7 @@ def make_q_pv_plots(title, prefix, SolarPVs, t_plot_r, q_pv_plot_r, t_plot_m, q_
     else:
       plt.xlim([0, 24])
       plt.xticks([0, 4, 8, 12, 16, 20, 24])
-      plt.xlabel('Time (hours from midnight)')
+      plt.xlabel('Time (hours starting at midnight)')
 
     plt.ylabel('q_pv (kVAR)')
     plt.plot(t_plot_r[:len(q_pv_plot_r[name])], q_pv_plot_r[name], label='Resilience')

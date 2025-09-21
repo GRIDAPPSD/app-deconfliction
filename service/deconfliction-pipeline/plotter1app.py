@@ -76,7 +76,7 @@ def make_cm_plot(cm_t_plot, cm_start_plot, cm_rules_plot, cm_coop_plot):
   else:
     plt.xlim([0, 24])
     plt.xticks([0, 4, 8, 12, 16, 20, 24])
-    plt.xlabel('Time (hours after midnight)')
+    plt.xlabel('Time (hours starting at midnight)')
 
   plt.ylabel('Conflict Metric')
   plt.plot(cm_t_plot, cm_start_plot, label='starting metric')
@@ -104,7 +104,7 @@ def make_p_batt_plots(title, prefix, Batteries, t_plot, p_batt_plot):
     else:
       plt.xlim([0, 24])
       plt.xticks([0, 4, 8, 12, 16, 20, 24])
-      plt.xlabel('Time (hours after midnight)')
+      plt.xlabel('Time (hours starting at midnight)')
 
     plt.ylabel('P_batt (kW)')
     plt.plot(t_plot[:len(p_batt_plot[name])], p_batt_plot[name])
@@ -128,7 +128,7 @@ def make_soc_plots(title, prefix, Batteries, t_plot, soc_plot):
     else:
       plt.xlim([0, 24])
       plt.xticks([0, 4, 8, 12, 16, 20, 24])
-      plt.xlabel('Time (hours after midnight)')
+      plt.xlabel('Time (hours starting at midnight)')
 
     plt.ylabel('Battery SoC')
     plt.plot(t_plot[:len(soc_plot[name])], soc_plot[name])
@@ -154,7 +154,7 @@ def make_reg_plots(title, prefix, Regulators, t_plot, reg_plot):
     else:
       plt.xlim([0, 24])
       plt.xticks([0, 4, 8, 12, 16, 20, 24])
-      plt.xlabel('Time (hours after midnight)')
+      plt.xlabel('Time (hours starting at midnight)')
 
     plt.ylabel('Regulator Tap Pos')
     plt.plot(t_plot[:len(reg_plot[name])], reg_plot[name])
@@ -182,7 +182,7 @@ def make_p_pv_plots(title, prefix, SolarPVs, t_plot, p_pv_plot):
     else:
       plt.xlim([0, 24])
       plt.xticks([0, 4, 8, 12, 16, 20, 24])
-      plt.xlabel('Time (hours after midnight)')
+      plt.xlabel('Time (hours starting at midnight)')
 
     plt.ylabel('p_pv (kW)')
     plt.plot(t_plot[:len(p_pv_plot[name])], p_pv_plot[name])
@@ -210,7 +210,7 @@ def make_q_pv_plots(title, prefix, SolarPVs, t_plot, q_pv_plot):
     else:
       plt.xlim([0, 24])
       plt.xticks([0, 4, 8, 12, 16, 20, 24])
-      plt.xlabel('Time (hours after midnight)')
+      plt.xlabel('Time (hours starting at midnight)')
 
     plt.ylabel('q_pv (kVAR)')
     plt.plot(t_plot[:len(q_pv_plot[name])], q_pv_plot[name])
