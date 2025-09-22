@@ -149,7 +149,8 @@ class DeconflictionPipeline(GridAPPSD):
 
     self.keepLoopingFlag = True
 
-    #prlog('messageListenerProcess--start listening for messages from simulation: ' + simulation_id)
+    #prlog('messageListenerProcess--start listening for simulation messages...')
+
     while self.keepLoopingFlag:
       # GDB 9/2/25: Warning: increasing the sleep duration above 0.1 such as
       # 0.5 can lead to bad things. With two processes sleeping on both ends
@@ -166,20 +167,16 @@ class DeconflictionPipeline(GridAPPSD):
 
   def OnSimOutputMessage(self, header, message):
     #prlog('OnSimOutputMessage--received message: ' + str(message))
-    prlog('OnSimOutputMessage--received message')
     if not self.keepLoopingFlag:
       return
 
     if self.realtimeFlag:
       self.messageQueue.put((None, None, None, message['message']))
     else:
-      prlog('OnSimOutputMessage--not realtime')
       ts_unix = int(message['message']['timestamp'])
-      prlog('OnSimOutputMessage--ts_unix: ' + str(ts_unix))
       # only add every 5th measurement message to the queue to
       # allow sufficient time for cooperation
       if ts_unix % 300 == 0:
-        prlog('OnSimOutputMessage--putting message on queue for timestamp: ' + str(ts_unix))
         self.messageQueue.put((None, None, None, message['message']))
 
 
