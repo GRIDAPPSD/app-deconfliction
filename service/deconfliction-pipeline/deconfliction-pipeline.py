@@ -149,6 +149,7 @@ class DeconflictionPipeline(GridAPPSD):
 
     self.keepLoopingFlag = True
 
+    #prlog('messageListenerProcess--start listening for messages from simulation: ' + simulation_id)
     while self.keepLoopingFlag:
       # GDB 9/2/25: Warning: increasing the sleep duration above 0.1 such as
       # 0.5 can lead to bad things. With two processes sleeping on both ends
@@ -1569,11 +1570,7 @@ class DeconflictionPipeline(GridAPPSD):
                                printAllMessagesFlag=False):
     if self.pltFlag:
       self.pltFile.write('SIMULATION,')
-      if self.pltTZero == None:
-        self.pltTZero = datetime.now()
-        diff = 0.0
-      else:
-        diff = (datetime.now() - self.pltTZero).total_seconds()
+      diff = (datetime.now() - self.pltTZero).total_seconds()
       self.pltFile.write(str(diff))
       self.pltFile.write(',')
       self.pltFile.write(str(timestamp))
@@ -2363,6 +2360,8 @@ class DeconflictionPipeline(GridAPPSD):
 
 
   def __init__(self, feeder_mrid, simulation_id, weights_base, interval):
+    # GDB 9/22/25: Zero the plot timer as soon as possible
+    self.pltTZero = datetime.now()
 
     # flag for whether simulation is run in real-time
     #self.realtimeFlag = True
@@ -2602,7 +2601,6 @@ class DeconflictionPipeline(GridAPPSD):
     self.pltFlag = True
     if self.pltFlag:
       self.pltFile = open(logDir + 'plot_data.csv', 'w')
-      self.pltTZero = None
       self.cmatFile = open(logDir + 'conflict_matrix.log', 'w')
 
     self.bypassDeconflictionFlag = False
