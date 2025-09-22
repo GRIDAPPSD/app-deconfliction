@@ -144,9 +144,8 @@ def make_reg_plots(title, prefix, Regulators, t_plot_r, reg_plot_r, t_plot_m, re
 
     regname = name[16:] # extract just the name for tidier plots
     plt.title(title + ' Tap Pos:  ' + regname, pad=15.0)
-    ax = plt.figure().gca()
-    # integer y-axis number labels except for the position never changing
-    ax.yaxis.set_major_locator(MaxNLocator(integer=True))
+    #ax = plt.figure().gca()
+    #ax.yaxis.set_major_locator(MaxNLocator(integer=True))
     #ax.xaxis.set_major_formatter(md.DateFormatter('%H:%M'))
     #plt.xlim([AppUtil.to_datetime(1), AppUtil.to_datetime(96)])
     #plt.xticks([AppUtil.to_datetime(1), AppUtil.to_datetime(25), AppUtil.to_datetime(49), AppUtil.to_datetime(73), AppUtil.to_datetime(96)])
@@ -299,35 +298,8 @@ def _main():
     p_pv_plot_c[pv] = []
     q_pv_plot_c[pv] = []
 
-  timex_r = 1.0
-  timex_m = 1.0
-  timex_c = 1.0
-
-  if not realtimeFlag:
-    # find the last time value for the simulation and call this 24 hours
-    finalsec_r = 0.0
-    with open('log/resil1app/plot_data.csv', 'r') as file:
-      for line in file:
-        tokens = line.split(',')
-        if tokens[0] == 'SIMULATION':
-          finalsec_r = float(tokens[1])
-    timex_r = 24.0/finalsec_r
-
-    finalsec_m = 0.0
-    with open('log/maxlocal1app/plot_data.csv', 'r') as file:
-      for line in file:
-        tokens = line.split(',')
-        if tokens[0] == 'SIMULATION':
-          finalsec_m = float(tokens[1])
-    timex_m = 24.0/finalsec_m
-
-    finalsec_c = 0.0
-    with open('log/cvr1app/plot_data.csv', 'r') as file:
-      for line in file:
-        tokens = line.split(',')
-        if tokens[0] == 'SIMULATION':
-          finalsec_c = float(tokens[1])
-    timex_c = 24.0/finalsec_c
+  # Jan 1, midnight timestamp:
+  timex_start = 1704067200.0
 
   app = 'SIMULATION'
   prefix = 'sim'
@@ -338,7 +310,7 @@ def _main():
       tokens = line.split(',')
       if tokens[0] == app:
         simhits += 1
-        t_plot_r.append(float(tokens[1])*timex_r)
+        t_plot_r.append((float(tokens[2]) - timex_start)/3600.0)
 
         start = 3
         finish = start + len(Batteries)*3
@@ -369,7 +341,7 @@ def _main():
       tokens = line.split(',')
       if tokens[0] == app:
         simhits += 1
-        t_plot_m.append(float(tokens[1])*timex_m)
+        t_plot_m.append((float(tokens[2]) - timex_start)/3600.0)
 
         start = 3
         finish = start + len(Batteries)*3
@@ -400,7 +372,7 @@ def _main():
       tokens = line.split(',')
       if tokens[0] == app:
         simhits += 1
-        t_plot_c.append(float(tokens[1])*timex_c)
+        t_plot_c.append((float(tokens[2]) - timex_start)/3600.0)
 
         start = 3
         finish = start + len(Batteries)*3
@@ -429,107 +401,6 @@ def _main():
 
   make_p_batt_plots(app, prefix, Batteries, t_plot_r, p_batt_plot_r, t_plot_m, p_batt_plot_m, t_plot_c, p_batt_plot_c)
   make_soc_plots(app, prefix, Batteries, t_plot_r, soc_plot_r, t_plot_m, soc_plot_m, t_plot_c, soc_plot_c)
-  make_reg_plots(app, prefix, Regulators, t_plot_r, reg_plot_r, t_plot_m, reg_plot_m, t_plot_c, reg_plot_c)
-  make_p_pv_plots(app, prefix, SolarPVs, t_plot_r, p_pv_plot_r, t_plot_m, p_pv_plot_m, t_plot_c, p_pv_plot_c)
-  make_q_pv_plots(app, prefix, SolarPVs, t_plot_r, q_pv_plot_r, t_plot_m, q_pv_plot_m, t_plot_c, q_pv_plot_c)
-
-  t_plot_r.clear()
-  t_plot_m.clear()
-  t_plot_c.clear()
-
-  for batt in Batteries:
-    p_batt_plot_r[batt].clear()
-    soc_plot_r[batt].clear()
-    p_batt_plot_m[batt].clear()
-    soc_plot_m[batt].clear()
-    p_batt_plot_c[batt].clear()
-    soc_plot_c[batt].clear()
-
-  for reg in Regulators:
-    reg_plot_r[reg].clear()
-    reg_plot_m[reg].clear()
-    reg_plot_c[reg].clear()
-
-  for pv in SolarPVs:
-    p_pv_plot_r[pv].clear()
-    q_pv_plot_r[pv].clear()
-    p_pv_plot_m[pv].clear()
-    q_pv_plot_m[pv].clear()
-    p_pv_plot_c[pv].clear()
-    q_pv_plot_c[pv].clear()
-
-  app = 'resilience-app'
-  hits = 0
-  with open('log/resil1app/plot_data.csv', 'r') as file:
-    for line in file:
-      tokens = line.split(',')
-      if tokens[0] == app:
-        hits += 1
-        t_plot_r.append(float(tokens[1])*timex_r)
-
-        numdev = len(tokens)
-        for it in range(3, numdev, 2):
-          dev = tokens[it]
-          if dev.startswith('BatteryUnit.'):
-            p_batt_plot_r[dev].append(float(tokens[it+1])/1000.0)
-          elif dev.startswith('RatioTapChanger.'):
-            reg_plot_r[dev].append(int(tokens[it+1]))
-          elif dev.startswith('PhotovoltaicUnit.'):
-            cmplx = complex(tokens[it+1])/1000.0
-            p_pv_plot_r[dev].append(cmplx.real)
-            q_pv_plot_r[dev].append(cmplx.imag)
-
-  print(app + ' resilience hits: ' + str(hits), flush=True)
-
-  app = 'max_local-app'
-  hits = 0
-  with open('log/maxlocal1app/plot_data.csv', 'r') as file:
-    for line in file:
-      tokens = line.split(',')
-      if tokens[0] == app:
-        hits += 1
-        t_plot_m.append(float(tokens[1])*timex_m)
-
-        numdev = len(tokens)
-        for it in range(3, numdev, 2):
-          dev = tokens[it]
-          if dev.startswith('BatteryUnit.'):
-            p_batt_plot_m[dev].append(float(tokens[it+1])/1000.0)
-          elif dev.startswith('RatioTapChanger.'):
-            reg_plot_m[dev].append(int(tokens[it+1]))
-          elif dev.startswith('PhotovoltaicUnit.'):
-            cmplx = complex(tokens[it+1])/1000.0
-            p_pv_plot_m[dev].append(cmplx.real)
-            q_pv_plot_m[dev].append(cmplx.imag)
-
-  print(app + ' max_local hits: ' + str(hits), flush=True)
-
-  app = 'cvr-app'
-  hits = 0
-  with open('log/cvr1app/plot_data.csv', 'r') as file:
-    for line in file:
-      tokens = line.split(',')
-      if tokens[0] == app:
-        hits += 1
-        t_plot_c.append(float(tokens[1])*timex_c)
-
-        numdev = len(tokens)
-        for it in range(3, numdev, 2):
-          dev = tokens[it]
-          if dev.startswith('BatteryUnit.'):
-            p_batt_plot_c[dev].append(float(tokens[it+1])/1000.0)
-          elif dev.startswith('RatioTapChanger.'):
-            reg_plot_c[dev].append(int(tokens[it+1]))
-          elif dev.startswith('PhotovoltaicUnit.'):
-            cmplx = complex(tokens[it+1])/1000.0
-            p_pv_plot_c[dev].append(cmplx.real)
-            q_pv_plot_c[dev].append(cmplx.imag)
-
-  print(app + ' cvr hits: ' + str(hits), flush=True)
-
-  app = 'App Preferred'
-  prefix = 'setpt'
-  make_p_batt_plots(app, prefix, Batteries, t_plot_r, p_batt_plot_r, t_plot_m, p_batt_plot_m, t_plot_c, p_batt_plot_c)
   make_reg_plots(app, prefix, Regulators, t_plot_r, reg_plot_r, t_plot_m, reg_plot_m, t_plot_c, reg_plot_c)
   make_p_pv_plots(app, prefix, SolarPVs, t_plot_r, p_pv_plot_r, t_plot_m, p_pv_plot_m, t_plot_c, p_pv_plot_c)
   make_q_pv_plots(app, prefix, SolarPVs, t_plot_r, q_pv_plot_r, t_plot_m, q_pv_plot_m, t_plot_c, q_pv_plot_c)
