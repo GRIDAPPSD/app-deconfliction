@@ -822,13 +822,22 @@ class CompetingApp(GridAPPSD):
                                             self.v_A, self.v_B, self.v_C)
 
       if self.objectiveMaxLocalFlag:
+        # GDB 9/22/25: created separate 1 and 2 stage versions for the Max Local
+        # objective since 2 stage doesn't work as desired for p_pv values
+
         # note max_local is a two stage optimization and the first stage
         # is run within the objectiveForMaxLocal function
-        validFlag, objective = self.optObjectiveForMaxLocal(self.BusInfo,
+        '''
+        validFlag, objective = self.optObjectiveForMaxLocal2Stage(self.BusInfo,
                                     self.BatteriesInfo, self.EnergySource,
                                     self.Psub, self.Psub_mod,
                                     self.p_flow_A, self.p_flow_B, self.p_flow_C,
                                     self.p_batt, self.v_A, self.v_B, self.v_C)
+        '''
+        objective = self.optObjectiveForMaxLocal1Stage(self.BusInfo,
+                                    self.BatteriesInfo, self.EnergySource,
+                                    self.Psub, self.Psub_mod,
+                                    self.p_flow_A, self.p_flow_B, self.p_flow_C)
 
     if validFlag and self.optDo(objective):
       self.optDispatch(self.includeRegulatorsFlag, self.includeBatteriesFlag,
@@ -1340,9 +1349,37 @@ class CompetingApp(GridAPPSD):
     return objective
 
 
-  def optObjectiveForMaxLocal(self, BusInfo, BatteriesInfo, EnergySource,
-                              Psub, Psub_mod, p_flow_A, p_flow_B, p_flow_C,
-                              p_batt, v_A, v_B, v_C):
+  def optObjectiveForMaxLocal1Stage(self, BusInfo, BatteriesInfo, EnergySource,
+                                    Psub, Psub_mod, p_flow_A,p_flow_B,p_flow_C):
+    # constraints specific to max_local
+    self.Constraints.append(Psub_mod >= Psub)
+    self.Constraints.append(Psub_mod >= -Psub)
+
+    flow_min, flow_max = -5e6, 5e6
+    self.Constraints.append(Psub >= flow_min)
+    self.Constraints.append(Psub <= flow_max)
+    self.Constraints.append(Psub_mod >= flow_min)
+    self.Constraints.append(Psub_mod <= flow_max)
+
+    sub_flow_idx = EnergySource['flow_idx']
+    self.Constraints.append(Psub == p_flow_A[sub_flow_idx] + \
+                                    p_flow_B[sub_flow_idx] + \
+                                    p_flow_C[sub_flow_idx])
+
+    # originally Psub_mod was scaled by 1000 to solve an "unbounded" error
+    # with some version of CVXPY, but now I'm seeing it run fine without that
+    # scaling and I don't like the mismatch with Psub_mod on the second stage
+    # optmization so I'm going to go back to no scaling. The PuLP version
+    # never had scaling.
+    #objective = Psub_mod / 1000
+    objective = Psub_mod
+
+    return objective
+
+
+  def optObjectiveForMaxLocal2Stage(self, BusInfo, BatteriesInfo, EnergySource,
+                                    Psub, Psub_mod, p_flow_A, p_flow_B,p_flow_C,
+                                    p_batt, v_A, v_B, v_C):
     # constraints specific to max_local
     self.Constraints.append(Psub_mod >= Psub)
     self.Constraints.append(Psub_mod >= -Psub)
