@@ -176,6 +176,7 @@ class DeconflictionPipeline(GridAPPSD):
       # only add every 5th measurement message to the queue to
       # allow sufficient time for cooperation
       if ts_unix % 300 == 0:
+        #prlog('OnSimOutputMessage--putting message on queue for timestamp: ' + str(ts_unix))
         self.messageQueue.put((None, None, None, message['message']))
 
 
