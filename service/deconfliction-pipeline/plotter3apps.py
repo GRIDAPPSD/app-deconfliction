@@ -144,9 +144,9 @@ def make_reg_plots(title, prefix, Regulators, t_plot, reg_plot):
       print('*** Mismatched data points for plot ' + title + ' ' + name + ', time len: ' + str(len(t_plot)) + ', reg len: ' + str(len(reg_plot[name])), flush=True)
     regname = name[16:] # extract just the name for tidier plots
     plt.title(title + ' Tap Pos:  ' + regname, pad=15.0)
-    ax = plt.figure().gca()
+    #ax = plt.figure().gca()
     # integer y-axis number labels except for the position never changing
-    ax.yaxis.set_major_locator(MaxNLocator(integer=True))
+    #ax.yaxis.set_major_locator(MaxNLocator(integer=True))
     #ax.xaxis.set_major_formatter(md.DateFormatter('%H:%M'))
     #plt.xlim([AppUtil.to_datetime(1), AppUtil.to_datetime(96)])
     #plt.xticks([AppUtil.to_datetime(1), AppUtil.to_datetime(25), AppUtil.to_datetime(49), AppUtil.to_datetime(73), AppUtil.to_datetime(96)])
