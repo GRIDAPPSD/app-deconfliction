@@ -1,0 +1,421 @@
+# Copyright (c) 2025, Battelle Memorial Institute All rights reserved.
+# Battelle Memorial Institute (hereinafter Battelle) hereby grants permission
+# to any person or entity lawfully obtaining a copy of this software and
+# associated documentation files (hereinafter the Software) to redistribute and
+# use the Software in source and binary forms, with or without modification.
+# Such person or entity may use, copy, modify, merge, publish, distribute,
+# sublicense, and/or sell copies of the Software, and may permit others to do
+# so, subject to the following conditions:
+# Redistributions of source code must retain the above copyright notice, this
+# list of conditions and the following disclaimers.
+# Redistributions in binary form must reproduce the above copyright notice,
+# this list of conditions and the following disclaimer in the documentation
+# and/or other materials provided with the distribution.
+# Other than as used herein, neither the name Battelle Memorial Institute or
+# Battelle may be used in any form whatsoever without the express written
+# consent of Battelle.
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL BATTELLE OR CONTRIBUTORS BE LIABLE FOR ANY
+# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+# ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# General disclaimer for use with OSS licenses
+#
+# This material was prepared as an account of work sponsored by an agency of
+# the United States Government. Neither the United States Government nor the
+# United States Department of Energy, nor Battelle, nor any of their employees,
+# nor any jurisdiction or organization that has cooperated in the development
+# of these materials, makes any warranty, express or implied, or assumes any
+# legal liability or responsibility for the accuracy, completeness, or
+# usefulness or any information, apparatus, product, software, or process
+# disclosed, or represents that its use would not infringe privately owned
+# rights.
+#
+# Reference herein to any specific commercial product, process, or service by
+# trade name, trademark, manufacturer, or otherwise does not necessarily
+# constitute or imply its endorsement, recommendation, or favoring by the
+# United States Government or any agency thereof, or Battelle Memorial
+# Institute. The views and opinions of authors expressed herein do not
+# necessarily state or reflect those of the United States Government or any
+# agency thereof.
+#
+# PACIFIC NORTHWEST NATIONAL LABORATORY operated by BATTELLE for the
+# UNITED STATES DEPARTMENT OF ENERGY under Contract DE-AC05-76RL01830
+# ------------------------------------------------------------------------------
+
+import matplotlib
+from matplotlib import pyplot as plt
+from matplotlib import dates as md
+from matplotlib.ticker import MaxNLocator
+from datetime import datetime
+
+# need to do some magic with the time axis if it's not a realtime simulation
+realtimeFlag = False
+
+def to_datetime(time):
+  return datetime(1966, 8, 1, (int(time)-1)//4, 15*((int(time)-1) % 4), 0)
+
+
+def make_p_batt_plots(Batteries, t_plot_s, p_batt_plot_s, t_plot_r, p_batt_plot_r, t_plot_m, p_batt_plot_m, t_plot_c, p_batt_plot_c):
+  for name in Batteries:
+    if len(t_plot_s) != len(p_batt_plot_s[name]):
+      print('*** Mismatched data points for simulation plot P_batt ' + name + ', time len: ' + str(len(t_plot_s)) + ', p_batt len: ' + str(len(p_batt_plot_s[name])), flush=True)
+
+    if len(t_plot_r) != len(p_batt_plot_r[name]):
+      print('*** Mismatched data points for resilience plot P_batt ' + name + ', time len: ' + str(len(t_plot_r)) + ', p_batt len: ' + str(len(p_batt_plot_r[name])), flush=True)
+
+    if len(t_plot_m) != len(p_batt_plot_m[name]):
+      print('*** Mismatched data points for max local plot P_batt ' + name + ', time len: ' + str(len(t_plot_m)) + ', p_batt len: ' + str(len(p_batt_plot_m[name])), flush=True)
+
+    if len(t_plot_c) != len(p_batt_plot_c[name]):
+      print('*** Mismatched data points for CVR plot P_batt ' + name + ', time len: ' + str(len(t_plot_c)) + ', p_batt len: ' + str(len(p_batt_plot_c[name])), flush=True)
+
+    batname = name[12:] # extract just the name for tidier plots
+    plt.title('P_batt:  ' + batname, pad=15.0)
+    #ax = plt.figure().gca()
+    #ax.xaxis.set_major_formatter(md.DateFormatter('%H:%M'))
+    #plt.xlim([AppUtil.to_datetime(1), AppUtil.to_datetime(96)])
+    #plt.xticks([AppUtil.to_datetime(1), AppUtil.to_datetime(25), AppUtil.to_datetime(49), AppUtil.to_datetime(73), AppUtil.to_datetime(96)])
+    if realtimeFlag:
+      plt.xlabel('Time (sec)')
+    else:
+      plt.xlim([0, 24])
+      plt.xticks([0, 4, 8, 12, 16, 20, 24])
+      plt.xlabel('Time (hours starting at midnight)')
+
+    plt.ylabel('P_batt (kW)')
+    plt.plot(t_plot_s[:len(p_batt_plot_s[name])], p_batt_plot_s[name], label='Simulation')
+    plt.plot(t_plot_r[:len(p_batt_plot_r[name])], p_batt_plot_r[name], label='Resilience')
+    plt.plot(t_plot_m[:len(p_batt_plot_m[name])], p_batt_plot_m[name], label='Max Local')
+    plt.plot(t_plot_c[:len(p_batt_plot_c[name])], p_batt_plot_c[name], label='CVR')
+    plt.legend()
+    plt.grid(True)
+    plt.savefig('log/all_p_batt_' + batname + '.png')
+    #plot.show()
+    plt.close()
+
+
+def make_reg_plots(Regulators, t_plot_s, reg_plot_s, t_plot_r, reg_plot_r, t_plot_m, reg_plot_m, t_plot_c, reg_plot_c):
+  for name in Regulators:
+    if len(t_plot_s) != len(reg_plot_s[name]):
+      print('*** Mismatched data points for simulation plot ' + name + ', time len: ' + str(len(t_plot_s)) + ', reg len: ' + str(len(reg_plot_s[name])), flush=True)
+
+    if len(t_plot_r) != len(reg_plot_r[name]):
+      print('*** Mismatched data points for resilience plot ' + name + ', time len: ' + str(len(t_plot_r)) + ', reg len: ' + str(len(reg_plot_r[name])), flush=True)
+
+    if len(t_plot_m) != len(reg_plot_m[name]):
+      print('*** Mismatched data points for max local plot ' + name + ', time len: ' + str(len(t_plot_m)) + ', reg len: ' + str(len(reg_plot_m[name])), flush=True)
+
+    if len(t_plot_c) != len(reg_plot_c[name]):
+      print('*** Mismatched data points for CVR plot ' + name + ', time len: ' + str(len(t_plot_c)) + ', reg len: ' + str(len(reg_plot_c[name])), flush=True)
+
+
+    regname = name[16:] # extract just the name for tidier plots
+    plt.title('Tap Pos:  ' + regname, pad=15.0)
+    #ax = plt.figure().gca()
+    # integer y-axis number labels except for the position never changing
+    #ax.yaxis.set_major_locator(MaxNLocator(integer=True))
+    #ax.xaxis.set_major_formatter(md.DateFormatter('%H:%M'))
+    #plt.xlim([AppUtil.to_datetime(1), AppUtil.to_datetime(96)])
+    #plt.xticks([AppUtil.to_datetime(1), AppUtil.to_datetime(25), AppUtil.to_datetime(49), AppUtil.to_datetime(73), AppUtil.to_datetime(96)])
+    if realtimeFlag:
+      plt.xlabel('Time (sec)')
+    else:
+      plt.xlim([0, 24])
+      plt.xticks([0, 4, 8, 12, 16, 20, 24])
+      plt.xlabel('Time (hours starting at midnight)')
+
+    plt.ylabel('Regulator Tap Pos')
+    plt.plot(t_plot_s[:len(reg_plot_s[name])], reg_plot_s[name], label='Simulation')
+    plt.plot(t_plot_r[:len(reg_plot_r[name])], reg_plot_r[name], label='Resilience')
+    plt.plot(t_plot_m[:len(reg_plot_m[name])], reg_plot_m[name], label='Max Local')
+    plt.plot(t_plot_c[:len(reg_plot_c[name])], reg_plot_c[name], label='CVR')
+    plt.legend()
+    plt.grid(True)
+    plt.savefig('log/all_tap_' + regname + '.png')
+    #plot.show()
+    plt.close()
+
+
+def make_p_pv_plots(SolarPVs, t_plot_s, p_pv_plot_s, t_plot_r, p_pv_plot_r, t_plot_m, p_pv_plot_m, t_plot_c, p_pv_plot_c):
+  for name in SolarPVs:
+    # just bail if there is no SolarPV data
+    if len(p_pv_plot_s[name]) == 0:
+      return
+
+    if len(t_plot_s) != len(p_pv_plot_s[name]):
+      print('*** Mismatched data points for simulation plot p_pv ' + name + ', time len: ' + str(len(t_plot_s)) + ', p_pv len: ' + str(len(p_pv_plot_s[name])), flush=True)
+
+    if len(t_plot_r) != len(p_pv_plot_r[name]):
+      print('*** Mismatched data points for resilience plot p_pv ' + name + ', time len: ' + str(len(t_plot_r)) + ', p_pv len: ' + str(len(p_pv_plot_r[name])), flush=True)
+
+    if len(t_plot_m) != len(p_pv_plot_m[name]):
+      print('*** Mismatched data points for max local plot p_pv ' + name + ', time len: ' + str(len(t_plot_m)) + ', p_pv len: ' + str(len(p_pv_plot_m[name])), flush=True)
+
+    if len(t_plot_c) != len(p_pv_plot_c[name]):
+      print('*** Mismatched data points for CVR plot p_pv ' + name + ', time len: ' + str(len(t_plot_c)) + ', p_pv len: ' + str(len(p_pv_plot_c[name])), flush=True)
+
+    pvname = name[17:] # extract just the name for tidier plots
+    plt.title('Solar p_pv:  ' + pvname, pad=15.0)
+    #ax = plt.figure().gca()
+    #ax.xaxis.set_major_formatter(md.DateFormatter('%H:%M'))
+    #plt.xlim([AppUtil.to_datetime(1), AppUtil.to_datetime(96)])
+    #plt.xticks([AppUtil.to_datetime(1), AppUtil.to_datetime(25), AppUtil.to_datetime(49), AppUtil.to_datetime(73), AppUtil.to_datetime(96)])
+    if realtimeFlag:
+      plt.xlabel('Time (sec)')
+    else:
+      plt.xlim([0, 24])
+      plt.xticks([0, 4, 8, 12, 16, 20, 24])
+      plt.xlabel('Time (hours starting at midnight)')
+
+    plt.ylabel('p_pv (kW)')
+    plt.plot(t_plot_s[:len(p_pv_plot_s[name])], p_pv_plot_s[name], label='Simulation')
+    plt.plot(t_plot_r[:len(p_pv_plot_r[name])], p_pv_plot_r[name], label='Resilience')
+    plt.plot(t_plot_m[:len(p_pv_plot_m[name])], p_pv_plot_m[name], label='Max Local')
+    plt.plot(t_plot_c[:len(p_pv_plot_c[name])], p_pv_plot_c[name], label='CVR')
+    plt.legend()
+    plt.grid(True)
+    plt.savefig('log/all_p_pv_' + pvname + '.png')
+    #plot.show()
+    plt.close()
+
+
+def make_q_pv_plots(SolarPVs, t_plot_s, q_pv_plot_s, t_plot_r, q_pv_plot_r, t_plot_m, q_pv_plot_m, t_plot_c, q_pv_plot_c):
+  for name in SolarPVs:
+    # just bail if there is no SolarPV data
+    if len(q_pv_plot_s[name]) == 0:
+      return
+
+    if len(t_plot_s) != len(q_pv_plot_s[name]):
+      print('*** Mismatched data points for simulation plot q_pv ' + name + ', time len: ' + str(len(t_plot_s)) + ', q_pv len: ' + str(len(q_pv_plot_s[name])), flush=True)
+
+    if len(t_plot_r) != len(q_pv_plot_r[name]):
+      print('*** Mismatched data points for resilience plot q_pv ' + name + ', time len: ' + str(len(t_plot_r)) + ', q_pv len: ' + str(len(q_pv_plot_r[name])), flush=True)
+
+    if len(t_plot_m) != len(q_pv_plot_m[name]):
+      print('*** Mismatched data points for max local plot q_pv ' + name + ', time len: ' + str(len(t_plot_m)) + ', q_pv len: ' + str(len(q_pv_plot_m[name])), flush=True)
+
+    if len(t_plot_c) != len(q_pv_plot_c[name]):
+      print('*** Mismatched data points for CVR plot q_pv ' + name + ', time len: ' + str(len(t_plot_c)) + ', q_pv len: ' + str(len(q_pv_plot_c[name])), flush=True)
+
+    pvname = name[17:] # extract just the name for tidier plots
+    plt.title('Solar q_pv:  ' + pvname, pad=15.0)
+    #ax = plt.figure().gca()
+    #ax.xaxis.set_major_formatter(md.DateFormatter('%H:%M'))
+    #plt.xlim([AppUtil.to_datetime(1), AppUtil.to_datetime(96)])
+    #plt.xticks([AppUtil.to_datetime(1), AppUtil.to_datetime(25), AppUtil.to_datetime(49), AppUtil.to_datetime(73), AppUtil.to_datetime(96)])
+    if realtimeFlag:
+      plt.xlabel('Time (sec)')
+    else:
+      plt.xlim([0, 24])
+      plt.xticks([0, 4, 8, 12, 16, 20, 24])
+      plt.xlabel('Time (hours starting at midnight)')
+
+    plt.ylabel('q_pv (kW)')
+    plt.plot(t_plot_s[:len(q_pv_plot_s[name])], q_pv_plot_s[name], label='Simulation')
+    plt.plot(t_plot_r[:len(q_pv_plot_r[name])], q_pv_plot_r[name], label='Resilience')
+    plt.plot(t_plot_m[:len(q_pv_plot_m[name])], q_pv_plot_m[name], label='Max Local')
+    plt.plot(t_plot_c[:len(q_pv_plot_c[name])], q_pv_plot_c[name], label='CVR')
+    plt.legend()
+    plt.grid(True)
+    plt.savefig('log/all_q_pv_' + pvname + '.png')
+    #plot.show()
+    plt.close()
+
+
+def _main():
+  print('Starting plotter...', flush=True)
+
+  matplotlib.use('agg')
+
+  Batteries = ['BatteryUnit.battery1','BatteryUnit.battery2','BatteryUnit.battery3','BatteryUnit.battery4','BatteryUnit.battery5']
+
+  Regulators = ['RatioTapChanger.reg1a','RatioTapChanger.reg2a','RatioTapChanger.reg3a','RatioTapChanger.reg3c','RatioTapChanger.reg4a','RatioTapChanger.reg4b','RatioTapChanger.reg4c']
+
+  SolarPVs = ['PhotovoltaicUnit.dg_12','PhotovoltaicUnit.dg_18','PhotovoltaicUnit.dg_30','PhotovoltaicUnit.dg_36','PhotovoltaicUnit.dg_42','PhotovoltaicUnit.dg_48','PhotovoltaicUnit.dg_54','PhotovoltaicUnit.dg_6','PhotovoltaicUnit.dg_60','PhotovoltaicUnit.dg_66','PhotovoltaicUnit.dg_72','PhotovoltaicUnit.dg_78','PhotovoltaicUnit.dg_84','PhotovoltaicUnit.dg_90']
+
+  t_plot_s = []
+  t_plot_r = []
+  t_plot_m = []
+  t_plot_c = []
+  p_batt_plot_s = {}
+  p_batt_plot_r = {}
+  p_batt_plot_m = {}
+  p_batt_plot_c = {}
+  reg_plot_s = {}
+  reg_plot_r = {}
+  reg_plot_m = {}
+  reg_plot_c = {}
+  p_pv_plot_s = {}
+  p_pv_plot_r = {}
+  p_pv_plot_m = {}
+  p_pv_plot_c = {}
+  q_pv_plot_s = {}
+  q_pv_plot_r = {}
+  q_pv_plot_m = {}
+  q_pv_plot_c = {}
+
+  for batt in Batteries:
+    p_batt_plot_s[batt] = []
+    p_batt_plot_r[batt] = []
+    p_batt_plot_m[batt] = []
+    p_batt_plot_c[batt] = []
+
+  for reg in Regulators:
+    reg_plot_s[reg] = []
+    reg_plot_r[reg] = []
+    reg_plot_m[reg] = []
+    reg_plot_c[reg] = []
+
+  for pv in SolarPVs:
+    p_pv_plot_s[pv] = []
+    p_pv_plot_r[pv] = []
+    p_pv_plot_m[pv] = []
+    p_pv_plot_c[pv] = []
+    q_pv_plot_s[pv] = []
+    q_pv_plot_r[pv] = []
+    q_pv_plot_m[pv] = []
+    q_pv_plot_c[pv] = []
+
+  # Jan 1, midnight timestamp:
+  timex_start = 1704067200.0
+
+  app = 'SIMULATION'
+  hits = 0
+  with open('log/threeplots/plot_data.csv', 'r') as file:
+    for line in file:
+      tokens = line.split(',')
+      if tokens[0] == app:
+        simhits += 1
+        t_plot_s.append((float(tokens[2]) - timex_start)/3600.0)
+
+        start = 3
+        finish = start + len(Batteries)*3
+        for it in range(start, finish, 3):
+          batt = tokens[it]
+          p_batt_plot_s[batt].append(float(tokens[it+1])/1000.0)
+
+        start = finish
+        finish = start + len(Regulators)*2
+        for it in range(start, finish, 2):
+          reg = tokens[it]
+          reg_plot_s[reg].append(int(tokens[it+1]))
+
+        start = finish
+        finish = start + len(SolarPVs)*2
+        for it in range(start, finish, 2):
+          pv = tokens[it]
+          cmplx = complex(tokens[it+1])/1000.0
+          p_pv_plot_s[pv].append(cmplx.real)
+          q_pv_plot_s[pv].append(cmplx.imag)
+  print(app + ' hits: ' + str(hits), flush=True)
+
+  app = 'resilience-app'
+  hits = 0
+  with open('log/threeplots/plot_data.csv', 'r') as file:
+    for line in file:
+      tokens = line.split(',')
+      if tokens[0] == app:
+        hits += 1
+        t_plot_r.append((float(tokens[2]) - timex_start)/3600.0)
+
+        numdev = len(tokens)
+        for it in range(3, numdev, 2):
+          dev = tokens[it]
+          if dev.startswith('BatteryUnit.'):
+            p_batt_plot_r[dev].append(float(tokens[it+1])/1000.0)
+          elif dev.startswith('RatioTapChanger.'):
+            reg_plot_r[dev].append(int(tokens[it+1]))
+          elif dev.startswith('PhotovoltaicUnit.'):
+            cmplx = complex(tokens[it+1])/1000.0
+            p_pv_plot_r[dev].append(cmplx.real)
+            q_pv_plot_r[dev].append(cmplx.imag)
+  print(app + ' hits: ' + str(hits), flush=True)
+
+  app = 'max_local-app'
+  hits = 0
+  with open('log/threeplots/plot_data.csv', 'r') as file:
+    for line in file:
+      tokens = line.split(',')
+      if tokens[0] == app:
+        hits += 1
+        t_plot_m.append((float(tokens[2]) - timex_start)/3600.0)
+
+        numdev = len(tokens)
+        for it in range(3, numdev, 2):
+          dev = tokens[it]
+          if dev.startswith('BatteryUnit.'):
+            p_batt_plot_m[dev].append(float(tokens[it+1])/1000.0)
+          elif dev.startswith('RatioTapChanger.'):
+            reg_plot_m[dev].append(int(tokens[it+1]))
+          elif dev.startswith('PhotovoltaicUnit.'):
+            cmplx = complex(tokens[it+1])/1000.0
+            p_pv_plot_m[dev].append(cmplx.real)
+            q_pv_plot_m[dev].append(cmplx.imag)
+  print(app + ' hits: ' + str(hits), flush=True)
+
+  app = 'cvr-app'
+  hits = 0
+  with open('log/threeplots/plot_data.csv', 'r') as file:
+    for line in file:
+      tokens = line.split(',')
+      if tokens[0] == app:
+        hits += 1
+        t_plot_c.append((float(tokens[2]) - timex_start)/3600.0)
+
+        numdev = len(tokens)
+        for it in range(3, numdev, 2):
+          dev = tokens[it]
+          if dev.startswith('BatteryUnit.'):
+            p_batt_plot_c[dev].append(float(tokens[it+1])/1000.0)
+          elif dev.startswith('RatioTapChanger.'):
+            reg_plot_c[dev].append(int(tokens[it+1]))
+          elif dev.startswith('PhotovoltaicUnit.'):
+            cmplx = complex(tokens[it+1])/1000.0
+            p_pv_plot_c[dev].append(cmplx.real)
+            q_pv_plot_c[dev].append(cmplx.imag)
+  print(app + ' hits: ' + str(hits), flush=True)
+
+  make_p_batt_plots(Batteries, t_plot_s, p_batt_plot_s, t_plot_r, p_batt_plot_r, t_plot_m, p_batt_plot_m, t_plot_c, p_batt_plot_c)
+  make_reg_plots(Regulators, t_plot_s, reg_plot_s, t_plot_r, reg_plot_r, t_plot_m, reg_plot_m, t_plot_c, reg_plot_c)
+  make_p_pv_plots(SolarPVs, t_plot_s, p_pv_plot_s, t_plot_r, p_pv_plot_r, t_plot_m, p_pv_plot_m, t_plot_c, p_pv_plot_c)
+  make_q_pv_plots(SolarPVs, t_plot_s, q_pv_plot_s, t_plot_r, q_pv_plot_r, t_plot_m, q_pv_plot_m, t_plot_c, q_pv_plot_c)
+
+  t_plot_s.clear()
+  t_plot_r.clear()
+  t_plot_m.clear()
+  t_plot_c.clear()
+
+  for batt in Batteries:
+    p_batt_plot_s[batt].clear()
+    p_batt_plot_r[batt].clear()
+    p_batt_plot_m[batt].clear()
+    p_batt_plot_c[batt].clear()
+
+  for reg in Regulators:
+    reg_plot_s[reg].clear()
+    reg_plot_r[reg].clear()
+    reg_plot_m[reg].clear()
+    reg_plot_c[reg].clear()
+
+  for pv in SolarPVs:
+    p_pv_plot_s[pv].clear()
+    p_pv_plot_r[pv].clear()
+    p_pv_plot_m[pv].clear()
+    p_pv_plot_c[pv].clear()
+    q_pv_plot_s[pv].clear()
+    q_pv_plot_r[pv].clear()
+    q_pv_plot_m[pv].clear()
+    q_pv_plot_c[pv].clear()
+
+  print('Goodbye!')
+
+
+if __name__ == "__main__":
+  _main()
+
