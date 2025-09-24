@@ -291,7 +291,7 @@ def _main():
     for line in file:
       tokens = line.split(',')
       if tokens[0] == app:
-        simhits += 1
+        hits += 1
         t_plot_s.append((float(tokens[2]) - timex_start)/3600.0)
 
         start = 3
