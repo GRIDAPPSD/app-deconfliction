@@ -147,6 +147,11 @@ class DeconflictionPipeline(GridAPPSD):
     coop_id = gapps.subscribe(service_input_topic('deconfliction.cooperation',
                               simulation_id), self.OnCoopSetpointsMessage)
 
+    # GDB 9/24/25: Keep track of the most recent simulation measurement
+    # timestamp for indexing the application Difference Builder messages that
+    # don't have simulation-based timestamps
+    self.simTimestamp = None
+
     self.keepLoopingFlag = True
 
     #prlog('messageListenerProcess--start listening for simulation messages...')
@@ -170,14 +175,16 @@ class DeconflictionPipeline(GridAPPSD):
     if not self.keepLoopingFlag:
       return
 
+    self.simTimestamp = int(message['message']['timestamp'])
+
     if self.realtimeFlag:
-      self.messageQueue.put((None, None, None, message['message']))
+      self.messageQueue.put((None, None, self.simTimestamp, message['message']))
     else:
-      ts_unix = int(message['message']['timestamp'])
       # only add every 5th measurement message to the queue to
       # allow sufficient time for cooperation
-      if ts_unix % 300 == 0:
-        self.messageQueue.put((None, None, None, message['message']))
+      if self.simTimestamp % 300 == 0:
+        self.messageQueue.put((None, None, self.simTimestamp,
+                               message['message']))
 
 
   def OnSimLogMessage(self, header, message):
@@ -188,7 +195,7 @@ class DeconflictionPipeline(GridAPPSD):
     status = message['processStatus']
     if status=='COMPLETE' or status=='CLOSED':
       self.keepLoopingFlag = False
-      self.messageQueue.put((None, None, None, message))
+      self.messageQueue.put((None, None, self.simTimestamp, message))
 
 
   def OnMeasSetpointsMessage(self, header, message):
@@ -196,7 +203,7 @@ class DeconflictionPipeline(GridAPPSD):
       prlog('OnMeasSetpointsMessage--received message: ' + str(message))
       prlog('OnMeasSetpointsMessage--received header: ' + str(header))
 
-    self.messageQueue.put((message['app_name'], True, None,
+    self.messageQueue.put((message['app_name'], None, self.simTimestamp,
                            message['input']['message']))
 
 
@@ -205,8 +212,8 @@ class DeconflictionPipeline(GridAPPSD):
       prlog('OnCoopSetpointsMessage--received message: ' + str(message))
       prlog('OnCoopSetpointsMessage--received header: ' + str(header))
 
-    self.messageQueue.put((message['app_name'], False, message['coop_series'],
-                           message['input']['message']))
+    self.messageQueue.put((message['app_name'], message['coop_series'],
+                           self.simTimestamp, message['input']['message']))
 
   # end of message listener process methods
 
@@ -800,7 +807,6 @@ class DeconflictionPipeline(GridAPPSD):
                              (newResolutionVector[device][0],
                               -self.BatteriesInfo[device]['P_batt_charge_max'])
 
-        # XXX check if we need to flip < to >
         elif -round(newResolutionVector[device][1]) < \
               round(self.BatteriesInfo[device]['P_batt_discharge_max']):
           prlog('SetpointValidatorForBatteries--device: ' + name +
@@ -2636,7 +2642,7 @@ class DeconflictionPipeline(GridAPPSD):
       # old data.
       app_names = set()
       while self.messageQueue.qsize() > 0:
-        app_name, meas_msg_flag, coop_series, message = self.messageQueue.get()
+        app_name, coop_series, timestamp, message = self.messageQueue.get()
 
         if 'processStatus' in message:
           notDoneFlag = False
@@ -2644,13 +2650,12 @@ class DeconflictionPipeline(GridAPPSD):
           prlog('Simulation ' + status + ' message received')
           break # done with all processing
 
-        timestamp = message['timestamp']
-
         if app_name == None:
           self.ProcessSimulationMessage(message, timestamp,
                                         self.printAllMessagesFlag)
 
         else:
+          meas_msg_flag = coop_series == None
           deconflictFlag = self.ProcessSetpointsMessage(message, timestamp,
                                           app_name, meas_msg_flag, coop_series,
                                           self.printAllConflictsResolutionsFlag)
