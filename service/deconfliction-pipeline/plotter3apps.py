@@ -254,18 +254,8 @@ def _main():
   cm_rules_plot = []
   cm_coop_plot = []
 
-  timex = 1.0
-
-  if not realtimeFlag:
-    # find the last time value for the simulation and call this 24 hours
-    finalsec = 0.0
-    with open('log/plot_data.csv', 'r') as file:
-      for line in file:
-        tokens = line.split(',')
-        if tokens[0] == 'SIMULATION':
-          finalsec = float(tokens[1])
-
-    timex = 24.0/finalsec
+  # Jan 1, midnight timestamp:
+  timex_start = 1704067200.0
 
   app = 'SIMULATION'
   prefix = 'sim'
@@ -277,7 +267,7 @@ def _main():
       tokens = line.split(',')
       if tokens[0] == app:
         simhits += 1
-        t_plot.append(float(tokens[1])*timex)
+        t_plot.append((float(tokens[2]) - timex_start)/3600.0)
 
         start = 3
         finish = start + len(Batteries)*3
@@ -302,7 +292,7 @@ def _main():
 
       elif tokens[0] == 'conflict_metric':
         cmhits += 1
-        cm_t_plot.append(float(tokens[1])*timex)
+        cm_t_plot.append((float(tokens[2]) - timex_start)/3600.0)
         cm_start_plot.append(float(tokens[3]))
         cm_rules_plot.append(float(tokens[4]))
         if tokens[5] != 'BYPASS_COOPERATION\n':
@@ -354,7 +344,7 @@ def _main():
         tokens = line.split(',')
         if tokens[0] == app_list[iapp]:
           hits += 1
-          t_plot.append(float(tokens[1])*timex)
+          t_plot.append((float(tokens[2]) - timex_start)/3600.0)
 
           numdev = len(tokens)
           for it in range(3, numdev, 2):
