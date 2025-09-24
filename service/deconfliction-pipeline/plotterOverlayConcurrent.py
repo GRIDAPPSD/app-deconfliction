@@ -80,7 +80,7 @@ def make_p_batt_plots(title, prefix, Batteries, t_plot_w, p_batt_plot_w, t_plot_
     else:
       plt.xlim([0, 24])
       plt.xticks([0, 4, 8, 12, 16, 20, 24])
-      plt.xlabel('Time (hours starting at midnight)')
+      plt.xlabel('Time (hours after midnight)')
 
     plt.ylabel('P_batt (kW)')
     plt.plot(t_plot_w[:len(p_batt_plot_w[name])], p_batt_plot_w[name], label='With Cooperation')
@@ -111,7 +111,7 @@ def make_soc_plots(title, prefix, Batteries, t_plot_w, soc_plot_w, t_plot_wo, so
     else:
       plt.xlim([0, 24])
       plt.xticks([0, 4, 8, 12, 16, 20, 24])
-      plt.xlabel('Time (hours starting at midnight)')
+      plt.xlabel('Time (hours after midnight)')
 
     plt.ylabel('Battery SoC')
     plt.plot(t_plot_w[:len(soc_plot_w[name])], soc_plot_w[name], label='With Cooperation')
@@ -143,7 +143,7 @@ def make_reg_plots(title, prefix, Regulators, t_plot_w, reg_plot_w, t_plot_wo, r
     else:
       plt.xlim([0, 24])
       plt.xticks([0, 4, 8, 12, 16, 20, 24])
-      plt.xlabel('Time (hours starting at midnight)')
+      plt.xlabel('Time (hours after midnight)')
 
     plt.ylabel('Regulator Tap Pos')
     plt.plot(t_plot_w[:len(reg_plot_w[name])], reg_plot_w[name], label='With Cooperation')
@@ -178,7 +178,7 @@ def make_p_pv_plots(title, prefix, SolarPVs, t_plot_w, p_pv_plot_w, t_plot_wo, p
     else:
       plt.xlim([0, 24])
       plt.xticks([0, 4, 8, 12, 16, 20, 24])
-      plt.xlabel('Time (hours starting at midnight)')
+      plt.xlabel('Time (hours after midnight)')
 
     plt.ylabel('p_pv (kW)')
     plt.plot(t_plot_w[:len(p_pv_plot_w[name])], p_pv_plot_w[name], label='With Cooperation')
@@ -213,7 +213,7 @@ def make_q_pv_plots(title, prefix, SolarPVs, t_plot_w, q_pv_plot_w, t_plot_wo, q
     else:
       plt.xlim([0, 24])
       plt.xticks([0, 4, 8, 12, 16, 20, 24])
-      plt.xlabel('Time (hours starting at midnight)')
+      plt.xlabel('Time (hours after midnight)')
 
     plt.ylabel('q_pv (kVAR)')
     plt.plot(t_plot_w[:len(q_pv_plot_w[name])], q_pv_plot_w[name], label='With Cooperation')
