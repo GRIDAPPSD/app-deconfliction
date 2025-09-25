@@ -57,33 +57,45 @@ from datetime import datetime
 # need to do some magic with the time axis if it's not a realtime simulation
 realtimeFlag = False
 
+plotDPI = 200
+labelSize = 16
+legendSize = 14
+tickSize = 12
+simColor = 'black'
+resilColor = 'red'
+maxLocalColor = 'green'
+cvrColor = 'blue'
+withCoopColor = 'cyan'
+withoutCoopColor = 'magenta'
+legendLoc = 'lower right'
+legendProp = {'weight': 'bold', 'size': legendSize}
+
 def to_datetime(time):
   return datetime(1966, 8, 1, (int(time)-1)//4, 15*((int(time)-1) % 4), 0)
 
 
 def make_cm_plot(cm_t_plot, cm_start_plot, cm_rules_plot, cm_coop_plot):
+  plt.figure(figsize=(8,4), dpi=plotDPI)
   #plt.title('Conflict Metric', pad=15.0)
-
-  # GDB 9/5/25: make plot wider than default to uncompress data
-  plt.figure().set_size_inches(10, 5)
 
   #ax = plt.figure().gca()
   #ax.xaxis.set_major_formatter(md.DateFormatter('%H:%M'))
   #plt.xlim([AppUtil.to_datetime(1), AppUtil.to_datetime(96)])
   #plt.xticks([AppUtil.to_datetime(1), AppUtil.to_datetime(25), AppUtil.to_datetime(49), AppUtil.to_datetime(73), AppUtil.to_datetime(96)])
   if realtimeFlag:
-    plt.xlabel('Time (sec)')
+    plt.xlabel('Time (sec)', fontweight='bold', fontsize=labelSize)
   else:
     plt.xlim([0, 24])
-    plt.xticks([0, 4, 8, 12, 16, 20, 24])
-    plt.xlabel('Time (hours after midnight)')
+    plt.xticks([0, 4, 8, 12, 16, 20, 24], fontweight='bold', fontsize=tickSize)
+    plt.xlabel('Time (hours after midnight)', fontweight='bold', fontsize=labelSize)
 
-  plt.ylabel('Conflict Metric')
-  plt.plot(cm_t_plot, cm_start_plot, label='starting metric')
-  plt.plot(cm_t_plot, cm_rules_plot, label='post-rules')
+  plt.yticks(fontweight='bold', fontsize=tickSize)
+  plt.ylabel('Conflict Metric', fontweight='bold', fontsize=labelSize)
+  plt.plot(cm_t_plot, cm_start_plot, color='red', label='starting metric')
+  plt.plot(cm_t_plot, cm_rules_plot, color='blue', label='post-rules')
   if len(cm_coop_plot) > 0:
-    plt.plot(cm_t_plot, cm_coop_plot, label='post-cooperation')
-  plt.legend()
+    plt.plot(cm_t_plot, cm_coop_plot, color='green', label='post-cooperation')
+  plt.legend(prop=legendProp, loc=legendLoc)
   plt.grid(True)
   plt.tight_layout()
   plt.savefig('log/conflict_metric.png')
@@ -96,19 +108,21 @@ def make_p_batt_plots(title, prefix, Batteries, t_plot, p_batt_plot):
     if len(t_plot) != len(p_batt_plot[name]):
       print('*** Mismatched data points for plot ' + title + ' P_batt ' + name + ', time len: ' + str(len(t_plot)) + ', p_batt len: ' + str(len(p_batt_plot[name])), flush=True)
     batname = name[12:] # extract just the name for tidier plots
+    plt.figure(dpi=plotDPI)
     #plt.title(title + ' P_batt:  ' + batname, pad=15.0)
     #ax = plt.figure().gca()
     #ax.xaxis.set_major_formatter(md.DateFormatter('%H:%M'))
     #plt.xlim([AppUtil.to_datetime(1), AppUtil.to_datetime(96)])
     #plt.xticks([AppUtil.to_datetime(1), AppUtil.to_datetime(25), AppUtil.to_datetime(49), AppUtil.to_datetime(73), AppUtil.to_datetime(96)])
     if realtimeFlag:
-      plt.xlabel('Time (sec)')
+      plt.xlabel('Time (sec)', fontweight='bold', fontsize=labelSize)
     else:
       plt.xlim([0, 24])
-      plt.xticks([0, 4, 8, 12, 16, 20, 24])
-      plt.xlabel('Time (hours after midnight)')
+      plt.xticks([0, 4, 8, 12, 16, 20, 24], fontweight='bold', fontsize=tickSize)
+      plt.xlabel('Time (hours after midnight)', fontweight='bold', fontsize=labelSize)
 
-    plt.ylabel('P_batt (kW)')
+    plt.yticks(fontweight='bold', fontsize=tickSize)
+    plt.ylabel('P_batt (kW)', fontweight='bold', fontsize=labelSize)
     plt.plot(t_plot[:len(p_batt_plot[name])], p_batt_plot[name])
     plt.tight_layout()
     plt.savefig('log/' + prefix + '_p_batt_' + batname + '.png')
@@ -121,19 +135,21 @@ def make_soc_plots(title, prefix, Batteries, t_plot, soc_plot):
     if len(t_plot) != len(soc_plot[name]):
       print('*** Mismatched data points for plot ' + title + ' SoC ' + name + ', time len: ' + str(len(t_plot)) + ', soc len: ' + str(len(soc_plot[name])), flush=True)
     batname = name[12:] # extract just the name for tidier plots
+    plt.figure(dpi=plotDPI)
     #plt.title(title + ' SoC:  ' + batname, pad=15.0)
     #ax = plt.figure().gca()
     #ax.xaxis.set_major_formatter(md.DateFormatter('%H:%M'))
     #plt.xlim([AppUtil.to_datetime(1), AppUtil.to_datetime(96)])
     #plt.xticks([AppUtil.to_datetime(1), AppUtil.to_datetime(25), AppUtil.to_datetime(49), AppUtil.to_datetime(73), AppUtil.to_datetime(96)])
     if realtimeFlag:
-      plt.xlabel('Time (sec)')
+      plt.xlabel('Time (sec)', fontweight='bold', fontsize=labelSize)
     else:
       plt.xlim([0, 24])
-      plt.xticks([0, 4, 8, 12, 16, 20, 24])
-      plt.xlabel('Time (hours after midnight)')
+      plt.xticks([0, 4, 8, 12, 16, 20, 24], fontweight='bold', fontsize=tickSize)
+      plt.xlabel('Time (hours after midnight)', fontweight='bold', fontsize=labelSize)
 
-    plt.ylabel('Battery SoC')
+    plt.yticks(fontweight='bold', fontsize=tickSize)
+    plt.ylabel('Battery SoC', fontweight='bold', fontsize=labelSize)
     plt.plot(t_plot[:len(soc_plot[name])], soc_plot[name])
     plt.tight_layout()
     plt.savefig('log/' + prefix + '_soc_' + batname + '.png')
@@ -146,6 +162,7 @@ def make_reg_plots(title, prefix, Regulators, t_plot, reg_plot):
     if len(t_plot) != len(reg_plot[name]):
       print('*** Mismatched data points for plot ' + title + ' ' + name + ', time len: ' + str(len(t_plot)) + ', reg len: ' + str(len(reg_plot[name])), flush=True)
     regname = name[16:] # extract just the name for tidier plots
+    plt.figure(figsize=(8,4), dpi=plotDPI)
     #plt.title(title + ' Tap Pos:  ' + regname, pad=15.0)
     #ax = plt.figure().gca()
     # integer y-axis number labels except for the position never changing
@@ -154,13 +171,14 @@ def make_reg_plots(title, prefix, Regulators, t_plot, reg_plot):
     #plt.xlim([AppUtil.to_datetime(1), AppUtil.to_datetime(96)])
     #plt.xticks([AppUtil.to_datetime(1), AppUtil.to_datetime(25), AppUtil.to_datetime(49), AppUtil.to_datetime(73), AppUtil.to_datetime(96)])
     if realtimeFlag:
-      plt.xlabel('Time (sec)')
+      plt.xlabel('Time (sec)', fontweight='bold', fontsize=labelSize)
     else:
       plt.xlim([0, 24])
-      plt.xticks([0, 4, 8, 12, 16, 20, 24])
-      plt.xlabel('Time (hours after midnight)')
+      plt.xticks([0, 4, 8, 12, 16, 20, 24], fontweight='bold', fontsize=tickSize)
+      plt.xlabel('Time (hours after midnight)', fontweight='bold', fontsize=labelSize)
 
-    plt.ylabel('Regulator Tap Pos')
+    plt.yticks(fontweight='bold', fontsize=tickSize)
+    plt.ylabel('Regulator Tap Pos', fontweight='bold', fontsize=labelSize)
     plt.plot(t_plot[:len(reg_plot[name])], reg_plot[name])
     plt.tight_layout()
     plt.savefig('log/' + prefix + '_tap_' + regname + '.png')
@@ -177,19 +195,21 @@ def make_p_pv_plots(title, prefix, SolarPVs, t_plot, p_pv_plot):
     if len(t_plot) != len(p_pv_plot[name]):
       print('*** Mismatched data points for plot ' + title + ' p_pv ' + name + ', time len: ' + str(len(t_plot)) + ', p_pv len: ' + str(len(p_pv_plot[name])), flush=True)
     pvname = name[17:] # extract just the name for tidier plots
+    plt.figure(dpi=plotDPI)
     #plt.title(title + ' p_pv:  ' + pvname, pad=15.0)
     #ax = plt.figure().gca()
     #ax.xaxis.set_major_formatter(md.DateFormatter('%H:%M'))
     #plt.xlim([AppUtil.to_datetime(1), AppUtil.to_datetime(96)])
     #plt.xticks([AppUtil.to_datetime(1), AppUtil.to_datetime(25), AppUtil.to_datetime(49), AppUtil.to_datetime(73), AppUtil.to_datetime(96)])
     if realtimeFlag:
-      plt.xlabel('Time (sec)')
+      plt.xlabel('Time (sec)', fontweight='bold', fontsize=labelSize)
     else:
       plt.xlim([0, 24])
-      plt.xticks([0, 4, 8, 12, 16, 20, 24])
-      plt.xlabel('Time (hours after midnight)')
+      plt.xticks([0, 4, 8, 12, 16, 20, 24], fontweight='bold', fontsize=tickSize)
+      plt.xlabel('Time (hours after midnight)', fontweight='bold', fontsize=labelSize)
 
-    plt.ylabel('p_pv (kW)')
+    plt.yticks(fontweight='bold', fontsize=tickSize)
+    plt.ylabel('p_pv (kW)', fontweight='bold', fontsize=labelSize)
     plt.plot(t_plot[:len(p_pv_plot[name])], p_pv_plot[name])
     plt.tight_layout()
     plt.savefig('log/' + prefix + '_p_pv_' + pvname + '.png')
@@ -206,19 +226,21 @@ def make_q_pv_plots(title, prefix, SolarPVs, t_plot, q_pv_plot):
     if len(t_plot) != len(q_pv_plot[name]):
       print('*** Mismatched data points for plot ' + title + ' q_pv ' + name + ', time len: ' + str(len(t_plot)) + ', q_pv len: ' + str(len(q_pv_plot[name])), flush=True)
     pvname = name[17:] # extract just the name for tidier plots
+    plt.figure(dpi=plotDPI)
     #plt.title(title + ' q_pv:  ' + pvname, pad=15.0)
     #ax = plt.figure().gca()
     #ax.xaxis.set_major_formatter(md.DateFormatter('%H:%M'))
     #plt.xlim([AppUtil.to_datetime(1), AppUtil.to_datetime(96)])
     #plt.xticks([AppUtil.to_datetime(1), AppUtil.to_datetime(25), AppUtil.to_datetime(49), AppUtil.to_datetime(73), AppUtil.to_datetime(96)])
     if realtimeFlag:
-      plt.xlabel('Time (sec)')
+      plt.xlabel('Time (sec)', fontweight='bold', fontsize=labelSize)
     else:
       plt.xlim([0, 24])
-      plt.xticks([0, 4, 8, 12, 16, 20, 24])
-      plt.xlabel('Time (hours after midnight)')
+      plt.xticks([0, 4, 8, 12, 16, 20, 24], fontweight='bold', fontsize=tickSize)
+      plt.xlabel('Time (hours after midnight)', fontweight='bold', fontsize=labelSize)
 
-    plt.ylabel('q_pv (kVAR)')
+    plt.yticks(fontweight='bold', fontsize=tickSize)
+    plt.ylabel('q_pv (kVAR)', fontweight='bold', fontsize=labelSize)
     plt.plot(t_plot[:len(q_pv_plot[name])], q_pv_plot[name])
     plt.tight_layout()
     plt.savefig('log/' + prefix + '_q_pv_' + pvname + '.png')

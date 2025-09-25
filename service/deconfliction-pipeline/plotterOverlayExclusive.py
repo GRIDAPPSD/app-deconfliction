@@ -57,6 +57,19 @@ from datetime import datetime
 # need to do some magic with the time axis if it's not a realtime simulation
 realtimeFlag = False
 
+plotDPI = 200
+labelSize = 16
+legendSize = 14
+tickSize = 12
+simColor = 'black'
+resilColor = 'red'
+maxLocalColor = 'green'
+cvrColor = 'blue'
+withCoopColor = 'cyan'
+withoutCoopColor = 'magenta'
+legendLoc = 'lower right'
+legendProp = {'weight': 'bold', 'size': legendSize}
+
 def to_datetime(time):
   return datetime(1966, 8, 1, (int(time)-1)//4, 15*((int(time)-1) % 4), 0)
 
@@ -73,23 +86,25 @@ def make_p_batt_plots(title, prefix, Batteries, t_plot_r, p_batt_plot_r, t_plot_
       print('*** Mismatched data points for cvr plot ' + title + ' P_batt ' + name + ', time len: ' + str(len(t_plot_c)) + ', p_batt len: ' + str(len(p_batt_plot_c[name])), flush=True)
 
     batname = name[12:] # extract just the name for tidier plots
+    plt.figure(dpi=plotDPI)
     #plt.title(title + ' P_batt:  ' + batname, pad=15.0)
     #ax = plt.figure().gca()
     #ax.xaxis.set_major_formatter(md.DateFormatter('%H:%M'))
     #plt.xlim([AppUtil.to_datetime(1), AppUtil.to_datetime(96)])
     #plt.xticks([AppUtil.to_datetime(1), AppUtil.to_datetime(25), AppUtil.to_datetime(49), AppUtil.to_datetime(73), AppUtil.to_datetime(96)])
     if realtimeFlag:
-      plt.xlabel('Time (sec)')
+      plt.xlabel('Time (sec)', fontweight='bold', fontsize=labelSize)
     else:
       plt.xlim([0, 24])
-      plt.xticks([0, 4, 8, 12, 16, 20, 24])
-      plt.xlabel('Time (hours after midnight)')
+      plt.xticks([0, 4, 8, 12, 16, 20, 24], fontweight='bold', fontsize=tickSize)
+      plt.xlabel('Time (hours after midnight)', fontweight='bold', fontsize=labelSize)
 
-    plt.ylabel('P_batt (kW)')
-    plt.plot(t_plot_r[:len(p_batt_plot_r[name])], p_batt_plot_r[name], label='Resilience')
-    plt.plot(t_plot_m[:len(p_batt_plot_m[name])], p_batt_plot_m[name], label='Max Local')
-    plt.plot(t_plot_c[:len(p_batt_plot_c[name])], p_batt_plot_c[name], label='CVR')
-    plt.legend()
+    plt.yticks(fontweight='bold', fontsize=tickSize)
+    plt.ylabel('P_batt (kW)', fontweight='bold', fontsize=labelSize)
+    plt.plot(t_plot_r[:len(p_batt_plot_r[name])], p_batt_plot_r[name], color=resilColor, label='Resilience')
+    plt.plot(t_plot_m[:len(p_batt_plot_m[name])], p_batt_plot_m[name], color=maxLocalColor, label='Max Local')
+    plt.plot(t_plot_c[:len(p_batt_plot_c[name])], p_batt_plot_c[name], color=cvrColor, label='CVR')
+    plt.legend(prop=legendProp, loc=legendLoc)
     plt.grid(True)
     plt.tight_layout()
     plt.savefig('log/' + prefix + '_p_batt_' + batname + '.png')
@@ -109,23 +124,25 @@ def make_soc_plots(title, prefix, Batteries, t_plot_r, soc_plot_r, t_plot_m, soc
       print('*** Mismatched data points for cvr plot ' + title + ' SoC ' + name + ', time len: ' + str(len(t_plot_c)) + ', soc len: ' + str(len(soc_plot_c[name])), flush=True)
 
     batname = name[12:] # extract just the name for tidier plots
+    plt.figure(dpi=plotDPI)
     #plt.title(title + ' SoC:  ' + batname, pad=15.0)
     #ax = plt.figure().gca()
     #ax.xaxis.set_major_formatter(md.DateFormatter('%H:%M'))
     #plt.xlim([AppUtil.to_datetime(1), AppUtil.to_datetime(96)])
     #plt.xticks([AppUtil.to_datetime(1), AppUtil.to_datetime(25), AppUtil.to_datetime(49), AppUtil.to_datetime(73), AppUtil.to_datetime(96)])
     if realtimeFlag:
-      plt.xlabel('Time (sec)')
+      plt.xlabel('Time (sec)', fontweight='bold', fontsize=labelSize)
     else:
       plt.xlim([0, 24])
-      plt.xticks([0, 4, 8, 12, 16, 20, 24])
-      plt.xlabel('Time (hours after midnight)')
+      plt.xticks([0, 4, 8, 12, 16, 20, 24], fontweight='bold', fontsize=tickSize)
+      plt.xlabel('Time (hours after midnight)', fontweight='bold', fontsize=labelSize)
 
-    plt.ylabel('Battery SoC')
-    plt.plot(t_plot_r[:len(soc_plot_r[name])], soc_plot_r[name], label='Resilience')
-    plt.plot(t_plot_m[:len(soc_plot_m[name])], soc_plot_m[name], label='Max Local')
-    plt.plot(t_plot_c[:len(soc_plot_c[name])], soc_plot_c[name], label='CVR')
-    plt.legend()
+    plt.yticks(fontweight='bold', fontsize=tickSize)
+    plt.ylabel('Battery SoC', fontweight='bold', fontsize=labelSize)
+    plt.plot(t_plot_r[:len(soc_plot_r[name])], soc_plot_r[name], color=resilColor, label='Resilience')
+    plt.plot(t_plot_m[:len(soc_plot_m[name])], soc_plot_m[name], color=maxLocalColor, label='Max Local')
+    plt.plot(t_plot_c[:len(soc_plot_c[name])], soc_plot_c[name], color=cvrColor, label='CVR')
+    plt.legend(prop=legendProp, loc=legendLoc)
     plt.grid(True)
     plt.tight_layout()
     plt.savefig('log/' + prefix + '_soc_' + batname + '.png')
@@ -145,6 +162,7 @@ def make_reg_plots(title, prefix, Regulators, t_plot_r, reg_plot_r, t_plot_m, re
       print('*** Mismatched data points for cvr plot ' + title + ' ' + name + ', time len: ' + str(len(t_plot_c)) + ', reg len: ' + str(len(reg_plot_c[name])), flush=True)
 
     regname = name[16:] # extract just the name for tidier plots
+    plt.figure(figsize=(8,4), dpi=plotDPI)
     #plt.title(title + ' Tap Pos:  ' + regname, pad=15.0)
     #ax = plt.figure().gca()
     #ax.yaxis.set_major_locator(MaxNLocator(integer=True))
@@ -152,17 +170,18 @@ def make_reg_plots(title, prefix, Regulators, t_plot_r, reg_plot_r, t_plot_m, re
     #plt.xlim([AppUtil.to_datetime(1), AppUtil.to_datetime(96)])
     #plt.xticks([AppUtil.to_datetime(1), AppUtil.to_datetime(25), AppUtil.to_datetime(49), AppUtil.to_datetime(73), AppUtil.to_datetime(96)])
     if realtimeFlag:
-      plt.xlabel('Time (sec)')
+      plt.xlabel('Time (sec)', fontweight='bold', fontsize=labelSize)
     else:
       plt.xlim([0, 24])
-      plt.xticks([0, 4, 8, 12, 16, 20, 24])
-      plt.xlabel('Time (hours after midnight)')
+      plt.xticks([0, 4, 8, 12, 16, 20, 24], fontweight='bold', fontsize=tickSize)
+      plt.xlabel('Time (hours after midnight)', fontweight='bold', fontsize=labelSize)
 
-    plt.ylabel('Regulator Tap Pos')
-    plt.plot(t_plot_r[:len(reg_plot_r[name])], reg_plot_r[name], label='Resilience')
-    plt.plot(t_plot_m[:len(reg_plot_m[name])], reg_plot_m[name], label='Max Local')
-    plt.plot(t_plot_c[:len(reg_plot_c[name])], reg_plot_c[name], label='CVR')
-    plt.legend()
+    plt.yticks(fontweight='bold', fontsize=tickSize)
+    plt.ylabel('Regulator Tap Pos', fontweight='bold', fontsize=labelSize)
+    plt.plot(t_plot_r[:len(reg_plot_r[name])], reg_plot_r[name], color=resilColor, label='Resilience')
+    plt.plot(t_plot_m[:len(reg_plot_m[name])], reg_plot_m[name], color=maxLocalColor, label='Max Local')
+    plt.plot(t_plot_c[:len(reg_plot_c[name])], reg_plot_c[name], color=cvrColor, label='CVR')
+    plt.legend(prop=legendProp, loc=legendLoc)
     plt.grid(True)
     plt.tight_layout()
     plt.savefig('log/' + prefix + '_tap_' + regname + '.png')
@@ -186,23 +205,25 @@ def make_p_pv_plots(title, prefix, SolarPVs, t_plot_r, p_pv_plot_r, t_plot_m, p_
       print('*** Mismatched data points for cvr plot ' + title + ' p_pv ' + name + ', time len: ' + str(len(t_plot_c)) + ', p_pv len: ' + str(len(p_pv_plot_c[name])), flush=True)
 
     pvname = name[17:] # extract just the name for tidier plots
+    plt.figure(dpi=plotDPI)
     #plt.title(title + ' p_pv:  ' + pvname, pad=15.0)
     #ax = plt.figure().gca()
     #ax.xaxis.set_major_formatter(md.DateFormatter('%H:%M'))
     #plt.xlim([AppUtil.to_datetime(1), AppUtil.to_datetime(96)])
     #plt.xticks([AppUtil.to_datetime(1), AppUtil.to_datetime(25), AppUtil.to_datetime(49), AppUtil.to_datetime(73), AppUtil.to_datetime(96)])
     if realtimeFlag:
-      plt.xlabel('Time (sec)')
+      plt.xlabel('Time (sec)', fontweight='bold', fontsize=labelSize)
     else:
       plt.xlim([0, 24])
-      plt.xticks([0, 4, 8, 12, 16, 20, 24])
-      plt.xlabel('Time (hours after midnight)')
+      plt.xticks([0, 4, 8, 12, 16, 20, 24], fontweight='bold', fontsize=tickSize)
+      plt.xlabel('Time (hours after midnight)', fontweight='bold', fontsize=labelSize)
 
-    plt.ylabel('p_pv (kW)')
-    plt.plot(t_plot_r[:len(p_pv_plot_r[name])], p_pv_plot_r[name], label='Resilience')
-    plt.plot(t_plot_m[:len(p_pv_plot_m[name])], p_pv_plot_m[name], label='Max Local')
-    plt.plot(t_plot_c[:len(p_pv_plot_c[name])], p_pv_plot_c[name], label='CVR')
-    plt.legend()
+    plt.yticks(fontweight='bold', fontsize=tickSize)
+    plt.ylabel('p_pv (kW)', fontweight='bold', fontsize=labelSize)
+    plt.plot(t_plot_r[:len(p_pv_plot_r[name])], p_pv_plot_r[name], color=resilColor, label='Resilience')
+    plt.plot(t_plot_m[:len(p_pv_plot_m[name])], p_pv_plot_m[name], color=maxLocalColor, label='Max Local')
+    plt.plot(t_plot_c[:len(p_pv_plot_c[name])], p_pv_plot_c[name], color=cvrColor, label='CVR')
+    plt.legend(prop=legendProp, loc=legendLoc)
     plt.grid(True)
     plt.tight_layout()
     plt.savefig('log/' + prefix + '_p_pv_' + pvname + '.png')
@@ -226,23 +247,25 @@ def make_q_pv_plots(title, prefix, SolarPVs, t_plot_r, q_pv_plot_r, t_plot_m, q_
       print('*** Mismatched data points for cvr plot ' + title + ' q_pv ' + name + ', time len: ' + str(len(t_plot_c)) + ', q_pv len: ' + str(len(q_pv_plot_c[name])), flush=True)
 
     pvname = name[17:] # extract just the name for tidier plots
+    plt.figure(dpi=plotDPI)
     #plt.title(title + ' q_pv:  ' + pvname, pad=15.0)
     #ax = plt.figure().gca()
     #ax.xaxis.set_major_formatter(md.DateFormatter('%H:%M'))
     #plt.xlim([AppUtil.to_datetime(1), AppUtil.to_datetime(96)])
     #plt.xticks([AppUtil.to_datetime(1), AppUtil.to_datetime(25), AppUtil.to_datetime(49), AppUtil.to_datetime(73), AppUtil.to_datetime(96)])
     if realtimeFlag:
-      plt.xlabel('Time (sec)')
+      plt.xlabel('Time (sec)', fontweight='bold', fontsize=labelSize)
     else:
       plt.xlim([0, 24])
-      plt.xticks([0, 4, 8, 12, 16, 20, 24])
-      plt.xlabel('Time (hours after midnight)')
+      plt.xticks([0, 4, 8, 12, 16, 20, 24], fontweight='bold', fontsize=tickSize)
+      plt.xlabel('Time (hours after midnight)', fontweight='bold', fontsize=labelSize)
 
-    plt.ylabel('q_pv (kVAR)')
-    plt.plot(t_plot_r[:len(q_pv_plot_r[name])], q_pv_plot_r[name], label='Resilience')
-    plt.plot(t_plot_m[:len(q_pv_plot_m[name])], q_pv_plot_m[name], label='Max Local')
-    plt.plot(t_plot_c[:len(q_pv_plot_c[name])], q_pv_plot_c[name], label='CVR')
-    plt.legend()
+    plt.yticks(fontweight='bold', fontsize=tickSize)
+    plt.ylabel('q_pv (kVAR)', fontweight='bold', fontsize=labelSize)
+    plt.plot(t_plot_r[:len(q_pv_plot_r[name])], q_pv_plot_r[name], color=resilColor, label='Resilience')
+    plt.plot(t_plot_m[:len(q_pv_plot_m[name])], q_pv_plot_m[name], color=maxLocalColor, label='Max Local')
+    plt.plot(t_plot_c[:len(q_pv_plot_c[name])], q_pv_plot_c[name], color=cvrColor, label='CVR')
+    plt.legend(prop=legendProp, loc=legendLoc)
     plt.grid(True)
     plt.tight_layout()
     plt.savefig('log/' + prefix + '_q_pv_' + pvname + '.png')
