@@ -73,7 +73,7 @@ def make_p_batt_plots(title, prefix, Batteries, t_plot_r, p_batt_plot_r, t_plot_
       print('*** Mismatched data points for cvr plot ' + title + ' P_batt ' + name + ', time len: ' + str(len(t_plot_c)) + ', p_batt len: ' + str(len(p_batt_plot_c[name])), flush=True)
 
     batname = name[12:] # extract just the name for tidier plots
-    plt.title(title + ' P_batt:  ' + batname, pad=15.0)
+    #plt.title(title + ' P_batt:  ' + batname, pad=15.0)
     #ax = plt.figure().gca()
     #ax.xaxis.set_major_formatter(md.DateFormatter('%H:%M'))
     #plt.xlim([AppUtil.to_datetime(1), AppUtil.to_datetime(96)])
@@ -91,6 +91,7 @@ def make_p_batt_plots(title, prefix, Batteries, t_plot_r, p_batt_plot_r, t_plot_
     plt.plot(t_plot_c[:len(p_batt_plot_c[name])], p_batt_plot_c[name], label='CVR')
     plt.legend()
     plt.grid(True)
+    plt.tight_layout()
     plt.savefig('log/' + prefix + '_p_batt_' + batname + '.png')
     #plot.show()
     plt.close()
@@ -108,7 +109,7 @@ def make_soc_plots(title, prefix, Batteries, t_plot_r, soc_plot_r, t_plot_m, soc
       print('*** Mismatched data points for cvr plot ' + title + ' SoC ' + name + ', time len: ' + str(len(t_plot_c)) + ', soc len: ' + str(len(soc_plot_c[name])), flush=True)
 
     batname = name[12:] # extract just the name for tidier plots
-    plt.title(title + ' SoC:  ' + batname, pad=15.0)
+    #plt.title(title + ' SoC:  ' + batname, pad=15.0)
     #ax = plt.figure().gca()
     #ax.xaxis.set_major_formatter(md.DateFormatter('%H:%M'))
     #plt.xlim([AppUtil.to_datetime(1), AppUtil.to_datetime(96)])
@@ -126,6 +127,7 @@ def make_soc_plots(title, prefix, Batteries, t_plot_r, soc_plot_r, t_plot_m, soc
     plt.plot(t_plot_c[:len(soc_plot_c[name])], soc_plot_c[name], label='CVR')
     plt.legend()
     plt.grid(True)
+    plt.tight_layout()
     plt.savefig('log/' + prefix + '_soc_' + batname + '.png')
     #plot.show()
     plt.close()
@@ -143,7 +145,7 @@ def make_reg_plots(title, prefix, Regulators, t_plot_r, reg_plot_r, t_plot_m, re
       print('*** Mismatched data points for cvr plot ' + title + ' ' + name + ', time len: ' + str(len(t_plot_c)) + ', reg len: ' + str(len(reg_plot_c[name])), flush=True)
 
     regname = name[16:] # extract just the name for tidier plots
-    plt.title(title + ' Tap Pos:  ' + regname, pad=15.0)
+    #plt.title(title + ' Tap Pos:  ' + regname, pad=15.0)
     #ax = plt.figure().gca()
     #ax.yaxis.set_major_locator(MaxNLocator(integer=True))
     #ax.xaxis.set_major_formatter(md.DateFormatter('%H:%M'))
@@ -162,6 +164,7 @@ def make_reg_plots(title, prefix, Regulators, t_plot_r, reg_plot_r, t_plot_m, re
     plt.plot(t_plot_c[:len(reg_plot_c[name])], reg_plot_c[name], label='CVR')
     plt.legend()
     plt.grid(True)
+    plt.tight_layout()
     plt.savefig('log/' + prefix + '_tap_' + regname + '.png')
     #plot.show()
     plt.close()
@@ -183,7 +186,7 @@ def make_p_pv_plots(title, prefix, SolarPVs, t_plot_r, p_pv_plot_r, t_plot_m, p_
       print('*** Mismatched data points for cvr plot ' + title + ' p_pv ' + name + ', time len: ' + str(len(t_plot_c)) + ', p_pv len: ' + str(len(p_pv_plot_c[name])), flush=True)
 
     pvname = name[17:] # extract just the name for tidier plots
-    plt.title(title + ' p_pv:  ' + pvname, pad=15.0)
+    #plt.title(title + ' p_pv:  ' + pvname, pad=15.0)
     #ax = plt.figure().gca()
     #ax.xaxis.set_major_formatter(md.DateFormatter('%H:%M'))
     #plt.xlim([AppUtil.to_datetime(1), AppUtil.to_datetime(96)])
@@ -201,6 +204,7 @@ def make_p_pv_plots(title, prefix, SolarPVs, t_plot_r, p_pv_plot_r, t_plot_m, p_
     plt.plot(t_plot_c[:len(p_pv_plot_c[name])], p_pv_plot_c[name], label='CVR')
     plt.legend()
     plt.grid(True)
+    plt.tight_layout()
     plt.savefig('log/' + prefix + '_p_pv_' + pvname + '.png')
     #plot.show()
     plt.close()
@@ -222,7 +226,7 @@ def make_q_pv_plots(title, prefix, SolarPVs, t_plot_r, q_pv_plot_r, t_plot_m, q_
       print('*** Mismatched data points for cvr plot ' + title + ' q_pv ' + name + ', time len: ' + str(len(t_plot_c)) + ', q_pv len: ' + str(len(q_pv_plot_c[name])), flush=True)
 
     pvname = name[17:] # extract just the name for tidier plots
-    plt.title(title + ' q_pv:  ' + pvname, pad=15.0)
+    #plt.title(title + ' q_pv:  ' + pvname, pad=15.0)
     #ax = plt.figure().gca()
     #ax.xaxis.set_major_formatter(md.DateFormatter('%H:%M'))
     #plt.xlim([AppUtil.to_datetime(1), AppUtil.to_datetime(96)])
@@ -240,6 +244,7 @@ def make_q_pv_plots(title, prefix, SolarPVs, t_plot_r, q_pv_plot_r, t_plot_m, q_
     plt.plot(t_plot_c[:len(q_pv_plot_c[name])], q_pv_plot_c[name], label='CVR')
     plt.legend()
     plt.grid(True)
+    plt.tight_layout()
     plt.savefig('log/' + prefix + '_q_pv_' + pvname + '.png')
     #plot.show()
     plt.close()
