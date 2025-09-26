@@ -92,6 +92,7 @@ if deconflictionAsServiceFlag:
 # redirect stderr to a file
 sys.stderr = open(logDir + 'deconfliction-pipeline-stderr.log', 'w')
 
+
 # went with prlog for name so it's the exact length as print since I had to
 # replace all the existing print calls and that would be a mess otherwise
 def prlog(msg):
@@ -101,6 +102,15 @@ def prlog(msg):
       flog.write(msg + '\n')
   except:
     pass
+
+
+def msglog(msg):
+  try:
+    with open(logDir + 'deconfliction-pipeline-messages.log', 'a') as flog:
+      flog.write(str(datetime.now()) + ': ' + msg + '\n')
+  except:
+    pass
+
 
 prlog('Starting deconfliction pipeline...')
 
@@ -203,6 +213,9 @@ class DeconflictionPipeline(GridAPPSD):
       prlog('OnMeasSetpointsMessage--received message: ' + str(message))
       prlog('OnMeasSetpointsMessage--received header: ' + str(header))
 
+    if self.logMessagesFlag:
+      msglog('received new measurement setpoints|app: ' + message['app_name'])
+
     self.messageQueue.put((message['app_name'], None, self.simTimestamp,
                            message['input']['message']))
 
@@ -211,6 +224,11 @@ class DeconflictionPipeline(GridAPPSD):
     if self.printAllMessagesFlag:
       prlog('OnCoopSetpointsMessage--received message: ' + str(message))
       prlog('OnCoopSetpointsMessage--received header: ' + str(header))
+
+    if self.logMessagesFlag:
+      msglog('received cooperation response|app: ' + message['app_name'] +
+              '|msgid: ' + str(message['coop_msgid']) + '|series: ' +
+              str(message['coop_series']))
 
     self.messageQueue.put((message['app_name'], message['coop_series'],
                            self.simTimestamp, message['input']['message']))
@@ -1840,6 +1858,11 @@ class DeconflictionPipeline(GridAPPSD):
         self.SetpointValidatorForRegulators(newResolutionVector,
                                             self.printAllValidatorFlag)
 
+        if self.logMessagesFlag:
+          msglog('INTERRUPT cooperation with new meas setpoints|responses: ' +
+                 str(self.coopResponseCounter) + '|series: ' +
+                 str(self.coopCurrentSeries))
+
         # Output conflict metric data to plot_data.csv for a concluded
         # cooperation where it hasn't reached thresholds
         if self.pltFlag:
@@ -1885,6 +1908,16 @@ class DeconflictionPipeline(GridAPPSD):
         # reset running counts for cooperation messages
         self.AppCoopCount.clear()
 
+    # if this is a cooperation response and we are in a cooperation series
+    # we need to increment the counters
+    elif self.coopCurrentFlag:
+      self.coopResponseCounter += 1
+
+      if app_name in self.AppCoopCount:
+        self.AppCoopCount[app_name] += 1
+      else:
+        self.AppCoopCount[app_name] = 1
+
     # set_points are the forward_differences part of the DifferenceBuilder
     # message with keys of object, attribute, and value
     set_points = message['forward_differences']
@@ -1900,7 +1933,7 @@ class DeconflictionPipeline(GridAPPSD):
     return True
 
 
-  def DeconflictSetpoints(self, timestamp, app_names, meas_msg_flag,
+  def DeconflictSetpoints(self, timestamp, meas_msg_flag,
                           printAllConflictsResolutionsFlag):
     if meas_msg_flag:
       self.startConflictMetric = self.ConflictMetricComputation(timestamp)
@@ -2142,9 +2175,14 @@ class DeconflictionPipeline(GridAPPSD):
         if isinstance(value[1], complex):
           coopProposed[device] = (value[0], (value[1].real, value[1].imag))
 
-      coopMessage = {'coop_series': self.coopCurrentSeries,
+      self.coopMsgID += 1
+      coopMessage = {'coop_msgid': self.coopMsgID,
+                     'coop_series': self.coopCurrentSeries,
                      'coop_proposed': coopProposed}
       self.gapps.send(self.coop_topic, json.dumps(coopMessage))
+      if self.logMessagesFlag:
+        msglog('requesting initial cooperation|msgid: ' + str(self.coopMsgID) +
+               '|series: ' + str(self.coopCurrentSeries))
       prlog('>>> DeconflictSetpoints--kicked off new COOPERATION series, ' +
             'updated current series: ' + str(self.coopCurrentSeries))
 
@@ -2160,16 +2198,6 @@ class DeconflictionPipeline(GridAPPSD):
     # coop message with conflict to get here
     prlog('DeconflictSetpoints--conflict found with COOP ' +
           'message, checking thresholds')
-
-    self.coopResponseCounter += 1
-
-    # increment cooperation message counter for apps as one of the criteria
-    # for ending cooperation
-    for app_name in app_names:
-      if app_name in self.AppCoopCount:
-        self.AppCoopCount[app_name] += 1
-      else:
-        self.AppCoopCount[app_name] = 1
 
     # save the previous conflict metric for comparison
     prevConflictMetric = self.conflictMetric
@@ -2238,9 +2266,14 @@ class DeconflictionPipeline(GridAPPSD):
 
       # publish this proposed setpoint vector to the cooperation topic for
       # competing apps that support cooperation to respond to
-      coopMessage = {'coop_series': self.coopCurrentSeries,
+      self.coopMsgID += 1
+      coopMessage = {'coop_msgid': self.coopMsgID,
+                     'coop_series': self.coopCurrentSeries,
                      'coop_proposed': coopProposed}
       self.gapps.send(self.coop_topic, json.dumps(coopMessage))
+      if self.logMessagesFlag:
+        msglog('requesting more cooperation|msgid: ' + str(self.coopMsgID) +
+               '|series: ' + str(self.coopCurrentSeries))
       prlog('DeconflictSetpoints--finished processing, timestamp: ' +
             str(timestamp))
       return
@@ -2322,6 +2355,11 @@ class DeconflictionPipeline(GridAPPSD):
     self.SetpointValidatorForRegulators(newResolutionVector,
                                         self.printAllValidatorFlag)
 
+    if self.logMessagesFlag:
+      msglog('SUCCESSFUL cooperation conclusion|responses: ' +
+             str(self.coopResponseCounter) + '|series: ' +
+             str(self.coopCurrentSeries))
+
     if self.pltFlag:
       self.pltFile.write('conflict_metric,')
       diff = (datetime.now() - self.pltTZero).total_seconds()
@@ -2373,6 +2411,9 @@ class DeconflictionPipeline(GridAPPSD):
     # flag for whether simulation is run in real-time
     #self.realtimeFlag = True
     self.realtimeFlag = False
+
+    # flag for whether to log cooperation messages in a file
+    self.logMessagesFlag = True
 
     self.messageQueue = Queue()
 
@@ -2508,6 +2549,7 @@ class DeconflictionPipeline(GridAPPSD):
     # initialize series counter used to uniquely identify cooperation messages
     self.coopCurrentSeries = 0
     self.coopCurrentFlag = False
+    self.coopMsgID = 0
 
     self.simMessageCounter = 0
 
@@ -2640,7 +2682,6 @@ class DeconflictionPipeline(GridAPPSD):
       # device setpoints to be reflected in measurements and performing
       # deconfliction before then could lead to making new requests based on
       # old data.
-      app_names = set()
       while self.messageQueue.qsize() > 0:
         app_name, coop_series, timestamp, message = self.messageQueue.get()
 
@@ -2664,7 +2705,6 @@ class DeconflictionPipeline(GridAPPSD):
             # set the flag indicating there is pending deconfliction needed
             # since we need to drain the message queue before initiating that
             pendingDeconflictFlag = True
-            app_names.add(app_name)
             if meas_msg_flag:
               pendingMeasMsgFlag = True
 
@@ -2684,7 +2724,7 @@ class DeconflictionPipeline(GridAPPSD):
         # cooperation series, device dispatches can happen multiple times
         # in quick succession for the same cooperation series
         if pendingMeasMsgFlag or self.coopCurrentFlag:
-          self.DeconflictSetpoints(timestamp, app_names, pendingMeasMsgFlag,
+          self.DeconflictSetpoints(timestamp, pendingMeasMsgFlag,
                                    self.printAllConflictsResolutionsFlag)
         pendingDeconflictFlag = False
         pendingMeasMsgFlag = False

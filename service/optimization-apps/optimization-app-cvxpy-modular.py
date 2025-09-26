@@ -194,6 +194,7 @@ class CompetingApp(GridAPPSD):
     # one currently being processed in order to determine when to discard
     # "stale" cooperation messages associated with an earlier series
     self.coopSeries = 0
+    self.coopMsgID = 0
 
     # coopCounter allows diminishing cooperation with each succeeding
     # cooperation message solicitation within a series
@@ -230,6 +231,7 @@ class CompetingApp(GridAPPSD):
         if self.includeBatteriesFlag or self.includeRegulatorsFlag or \
            self.includeSolarPVsPFlag:
           checkSeries = lastCoopMessage['coop_series']
+          self.coopMsgID = lastCoopMessage['coop_msgid']
 
           if checkSeries >= self.coopSeries:
             if checkSeries == self.coopSeries:
@@ -576,6 +578,7 @@ class CompetingApp(GridAPPSD):
     dispatch_message = self.difference_builder.get_message()
     dispatch_message['app_name'] = self.app_name
     dispatch_message['coop_series'] = self.coopSeries
+    dispatch_message['coop_msgid'] = self.coopMsgID
     ##print('Sending Cooperation DifferenceBuilder message with series: ' +
     ##      str(self.coopSeries), flush=True)
     #print('Sending Cooperation DifferenceBuilder message: ' +
