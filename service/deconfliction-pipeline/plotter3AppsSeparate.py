@@ -91,11 +91,17 @@ def make_cm_plot(cm_t_plot, cm_start_plot, cm_rules_plot, cm_coop_plot):
 
   plt.yticks(fontweight='bold', fontsize=tickSize)
   plt.ylabel('Conflict Metric', fontweight='bold', fontsize=labelSize)
-  plt.plot(cm_t_plot, cm_start_plot, color='red', label='starting metric')
-  plt.plot(cm_t_plot, cm_rules_plot, color='blue', label='post-rules')
+  plt.plot(cm_t_plot, cm_start_plot, color='orange', label='starting metric')
+  plt.plot(cm_t_plot, cm_rules_plot, color='magenta', label='post-rules')
   if len(cm_coop_plot) > 0:
-    plt.plot(cm_t_plot, cm_coop_plot, color='green', label='post-cooperation')
-  plt.legend(prop=legendProp, loc=legendLoc)
+    plt.plot(cm_t_plot, cm_coop_plot, color='cyan', label='post-cooperation')
+
+  cm_topt_plot = [1.0, 23.5]
+  cm_opt_plot = [0.0, 0.0]
+  plt.plot(cm_topt_plot, cm_opt_plot, color='lime', label='post-optimization')
+
+  #plt.legend(prop=legendProp, loc=legendLoc)
+  plt.legend(prop=legendProp, loc='upper left')
   plt.grid(True)
   plt.tight_layout()
   plt.savefig('log/conflict_metric.png')
