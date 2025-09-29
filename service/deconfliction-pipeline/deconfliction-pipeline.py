@@ -214,7 +214,7 @@ class DeconflictionPipeline(GridAPPSD):
       prlog('OnMeasSetpointsMessage--received header: ' + str(header))
 
     if self.logMessagesFlag:
-      msglog('received new measurement setpoints|app: ' + message['app_name'])
+      msglog('received new measurement setpoints|app:' + message['app_name'])
 
     self.messageQueue.put((message['app_name'], None, self.simTimestamp,
                            message['input']['message']))
@@ -226,8 +226,8 @@ class DeconflictionPipeline(GridAPPSD):
       prlog('OnCoopSetpointsMessage--received header: ' + str(header))
 
     if self.logMessagesFlag:
-      msglog('received cooperation response|app: ' + message['app_name'] +
-              '|msgid: ' + str(message['coop_msgid']) + '|series: ' +
+      msglog('received cooperation response|app:' + message['app_name'] +
+              '|msgid:' + str(message['coop_msgid']) + '|series:' +
               str(message['coop_series']))
 
     self.messageQueue.put((message['app_name'], message['coop_series'],
@@ -1859,8 +1859,8 @@ class DeconflictionPipeline(GridAPPSD):
                                             self.printAllValidatorFlag)
 
         if self.logMessagesFlag:
-          msglog('INTERRUPT cooperation with new meas setpoints|responses: ' +
-                 str(self.coopResponseCounter) + '|series: ' +
+          msglog('INTERRUPT cooperation with new meas setpoints|responses:' +
+                 str(self.coopResponseCounter) + '|series:' +
                  str(self.coopCurrentSeries))
 
         # Output conflict metric data to plot_data.csv for a concluded
@@ -2181,8 +2181,8 @@ class DeconflictionPipeline(GridAPPSD):
                      'coop_proposed': coopProposed}
       self.gapps.send(self.coop_topic, json.dumps(coopMessage))
       if self.logMessagesFlag:
-        msglog('requesting initial cooperation|msgid: ' + str(self.coopMsgID) +
-               '|series: ' + str(self.coopCurrentSeries))
+        msglog('requesting initial cooperation|msgid:' + str(self.coopMsgID) +
+               '|series:' + str(self.coopCurrentSeries))
       prlog('>>> DeconflictSetpoints--kicked off new COOPERATION series, ' +
             'updated current series: ' + str(self.coopCurrentSeries))
 
@@ -2272,8 +2272,8 @@ class DeconflictionPipeline(GridAPPSD):
                      'coop_proposed': coopProposed}
       self.gapps.send(self.coop_topic, json.dumps(coopMessage))
       if self.logMessagesFlag:
-        msglog('requesting more cooperation|msgid: ' + str(self.coopMsgID) +
-               '|series: ' + str(self.coopCurrentSeries))
+        msglog('requesting more cooperation|msgid:' + str(self.coopMsgID) +
+               '|series:' + str(self.coopCurrentSeries))
       prlog('DeconflictSetpoints--finished processing, timestamp: ' +
             str(timestamp))
       return
@@ -2356,8 +2356,8 @@ class DeconflictionPipeline(GridAPPSD):
                                         self.printAllValidatorFlag)
 
     if self.logMessagesFlag:
-      msglog('SUCCESSFUL cooperation conclusion|responses: ' +
-             str(self.coopResponseCounter) + '|series: ' +
+      msglog('SUCCESSFUL cooperation conclusion|responses:' +
+             str(self.coopResponseCounter) + '|series:' +
              str(self.coopCurrentSeries))
 
     if self.pltFlag:
