@@ -2662,7 +2662,7 @@ class DeconflictionPipeline(GridAPPSD):
     notDoneFlag = True
 
     while notDoneFlag:
-      if self.messageQueue.qsize() == 0:
+      if self.messageQueue.empty():
         # GDB 9/2/25: Warning: increasing the sleep duration above 0.1 such as
         # 0.5 can lead to bad things. With two processes sleeping on both ends
         # (apps and deconfliction pipeline) that's 4 sleep statements that are
@@ -2682,7 +2682,7 @@ class DeconflictionPipeline(GridAPPSD):
       # device setpoints to be reflected in measurements and performing
       # deconfliction before then could lead to making new requests based on
       # old data.
-      while self.messageQueue.qsize() > 0:
+      while not self.messageQueue.empty():
         app_name, coop_series, timestamp, message = self.messageQueue.get()
 
         if 'processStatus' in message:

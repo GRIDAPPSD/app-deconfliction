@@ -151,11 +151,19 @@ class CompetingApp(GridAPPSD):
       # If doing real-time simulation must subtract 5 off timestamp to make it
       # evenly divisble by multiples of the 3 second GridLAB-D time interval
       if (ts_unix-5) % self.optIntervalSec == 0:
+        '''
+        while not self.simQueue.empty():
+          self.simQueue.get()
+        '''
         self.simQueue.put(message['message'])
     else:
       # If doing non-real-time simulation remove the 5 second offset because
       # GridLAB-D outputs at even 60 second intervals
       if ts_unix % self.optIntervalSec == 0:
+        '''
+        while not self.simQueue.empty():
+          self.simQueue.get()
+        '''
         self.simQueue.put(message['message'])
 
 
@@ -169,7 +177,16 @@ class CompetingApp(GridAPPSD):
     if status=='COMPLETE' or status=='CLOSED':
       self.keepLoopingFlag = False
       # both simulation and cooperation queues need this message
+      '''
+      while not self.simQueue.empty():
+        self.simQueue.get()
+      '''
       self.simQueue.put(message)
+
+      '''
+      while not self.coopQueue.empty():
+        self.coopQueue.get()
+      '''
       self.coopQueue.put(message)
 
 
@@ -179,6 +196,12 @@ class CompetingApp(GridAPPSD):
     if not self.keepLoopingFlag:
       return
 
+    # GDB 9/29/25: Empty the queue before putting on the new message
+    # to insure the app is not responding to a stale cooperation request
+    '''
+    while not self.coopQueue.empty():
+      self.coopQueue.get()
+    '''
     self.coopQueue.put(message)
 
   # end of message listener process methods
@@ -201,7 +224,7 @@ class CompetingApp(GridAPPSD):
     self.coopCounter = 0
 
     while True:
-      while self.coopQueue.qsize() == 0:
+      while self.coopQueue.empty():
         # GDB 9/2/25: Warning: increasing the sleep duration above 0.1 such as
         # 0.5 can lead to bad things. With two processes sleeping on both ends
         # (apps and deconfliction pipeline) that's 4 sleep statements that are
@@ -212,7 +235,7 @@ class CompetingApp(GridAPPSD):
       lastCoopMessage = None
 
       #print('Cooperation queue check start', flush=True)
-      while self.coopQueue.qsize() > 0:
+      while not self.coopQueue.empty():
         message = self.coopQueue.get()
 
         if 'processStatus' in message: # simulation log message
@@ -2107,7 +2130,7 @@ class CompetingApp(GridAPPSD):
     # start by discarding any messages that arrived during initialization
     # as we don't want to process anything that's stale
     print('Simulation queue check after initialization start', flush=True)
-    while self.simQueue.qsize() > 0:
+    while not self.simQueue.empty():
       message = self.simQueue.get()
 
       if 'processStatus' in message: # simulation log message
@@ -2136,7 +2159,7 @@ class CompetingApp(GridAPPSD):
     self.lastTime = datetime.now()
 
     while True:
-      while self.simQueue.qsize() == 0:
+      while self.simQueue.empty():
         # GDB 9/2/25: Warning: increasing the sleep duration above 0.1 such as
         # 0.5 can lead to bad things. With two processes sleeping on both ends
         # (apps and deconfliction pipeline) that's 4 sleep statements that are
@@ -2147,7 +2170,7 @@ class CompetingApp(GridAPPSD):
       lastMeasMessage = None
 
       print('Simulation queue check start', flush=True)
-      while self.simQueue.qsize() > 0:
+      while not self.simQueue.empty():
         message = self.simQueue.get()
 
         if 'processStatus' in message: # simulation log message
