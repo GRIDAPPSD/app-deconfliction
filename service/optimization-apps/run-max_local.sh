@@ -27,6 +27,7 @@ fi
 trap - SIGINT SIGTERM EXIT
 
 mkdir -p log
+rm -f log/max_local-app-messages.log
 if [ "$OPTLIB" = "pulp" ] || [ "$OPTLIB" = "PuLP" ] || [ "$OPTLIB" = "PULP" ]; then
   python3 optimization-app-pulp.py max_local $SIMID "$SIMREQ" $INTERVAL 2>&1 | tee log/max_local-app.log
 else

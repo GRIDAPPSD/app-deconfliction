@@ -97,6 +97,13 @@ import MethodUtil
 
 class CompetingApp(GridAPPSD):
 
+  def msglog(self, msg):
+    try:
+      with open('log/' + self.opt_type + '-app-messages.log', 'a') as flog:
+        flog.write(str(datetime.now()) + ': ' + msg + '\n')
+    except:
+      pass
+
   # start of message listener process methods
 
   # GDB 9/5/25 NOTE: I have been on the struggle bus for days regarding
@@ -151,6 +158,8 @@ class CompetingApp(GridAPPSD):
       # If doing real-time simulation must subtract 5 off timestamp to make it
       # evenly divisble by multiples of the 3 second GridLAB-D time interval
       if (ts_unix-5) % self.optIntervalSec == 0:
+        if self.logMessagesFlag:
+          self.msglog('received simulation measurements to queue at timestamp:' + str(ts_unix))
         '''
         while not self.simQueue.empty():
           self.simQueue.get()
@@ -160,6 +169,8 @@ class CompetingApp(GridAPPSD):
       # If doing non-real-time simulation remove the 5 second offset because
       # GridLAB-D outputs at even 60 second intervals
       if ts_unix % self.optIntervalSec == 0:
+        if self.logMessagesFlag:
+          self.msglog('received simulation measurements to queue at timestamp:' + str(ts_unix))
         '''
         while not self.simQueue.empty():
           self.simQueue.get()
@@ -198,6 +209,9 @@ class CompetingApp(GridAPPSD):
 
     # GDB 9/29/25: Empty the queue before putting on the new message
     # to insure the app is not responding to a stale cooperation request
+    if self.logMessagesFlag:
+      self.msglog('received cooperation request|msgid:' + str(message['coop_msgid']) + '|series:' +
+                  str(message['coop_series']))
     '''
     while not self.coopQueue.empty():
       self.coopQueue.get()
@@ -607,6 +621,10 @@ class CompetingApp(GridAPPSD):
     #print('Sending Cooperation DifferenceBuilder message: ' +
     #      json.dumps(dispatch_message), flush=True)
     self.coop_gapps.send(self.coop_publish_topic, json.dumps(dispatch_message))
+    if self.logMessagesFlag:
+      self.msglog('sending cooperation response|msgid:' + str(self.coopMsgID) + '|series:' +
+                  str(self.coopSeries))
+
     self.difference_builder.clear()
 
   # end of cooperation handler process methods
@@ -1682,6 +1700,8 @@ class CompetingApp(GridAPPSD):
       # these can go either to the simulation or the deconfliction pipeline
       # based on the deconflictionAsServiceFlag value
       self.sim_gapps.send(self.sim_publish_topic, json.dumps(dispatch_message))
+      if self.logMessagesFlag:
+        self.msglog('sending new optimization setpoints')
 
       self.difference_builder.clear()
 
@@ -1777,6 +1797,9 @@ class CompetingApp(GridAPPSD):
     # flag for whether simulation is run in real-time
     #self.realtimeFlag = True
     self.realtimeFlag = False
+
+    # flag for whether to log cooperation messages in a file
+    self.logMessagesFlag = True
 
     # deltaT is time between timesteps as fractional hours
     # optimization interval seconds is the number of simulation seconds

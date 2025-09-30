@@ -27,6 +27,7 @@ fi
 trap - SIGINT SIGTERM EXIT
 
 mkdir -p log
+rm -f log/resilience-app-messages.log
 if [ "$OPTLIB" = "pulp" ] || [ "$OPTLIB" = "PuLP" ] || [ "$OPTLIB" = "PULP" ]; then
   python3 optimization-app-pulp.py resilience $SIMID "$SIMREQ" $INTERVAL 2>&1 | tee log/resilience-app.log
 else
