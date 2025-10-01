@@ -129,6 +129,9 @@ class CompetingApp(GridAPPSD):
     coop_id = self.msg_gapps.subscribe(service_output_topic(
                                        'deconfliction.cooperation',
                                        simulation_id), self.OnCoopMessage)
+    test_id = self.msg_gapps.subscribe(service_output_topic(
+                                       'deconfliction.test_message',
+                                       simulation_id), self.OnTestMessage)
 
     self.keepLoopingFlag = True
 
@@ -143,6 +146,7 @@ class CompetingApp(GridAPPSD):
     self.msg_gapps.unsubscribe(out_id)
     self.msg_gapps.unsubscribe(log_id)
     self.msg_gapps.unsubscribe(coop_id)
+    self.msg_gapps.unsubscribe(test_id)
 
 
   def OnSimOutputMessage(self, header, message):
@@ -217,6 +221,19 @@ class CompetingApp(GridAPPSD):
       self.coopQueue.get()
     '''
     self.coopQueue.put(message)
+
+
+  def OnTestMessage(self, header, message):
+    #print('header: ' + str(header), flush=True)
+    #print('message: ' + str(message), flush=True)
+    if not self.keepLoopingFlag:
+      return
+
+    if 'processStatus' in message:
+      if message['processStatus'] == 'ABORT':
+        self.keepLoopingFlag = False
+        self.simQueue.put(message)
+        self.coopQueue.put(message)
 
   # end of message listener process methods
 
@@ -1911,6 +1928,9 @@ class CompetingApp(GridAPPSD):
     self.coop_publish_topic = service_input_topic('deconfliction.cooperation',
                                                   simulation_id)
 
+    self.test_publish_topic = service_input_topic('deconfliction.test_message',
+                                                  simulation_id)
+
     # determine whether to send directly to simulation or the deconfliction
     # pipeline
     deconflictionAsServiceFlag = False
@@ -2159,7 +2179,11 @@ class CompetingApp(GridAPPSD):
       if 'processStatus' in message: # simulation log message
         # this would be weird to get this early, but it could happen
         status = message['processStatus']
-        print('Simulation ' + status + ' message received', flush=True)
+        if status == 'ABORT':
+          print('ABORTING due to message delay that will lead to ' +
+                'imminent failure--delay seconds: ' + message['delaySeconds'])
+        else:
+          print('Simulation ' + status + ' message received', flush=True)
 
         # wait for messageListener process to finish
         messageListener.join()
@@ -2180,6 +2204,11 @@ class CompetingApp(GridAPPSD):
 
     # diagnostic for tracking time between optimizations
     self.lastTime = datetime.now()
+
+    # send out test message to see if the message delay is too long to continue
+    test_message = {'time_sent': str(self.lastTime),
+                    'app_name': self.app_name}
+    self.sim_gapps.send(self.test_publish_topic, json.dumps(test_message))
 
     while True:
       while self.simQueue.empty():

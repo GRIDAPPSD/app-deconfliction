@@ -157,6 +157,9 @@ class DeconflictionPipeline(GridAPPSD):
     coop_id = gapps.subscribe(service_input_topic('deconfliction.cooperation',
                               simulation_id), self.OnCoopSetpointsMessage)
 
+    test_id = gapps.subscribe(service_input_topic('deconfliction.test_message',
+                              simulation_id), self.OnTestMessage)
+
     # GDB 9/24/25: Keep track of the most recent simulation measurement
     # timestamp for indexing the application Difference Builder messages that
     # don't have simulation-based timestamps
@@ -178,6 +181,7 @@ class DeconflictionPipeline(GridAPPSD):
     gapps.unsubscribe(log_id)
     gapps.unsubscribe(meas_id)
     gapps.unsubscribe(coop_id)
+    gapps.unsubscribe(test_id)
 
 
   def OnSimOutputMessage(self, header, message):
@@ -232,6 +236,24 @@ class DeconflictionPipeline(GridAPPSD):
 
     self.messageQueue.put((message['app_name'], message['coop_series'],
                            self.simTimestamp, message['input']['message']))
+
+
+  def OnTestMessage(self, header, message):
+    time_sent = datetime.strptime(message['time_sent'], '%Y-%m-%d %H:%M:%S.%f')
+    diff_sec = (datetime.now() - time_sent).total_seconds()
+
+    if self.printAllMessagesFlag:
+      prlog('OnTestMessage--message delay seconds: ' + str(diff_sec))
+
+    if self.logMessagesFlag:
+      msglog('received test message for checking delay|app:' +
+             message['app_name'] + '|seconds:' + str(diff_sec))
+
+    if diff_sec > 1.0:
+      self.keepLoopingFlag = False
+      message['processStatus'] = 'ABORT'
+      message['delaySeconds'] = str(diff_sec)
+      self.messageQueue.put((None, None, self.simTimestamp, message))
 
   # end of message listener process methods
 
@@ -2444,6 +2466,9 @@ class DeconflictionPipeline(GridAPPSD):
     self.coop_topic = service_output_topic('deconfliction.cooperation',
                                            simulation_id)
 
+    self.test_topic = service_output_topic('deconfliction.test_message',
+                                           simulation_id)
+
     # create DifferenceBuilder once and reuse it throughout the simulation
     self.difference_builder = DifferenceBuilder(simulation_id)
 
@@ -2688,7 +2713,15 @@ class DeconflictionPipeline(GridAPPSD):
         if 'processStatus' in message:
           notDoneFlag = False
           status = message['processStatus']
-          prlog('Simulation ' + status + ' message received')
+          if status == 'ABORT':
+            prlog('ABORTING due to message delay that will lead to ' +
+                  'imminent failure--delay seconds: ' + message['delaySeconds'])
+            # tell all running apps to also abort by passing along the message
+            self.gapps.send(self.test_topic, json.dumps(message))
+
+          else:
+            prlog('Simulation ' + status + ' message received')
+
           break # done with all processing
 
         if app_name == None:
