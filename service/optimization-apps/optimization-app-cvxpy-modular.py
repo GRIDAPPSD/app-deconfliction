@@ -164,21 +164,22 @@ class CompetingApp(GridAPPSD):
       if (ts_unix-5) % self.optIntervalSec == 0:
         if self.logMessagesFlag:
           self.msglog('received simulation measurements to queue at timestamp:' + str(ts_unix))
-        '''
+
+        # only permit a single message at a time to be queued to not fall behind
         while not self.simQueue.empty():
           self.simQueue.get()
-        '''
         self.simQueue.put(message['message'])
+
     else:
       # If doing non-real-time simulation remove the 5 second offset because
       # GridLAB-D outputs at even 60 second intervals
       if ts_unix % self.optIntervalSec == 0:
         if self.logMessagesFlag:
           self.msglog('received simulation measurements to queue at timestamp:' + str(ts_unix))
-        '''
+
+        # only permit a single message at a time to be queued to not fall behind
         while not self.simQueue.empty():
           self.simQueue.get()
-        '''
         self.simQueue.put(message['message'])
 
 
@@ -192,16 +193,13 @@ class CompetingApp(GridAPPSD):
     if status=='COMPLETE' or status=='CLOSED':
       self.keepLoopingFlag = False
       # both simulation and cooperation queues need this message
-      '''
+
       while not self.simQueue.empty():
         self.simQueue.get()
-      '''
       self.simQueue.put(message)
 
-      '''
       while not self.coopQueue.empty():
         self.coopQueue.get()
-      '''
       self.coopQueue.put(message)
 
 
@@ -216,10 +214,10 @@ class CompetingApp(GridAPPSD):
     if self.logMessagesFlag:
       self.msglog('received cooperation request|msgid:' + str(message['coop_msgid']) + '|series:' +
                   str(message['coop_series']))
-    '''
+
+    # only permit a single message at a time to be queued to not fall behind
     while not self.coopQueue.empty():
       self.coopQueue.get()
-    '''
     self.coopQueue.put(message)
 
 
