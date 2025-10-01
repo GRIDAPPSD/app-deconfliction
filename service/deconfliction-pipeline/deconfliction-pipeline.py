@@ -175,7 +175,8 @@ class DeconflictionPipeline(GridAPPSD):
       # (apps and deconfliction pipeline) that's 4 sleep statements that are
       # part of processing messages leading to a potential 2 second total
       # delay (with 0.5 sleeps), which is horrible for cooperation messages.
-      sleep(0.1)
+      #sleep(0.1)
+      sleep(0.05)
 
     gapps.unsubscribe(out_id)
     gapps.unsubscribe(log_id)
@@ -2687,14 +2688,14 @@ class DeconflictionPipeline(GridAPPSD):
     notDoneFlag = True
 
     while notDoneFlag:
-      if self.messageQueue.empty():
+      while self.messageQueue.empty():
         # GDB 9/2/25: Warning: increasing the sleep duration above 0.1 such as
         # 0.5 can lead to bad things. With two processes sleeping on both ends
         # (apps and deconfliction pipeline) that's 4 sleep statements that are
         # part of processing messages leading to a potential 2 second total
         # delay (with 0.5 sleeps), which is horrible for cooperation messages.
-        sleep(0.1)
-        continue
+        #sleep(0.1)
+        sleep(0.05)
 
       # GDB 5/21/25: This is an "enhanced queue draining" design. It keeps
       # up with messages by doing the minimal work needed to take in new

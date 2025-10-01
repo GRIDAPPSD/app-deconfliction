@@ -141,7 +141,8 @@ class CompetingApp(GridAPPSD):
       # (apps and deconfliction pipeline) that's 4 sleep statements that are
       # part of processing messages leading to a potential 2 second total
       # delay (with 0.5 sleeps), which is horrible for cooperation messages.
-      sleep(0.1)
+      #sleep(0.1)
+      sleep(0.05)
 
     self.msg_gapps.unsubscribe(out_id)
     self.msg_gapps.unsubscribe(log_id)
@@ -259,7 +260,8 @@ class CompetingApp(GridAPPSD):
         # (apps and deconfliction pipeline) that's 4 sleep statements that are
         # part of processing messages leading to a potential 2 second total
         # delay (with 0.5 sleeps), which is horrible for cooperation messages.
-        sleep(0.1)
+        #sleep(0.1)
+        sleep(0.05)
 
       lastCoopMessage = None
 
@@ -2215,7 +2217,8 @@ class CompetingApp(GridAPPSD):
         # (apps and deconfliction pipeline) that's 4 sleep statements that are
         # part of processing messages leading to a potential 2 second total
         # delay (with 0.5 sleeps), which is horrible for cooperation messages.
-        sleep(0.1)
+        #sleep(0.1)
+        sleep(0.05)
 
       lastMeasMessage = None
 
