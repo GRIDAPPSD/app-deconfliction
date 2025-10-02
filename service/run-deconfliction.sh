@@ -120,6 +120,10 @@ if [[ $APPS == *"c"* || $APPS == *"C"* ]]; then
   ./run-cvr.sh $SIMID "$SIMREQ" $OPTLIB $INTERVAL >/dev/null &
 fi
 
+if [[ $APPS == *"d"* || $APPS == *"D"* ]]; then
+  ./run-delay.sh $SIMID "$SIMREQ" >/dev/null &
+fi
+
 trap cleanup SIGINT SIGTERM EXIT
 
 cd ../deconfliction-pipeline
