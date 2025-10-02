@@ -224,7 +224,7 @@ class DeconflictionPipeline(GridAPPSD):
     # GDB 10/2/25: delays over a second seem to be common for these messages
     # so for now don't check and just put those on the queue
     '''
-    if diff_sec < 2.0:
+    if diff_sec < 5.0:
       self.messageQueue.put((message['app_name'], None, self.simTimestamp,
                              message['input']['message']))
     else:
@@ -251,7 +251,7 @@ class DeconflictionPipeline(GridAPPSD):
               '|msgid:' + str(message['coop_msgid']) + '|series:' +
               str(message['coop_series']) + '|delay:' + str(diff_sec))
 
-    if diff_sec < 2.0:
+    if diff_sec < 5.0:
       self.messageQueue.put((message['app_name'], message['coop_series'],
                              self.simTimestamp, message['input']['message']))
     else:
