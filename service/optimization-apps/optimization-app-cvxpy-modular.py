@@ -129,9 +129,9 @@ class CompetingApp(GridAPPSD):
     coop_id = self.msg_gapps.subscribe(service_output_topic(
                                        'deconfliction.cooperation',
                                        simulation_id), self.OnCoopMessage)
-    test_id = self.msg_gapps.subscribe(service_output_topic(
-                                       'deconfliction.test_message',
-                                       simulation_id), self.OnTestMessage)
+    abort_id = self.msg_gapps.subscribe(service_output_topic(
+                                        'deconfliction.abort',
+                                        simulation_id), self.OnAbortMessage)
 
     self.keepLoopingFlag = True
 
@@ -147,7 +147,7 @@ class CompetingApp(GridAPPSD):
     self.msg_gapps.unsubscribe(out_id)
     self.msg_gapps.unsubscribe(log_id)
     self.msg_gapps.unsubscribe(coop_id)
-    self.msg_gapps.unsubscribe(test_id)
+    self.msg_gapps.unsubscribe(abort_id)
 
 
   '''
@@ -226,7 +226,7 @@ class CompetingApp(GridAPPSD):
     self.coopQueue.put(message)
 
 
-  def OnTestMessage(self, header, message):
+  def OnAbortMessage(self, header, message):
     #print('header: ' + str(header), flush=True)
     #print('message: ' + str(message), flush=True)
     if not self.keepLoopingFlag:
@@ -275,7 +275,11 @@ class CompetingApp(GridAPPSD):
 
         if 'processStatus' in message: # simulation log message
           status = message['processStatus']
-          ##print('Simulation ' + status + ' message received', flush=True)
+          ##if status == 'ABORT':
+          ##  print('ABORTING due to message delay that will lead to ' +
+          ##        'imminent failure--delay seconds: ' + message['delaySeconds'])
+          ##else:
+          ##  print('Simulation ' + status + ' message received', flush=True)
 
           return # done with all processing
 
@@ -637,6 +641,7 @@ class CompetingApp(GridAPPSD):
     dispatch_message['app_name'] = self.app_name
     dispatch_message['coop_series'] = self.coopSeries
     dispatch_message['coop_msgid'] = self.coopMsgID
+    dispatch_message['time_sent'] = str(datetime.now())
     ##print('Sending Cooperation DifferenceBuilder message with series: ' +
     ##      str(self.coopSeries), flush=True)
     #print('Sending Cooperation DifferenceBuilder message: ' +
@@ -1714,6 +1719,7 @@ class CompetingApp(GridAPPSD):
     if includeRegulatorsFlag or includeBatteriesFlag or includeSolarPVsPFlag:
       dispatch_message = self.difference_builder.get_message()
       dispatch_message['app_name'] = self.app_name
+      dispatch_message['time_sent'] = str(datetime.now())
       print('Sending Measurements DifferenceBuilder message!', flush=True)
       #print('Sending Measurements DifferenceBuilder message: ' +
       #      json.dumps(dispatch_message), flush=True)
@@ -1930,9 +1936,6 @@ class CompetingApp(GridAPPSD):
 
     # topic for sending out cooperation responses
     self.coop_publish_topic = service_input_topic('deconfliction.cooperation',
-                                                  simulation_id)
-
-    self.test_publish_topic = service_input_topic('deconfliction.test_message',
                                                   simulation_id)
 
     # determine whether to send directly to simulation or the deconfliction
@@ -2209,11 +2212,6 @@ class CompetingApp(GridAPPSD):
     # diagnostic for tracking time between optimizations
     self.lastTime = datetime.now()
 
-    # send out test message to see if the message delay is too long to continue
-    test_message = {'time_sent': str(self.lastTime),
-                    'app_name': self.app_name}
-    self.sim_gapps.send(self.test_publish_topic, json.dumps(test_message))
-
     while True:
       while self.simQueue.empty():
         # GDB 9/2/25: Warning: increasing the sleep duration above 0.1 such as
@@ -2232,7 +2230,11 @@ class CompetingApp(GridAPPSD):
 
         if 'processStatus' in message: # simulation log message
           status = message['processStatus']
-          print('Simulation ' + status + ' message received', flush=True)
+          if status == 'ABORT':
+            print('ABORTING due to message delay that will lead to ' +
+                  'imminent failure--delay seconds: ' + message['delaySeconds'])
+          else:
+            print('Simulation ' + status + ' message received', flush=True)
 
           # wait for messageListener process to finish
           messageListener.join()
