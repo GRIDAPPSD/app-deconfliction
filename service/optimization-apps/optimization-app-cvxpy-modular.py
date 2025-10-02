@@ -227,8 +227,12 @@ class CompetingApp(GridAPPSD):
     # GDB 9/29/25: Empty the queue before putting on the new message
     # to insure the app is not responding to a stale cooperation request
     if self.logMessagesFlag:
-      self.msglog('received cooperation request|msgid:' + str(message['coop_msgid']) + '|series:' +
-                  str(message['coop_series']))
+      time_sent = datetime.strptime(message['time_sent'],'%Y-%m-%d %H:%M:%S.%f')
+      diff_sec = (datetime.now() - time_sent).total_seconds()
+
+      self.msglog('received cooperation request|msgid:' +
+                  str(message['coop_msgid']) + '|series:' +
+                  str(message['coop_series']) + '|delay:' + str(diff_sec))
 
     # only permit a single message at a time to be queued to not fall behind
     self.clearCoopQueue()

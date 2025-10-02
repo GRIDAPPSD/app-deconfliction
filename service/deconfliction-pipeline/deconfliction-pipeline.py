@@ -214,10 +214,9 @@ class DeconflictionPipeline(GridAPPSD):
       prlog('OnMeasSetpointsMessage--received message: ' + str(message))
       prlog('OnMeasSetpointsMessage--received header: ' + str(header))
 
-    time_sent = datetime.strptime(message['time_sent'], '%Y-%m-%d %H:%M:%S.%f')
-    diff_sec = (datetime.now() - time_sent).total_seconds()
-
     if self.logMessagesFlag:
+      time_sent = datetime.strptime(message['time_sent'],'%Y-%m-%d %H:%M:%S.%f')
+      diff_sec = (datetime.now() - time_sent).total_seconds()
       msglog('received new measurement setpoints|app:' + message['app_name'] +
              '|delay:' + str(diff_sec))
 
@@ -2204,7 +2203,8 @@ class DeconflictionPipeline(GridAPPSD):
           coopProposed[device] = (value[0], (value[1].real, value[1].imag))
 
       self.coopMsgID += 1
-      coopMessage = {'coop_msgid': self.coopMsgID,
+      coopMessage = {'time_sent': str(datetime.now()),
+                     'coop_msgid': self.coopMsgID,
                      'coop_series': self.coopCurrentSeries,
                      'coop_proposed': coopProposed}
       self.gapps.send(self.coop_topic, json.dumps(coopMessage))
@@ -2295,7 +2295,8 @@ class DeconflictionPipeline(GridAPPSD):
       # publish this proposed setpoint vector to the cooperation topic for
       # competing apps that support cooperation to respond to
       self.coopMsgID += 1
-      coopMessage = {'coop_msgid': self.coopMsgID,
+      coopMessage = {'time_sent': str(datetime.now()),
+                     'coop_msgid': self.coopMsgID,
                      'coop_series': self.coopCurrentSeries,
                      'coop_proposed': coopProposed}
       self.gapps.send(self.coop_topic, json.dumps(coopMessage))
