@@ -150,14 +150,23 @@ class CompetingApp(GridAPPSD):
     self.msg_gapps.unsubscribe(abort_id)
 
 
-  '''
-  def clearQueue(self, queue):
-    while True:
-      try:
-        queue.get(block=False)
-      except Queue.Empty:
-        break
-  '''
+  def clearSimQueue(self):
+    try:
+      while True:
+        self.simQueue.get(block=False)
+    #except Queue.Empty:
+    except:
+      pass
+
+
+  def clearCoopQueue(self):
+    try:
+      while True:
+        self.coopQueue.get(block=False)
+    #except Queue.Empty:
+    except:
+      pass
+
 
   def OnSimOutputMessage(self, header, message):
     #print('header: ' + str(header), flush=True)
@@ -176,7 +185,7 @@ class CompetingApp(GridAPPSD):
           self.msglog('received simulation measurements to queue at timestamp:' + str(ts_unix))
 
         # only permit a single message at a time to be queued to not fall behind
-        #self.clearQueue(self.simQueue)
+        self.clearSimQueue()
         self.simQueue.put(message['message'])
 
     else:
@@ -187,7 +196,7 @@ class CompetingApp(GridAPPSD):
           self.msglog('received simulation measurements to queue at timestamp:' + str(ts_unix))
 
         # only permit a single message at a time to be queued to not fall behind
-        #self.clearQueue(self.simQueue)
+        self.clearSimQueue()
         self.simQueue.put(message['message'])
 
 
@@ -202,10 +211,10 @@ class CompetingApp(GridAPPSD):
       self.keepLoopingFlag = False
       # both simulation and cooperation queues need this message
 
-      #self.clearQueue(self.simQueue)
+      self.clearSimQueue()
       self.simQueue.put(message)
 
-      #self.clearQueue(self.coopQueue)
+      self.clearCoopQueue()
       self.coopQueue.put(message)
 
 
@@ -222,7 +231,7 @@ class CompetingApp(GridAPPSD):
                   str(message['coop_series']))
 
     # only permit a single message at a time to be queued to not fall behind
-    #self.clearQueue(self.coopQueue)
+    self.clearCoopQueue()
     self.coopQueue.put(message)
 
 
