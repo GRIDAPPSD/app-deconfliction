@@ -149,7 +149,8 @@ class CompetingApp(GridAPPSD):
       return
 
     if 'processStatus' in message:
-      if message['processStatus'] == 'ABORT':
+      if message['processStatus']=='COMPLETE' or \
+         message['processStatus']=='ABORT':
         self.keepLoopingFlag = False
 
 
@@ -157,6 +158,10 @@ class CompetingApp(GridAPPSD):
     # flag for whether simulation is run in real-time
     #self.realtimeFlag = True
     self.realtimeFlag = False
+
+    self.simLogSubscribedFlag = True
+    if not self.realtimeFlag:
+      self.simLogSubscribedFlag = False
 
     # flag for whether to log cooperation messages in a file
     self.logMessagesFlag = True
@@ -178,8 +183,11 @@ class CompetingApp(GridAPPSD):
 
     out_id = self.msg_gapps.subscribe(simulation_output_topic(simulation_id),
                                       self.OnSimOutputMessage)
-    log_id = self.msg_gapps.subscribe(simulation_log_topic(simulation_id),
-                                      self.OnSimLogMessage)
+
+    if self.simLogSubscribedFlag:
+      log_id = self.msg_gapps.subscribe(simulation_log_topic(simulation_id),
+                                        self.OnSimLogMessage)
+
     coop_id = self.msg_gapps.subscribe(service_output_topic(
                                        'deconfliction.cooperation',
                                        simulation_id), self.OnCoopMessage)
@@ -199,7 +207,8 @@ class CompetingApp(GridAPPSD):
       sleep(0.05)
 
     self.msg_gapps.unsubscribe(out_id)
-    self.msg_gapps.unsubscribe(log_id)
+    if self.simLogSubscribedFlag:
+      self.msg_gapps.unsubscribe(log_id)
     self.msg_gapps.unsubscribe(coop_id)
     self.msg_gapps.unsubscribe(abort_id)
 

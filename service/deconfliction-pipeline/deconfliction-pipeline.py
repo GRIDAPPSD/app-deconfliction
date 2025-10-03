@@ -144,8 +144,10 @@ class DeconflictionPipeline(GridAPPSD):
     # subscribe to simulation log and output messages
     out_id = gapps.subscribe(simulation_output_topic(simulation_id),
                              self.OnSimOutputMessage)
-    log_id = gapps.subscribe(simulation_log_topic(simulation_id),
-                             self.OnSimLogMessage)
+
+    if self.simLogSubscribedFlag:
+      log_id = gapps.subscribe(simulation_log_topic(simulation_id),
+                               self.OnSimLogMessage)
 
     if deconflictionAsServiceFlag:
       meas_id = gapps.subscribe(simulation_input_topic(simulation_id),
@@ -176,7 +178,8 @@ class DeconflictionPipeline(GridAPPSD):
       sleep(0.05)
 
     gapps.unsubscribe(out_id)
-    gapps.unsubscribe(log_id)
+    if self.simLogSubscribedFlag:
+      gapps.unsubscribe(log_id)
     gapps.unsubscribe(meas_id)
     gapps.unsubscribe(coop_id)
 
@@ -187,6 +190,17 @@ class DeconflictionPipeline(GridAPPSD):
       return
 
     self.simTimestamp = int(message['message']['timestamp'])
+
+    # GDB 10/3/25: Fix for not being able to subscribe to log messages, but
+    # still needing to recognize end of simulation
+    if not self.simLogSubscribedFlag:
+      if self.simTimestampStart == None:
+        self.simTimestampStart = self.simTimestamp
+
+      if (self.simTimestamp - self.simTimestampStart) >= self.simDuration:
+        self.keepLoopingFlag = False
+        message['processStatus'] = 'COMPLETE'
+        self.messageQueue.put((None, None, self.simTimestamp, message))
 
     if self.realtimeFlag:
       self.messageQueue.put((None, None, self.simTimestamp, message['message']))
@@ -2441,6 +2455,16 @@ class DeconflictionPipeline(GridAPPSD):
     #self.realtimeFlag = True
     self.realtimeFlag = False
 
+    # GDB 10/3/25: sim log messages overwhelm ActiveMQ causing severe
+    # delays in message delivery in non-realtime mode
+    self.simLogSubscribedFlag = True
+    if not self.realtimeFlag:
+      self.simLogSubscribedFlag = False
+      self.simTimestampStart = None
+      # match duration with simulation configuration
+      # for some reason final expected timestamp isn't sent so subtract 2 off
+      self.simDuration = 86400-120
+
     # flag for whether to log cooperation messages in a file
     self.logMessagesFlag = True
 
@@ -2728,6 +2752,9 @@ class DeconflictionPipeline(GridAPPSD):
 
           else:
             prlog('Simulation ' + status + ' message received')
+
+            if not self.simLogSubscribedFlag:
+              self.gapps.send(self.abort_topic, json.dumps(message))
 
           break # done with all processing
 
