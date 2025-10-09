@@ -89,7 +89,7 @@ def make_cm_plot(cm_t_plot, cm_start_plot, cm_rules_plot, cm_coop_plot):
     plt.xticks([0, 4, 8, 12, 16, 20, 24], fontweight='bold', fontsize=tickSize)
     plt.xlabel('Time (hours of day)', fontweight='bold', fontsize=labelSize)
 
-  plt.ylim([0.0, 1.0])
+  plt.ylim([-0.05, 1.0])
   plt.yticks([0.0, 0.2, 0.4, 0.6, 0.8, 1.0], fontweight='bold', fontsize=tickSize)
   plt.ylabel('Conflict Metric', fontweight='bold', fontsize=labelSize)
   plt.plot(cm_t_plot, cm_start_plot, color='orange', label='starting metric')
@@ -97,7 +97,7 @@ def make_cm_plot(cm_t_plot, cm_start_plot, cm_rules_plot, cm_coop_plot):
   if len(cm_coop_plot) > 0:
     plt.plot(cm_t_plot, cm_coop_plot, color='cyan', label='post-cooperation')
 
-  cm_topt_plot = [1.0, 23.5]
+  cm_topt_plot = [1.0, 23.8]
   cm_opt_plot = [0.0, 0.0]
   plt.plot(cm_topt_plot, cm_opt_plot, color='lime', label='post-optimization')
 
