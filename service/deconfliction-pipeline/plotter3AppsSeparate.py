@@ -87,9 +87,10 @@ def make_cm_plot(cm_t_plot, cm_start_plot, cm_rules_plot, cm_coop_plot):
   else:
     plt.xlim([0, 24])
     plt.xticks([0, 4, 8, 12, 16, 20, 24], fontweight='bold', fontsize=tickSize)
-    plt.xlabel('Time (hours after midnight)', fontweight='bold', fontsize=labelSize)
+    plt.xlabel('Time (hours of day)', fontweight='bold', fontsize=labelSize)
 
-  plt.yticks(fontweight='bold', fontsize=tickSize)
+  plt.ylim([0.0, 1.0])
+  plt.yticks([0.0, 0.2, 0.4, 0.6, 0.8, 1.0], fontweight='bold', fontsize=tickSize)
   plt.ylabel('Conflict Metric', fontweight='bold', fontsize=labelSize)
   plt.plot(cm_t_plot, cm_start_plot, color='orange', label='starting metric')
   plt.plot(cm_t_plot, cm_rules_plot, color='magenta', label='post-rules')
@@ -125,10 +126,10 @@ def make_p_batt_plots(title, prefix, Batteries, t_plot, p_batt_plot):
     else:
       plt.xlim([0, 24])
       plt.xticks([0, 4, 8, 12, 16, 20, 24], fontweight='bold', fontsize=tickSize)
-      plt.xlabel('Time (hours after midnight)', fontweight='bold', fontsize=labelSize)
+      plt.xlabel('Time (hours of day)', fontweight='bold', fontsize=labelSize)
 
     plt.yticks(fontweight='bold', fontsize=tickSize)
-    plt.ylabel('P_batt (kW)', fontweight='bold', fontsize=labelSize)
+    plt.ylabel('BESS Output (kW)', fontweight='bold', fontsize=labelSize)
     plt.plot(t_plot[:len(p_batt_plot[name])], p_batt_plot[name])
     plt.tight_layout()
     plt.savefig('log/' + prefix + '_p_batt_' + batname + '.png')
@@ -152,10 +153,10 @@ def make_soc_plots(title, prefix, Batteries, t_plot, soc_plot):
     else:
       plt.xlim([0, 24])
       plt.xticks([0, 4, 8, 12, 16, 20, 24], fontweight='bold', fontsize=tickSize)
-      plt.xlabel('Time (hours after midnight)', fontweight='bold', fontsize=labelSize)
+      plt.xlabel('Time (hours of day)', fontweight='bold', fontsize=labelSize)
 
     plt.yticks(fontweight='bold', fontsize=tickSize)
-    plt.ylabel('Battery SoC', fontweight='bold', fontsize=labelSize)
+    plt.ylabel('BESS Output (SoC)', fontweight='bold', fontsize=labelSize)
     plt.plot(t_plot[:len(soc_plot[name])], soc_plot[name])
     plt.tight_layout()
     plt.savefig('log/' + prefix + '_soc_' + batname + '.png')
@@ -183,8 +184,9 @@ def make_reg_plots(title, prefix, Regulators, t_plot, reg_plot):
       plt.xticks([0, 4, 8, 12, 16, 20, 24], fontweight='bold', fontsize=tickSize)
       plt.xlabel('Time (hours after midnight)', fontweight='bold', fontsize=labelSize)
 
-    plt.yticks(fontweight='bold', fontsize=tickSize)
-    plt.ylabel('Regulator Tap Pos', fontweight='bold', fontsize=labelSize)
+    plt.xlim([-16, 16])
+    plt.yticks([-16, -12, -8, -4, 0, 4, 8, 12, 16], fontweight='bold', fontsize=tickSize)
+    plt.ylabel('Regulator Taps', fontweight='bold', fontsize=labelSize)
     plt.plot(t_plot[:len(reg_plot[name])], reg_plot[name])
     plt.tight_layout()
     plt.savefig('log/' + prefix + '_tap_' + regname + '.png')
@@ -212,10 +214,10 @@ def make_p_pv_plots(title, prefix, SolarPVs, t_plot, p_pv_plot):
     else:
       plt.xlim([0, 24])
       plt.xticks([0, 4, 8, 12, 16, 20, 24], fontweight='bold', fontsize=tickSize)
-      plt.xlabel('Time (hours after midnight)', fontweight='bold', fontsize=labelSize)
+      plt.xlabel('Time (hours of day)', fontweight='bold', fontsize=labelSize)
 
     plt.yticks(fontweight='bold', fontsize=tickSize)
-    plt.ylabel('p_pv (kW)', fontweight='bold', fontsize=labelSize)
+    plt.ylabel('PV Output (kW)', fontweight='bold', fontsize=labelSize)
     plt.plot(t_plot[:len(p_pv_plot[name])], p_pv_plot[name])
     plt.tight_layout()
     plt.savefig('log/' + prefix + '_p_pv_' + pvname + '.png')
@@ -243,10 +245,10 @@ def make_q_pv_plots(title, prefix, SolarPVs, t_plot, q_pv_plot):
     else:
       plt.xlim([0, 24])
       plt.xticks([0, 4, 8, 12, 16, 20, 24], fontweight='bold', fontsize=tickSize)
-      plt.xlabel('Time (hours after midnight)', fontweight='bold', fontsize=labelSize)
+      plt.xlabel('Time (hours of day)', fontweight='bold', fontsize=labelSize)
 
     plt.yticks(fontweight='bold', fontsize=tickSize)
-    plt.ylabel('q_pv (kVAR)', fontweight='bold', fontsize=labelSize)
+    plt.ylabel('PV Output (kVAR)', fontweight='bold', fontsize=labelSize)
     plt.plot(t_plot[:len(q_pv_plot[name])], q_pv_plot[name])
     plt.tight_layout()
     plt.savefig('log/' + prefix + '_q_pv_' + pvname + '.png')
@@ -296,7 +298,7 @@ def _main():
 
   simhits = 0
   cmhits = 0
-  with open('log/plot_data.csv', 'r') as file:
+  with open('log/threeplots/plot_data.csv', 'r') as file:
     for line in file:
       tokens = line.split(',')
       if tokens[0] == app:
@@ -373,7 +375,7 @@ def _main():
 
   for iapp in range(len(app_list)):
     hits = 0
-    with open('log/plot_data.csv', 'r') as file:
+    with open('log/threeplots/plot_data.csv', 'r') as file:
       for line in file:
         tokens = line.split(',')
         if tokens[0] == app_list[iapp]:
