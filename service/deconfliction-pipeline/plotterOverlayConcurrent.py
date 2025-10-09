@@ -130,7 +130,8 @@ def make_soc_plots(title, prefix, Batteries, t_plot_w, soc_plot_w, t_plot_wo, so
       plt.xticks([0, 4, 8, 12, 16, 20, 24], fontweight='bold', fontsize=tickSize)
       #plt.xlabel('Time (hours of day)', fontweight='bold', fontsize=labelSize)
 
-    plt.yticks(fontweight='bold', fontsize=tickSize)
+    plt.ylim([0.0, 1.0])
+    plt.yticks([0.0, 0.2, 0.4, 0.6, 0.8, 1.0], fontweight='bold', fontsize=tickSize)
     plt.ylabel('BESS Output (SoC)', fontweight='bold', fontsize=labelSize)
     plt.plot(t_plot_w[:len(soc_plot_w[name])], soc_plot_w[name], color=withCoopColor, label='With Cooperation')
     plt.plot(t_plot_wo[:len(soc_plot_wo[name])], soc_plot_wo[name], color=withoutCoopColor, label='Without Cooperation')
