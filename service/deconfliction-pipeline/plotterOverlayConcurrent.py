@@ -94,10 +94,10 @@ def make_p_batt_plots(title, prefix, Batteries, t_plot_w, p_batt_plot_w, t_plot_
     else:
       plt.xlim([0, 24])
       plt.xticks([0, 4, 8, 12, 16, 20, 24], fontweight='bold', fontsize=tickSize)
-      plt.xlabel('Time (hours after midnight)', fontweight='bold', fontsize=labelSize)
+      #plt.xlabel('Time (hours of day)', fontweight='bold', fontsize=labelSize)
 
     plt.yticks(fontweight='bold', fontsize=tickSize)
-    plt.ylabel('P_batt (kW)', fontweight='bold', fontsize=labelSize)
+    plt.ylabel('BESS Output (kW)', fontweight='bold', fontsize=labelSize)
     plt.plot(t_plot_w[:len(p_batt_plot_w[name])], p_batt_plot_w[name], color=withCoopColor, label='With Cooperation')
     plt.plot(t_plot_wo[:len(p_batt_plot_wo[name])], p_batt_plot_wo[name], color=withoutCoopColor, label='Without Cooperation')
     plt.legend(prop=legendProp, loc=legendLoc)
@@ -128,10 +128,10 @@ def make_soc_plots(title, prefix, Batteries, t_plot_w, soc_plot_w, t_plot_wo, so
     else:
       plt.xlim([0, 24])
       plt.xticks([0, 4, 8, 12, 16, 20, 24], fontweight='bold', fontsize=tickSize)
-      plt.xlabel('Time (hours after midnight)', fontweight='bold', fontsize=labelSize)
+      #plt.xlabel('Time (hours of day)', fontweight='bold', fontsize=labelSize)
 
     plt.yticks(fontweight='bold', fontsize=tickSize)
-    plt.ylabel('Battery SoC', fontweight='bold', fontsize=labelSize)
+    plt.ylabel('BESS Output (SoC)', fontweight='bold', fontsize=labelSize)
     plt.plot(t_plot_w[:len(soc_plot_w[name])], soc_plot_w[name], color=withCoopColor, label='With Cooperation')
     plt.plot(t_plot_wo[:len(soc_plot_wo[name])], soc_plot_wo[name], color=withoutCoopColor, label='Without Cooperation')
     plt.legend(prop=legendProp, loc=legendLoc)
@@ -151,7 +151,7 @@ def make_reg_plots(title, prefix, Regulators, t_plot_w, reg_plot_w, t_plot_wo, r
       print('*** Mismatched data points for no cooperation plot ' + title + ' ' + name + ', time len: ' + str(len(t_plot_wo)) + ', reg len: ' + str(len(reg_plot_wo[name])), flush=True)
 
     regname = name[16:] # extract just the name for tidier plots
-    plt.figure(figsize=(8,4), dpi=plotDPI)
+    plt.figure(dpi=plotDPI)
     #plt.title(title + ' Tap Pos:  ' + regname, pad=15.0)
     #ax = plt.figure().gca()
     #ax.yaxis.set_major_locator(MaxNLocator(integer=True))
@@ -163,10 +163,11 @@ def make_reg_plots(title, prefix, Regulators, t_plot_w, reg_plot_w, t_plot_wo, r
     else:
       plt.xlim([0, 24])
       plt.xticks([0, 4, 8, 12, 16, 20, 24], fontweight='bold', fontsize=tickSize)
-      plt.xlabel('Time (hours after midnight)', fontweight='bold', fontsize=labelSize)
+      plt.xlabel('Time (hours of day)', fontweight='bold', fontsize=labelSize)
 
-    plt.yticks(fontweight='bold', fontsize=tickSize)
-    plt.ylabel('Regulator Tap Pos', fontweight='bold', fontsize=labelSize)
+    plt.ylim([-16, 16])
+    plt.yticks([-16, -12, -8, -4, 0, 4, 8, 12, 16], fontweight='bold', fontsize=tickSize)
+    plt.ylabel('Regulator Taps', fontweight='bold', fontsize=labelSize)
     plt.plot(t_plot_w[:len(reg_plot_w[name])], reg_plot_w[name], color=withCoopColor, label='With Cooperation')
     plt.plot(t_plot_wo[:len(reg_plot_wo[name])], reg_plot_wo[name], color=withoutCoopColor, label='Without Cooperation')
     plt.legend(prop=legendProp, loc=legendLoc)
@@ -201,10 +202,10 @@ def make_p_pv_plots(title, prefix, SolarPVs, t_plot_w, p_pv_plot_w, t_plot_wo, p
     else:
       plt.xlim([0, 24])
       plt.xticks([0, 4, 8, 12, 16, 20, 24], fontweight='bold', fontsize=tickSize)
-      plt.xlabel('Time (hours after midnight)', fontweight='bold', fontsize=labelSize)
+      #plt.xlabel('Time (hours of day)', fontweight='bold', fontsize=labelSize)
 
     plt.yticks(fontweight='bold', fontsize=tickSize)
-    plt.ylabel('p_pv (kW)', fontweight='bold', fontsize=labelSize)
+    plt.ylabel('PV Output (kW)', fontweight='bold', fontsize=labelSize)
     plt.plot(t_plot_w[:len(p_pv_plot_w[name])], p_pv_plot_w[name], color=withCoopColor, label='With Cooperation')
     plt.plot(t_plot_wo[:len(p_pv_plot_wo[name])], p_pv_plot_wo[name], color=withoutCoopColor, label='Without Cooperation')
     plt.legend(prop=legendProp, loc=legendLoc)
@@ -239,10 +240,10 @@ def make_q_pv_plots(title, prefix, SolarPVs, t_plot_w, q_pv_plot_w, t_plot_wo, q
     else:
       plt.xlim([0, 24])
       plt.xticks([0, 4, 8, 12, 16, 20, 24], fontweight='bold', fontsize=tickSize)
-      plt.xlabel('Time (hours after midnight)', fontweight='bold', fontsize=labelSize)
+      #plt.xlabel('Time (hours of day)', fontweight='bold', fontsize=labelSize)
 
     plt.yticks(fontweight='bold', fontsize=tickSize)
-    plt.ylabel('q_pv (kVAR)', fontweight='bold', fontsize=labelSize)
+    plt.ylabel('PV Output (kVAR)', fontweight='bold', fontsize=labelSize)
     plt.plot(t_plot_w[:len(q_pv_plot_w[name])], q_pv_plot_w[name], color=withCoopColor, label='With Cooperation')
     plt.plot(t_plot_wo[:len(q_pv_plot_wo[name])], q_pv_plot_wo[name], color=withoutCoopColor, label='Without Cooperation')
     plt.legend(prop=legendProp, loc=legendLoc)
@@ -299,7 +300,7 @@ def _main():
   timex_start = 1704067200.0
 
   app = 'SIMULATION'
-  prefix = 'sim'
+  prefix = 'concurrent'
 
   simhits = 0
   with open('log/threeplots/plot_data.csv', 'r') as file:

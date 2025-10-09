@@ -100,10 +100,10 @@ def make_p_batt_plots(Batteries, t_plot_s, p_batt_plot_s, t_plot_r, p_batt_plot_
     else:
       plt.xlim([0, 24])
       plt.xticks([0, 4, 8, 12, 16, 20, 24], fontweight='bold', fontsize=tickSize)
-      plt.xlabel('Time (hours after midnight)', fontweight='bold', fontsize=labelSize)
+      #plt.xlabel('Time (hours of day)', fontweight='bold', fontsize=labelSize)
 
     plt.yticks(fontweight='bold', fontsize=tickSize)
-    plt.ylabel('P_batt (kW)', fontweight='bold', fontsize=labelSize)
+    plt.ylabel('BESS Output (kW)', fontweight='bold', fontsize=labelSize)
     plt.plot(t_plot_s[:len(p_batt_plot_s[name])], p_batt_plot_s[name], color=simColor, linewidth=2, label='Simulation')
     plt.plot(t_plot_r[:len(p_batt_plot_r[name])], p_batt_plot_r[name], color=resilColor, label='Resilience')
     plt.plot(t_plot_m[:len(p_batt_plot_m[name])], p_batt_plot_m[name], color=maxLocalColor, label='Max Local')
@@ -130,7 +130,7 @@ def make_reg_plots(Regulators, t_plot_s, reg_plot_s, t_plot_r, reg_plot_r, t_plo
     if len(t_plot_c) != len(reg_plot_c[name]):
       print('*** Mismatched data points for CVR plot ' + name + ', time len: ' + str(len(t_plot_c)) + ', reg len: ' + str(len(reg_plot_c[name])), flush=True)
 
-    plt.figure(figsize=(8,4), dpi=200)
+    plt.figure(dpi=200)
     regname = name[16:] # extract just the name for tidier plots
     #plt.title('Tap Pos:  ' + regname, pad=15.0)
     #ax = plt.figure().gca()
@@ -144,10 +144,11 @@ def make_reg_plots(Regulators, t_plot_s, reg_plot_s, t_plot_r, reg_plot_r, t_plo
     else:
       plt.xlim([0, 24])
       plt.xticks([0, 4, 8, 12, 16, 20, 24], fontweight='bold', fontsize=tickSize)
-      plt.xlabel('Time (hours after midnight)', fontweight='bold', fontsize=labelSize)
+      #plt.xlabel('Time (hours of day)', fontweight='bold', fontsize=labelSize)
 
-    plt.yticks(fontweight='bold', fontsize=tickSize)
-    plt.ylabel('Regulator Tap Pos', fontweight='bold', fontsize=labelSize)
+    plt.ylim([-16, 16])
+    plt.yticks([-16, -12, -8, -4, 0, 4, 8, 12, 16], fontweight='bold', fontsize=tickSize)
+    plt.ylabel('Regulator Taps', fontweight='bold', fontsize=labelSize)
     plt.plot(t_plot_s[:len(reg_plot_s[name])], reg_plot_s[name], color=simColor, linewidth=2, label='Simulation')
     plt.plot(t_plot_r[:len(reg_plot_r[name])], reg_plot_r[name], color=resilColor, label='Resilience')
     plt.plot(t_plot_m[:len(reg_plot_m[name])], reg_plot_m[name], color=maxLocalColor, label='Max Local')
@@ -190,10 +191,10 @@ def make_p_pv_plots(SolarPVs, t_plot_s, p_pv_plot_s, t_plot_r, p_pv_plot_r, t_pl
     else:
       plt.xlim([0, 24])
       plt.xticks([0, 4, 8, 12, 16, 20, 24], fontweight='bold', fontsize=tickSize)
-      plt.xlabel('Time (hours after midnight)', fontweight='bold', fontsize=labelSize)
+      plt.xlabel('Time (hours of day)', fontweight='bold', fontsize=labelSize)
 
     plt.yticks(fontweight='bold', fontsize=tickSize)
-    plt.ylabel('p_pv (kW)', fontweight='bold', fontsize=labelSize)
+    plt.ylabel('PV Output (kW)', fontweight='bold', fontsize=labelSize)
     plt.plot(t_plot_s[:len(p_pv_plot_s[name])], p_pv_plot_s[name], color=simColor, label='Simulation', linewidth=2)
     plt.plot(t_plot_r[:len(p_pv_plot_r[name])], p_pv_plot_r[name], color=resilColor, label='Resilience')
     plt.plot(t_plot_m[:len(p_pv_plot_m[name])], p_pv_plot_m[name], color=maxLocalColor, label='Max Local')
@@ -236,10 +237,10 @@ def make_q_pv_plots(SolarPVs, t_plot_s, q_pv_plot_s, t_plot_r, q_pv_plot_r, t_pl
     else:
       plt.xlim([0, 24])
       plt.xticks([0, 4, 8, 12, 16, 20, 24], fontweight='bold', fontsize=tickSize)
-      plt.xlabel('Time (hours after midnight)', fontweight='bold', fontsize=labelSize)
+      plt.xlabel('Time (hours of day)', fontweight='bold', fontsize=labelSize)
 
     plt.yticks(fontweight='bold', fontsize=tickSize)
-    plt.ylabel('q_pv (kW)', fontweight='bold', fontsize=labelSize)
+    plt.ylabel('PV Output (kVAR)', fontweight='bold', fontsize=labelSize)
     plt.plot(t_plot_s[:len(q_pv_plot_s[name])], q_pv_plot_s[name], color=simColor, label='Simulation', linewidth=2)
     plt.plot(t_plot_r[:len(q_pv_plot_r[name])], q_pv_plot_r[name], color=resilColor, label='Resilience')
     plt.plot(t_plot_m[:len(q_pv_plot_m[name])], q_pv_plot_m[name], color=maxLocalColor, label='Max Local')
