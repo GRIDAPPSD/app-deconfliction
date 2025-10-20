@@ -56,6 +56,9 @@ import csv
 import copy
 from time import sleep
 
+# os.environ['MOSEKLM_LICENSE_FILE'] = '/home/mukh915/mosek/mosek.lic'
+# import mosek  # Import mosek to ensure it's available
+
 # GDB 8/27/25: Magic that puts message handling into its own process
 # as the only way to keep up with simulation measurements when there
 # are long-running optimizations
@@ -811,7 +814,7 @@ class CompetingApp(GridAPPSD):
 
   def optPerform(self, ts_datetime):
     self.Constraints = []
-
+    print('Starting Problem Formulation for App ... ',flush=True)
     if self.includeBatteriesFlag:
       self.optConstraintsDERWithBatteries(self.BatteriesInfo, self.deltaT,
                                           self.soc, self.p_batt,
@@ -897,8 +900,8 @@ class CompetingApp(GridAPPSD):
                                                                     self.p_flow_B, self.p_flow_C)
 
       if numWeights>4 and self.objectiveWeights[4]!=None:
-        objective += self.objectiveWeights[4] * self.optObjective5(
-                                                   self.BatteriesInfo, self.soc)
+        objective += self.objectiveWeights[4] * self.optObjective5(self.BatteriesInfo, self.soc, 
+                                                                   self.SolarPVsInfo, self.p_pv_A, self.p_pv_B, self.p_pv_C)
 
     else:
       if self.objectiveResilienceFlag:
@@ -926,7 +929,8 @@ class CompetingApp(GridAPPSD):
                                     self.BatteriesInfo, self.EnergySource,
                                     self.Psub, self.Psub_mod,
                                     self.p_flow_A, self.p_flow_B, self.p_flow_C)
-
+        
+    print('Starting Optimization for App ... ',flush=True)
     if validFlag and self.optDo(objective):
       self.optDispatch(self.includeRegulatorsFlag, self.includeBatteriesFlag,
                        self.includeSolarPVsPFlag, self.includeVoltagesFlag)
@@ -1529,7 +1533,7 @@ class CompetingApp(GridAPPSD):
       if 'C' in SolarPVsInfo[bus]['phase']:
         objective_pv += p_pv_C[idx]
 
-    objective -= (objective_pv)/1000000
+    objective -= (objective_pv)/9960000
     return objective
 
 
@@ -1557,7 +1561,7 @@ class CompetingApp(GridAPPSD):
                                     q_flow_C[sub_flow_idx])
 
     ####### simplified implementation of power factor #######
-    objective = (Qsub_mod - Psub_mod) / 2000000
+    objective = (Qsub_mod + Psub_mod) / 2000000
     return objective
 
 
@@ -1571,7 +1575,8 @@ class CompetingApp(GridAPPSD):
     cost_now = cost[idx_cost]
 
     print('Adding Objective 3 for Arbitrage at time {} with current and average price {}, {}'.format(ts_target, cost_now, average_cost))
-    objective_batt = sum((cost_now-average_cost) * p_batt[i] for i in range(len(BatteriesInfo)))/1000
+    cost_sign = math.copysign(1, (cost_now-average_cost))
+    objective_batt = sum(cost_sign * cost_now* p_batt[i] for i in range(len(BatteriesInfo)))/1000
 
     objective_pv = 0
     for bus in SolarPVsInfo:
@@ -1584,7 +1589,7 @@ class CompetingApp(GridAPPSD):
         objective_pv += p_pv_C[idx]
 
     objective_pv = -1 * cost_now * objective_pv /1000
-    objective = (objective_batt + objective_pv) * self.deltaT
+    objective = (objective_batt + objective_pv) * self.deltaT / 60
 
     return objective
 
@@ -1592,9 +1597,9 @@ class CompetingApp(GridAPPSD):
   def optObjective4(self, EnergySource, Psub, Psub_mod, p_flow_A, p_flow_B, p_flow_C):
 
     print('Adding Objective 4 for Peak Load at time {}'.format(ts_time))
-    target_peak = 2e6
-    self.Constraints.append(Psub_mod >= Psub - target_peak)
-    self.Constraints.append(Psub_mod >= -Psub + target_peak)
+    target_peak = 1.5e6
+    self.Constraints.append(Psub_mod >=     target_peak - Psub)
+    self.Constraints.append(Psub_mod >= -1*(target_peak - Psub))
 
     flow_min, flow_max = -5e6, 5e6
     self.Constraints.append(Psub >= flow_min)
@@ -1613,20 +1618,33 @@ class CompetingApp(GridAPPSD):
     # optmization so I'm going to go back to no scaling. The PuLP version
     # never had scaling.
     #objective = Psub_mod / 1000
-    objective = Psub_mod /1000000
+    objective = Psub_mod /500000
 
     return objective
 
 
-  def optObjective5(self, BatteriesInfo, soc):
+  def optObjective5(self, BatteriesInfo, soc, SolarPVsInfo, p_pv_A, p_pv_B, p_pv_C):
     print('Adding Objective 5 for Resilience at time {}'.format(ts_time))
-    objective = sum(-100 * soc[i] for i in range(len(BatteriesInfo))) / (100)
+    objective = sum(-100 * soc[i] for i in range(len(BatteriesInfo))) / (4.5* 100)
+
+    #### Adding additional term to minimize active power curtailment
+    objective_pv = 0
+    for bus in SolarPVsInfo:
+      idx = SolarPVsInfo[bus]['idx']
+      if 'A' in SolarPVsInfo[bus]['phase']:
+        objective_pv += p_pv_A[idx]
+      if 'B' in SolarPVsInfo[bus]['phase']:
+        objective_pv += p_pv_B[idx]
+      if 'C' in SolarPVsInfo[bus]['phase']:
+        objective_pv += p_pv_C[idx]
+
+    objective -= (objective_pv)/16600000.0
+
     return objective
 
 
   def optDo(self, objective):
     problem = cp.Problem(cp.Minimize(objective), self.Constraints)
-
     startTime = datetime.now()
     #problem.solve(solver=cp.MOSEK, verbose=True) # commercial solver
     #problem.solve(solver=cp.CBC, verbose=False)
@@ -1634,8 +1652,14 @@ class CompetingApp(GridAPPSD):
     # it really gets stuck and falls so far behind that the results are
     # useless by the time they are computed and then the app is way behind
     # in missing all the data while it was stuck.
+
     problem.solve(solver=cp.GLPK_MI, abstol=1e-3, kktsolver='chol',
                   feastol=1e-3, max_iters=100, tm_lim=15000, verbose=False)
+
+    
+    # problem.solve(solver=cp.MOSEK, mosek_params={'MSK_DPAR_MIO_TOL_REL_GAP': 2e-2, 'MSK_IPAR_INTPNT_MAX_ITERATIONS': 100, 
+    #                                       'MSK_DPAR_MIO_TOL_ABS_RELAX_INT': 1e-2, 'MSK_DPAR_OPTIMIZER_MAX_TIME': 15000},  verbose=False)
+
     print('Optimization status:', problem.status, flush=True)
     #print('Optimization value:', problem.value, flush=True)
     now = datetime.now()
@@ -1644,6 +1668,7 @@ class CompetingApp(GridAPPSD):
     self.lastTime = now
     print('Optimization time: ' + str(optTime), flush=True)
     print('Optimization time interval: ' + str(optInterval), flush=True)
+    print('Optimization Objective Value: ' + str(problem.value), flush=True)
 
     # GDB 9/19/25: Treat an optimal_inaccurate status the same as optimal
     return (problem.status.startswith('optimal'))
@@ -1760,6 +1785,8 @@ class CompetingApp(GridAPPSD):
 
 
   def updateEnergyConsumers(self, measurements):
+    total_kW = 0; 
+    total_kVAR = 0; 
     for bus in self.EnergyConsumers:
       for phase in self.EnergyConsumers[bus]['measid']:
         measid = self.EnergyConsumers[bus]['measid'][phase]
@@ -1768,7 +1795,10 @@ class CompetingApp(GridAPPSD):
                                measurements[measid]['angle'])
           self.EnergyConsumers[bus]['kW'][phase] = p
           self.EnergyConsumers[bus]['kVar'][phase] = q
-
+          total_kW += p 
+          total_kVAR += q
+    print('Updated EnergyConsumers - Current total kW : ' + str(round(total_kW/1000, 3)), flush=True)
+    print('Updated EnergyConsumers - Current total kVAR : ' + str(round(total_kVAR/1000, 3)), flush=True)
 
   def updateSolarPVs(self, measurements):
     for bus in self.SolarPVsInfo:
@@ -1870,6 +1900,7 @@ class CompetingApp(GridAPPSD):
     if self.opt_type!='scalability' and interval!=None:
       self.optIntervalSec = int(interval)
 
+    print('Optimization intervals: ' + str(self.optIntervalSec))
     # Add compensation factor to optIntervalSec in non-realtime mode
     # for computing deltaT because of the lag GridLAB-D is taking in
     # this mode for measurements to reflect DifferenceBuilder messages
