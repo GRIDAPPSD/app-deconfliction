@@ -101,8 +101,9 @@ import MethodUtil
 class CompetingApp(GridAPPSD):
 
   def msglog(self, msg):
+    logname = 'log/' + self.app_name + '-messages.log'
     try:
-      with open('log/' + self.opt_type + '-app-messages.log', 'a') as flog:
+      with open(logname, 'a') as flog:
         flog.write(str(datetime.now()) + ': ' + msg + '\n')
     except:
       pass
@@ -189,7 +190,7 @@ class CompetingApp(GridAPPSD):
       # evenly divisble by multiples of the 3 second GridLAB-D time interval
       if (ts_unix-5) % self.optIntervalSec == 0:
         if self.logMessagesFlag:
-          self.msglog('received simulation measurements to queue at timestamp:' + str(ts_unix))
+          self.msglog('received simulation measurements to queue at timestamp:' + str(ts_unix) + ', wall time: ' + str(datetime.utcfromtimestamp(ts_unix).time()))
 
         # only permit a single message at a time to be queued to not fall behind
         self.clearSimQueue()
@@ -200,7 +201,7 @@ class CompetingApp(GridAPPSD):
       # GridLAB-D outputs at even 60 second intervals
       if ts_unix % self.optIntervalSec == 0:
         if self.logMessagesFlag:
-          self.msglog('received simulation measurements to queue at timestamp:' + str(ts_unix))
+          self.msglog('received simulation measurements to queue at timestamp:' + str(ts_unix) + ', wall time: ' + str(datetime.utcfromtimestamp(ts_unix).time()))
 
         # only permit a single message at a time to be queued to not fall behind
         self.clearSimQueue()
@@ -1906,6 +1907,12 @@ class CompetingApp(GridAPPSD):
     # this mode for measurements to reflect DifferenceBuilder messages
     self.deltaT = (self.optIntervalSec + simLagSec)/3600.0
 
+    if self.opt_type == 'scalability':
+      # the interval value is actually the app_setup.csv line
+      self.optPrelimScalability(interval)
+    else:
+      self.optPrelimClassic()
+
     # GDB 8/27/25: Magic IPC Queue class for sharing ActiveMQ messages
     # between different processes
     self.simQueue = Queue()
@@ -1958,12 +1965,6 @@ class CompetingApp(GridAPPSD):
 
     print('RegulatorsInfo: ' + str(self.RegulatorsInfo), flush=True)
     print('RegulatorsIdx: ' + str(self.RegulatorsIdx), flush=True)
-
-    if self.opt_type == 'scalability':
-      # the interval value is actually the app_setup.csv line
-      self.optPrelimScalability(interval)
-    else:
-      self.optPrelimClassic()
 
     # MM 9/19/25: load the solarPV profile data to be able to do quick
     # lookups for the current timestamp each time an optimization is done
@@ -2298,6 +2299,8 @@ class CompetingApp(GridAPPSD):
           return # done with all processing
 
         if 'measurements' in message: # simulation output message
+          if self.logMessagesFlag:
+            self.msglog('found simulation measurements message on queue with timestamp: ' + str(message['timestamp']) + ', wall time: ' + str(datetime.utcfromtimestamp(int(message['timestamp'])).time()))
           print('Simulation measurements message on queue with timestamp: ' +
                 str(message['timestamp']), flush=True)
           lastMeasMessage = message
@@ -2308,6 +2311,9 @@ class CompetingApp(GridAPPSD):
         global ts_time
         ts_time = datetime.utcfromtimestamp(ts_unix).time()
 
+        if self.logMessagesFlag:
+          self.msglog('simulation timestamp used for optimization: ' + str(ts_unix) +
+                ', wall time: ' + str(ts_time))
         print('\nSimulation timestamp for optimization: ' + str(ts_unix) +
               ', wall time: ' + str(ts_time), flush=True)
 
