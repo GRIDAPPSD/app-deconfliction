@@ -1806,6 +1806,26 @@ class DeconflictionPipeline(GridAPPSD):
               ', PQ_pv_inv: ' + str(self.SolarPVs[device]['PQ_pv_inv']))
 
 
+  def PlotDispatch(self, reason, newResolutionVector):
+    if self.pltFlag:
+      timerRunning = (datetime.now() - self.pltTZero).total_seconds()
+      self.pltFile.write('device_dispatch,reason:' + reason + ',runningTime:' + str(timerRunning) + ',rulesTime:' + str(self.timerRules) + ',coopTime:' + str(self.timerCoop) + ',optTime:' + str(self.timerOpt))
+
+      for device, value in newResolutionVector.items():
+        name = MethodUtil.DeviceToName[device]
+        if name.startswith('BatteryUnit.'):
+          if value[1] != self.BatteriesInfo[device]['P_batt_inv']:
+            self.pltFile.write(',' + name + ':' + str(value[1]))
+        elif name.startswith('PhotovoltaicUnit.'):
+          if value[1] != self.SolarPVs[device]['PQ_pv_inv']:
+            self.pltFile.write(',' + name + ':' + str(value[1]))
+        elif name.startswith('RatioTapChanger.'):
+          if value[1] != self.Regulators[device]['step']:
+            self.pltFile.write(',' + name + ':' + str(value[1]))
+
+      self.pltFile.write('\n')
+
+
   def ProcessSetpointsMessage(self, message, timestamp, app_name, meas_msg_flag,
                               coop_series, printAllConflictsResolutionsFlag):
     if meas_msg_flag:
@@ -1875,9 +1895,18 @@ class DeconflictionPipeline(GridAPPSD):
                                       self.TargetResolutionVector)
 
         self.logConflictTest('running COOPERATION before OPTIMIZATION')
+
+        # start optimization triggered by new setpoints interrupting cooperation
+
+        # timers for scalability testing
+        coopFinish = datetime.now()
+        self.timerCoop = (coopFinish - self.timerCoopStart).total_seconds()
+
         newResolutionVector = self.Optimization(timestamp, self.ConflictMatrix)
         self.logResolutionTest('running COOPERATION after OPTIMIZATION',
                                newResolutionVector)
+        # timers for scalability testing
+        self.timerOpt = (datetime.now() - coopFinish).total_seconds()
 
         # Published IEEE Access Foundational Paper Reference:
         #   Step 3.2--Deconfliction Solution
@@ -1930,6 +1959,9 @@ class DeconflictionPipeline(GridAPPSD):
 
         # Published IEEE Access Foundational Paper Reference:
         #   Step 5--Device Dispatcher
+        # start dispatch triggered by new setpoints interrupting cooperation
+        # logging for scalability testing
+        self.PlotDispatch('CoopInterrupted', newResolutionVector)
         dispatchCount = self.DeviceDispatcher(timestamp, newResolutionVector,
                                               self.printAllDispatchesFlag)
         prlog('>>> ProcessSetpointsMessage--invoked device dispatch for ' +
@@ -1995,10 +2027,16 @@ class DeconflictionPipeline(GridAPPSD):
       if self.rulesStageFirstFlag:
         prlog('DeconflictSetpoints--applying initial RULES & HEURISTICS ' +
               'stage deconfliction')
+        # start rules
+        # timers for scalability testing
+        rulesStart = datetime.now()
         self.RulesForBatteriesConflict(self.printAllRulesFlag)
 
         self.logConflictTest('start deconfliction before first rules stage')
         self.RulesForRegulatorsConflict(self.printAllRulesFlag)
+        # finish rules
+        # timers for scalability testing
+        self.timerRules = (datetime.now() - rulesStart).total_seconds()
         self.logConflictTest('start deconfliction after first rules stage')
 
         self.rulesFirstConflictMetric =self.ConflictMetricComputation(timestamp)
@@ -2182,6 +2220,10 @@ class DeconflictionPipeline(GridAPPSD):
         prlog('DeconflictSetpoints--finished processing, timestamp: ' +
               str(timestamp))
         return
+
+      # start cooperation
+      # timers for scalability testing
+      self.timerCoopStart = datetime.now()
 
       # Published IEEE Access Foundational Paper Reference:
       #   Step 3.2--Deconfliction Solution
@@ -2372,8 +2414,14 @@ class DeconflictionPipeline(GridAPPSD):
                                   self.TargetResolutionVector)
 
     self.logConflictTest('COOPERATION stage done before OPTIMIZATION')
+    # start optimization triggered by cooperation concluding
+    # timers for scalability testing
+    coopFinish = datetime.now()
+    self.timerCoop = (coopFinish - self.timerCoopStart).total_seconds()
+
     newResolutionVector = self.Optimization(timestamp, self.ConflictMatrix)
     self.logConflictTest('cooperation stage done after OPTIMIZATION')
+    self.timerOpt = (datetime.now() - coopFinish).total_seconds()
 
     #self.logResolutionPV('coop done', newResolutionVector)
 
@@ -2429,6 +2477,9 @@ class DeconflictionPipeline(GridAPPSD):
 
     # Published IEEE Access Foundational Paper Reference:
     #   Step 5--Device Dispatcher
+    # start dispatch triggered by cooperation concluding
+    # logging for scalability testing
+    self.PlotDispatch('CoopConcluded', newResolutionVector)
     dispatchCount = self.DeviceDispatcher(timestamp, newResolutionVector,
                                           self.printAllDispatchesFlag)
     prlog('>>> DeconflictSetpoints--invoked device dispatch, # ' +
