@@ -1808,20 +1808,47 @@ class DeconflictionPipeline(GridAPPSD):
 
   def PlotDispatch(self, reason, newResolutionVector):
     if self.pltFlag:
-      timerRunning = (datetime.now() - self.pltTZero).total_seconds()
-      self.pltFile.write('device_dispatch,reason:' + reason + ',runningTime:' + str(timerRunning) + ',rulesTime:' + str(self.timerRules) + ',coopTime:' + str(self.timerCoop) + ',optTime:' + str(self.timerOpt))
+      now = datetime.now()
+      timerRunning = (now - self.pltTZero).total_seconds()
+
+      deltaDispatch = 0.0
+      if self.timerDispatch != None:
+        deltaDispatch = (now - self.timerDispatch).total_seconds()
+      self.timerDispatch = now
+
+      self.pltFile.write('device_dispatch,reason:' + reason + ',runningTime:' + str(timerRunning) + ',dispatchTime:' + str(deltaDispatch) + ',rulesTime:' + str(self.timerRules) + ',coopTime:' + str(self.timerCoop) + ',optTime:' + str(self.timerOpt))
+
+      '''
+      for device, value in newResolutionVector.items():
+        name = MethodUtil.DeviceToName[device]
+        # uncomment one of the following blocks based on whether to output all
+        # devices or just the ones in the Difference Builder message
+        self.pltFile.write(',' + name + ':' + str(value[1]))
+        #if name.startswith('BatteryUnit.'):
+        #  if value[1] != self.BatteriesInfo[device]['P_batt_inv']:
+        #    self.pltFile.write(',' + name + ':' + str(value[1]))
+        #elif name.startswith('PhotovoltaicUnit.'):
+        #  if value[1] != self.SolarPVs[device]['PQ_pv_inv']:
+        #    self.pltFile.write(',' + name + ':' + str(value[1]))
+        #elif name.startswith('RatioTapChanger.'):
+        #  if value[1] != self.Regulators[device]['step']:
+        #    self.pltFile.write(',' + name + ':' + str(value[1]))
+      '''
 
       for device, value in newResolutionVector.items():
         name = MethodUtil.DeviceToName[device]
         if name.startswith('BatteryUnit.'):
-          if value[1] != self.BatteriesInfo[device]['P_batt_inv']:
-            self.pltFile.write(',' + name + ':' + str(value[1]))
-        elif name.startswith('PhotovoltaicUnit.'):
-          if value[1] != self.SolarPVs[device]['PQ_pv_inv']:
-            self.pltFile.write(',' + name + ':' + str(value[1]))
-        elif name.startswith('RatioTapChanger.'):
-          if value[1] != self.Regulators[device]['step']:
-            self.pltFile.write(',' + name + ':' + str(value[1]))
+          self.pltFile.write(',' + name + ':' + str(value[1]))
+
+      for device, value in newResolutionVector.items():
+        name = MethodUtil.DeviceToName[device]
+        if name.startswith('RatioTapChanger.'):
+          self.pltFile.write(',' + name + ':' + str(value[1]))
+
+      for device, value in newResolutionVector.items():
+        name = MethodUtil.DeviceToName[device]
+        if name.startswith('PhotovoltaicUnit.'):
+          self.pltFile.write(',' + name + ':' + str(value[1]))
 
       self.pltFile.write('\n')
 
@@ -1961,7 +1988,7 @@ class DeconflictionPipeline(GridAPPSD):
         #   Step 5--Device Dispatcher
         # start dispatch triggered by new setpoints interrupting cooperation
         # logging for scalability testing
-        self.PlotDispatch('CoopInterrupted', newResolutionVector)
+        self.PlotDispatch('CooperationInterrupted', newResolutionVector)
         dispatchCount = self.DeviceDispatcher(timestamp, newResolutionVector,
                                               self.printAllDispatchesFlag)
         prlog('>>> ProcessSetpointsMessage--invoked device dispatch for ' +
@@ -2479,7 +2506,7 @@ class DeconflictionPipeline(GridAPPSD):
     #   Step 5--Device Dispatcher
     # start dispatch triggered by cooperation concluding
     # logging for scalability testing
-    self.PlotDispatch('CoopConcluded', newResolutionVector)
+    self.PlotDispatch('CooperationFinished', newResolutionVector)
     dispatchCount = self.DeviceDispatcher(timestamp, newResolutionVector,
                                           self.printAllDispatchesFlag)
     prlog('>>> DeconflictSetpoints--invoked device dispatch, # ' +
@@ -2501,6 +2528,7 @@ class DeconflictionPipeline(GridAPPSD):
   def __init__(self, feeder_mrid, simulation_id, weights_base, interval):
     # GDB 9/22/25: Zero the plot timer as soon as possible
     self.pltTZero = datetime.now()
+    self.timerDispatch = None
 
     # flag for whether simulation is run in real-time
     #self.realtimeFlag = True
