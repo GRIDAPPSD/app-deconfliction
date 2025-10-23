@@ -357,7 +357,9 @@ class CompetingApp(GridAPPSD):
 
     # except for SolarPVs the set-point values are tuples and they are
     # easier to work with as complex numbers so do that translation now
+    coopTime = 0
     for mrid, value in coopProposed.items():
+      coopTime = max(coopTime, value[0])
       # I create tuples for the complex SolarPV setpoints for serialization,
       # but JSON serializes those as lists so the reverse deserialization
       # needs to check for lists rather than tuples
@@ -407,7 +409,7 @@ class CompetingApp(GridAPPSD):
     # alternative workflow implementation for supporting cooperation in
     # order to meet the FY24 deconfliction service deliverable
     '''
-    self.optPerform()
+    self.optPerform(datetime.utcfromtimestamp(coopTime), cooperationFlag=True)
     '''
 
     #print('DECONFLICTOR COOPERATE p_batt_greedy: ' + str(self.p_batt_greedy), flush=True)
@@ -658,22 +660,24 @@ class CompetingApp(GridAPPSD):
           self.difference_builder.add_difference(reg, 'TapChanger.step',
                                                  self.reg_greedy[idx], None)
 
-    # finally, send out the cooperation setpoints via DifferenceBuilder msg
-    dispatch_message = self.difference_builder.get_message()
-    dispatch_message['app_name'] = self.app_name
-    dispatch_message['coop_series'] = self.coopSeries
-    dispatch_message['coop_msgid'] = self.coopMsgID
-    dispatch_message['time_sent'] = str(datetime.now())
-    ##print('Sending Cooperation DifferenceBuilder message with series: ' +
-    ##      str(self.coopSeries), flush=True)
-    #print('Sending Cooperation DifferenceBuilder message: ' +
-    #      json.dumps(dispatch_message), flush=True)
-    self.coop_gapps.send(self.coop_publish_topic, json.dumps(dispatch_message))
-    if self.logMessagesFlag:
-      self.msglog('sending cooperation response|msgid:' + str(self.coopMsgID) + '|series:' +
-                  str(self.coopSeries))
+    if self.includeBatteriesFlag or self.includeSolarPVsPFlag or \
+       self.includeRegulatorsFlag:
+      # finally, send out the cooperation setpoints via DifferenceBuilder msg
+      dispatch_message = self.difference_builder.get_message()
+      dispatch_message['app_name'] = self.app_name
+      dispatch_message['coop_series'] = self.coopSeries
+      dispatch_message['coop_msgid'] = self.coopMsgID
+      dispatch_message['time_sent'] = str(datetime.now())
+      print('Sending Cooperation DifferenceBuilder message with msgid: ' +
+            str(self.coopMsgID) + ', series: ' + str(self.coopSeries),
+            flush=True)
+      #print('Sending Cooperation DifferenceBuilder message: ' +
+      #      json.dumps(dispatch_message), flush=True)
+      self.coop_gapps.send(self.coop_publish_topic, json.dumps(dispatch_message))
+      if self.logMessagesFlag:
+        self.msglog('sending cooperation response|msgid:' + str(self.coopMsgID) + '|series:' + str(self.coopSeries))
 
-    self.difference_builder.clear()
+      self.difference_builder.clear()
 
   # end of cooperation handler process methods
 
@@ -813,7 +817,7 @@ class CompetingApp(GridAPPSD):
       self.includeQFlowFlag = True
 
 
-  def optPerform(self, ts_datetime):
+  def optPerform(self, ts_datetime, cooperationFlag=False):
     self.Constraints = []
     print('Starting Problem Formulation for App ... ',flush=True)
     if self.includeBatteriesFlag:
@@ -933,8 +937,9 @@ class CompetingApp(GridAPPSD):
         
     print('Starting Optimization for App ... ',flush=True)
     if validFlag and self.optDo(objective):
-      self.optDispatch(self.includeRegulatorsFlag, self.includeBatteriesFlag,
-                       self.includeSolarPVsPFlag, self.includeVoltagesFlag)
+      if not cooperationFlag:
+        self.optDispatch(self.includeRegulatorsFlag, self.includeBatteriesFlag,
+                         self.includeSolarPVsPFlag, self.includeVoltagesFlag)
 
 
   def optDefineVariables(self, includePFlowFlag, includeQFlowFlag,
@@ -1894,8 +1899,8 @@ class CompetingApp(GridAPPSD):
       # if attempting non-real-time, something like 1800 is reasonable
       # so the optimization time is safely shorter than the time between
       # optimizations--otherwise the queue draining won't work right.
-      self.optIntervalSec = 1800
-      #self.optIntervalSec = 3600
+      #self.optIntervalSec = 1800
+      self.optIntervalSec = 3600
       simLagSec = 600
 
     if self.opt_type!='scalability' and interval!=None:
@@ -2006,13 +2011,6 @@ class CompetingApp(GridAPPSD):
 
     # create DifferenceBuilder once and reuse it throughout the simulation
     self.difference_builder = DifferenceBuilder(simulation_id)
-
-    # Cooperation is handled in a third process so need to have everything
-    # that code needs defined before creating this process such as the
-    # device info dictionaries.
-    cooperationHandler = Process(target=self.cooperationHandlerProcess,
-                                 args=(simulation_id,))
-    cooperationHandler.start()
 
     self.EnergySource = AppUtil.getEnergySource(sparql_mgr)
 
@@ -2231,6 +2229,16 @@ class CompetingApp(GridAPPSD):
                           self.includeVoltagesFlag, self.includeBatteriesFlag,
                           self.includeRegulatorsFlag, self.includeSolarPVsPFlag)
 
+    # diagnostic for tracking time between optimizations
+    self.lastTime = datetime.now()
+
+    # Cooperation is handled in a third process so need to have everything
+    # that code needs defined before creating this process such as the
+    # device info dictionaries.
+    cooperationHandler = Process(target=self.cooperationHandlerProcess,
+                                 args=(simulation_id,))
+    cooperationHandler.start()
+
     # start by discarding any messages that arrived during initialization
     # as we don't want to process anything that's stale
     print('Simulation queue check after initialization start', flush=True)
@@ -2262,9 +2270,6 @@ class CompetingApp(GridAPPSD):
     print('Initialized modularized ' + opt_type +
           ' CVXPY optimization competing app, waiting for messages...\n',
           flush=True)
-
-    # diagnostic for tracking time between optimizations
-    self.lastTime = datetime.now()
 
     while True:
       while self.simQueue.empty():
@@ -2312,8 +2317,7 @@ class CompetingApp(GridAPPSD):
         ts_time = datetime.utcfromtimestamp(ts_unix).time()
 
         if self.logMessagesFlag:
-          self.msglog('simulation timestamp used for optimization: ' + str(ts_unix) +
-                ', wall time: ' + str(ts_time))
+          self.msglog('simulation timestamp used for optimization: ' + str(ts_unix) + ', wall time: ' + str(ts_time))
         print('\nSimulation timestamp for optimization: ' + str(ts_unix) +
               ', wall time: ' + str(ts_time), flush=True)
 
