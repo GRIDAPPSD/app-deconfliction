@@ -360,15 +360,16 @@ class CompetingApp(GridAPPSD):
 
     # except for SolarPVs the set-point values are tuples and they are
     # easier to work with as complex numbers so do that translation now
+    coopTime = 0
     for mrid, value in coopProposed.items():
       # I create tuples for the complex SolarPV setpoints for serialization,
       # but JSON serializes those as lists so the reverse deserialization
       # needs to check for lists rather than tuples
-      cooptime = value[0]
+      coopTime = max(coopTime, value[0])
       if isinstance(value[1], list):
         coopProposed[mrid] = (value[0], complex(value[1][0], value[1][1]))
     
-    print('Processing cooperation Message at {}'.format(cooptime), flush=True)
+    print('Processing cooperation Message at {}'.format(coopTime), flush=True)
     #for mrid in coopProposed:
     #  print('DECONFLICTOR COOPERATE mrid ' + mrid + ' proposed set-point: ' + str(coopProposed[mrid]), flush=True)
 
@@ -412,7 +413,7 @@ class CompetingApp(GridAPPSD):
     # alternative workflow implementation for supporting cooperation in
     # order to meet the FY24 deconfliction service deliverable
     
-    self.optPerform(datetime.utcfromtimestamp(cooptime), cooperationFlag = True)
+    self.optPerform(datetime.utcfromtimestamp(coopTime), cooperationFlag = True)
   
   # end of cooperation handler process methods
 
@@ -630,7 +631,7 @@ class CompetingApp(GridAPPSD):
 
       if numWeights>2 and self.objectiveWeights[2]!=None:
         objective += self.objectiveWeights[2] * self.optObjective3( self.SolarPVsInfo, self.BatteriesInfo,
-                                                                    self.p_pv_A, self.p_pv_B, self.p_pv_C, self.p_batt)
+                                                                    self.p_pv_A, self.p_pv_B, self.p_pv_C, self.p_batt, ts_datetime)
 
       if numWeights>3 and self.objectiveWeights[3]!=None:
 
@@ -686,9 +687,9 @@ class CompetingApp(GridAPPSD):
             self.Constraints.append(p_pv_C_diff[idx] >=  -1*(self.p_pv_C[idx] - self.pq_pv_proposed[idx].real))
             self.Constraints.append(q_pv_C_diff[idx] >=    (self.q_pv_C[idx] - self.pq_pv_proposed[idx].imag))
             self.Constraints.append(q_pv_C_diff[idx] >= -1*(self.q_pv_C[idx] - self.pq_pv_proposed[idx].imag))
-            objective_pq_pv_diff += p_pv_C_diff[idx] + self.q_pv_C_diff[idx]
+            objective_pq_pv_diff += p_pv_C_diff[idx] + q_pv_C_diff[idx]
 
-        objective_pq_pv_diff = objective_pq_pv_diff  / (len(len_SolarPVsInfo) * 1000000)
+        objective_pq_pv_diff = objective_pq_pv_diff  / (len_SolarPVsInfo * 1000000)
 
         
         if self.includeRegulatorsFlag:
@@ -701,7 +702,7 @@ class CompetingApp(GridAPPSD):
                 self.Constraints.append(reg_taps_diff[idx] >=    (self.reg_taps[(idx, tap_proposed)] -1))
                 self.Constraints.append(reg_taps_diff[idx] >= -1*(self.reg_taps[(idx, tap_proposed)] -1))
           
-          objective_reg_diff =  sum(self.reg_taps_diff[idx]  for i in range(len_RegulatorsInfo)) / (len_RegulatorsInfo*32)
+          objective_reg_diff =  sum(reg_taps_diff[idx] for i in range(len_RegulatorsInfo)) / (len_RegulatorsInfo*32)
 
         
         objective += (self.coopCounter+1) * 1.5 * (objective_pq_pv_diff + objective_batt_diff + objective_reg_diff)
@@ -1323,7 +1324,8 @@ class CompetingApp(GridAPPSD):
 
 
   def optObjective1(self, BusInfo, SolarPVsInfo, v_A, v_B, v_C, p_pv_A, p_pv_B, p_pv_C):
-    print('Adding Objective 1 for CVR at time {}'.format(ts_time))
+    #print('Adding Objective 1 for CVR at time {}'.format(ts_time))
+    print('Adding Objective 1 for CVR')
     objective = sum((v_A[i] + v_B[i] + v_C[i]) for i in range(len(BusInfo))) / ((2401.77 ** 2) * (123*3))
     #### Adding additional term to minimize active power curtailment
     objective_pv = 0
@@ -1342,7 +1344,8 @@ class CompetingApp(GridAPPSD):
 
   def optObjective2(self, EnergySource, Psub, Psub_mod, Qsub, Qsub_mod,
                     p_flow_A, p_flow_B, p_flow_C, q_flow_A, q_flow_B, q_flow_C):
-    print('Adding Objective 2 for PF at time {}'.format(ts_time))
+    #print('Adding Objective 2 for PF at time {}'.format(ts_time))
+    print('Adding Objective 2 for PF')
     self.Constraints.append(Psub_mod >= Psub)
     self.Constraints.append(Psub_mod >= -Psub)
 
@@ -1368,10 +1371,10 @@ class CompetingApp(GridAPPSD):
     return objective
 
 
-  def optObjective3(self, SolarPVsInfo, BatteriesInfo, p_pv_A, p_pv_B, p_pv_C, p_batt):
+  def optObjective3(self, SolarPVsInfo, BatteriesInfo, p_pv_A, p_pv_B, p_pv_C, p_batt, ts_datetime):
     cost = pd.read_csv('lmp_data.csv')
     cost['time'] = pd.to_datetime(cost['time'])
-    ts_target = pd.to_datetime(str(ts_time))
+    ts_target = pd.to_datetime(str(ts_datetime))
     idx_cost = abs(cost['time'] - ts_target).idxmin()
     cost = cost['price'].values/1000
     average_cost = np.mean(cost)
@@ -1398,8 +1401,8 @@ class CompetingApp(GridAPPSD):
 
 
   def optObjective4(self, EnergySource, Psub, Psub_mod, p_flow_A, p_flow_B, p_flow_C):
-
-    print('Adding Objective 4 for Peak Load at time {}'.format(ts_time))
+    #print('Adding Objective 4 for Peak Load at time {}'.format(ts_time))
+    print('Adding Objective 4 for Peak Load')
     target_peak = 1.5e6
     self.Constraints.append(Psub_mod >=     target_peak - Psub)
     self.Constraints.append(Psub_mod >= -1*(target_peak - Psub))
@@ -1427,7 +1430,8 @@ class CompetingApp(GridAPPSD):
 
 
   def optObjective5(self, BatteriesInfo, soc, SolarPVsInfo, p_pv_A, p_pv_B, p_pv_C):
-    print('Adding Objective 5 for Resilience at time {}'.format(ts_time))
+    #print('Adding Objective 5 for Resilience at time {}'.format(ts_time))
+    print('Adding Objective 5 for Resilience')
     objective = sum(-100 * soc[i] for i in range(len(BatteriesInfo))) / (4.5* 100)
 
     #### Adding additional term to minimize active power curtailment
@@ -1691,8 +1695,8 @@ class CompetingApp(GridAPPSD):
       exit()
 
     # flag for whether simulation is run in real-time
-    self.realtimeFlag = True
-    # self.realtimeFlag = False
+    #self.realtimeFlag = True
+    self.realtimeFlag = False
 
     self.simLogSubscribedFlag = True
     if not self.realtimeFlag:
@@ -1714,8 +1718,8 @@ class CompetingApp(GridAPPSD):
       # if attempting non-real-time, something like 1800 is reasonable
       # so the optimization time is safely shorter than the time between
       # optimizations--otherwise the queue draining won't work right.
-      self.optIntervalSec = 1800
-      #self.optIntervalSec = 3600
+      #self.optIntervalSec = 1800
+      self.optIntervalSec = 3600
       simLagSec = 600
 
     if self.opt_type!='scalability' and interval!=None:
@@ -2044,6 +2048,9 @@ class CompetingApp(GridAPPSD):
                           self.includeVoltagesFlag, self.includeBatteriesFlag,
                           self.includeRegulatorsFlag, self.includeSolarPVsPFlag)
 
+    # diagnostic for tracking time between optimizations
+    self.lastTime = datetime.now()
+
     # Cooperation is handled in a third process so need to have everything
     # that code needs defined before creating this process such as the
     # device info dictionaries.
@@ -2082,9 +2089,6 @@ class CompetingApp(GridAPPSD):
     print('Initialized modularized ' + opt_type +
           ' CVXPY optimization competing app, waiting for messages...\n',
           flush=True)
-
-    # diagnostic for tracking time between optimizations
-    self.lastTime = datetime.now()
 
     while True:
       while self.simQueue.empty():
