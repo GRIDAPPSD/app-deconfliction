@@ -1597,9 +1597,6 @@ class CompetingApp(GridAPPSD):
       self.difference_builder.clear()
 
       
-
-
-
   def pol2cart(self, mag, angle_deg):
         # Convert degrees to radians. GridAPPS-D spits angle in degrees
         angle_rad =  math.radians(angle_deg)
@@ -1830,13 +1827,6 @@ class CompetingApp(GridAPPSD):
     # create DifferenceBuilder once and reuse it throughout the simulation
     self.difference_builder = DifferenceBuilder(simulation_id)
 
-    # Cooperation is handled in a third process so need to have everything
-    # that code needs defined before creating this process such as the
-    # device info dictionaries.
-    cooperationHandler = Process(target=self.cooperationHandlerProcess,
-                                 args=(simulation_id,))
-    cooperationHandler.start()
-
     self.EnergySource = AppUtil.getEnergySource(sparql_mgr)
 
     vnom = sparql_mgr.vnom_export()
@@ -2053,6 +2043,13 @@ class CompetingApp(GridAPPSD):
     self.optDefineVariables(self.includePFlowFlag, self.includeQFlowFlag,
                           self.includeVoltagesFlag, self.includeBatteriesFlag,
                           self.includeRegulatorsFlag, self.includeSolarPVsPFlag)
+
+    # Cooperation is handled in a third process so need to have everything
+    # that code needs defined before creating this process such as the
+    # device info dictionaries.
+    cooperationHandler = Process(target=self.cooperationHandlerProcess,
+                                 args=(simulation_id,))
+    cooperationHandler.start()
 
     # start by discarding any messages that arrived during initialization
     # as we don't want to process anything that's stale
