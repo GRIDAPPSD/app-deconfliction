@@ -2632,8 +2632,8 @@ class DeconflictionPipeline(GridAPPSD):
     else:
       # if attempting non-real-time, something like 1800 is reasonable so
       # apps can complete optimizations safely within that interval
-      optIntervalSec = 1800 # 30 minutes
-      #optIntervalSec = 3600 # 1 hour
+      #optIntervalSec = 1800 # 30 minutes
+      optIntervalSec = 3600 # 1 hour
       simLagSec = 600
 
     if interval!=None and interval!='scalability':
