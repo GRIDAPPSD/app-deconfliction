@@ -368,7 +368,7 @@ class CompetingApp(GridAPPSD):
       if isinstance(value[1], list):
         coopProposed[mrid] = (value[0], complex(value[1][0], value[1][1]))
     
-    print('Processing cooperation Message at {cooptime}'.format(), flush=True)
+    print('Processing cooperation Message at {}'.format(cooptime), flush=True)
     #for mrid in coopProposed:
     #  print('DECONFLICTOR COOPERATE mrid ' + mrid + ' proposed set-point: ' + str(coopProposed[mrid]), flush=True)
 
@@ -644,7 +644,7 @@ class CompetingApp(GridAPPSD):
                                                                    self.SolarPVsInfo, self.p_pv_A, self.p_pv_B, self.p_pv_C)
 
       ########### Cooperation Process ###########
-      if cooperation_flag: 
+      if cooperationFlag: 
         
         print('Adding cooperation objectives at time {}, Cooperation Counter - {}'.format(ts_datetime, self.coopCounter+1),flush=True)
         
