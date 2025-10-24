@@ -414,14 +414,19 @@ class CompetingApp(GridAPPSD):
     # order to meet the FY24 deconfliction service deliverable
     
     print('BEFORE COOPERATION OPTIMIZATION', flush=True)
-    #self.optPerform(datetime.utcfromtimestamp(coopTime), cooperationFlag=True)
-    self.optPerform(datetime.utcfromtimestamp(coopTime))
+    self.optPerform(datetime.utcfromtimestamp(coopTime), cooperationFlag=True)
+    #sleep(5)
     print('BACK FROM COOPERATION OPTIMIZATION', flush=True)
 
     # GDB 10/23/25: OLD COOPERATION RESPONSE CODE HERE THROUGH END OF FUNCTION
 
     #print('DECONFLICTOR COOPERATE p_batt_greedy: ' + str(self.p_batt_greedy), flush=True)
     #print('DECONFLICTOR COOPERATE p_batt_proposed: ' + str(self.p_batt_proposed), flush=True)
+
+    # control whether cooperation responses are from an optimization or the
+    # simple logic below
+    if False:
+      return
 
     # GDB 9/10/24: Here is the alternative support for cooperation via
     # ranking the differences between proposed and greedy setpoints:
@@ -917,6 +922,7 @@ class CompetingApp(GridAPPSD):
 
       ########### Cooperation Process ###########
       if cooperationFlag: 
+      #if False:
         
         print('Adding cooperation objectives at time {}, Cooperation Counter - {}'.format(ts_datetime, self.coopCounter+1),flush=True)
         
@@ -1755,13 +1761,10 @@ class CompetingApp(GridAPPSD):
 
   def optDispatch(self, includeRegulatorsFlag, includeBatteriesFlag,
                   includeSolarPVsPFlag, includeVoltagesFlag, cooperationFlag):
-    # GDB 10/23/25: Bail now for cooperation so response isn't sent
-    if cooperationFlag:
-      return
 
-    if includeVoltagesFlag:
+    #if includeVoltagesFlag:
       # volt_sum = sum((self.v_A[i].value + self.v_B[i].value + self.v_C[i].value) for i in range(len(self.BusInfo))) / (2401.77 ** 2)
-      volt_sum = sum((self.v_A[i].value + self.v_B[i].value + self.v_C[i].value) for i in range(len(self.BusInfo))) / ((2401.77 ** 2) * (123 * 3))
+      #volt_sum = sum((self.v_A[i].value + self.v_B[i].value + self.v_C[i].value) for i in range(len(self.BusInfo))) / ((2401.77 ** 2) * (123 * 3))
       #print("Optimized sum of Voltages: {}".format(volt_sum))
 
     if includeRegulatorsFlag:
@@ -1776,12 +1779,16 @@ class CompetingApp(GridAPPSD):
                                                    k-16, None)
             regulator_taps.append([name, k-16, self.b_i[k]])
 
-            # set reg_greedy with every optimization based on measurements
-            self.reg_greedy[idx] = k-16
+            if not cooperationFlag:
+              # set reg_greedy with every optimization based on measurements
+              self.reg_greedy[idx] = k-16
+            else:
+              print('DEBUG COOPERATION OPTIMIZATION device: ' + name + ', greedy: ' + str(self.reg_greedy[idx]) + ', proposed: ' + str(self.reg_proposed[idx]) + ', compromise: ' + str(k-16), flush=True)
             break # assume this will only happen once per regulator
 
-      print(tabulate(regulator_taps, headers=['Regulator', 'Tap', 'b_i'],
-                     tablefmt='psql'), flush=True)
+      if not cooperationFlag:
+        print(tabulate(regulator_taps, headers=['Regulator', 'Tap', 'b_i'],
+                       tablefmt='psql'), flush=True)
 
     if includeBatteriesFlag:
       p_batt_setpoints = []
@@ -1797,11 +1804,15 @@ class CompetingApp(GridAPPSD):
         p_batt_setpoints.append([name, self.p_batt[idx].value/1000,
                                  self.soc[idx].value])
 
-        # set p_batt_greedy with every optimization based on measurements
-        self.p_batt_greedy[idx] = self.p_batt[idx].value
+        if not cooperationFlag:
+          # set p_batt_greedy with every optimization based on measurements
+          self.p_batt_greedy[idx] = self.p_batt[idx].value
+        else:
+          print('DEBUG COOPERATION OPTIMIZATION device: ' + name + ', greedy: ' + str(self.p_batt_greedy[idx]) + ', proposed: ' + str(self.p_batt_proposed[idx]) + ', compromise: ' + str(self.p_batt[idx].value), flush=True)
 
-      print(tabulate(p_batt_setpoints, headers=['Battery', 'P_batt (kW)',
-                     'Target SoC'], tablefmt='psql'), flush=True)
+      if not cooperationFlag:
+        print(tabulate(p_batt_setpoints, headers=['Battery', 'P_batt (kW)',
+                       'Target SoC'], tablefmt='psql'), flush=True)
 
     if includeSolarPVsPFlag:
       pq_pv_setpoints = []
@@ -1821,13 +1832,18 @@ class CompetingApp(GridAPPSD):
 
         pq_pv_setpoints.append([name, bus, total_p/1000, total_q/1000])
 
-        # set p_pv_greedy and q_pv_greedy with every optimization based
-        # on measurements
-        self.p_pv_greedy[idx] = total_p
-        self.q_pv_greedy[idx] = total_q
+        if not cooperationFlag:
+          # set p_pv_greedy and q_pv_greedy with every optimization based
+          # on measurements
+          self.p_pv_greedy[idx] = total_p
+          self.q_pv_greedy[idx] = total_q
+        else:
+          print('DEBUG COOPERATION OPTIMIZATION device: ' + name + ', greedy p: ' + str(self.p_pv_greedy[idx]) + ', proposed p: ' + str(self.pq_pv_proposed[idx].real) + ', compromise: ' + str(total_p), flush=True)
+          print('DEBUG COOPERATION OPTIMIZATION device: ' + name + ', greedy q: ' + str(self.q_pv_greedy[idx]) + ', proposed q: ' + str(self.pq_pv_proposed[idx].imag) + ', compromise: ' + str(total_q), flush=True)
 
-      print(tabulate(pq_pv_setpoints,headers=['SolarPV', 'bus', 'Total p (kW)',
-                     'Total q (kVAR)'], tablefmt='psql'), flush=True)
+      if not cooperationFlag:
+        print(tabulate(pq_pv_setpoints,headers=['SolarPV', 'bus','Total p (kW)',
+                       'Total q (kVAR)'], tablefmt='psql'), flush=True)
 
     '''
     if self.includePFlowFlag:
@@ -1840,6 +1856,11 @@ class CompetingApp(GridAPPSD):
         print('p_flow[' + str(i) + '] A: ' + str(self.p_flow_A[i].value) + ', B: ' + str(self.p_flow_B[i].value) + ', C: ' + str(self.p_flow_C[i].value), flush=True)
       print('')
     '''
+
+    # GDB 10/23/25: Bail now for cooperation so response isn't sent
+    if cooperationFlag:
+      self.difference_builder.clear()
+      return
 
     if includeRegulatorsFlag or includeBatteriesFlag or includeSolarPVsPFlag:
       dispatch_message = self.difference_builder.get_message()
@@ -1990,7 +2011,8 @@ class CompetingApp(GridAPPSD):
       # so the optimization time is safely shorter than the time between
       # optimizations--otherwise the queue draining won't work right.
       #self.optIntervalSec = 1800
-      self.optIntervalSec = 3600
+      #self.optIntervalSec = 3600
+      self.optIntervalSec = 7200
       simLagSec = 600
 
     if self.opt_type!='scalability' and interval!=None:
