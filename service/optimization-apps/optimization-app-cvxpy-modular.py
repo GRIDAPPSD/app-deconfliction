@@ -408,9 +408,11 @@ class CompetingApp(GridAPPSD):
     # the objective function is non-linear/non-convex so we have an
     # alternative workflow implementation for supporting cooperation in
     # order to meet the FY24 deconfliction service deliverable
-    '''
+
+    print('BEFORE COOPERATION RESPONSE OPTIMIZATION', flush=True)
     self.optPerform(datetime.utcfromtimestamp(coopTime), cooperationFlag=True)
-    '''
+    #sleep(5)
+    print('AFTER COOPERATION RESPONSE OPTIMIZATION', flush=True)
 
     #print('DECONFLICTOR COOPERATE p_batt_greedy: ' + str(self.p_batt_greedy), flush=True)
     #print('DECONFLICTOR COOPERATE p_batt_proposed: ' + str(self.p_batt_proposed), flush=True)
@@ -894,8 +896,7 @@ class CompetingApp(GridAPPSD):
                                     self.q_flow_A, self.q_flow_B, self.q_flow_C)
 
       if numWeights>2 and self.objectiveWeights[2]!=None:
-        objective += self.objectiveWeights[2] * self.optObjective3( self.SolarPVsInfo, self.BatteriesInfo,
-                                                                    self.p_pv_A, self.p_pv_B, self.p_pv_C, self.p_batt)
+        objective += self.objectiveWeights[2] * self.optObjective3( self.SolarPVsInfo, self.BatteriesInfo, self.p_pv_A, self.p_pv_B, self.p_pv_C, self.p_batt, ts_datetime)
 
       if numWeights>3 and self.objectiveWeights[3]!=None:
 
@@ -1526,7 +1527,8 @@ class CompetingApp(GridAPPSD):
 
 
   def optObjective1(self, BusInfo, SolarPVsInfo, v_A, v_B, v_C, p_pv_A, p_pv_B, p_pv_C):
-    print('Adding Objective 1 for CVR at time {}'.format(ts_time))
+    #print('Adding Objective 1 for CVR at time {}'.format(ts_time))
+    print('Adding Objective 1 for CVR')
     objective = sum((v_A[i] + v_B[i] + v_C[i]) for i in range(len(BusInfo))) / ((2401.77 ** 2) * (123*3))
     #### Adding additional term to minimize active power curtailment
     objective_pv = 0
@@ -1545,7 +1547,8 @@ class CompetingApp(GridAPPSD):
 
   def optObjective2(self, EnergySource, Psub, Psub_mod, Qsub, Qsub_mod,
                     p_flow_A, p_flow_B, p_flow_C, q_flow_A, q_flow_B, q_flow_C):
-    print('Adding Objective 2 for PF at time {}'.format(ts_time))
+    #print('Adding Objective 2 for PF at time {}'.format(ts_time))
+    print('Adding Objective 2 for PF')
     self.Constraints.append(Psub_mod >= Psub)
     self.Constraints.append(Psub_mod >= -Psub)
 
@@ -1571,10 +1574,10 @@ class CompetingApp(GridAPPSD):
     return objective
 
 
-  def optObjective3(self, SolarPVsInfo, BatteriesInfo, p_pv_A, p_pv_B, p_pv_C, p_batt):
+  def optObjective3(self, SolarPVsInfo, BatteriesInfo, p_pv_A, p_pv_B, p_pv_C, p_batt, ts_datetime):
     cost = pd.read_csv('lmp_data.csv')
     cost['time'] = pd.to_datetime(cost['time'])
-    ts_target = pd.to_datetime(str(ts_time))
+    ts_target = pd.to_datetime(str(ts_datetime))
     idx_cost = abs(cost['time'] - ts_target).idxmin()
     cost = cost['price'].values/1000
     average_cost = np.mean(cost)
@@ -1602,7 +1605,8 @@ class CompetingApp(GridAPPSD):
 
   def optObjective4(self, EnergySource, Psub, Psub_mod, p_flow_A, p_flow_B, p_flow_C):
 
-    print('Adding Objective 4 for Peak Load at time {}'.format(ts_time))
+    #print('Adding Objective 4 for Peak Load at time {}'.format(ts_time))
+    print('Adding Objective 4 for Peak Load')
     target_peak = 1.5e6
     self.Constraints.append(Psub_mod >=     target_peak - Psub)
     self.Constraints.append(Psub_mod >= -1*(target_peak - Psub))
@@ -1630,7 +1634,8 @@ class CompetingApp(GridAPPSD):
 
 
   def optObjective5(self, BatteriesInfo, soc, SolarPVsInfo, p_pv_A, p_pv_B, p_pv_C):
-    print('Adding Objective 5 for Resilience at time {}'.format(ts_time))
+    #print('Adding Objective 5 for Resilience at time {}'.format(ts_time))
+    print('Adding Objective 5 for Resilience')
     objective = sum(-100 * soc[i] for i in range(len(BatteriesInfo))) / (4.5* 100)
 
     #### Adding additional term to minimize active power curtailment
@@ -1900,7 +1905,8 @@ class CompetingApp(GridAPPSD):
       # so the optimization time is safely shorter than the time between
       # optimizations--otherwise the queue draining won't work right.
       #self.optIntervalSec = 1800
-      self.optIntervalSec = 3600
+      #self.optIntervalSec = 3600
+      self.optIntervalSec = 7200
       simLagSec = 600
 
     if self.opt_type!='scalability' and interval!=None:
