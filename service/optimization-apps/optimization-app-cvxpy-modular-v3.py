@@ -404,9 +404,9 @@ class CompetingApp(GridAPPSD):
       for mrid in self.SolarPVs:
         if mrid in coopProposed:
           idx = self.SolarPVs[mrid]['idx']
-          self.pq_pv_proposed[idx] = -coopProposed[mrid][1]
-          # MONIISH VERSION
-          #self.pq_pv_proposed[idx] = coopProposed[mrid][1]
+          #self.pq_pv_proposed[idx] = -coopProposed[mrid][1]
+          # MONISH VERSION
+          self.pq_pv_proposed[idx] = coopProposed[mrid][1]
 
     # Need to define the full optimization problem each time anything
     # changes for CVXPY to be happy
@@ -427,7 +427,7 @@ class CompetingApp(GridAPPSD):
 
     # control whether cooperation responses are from an optimization or the
     # simple logic below
-    if False:
+    if True:
       return
 
     # GDB 9/10/24: Here is the alternative support for cooperation via
@@ -595,9 +595,13 @@ class CompetingApp(GridAPPSD):
         # DifferenceBuilder message
         if self.pq_pv_proposed[idx] != None:
           self.difference_builder.add_difference(mrid,
-           'PowerElectronicsConnection.p', self.p_pv_greedy[idx], None)
+           'PowerElectronicsConnection.p', -self.p_pv_greedy[idx], None)
+           # MONISH VERSION ABOVE
+           #'PowerElectronicsConnection.p', self.p_pv_greedy[idx], None)
           self.difference_builder.add_difference(mrid,
-           'PowerElectronicsConnection.q', self.q_pv_greedy[idx], None)
+           'PowerElectronicsConnection.q', -self.q_pv_greedy[idx], None)
+           # MONISH VERSION ABOVE
+           #'PowerElectronicsConnection.q', self.q_pv_greedy[idx], None)
 
     if self.includeRegulatorsFlag:
       # now do the same for regulators
@@ -1883,9 +1887,9 @@ class CompetingApp(GridAPPSD):
     '''
 
     # GDB 10/23/25: Bail now for cooperation so response isn't sent
-    if cooperationFlag:
-      self.difference_builder.clear()
-      return
+    #if cooperationFlag:
+    #  self.difference_builder.clear()
+    #  return
 
     if includeRegulatorsFlag or includeBatteriesFlag or includeSolarPVsPFlag:
       dispatch_message = self.difference_builder.get_message()
