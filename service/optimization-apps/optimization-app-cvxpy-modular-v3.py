@@ -675,22 +675,22 @@ class CompetingApp(GridAPPSD):
             self.difference_builder.add_difference(reg, 'TapChanger.step',
                                                   self.reg_greedy[idx], None)
 
-    if self.includeBatteriesFlag or self.includeSolarPVsPFlag or \
-       self.includeRegulatorsFlag:
-      # finally, send out the cooperation setpoints via DifferenceBuilder msg
-      dispatch_message = self.difference_builder.get_message()
-      dispatch_message['app_name'] = self.app_name
-      dispatch_message['coop_series'] = self.coopSeries
-      dispatch_message['coop_msgid'] = self.coopMsgID
-      dispatch_message['time_sent'] = str(datetime.now())
-      print('Sending Cooperation DifferenceBuilder message with msgid: ' + str(self.coopMsgID) + ', series: ' + str(self.coopSeries), flush=True)
-      #print('Sending Cooperation DifferenceBuilder message: ' +
-      #      json.dumps(dispatch_message), flush=True)
-      self.coop_gapps.send(self.coop_publish_topic,json.dumps(dispatch_message))
-      if self.logMessagesFlag:
-        self.msglog('sending cooperation response|msgid:' + str(self.coopMsgID) + '|series:' + str(self.coopSeries))
+        if self.includeBatteriesFlag or self.includeSolarPVsPFlag or \
+        self.includeRegulatorsFlag:
+        # finally, send out the cooperation setpoints via DifferenceBuilder msg
+            dispatch_message = self.difference_builder.get_message()
+            dispatch_message['app_name'] = self.app_name
+            dispatch_message['coop_series'] = self.coopSeries
+            dispatch_message['coop_msgid'] = self.coopMsgID
+            dispatch_message['time_sent'] = str(datetime.now())
+            print('Sending Cooperation DifferenceBuilder message with msgid: ' + str(self.coopMsgID) + ', series: ' + str(self.coopSeries), flush=True)
+            #print('Sending Cooperation DifferenceBuilder message: ' +
+            #      json.dumps(dispatch_message), flush=True)
+            self.coop_gapps.send(self.coop_publish_topic,json.dumps(dispatch_message))
+            if self.logMessagesFlag:
+                self.msglog('sending cooperation response|msgid:' + str(self.coopMsgID) + '|series:' + str(self.coopSeries))
 
-      self.difference_builder.clear()
+            self.difference_builder.clear()
 
   # end of cooperation handler process methods
 
