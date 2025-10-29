@@ -21,5 +21,5 @@ APPNAME=`echo $LINE | cut -f1 -d,`
 trap - SIGINT SIGTERM EXIT
 
 #python3 optimization-app-cvxpy-modular.py scalability $SIMID "$SIMREQ" "$LINE" 2>&1 | tee log/$APPNAME-app.log
-python3 optimization-app-cvxpy-modular-v2.py scalability $SIMID "$SIMREQ" "$LINE" 2>&1 | tee log/$APPNAME-app.log
+python3 optimization-app-cvxpy-modular-v3.py scalability $SIMID "$SIMREQ" "$LINE" 2>&1 | tee log/$APPNAME-app.log
 
