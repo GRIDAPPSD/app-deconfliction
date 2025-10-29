@@ -1829,8 +1829,8 @@ class CompetingApp(GridAPPSD):
             break
 
         # make sure regtap falls within the greedy..proposed range
-        mintap = min(self.reg_greedy[idx], self.reg_propposed[idx])
-        maxtap = max(self.reg_greedy[idx], self.reg_propposed[idx])
+        mintap = min(self.reg_greedy[idx], self.reg_proposed[idx])
+        maxtap = max(self.reg_greedy[idx], self.reg_proposed[idx])
         if regtap < mintap:
           regtap = mintap
         elif regtap > maxtap:
