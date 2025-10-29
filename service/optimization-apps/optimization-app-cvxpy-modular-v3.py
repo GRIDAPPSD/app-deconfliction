@@ -1820,19 +1820,32 @@ class CompetingApp(GridAPPSD):
       for reg in self.RegulatorsInfo:
         idx = self.RegulatorsInfo[reg]['idx']
         name = self.RegulatorsInfo[reg]['name']
+
+        # translate from self.reg_taps vector to the scalar tap position
+        regtap = 0
         for k in range(32):
           if self.reg_taps[(idx, k)].value:
-            # new value before old value for DifferenceBuilder
-            self.difference_builder.add_difference(reg, 'TapChanger.step',
-                                                   k-16, None)
-            regulator_taps.append([name, k-16, self.b_i[k]])
+            regtap = k-16
+            break
 
-            if not cooperationFlag:
-              # set reg_greedy with every optimization based on measurements
-              self.reg_greedy[idx] = k-16
-            else:
-              print('DEBUG COOPERATION OPTIMIZATION device: ' + name + ', greedy: ' + str(self.reg_greedy[idx]) + ', proposed: ' + str(self.reg_proposed[idx]) + ', compromise: ' + str(k-16), flush=True)
-            break # assume this will only happen once per regulator
+        # make sure regtap falls within the greedy..proposed range
+        mintap = min(self.reg_greedy[idx], self.reg_propposed[idx])
+        maxtap = max(self.reg_greedy[idx], self.reg_propposed[idx])
+        if regtap < mintap:
+          regtap = mintap
+        elif regtap > maxtap:
+          regtap = maxtap
+
+        # new value before old value for DifferenceBuilder
+        self.difference_builder.add_difference(reg, 'TapChanger.step',
+                                               regtap, None)
+        regulator_taps.append([name, regtap, self.b_i[k]])
+
+        if not cooperationFlag:
+          # set reg_greedy with every optimization based on measurements
+          self.reg_greedy[idx] = regtap
+        else:
+          print('DEBUG COOPERATION OPTIMIZATION device: ' + name + ', greedy: ' + str(self.reg_greedy[idx]) + ', proposed: ' + str(self.reg_proposed[idx]) + ', compromise: ' + str(regtap), flush=True)
 
       if not cooperationFlag:
         print(tabulate(regulator_taps, headers=['Regulator', 'Tap', 'b_i'],
