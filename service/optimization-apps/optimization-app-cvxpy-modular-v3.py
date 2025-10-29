@@ -836,8 +836,12 @@ class CompetingApp(GridAPPSD):
 
 
   def optPerform(self, ts_datetime, cooperationFlag=False):
+
+    ts_datetime_lastopt = datetime.utcfromtimestamp(self.ts_last_opt[0])
+
     self.Constraints = []
-    print('Starting Problem Formulation for App ... ',flush=True)
+    print('Starting Problem Formulation for App consdering opt_time {}, last opt_time {}... '.format(ts_datetime, ts_datetime_lastopt), flush=True)
+
     if self.includeBatteriesFlag:
       self.optConstraintsDERWithBatteries(self.BatteriesInfo, self.deltaT,
                                           self.soc, self.p_batt,
@@ -855,7 +859,7 @@ class CompetingApp(GridAPPSD):
                                          self.includeSolarPVsQFlag,
                                          self.p_pv_A, self.p_pv_B, self.p_pv_C,
                                          self.q_pv_A, self.q_pv_B, self.q_pv_C,
-                                         ts_datetime)
+                                         ts_datetime_lastopt)
 
     if self.includePFlowFlag:
       self.optConstraintsNetworkWithPFlow(self.includeBatteriesFlag,
@@ -913,7 +917,7 @@ class CompetingApp(GridAPPSD):
 
       if numWeights>2 and self.objectiveWeights[2]!=None:
         objective += self.objectiveWeights[2] * self.optObjective3( self.SolarPVsInfo, self.BatteriesInfo,
-                                                                    self.p_pv_A, self.p_pv_B, self.p_pv_C, self.p_batt, ts_datetime)
+                                                                    self.p_pv_A, self.p_pv_B, self.p_pv_C, self.p_batt, ts_datetime_lastopt)
 
       if numWeights>3 and self.objectiveWeights[3]!=None:
 
@@ -937,10 +941,12 @@ class CompetingApp(GridAPPSD):
         for mrid in self.BatteriesInfo:
                 idx = self.BatteriesInfo[mrid]['idx']
                 if self.p_batt_proposed[idx] != None:
-                  self.Constraints.append(p_batt_diff[idx] >=    (-self.p_batt[idx] - self.p_batt_proposed[idx]))
-                  self.Constraints.append(p_batt_diff[idx] >= -1*(-self.p_batt[idx] - self.p_batt_proposed[idx]))
+                  self.Constraints.append(p_batt_diff[idx] >=    (self.p_batt[idx] - self.p_batt_proposed[idx]))
+                  self.Constraints.append(p_batt_diff[idx] >= -1*(self.p_batt[idx] - self.p_batt_proposed[idx]))
                   self.Constraints.append(p_batt_diff[idx] >= -1e6)
                   self.Constraints.append(p_batt_diff[idx] <=  1e6)
+                  self.Constraints.append(self.p_batt[idx] <=  max(self.p_batt_greedy[idx], self.p_batt_proposed[idx]))
+                  self.Constraints.append(self.p_batt[idx] >=  min(self.p_batt_greedy[idx], self.p_batt_proposed[idx]))
   
         objective_batt_diff =  sum(p_batt_diff[idx]  for i in range(len(self.BatteriesInfo))) / (len_BatteriesInfo * 1000000)
 
@@ -960,36 +966,49 @@ class CompetingApp(GridAPPSD):
             self.Constraints.append(p_pv_A_diff[idx] >=  -1*(self.p_pv_A[idx] - self.pq_pv_proposed[idx].real))
             self.Constraints.append(p_pv_A_diff[idx] >= -1e6)
             self.Constraints.append(p_pv_A_diff[idx] <=  1e6)
+            self.Constraints.append(self.p_pv_A[idx] <=  max(self.p_pv_greedy[idx], self.pq_pv_proposed[idx].real))
+            self.Constraints.append(self.p_pv_A[idx] >=  min(self.p_pv_greedy[idx], self.pq_pv_proposed[idx].real))
 
             self.Constraints.append(q_pv_A_diff[idx] >=    (self.q_pv_A[idx] - self.pq_pv_proposed[idx].imag))
             self.Constraints.append(q_pv_A_diff[idx] >= -1*(self.q_pv_A[idx] - self.pq_pv_proposed[idx].imag))
             self.Constraints.append(q_pv_A_diff[idx] >= -1e6)
             self.Constraints.append(q_pv_A_diff[idx] <=  1e6)
+            self.Constraints.append(self.q_pv_A[idx] <=  max(self.q_pv_greedy[idx], self.pq_pv_proposed[idx].imag))
+            self.Constraints.append(self.q_pv_A[idx] >=  min(self.q_pv_greedy[idx], self.pq_pv_proposed[idx].imag))
 
             objective_pq_pv_diff += p_pv_A_diff[idx] + q_pv_A_diff[idx]
+
           if 'B' in self.SolarPVsInfo[bus]['phase'] and self.pq_pv_proposed[idx] != None:
             self.Constraints.append(p_pv_B_diff[idx] >=  (self.p_pv_B[idx] - self.pq_pv_proposed[idx].real))
             self.Constraints.append(p_pv_B_diff[idx] >=  -1*(self.p_pv_B[idx] - self.pq_pv_proposed[idx].real))
             self.Constraints.append(p_pv_B_diff[idx] >= -1e6)
             self.Constraints.append(p_pv_B_diff[idx] <=  1e6)
+            self.Constraints.append(self.p_pv_B[idx] <=  max(self.p_pv_greedy[idx], self.pq_pv_proposed[idx].real))
+            self.Constraints.append(self.p_pv_B[idx] >=  min(self.p_pv_greedy[idx], self.pq_pv_proposed[idx].real))
 
             self.Constraints.append(q_pv_B_diff[idx] >=    (self.q_pv_B[idx] - self.pq_pv_proposed[idx].imag))
             self.Constraints.append(q_pv_B_diff[idx] >= -1*(self.q_pv_B[idx] - self.pq_pv_proposed[idx].imag))
             self.Constraints.append(q_pv_B_diff[idx] >= -1e6)
             self.Constraints.append(q_pv_B_diff[idx] <=  1e6)
-
+            self.Constraints.append(self.q_pv_B[idx] <=  max(self.q_pv_greedy[idx], self.pq_pv_proposed[idx].imag))
+            self.Constraints.append(self.q_pv_B[idx] >=  min(self.q_pv_greedy[idx], self.pq_pv_proposed[idx].imag))
 
             objective_pq_pv_diff += p_pv_B_diff[idx] + q_pv_B_diff[idx]
+
           if 'C' in self.SolarPVsInfo[bus]['phase'] and self.pq_pv_proposed[idx] != None:
             self.Constraints.append(p_pv_C_diff[idx] >=  (self.p_pv_C[idx] - self.pq_pv_proposed[idx].real))
             self.Constraints.append(p_pv_C_diff[idx] >=  -1*(self.p_pv_C[idx] - self.pq_pv_proposed[idx].real))
             self.Constraints.append(p_pv_C_diff[idx] >= -1e6)
             self.Constraints.append(p_pv_C_diff[idx] <=  1e6)
+            self.Constraints.append(self.p_pv_C[idx] <=  max(self.p_pv_greedy[idx], self.pq_pv_proposed[idx].real))
+            self.Constraints.append(self.p_pv_C[idx] >=  min(self.p_pv_greedy[idx], self.pq_pv_proposed[idx].real))
 
             self.Constraints.append(q_pv_C_diff[idx] >=    (self.q_pv_C[idx] - self.pq_pv_proposed[idx].imag))
             self.Constraints.append(q_pv_C_diff[idx] >= -1*(self.q_pv_C[idx] - self.pq_pv_proposed[idx].imag))
             self.Constraints.append(q_pv_C_diff[idx] >= -1e6)
             self.Constraints.append(q_pv_C_diff[idx] <=  1e6)
+            self.Constraints.append(self.q_pv_C[idx] <=  max(self.q_pv_greedy[idx], self.pq_pv_proposed[idx].imag))
+            self.Constraints.append(self.q_pv_C[idx] >=  min(self.q_pv_greedy[idx], self.pq_pv_proposed[idx].imag))
 
             objective_pq_pv_diff += p_pv_C_diff[idx] + q_pv_C_diff[idx]
 
@@ -1010,8 +1029,8 @@ class CompetingApp(GridAPPSD):
 
           objective_reg_diff =  sum(reg_taps_diff[idx] for i in range(len_RegulatorsInfo)) / (len_RegulatorsInfo*32)
 
-        
-        objective += (self.coopCounter+1) * 0.005 * (objective_pq_pv_diff + objective_batt_diff + objective_reg_diff)
+        objective += ((self.coopCounter+1)**2) * 2 * (objective_pq_pv_diff + objective_batt_diff)
+        # objective += (self.coopCounter+1) * 0.01 * (objective_pq_pv_diff + objective_batt_diff + objective_reg_diff)
 
     else:
       if self.objectiveResilienceFlag:
@@ -1837,11 +1856,10 @@ class CompetingApp(GridAPPSD):
           # set p_batt_greedy with every optimization based on measurements
           self.p_batt_greedy[idx] = self.p_batt[idx].value
         else:
-          print('DEBUG COOPERATION OPTIMIZATION device: ' + name + ', greedy: ' + str(-self.p_batt_greedy[idx]) + ', proposed: ' + str(self.p_batt_proposed[idx]) + ', compromise: ' + str(-self.p_batt[idx].value), flush=True)
+          print('DEBUG COOPERATION OPTIMIZATION device: ' + name + ', greedy: ' + str(self.p_batt_greedy[idx]) + ', proposed: ' + str(self.p_batt_proposed[idx]) + ', compromise: ' + str(self.p_batt[idx].value), flush=True)
 
       if not cooperationFlag:
-        print(tabulate(p_batt_setpoints, headers=['Battery', 'P_batt (kW)',
-                       'Target SoC'], tablefmt='psql'), flush=True)
+        print(tabulate(p_batt_setpoints, headers=['Battery', 'P_batt (kW)', 'Target SoC'], tablefmt='psql'), flush=True)
 
     if includeSolarPVsPFlag:
       pq_pv_setpoints = []
@@ -2016,8 +2034,8 @@ class CompetingApp(GridAPPSD):
       exit()
 
     # flag for whether simulation is run in real-time
-    #self.realtimeFlag = True
-    self.realtimeFlag = False
+    self.realtimeFlag = True
+    #self.realtimeFlag = False
 
     self.simLogSubscribedFlag = True
     if not self.realtimeFlag:
@@ -2133,6 +2151,8 @@ class CompetingApp(GridAPPSD):
     self.pq_pv_proposed = [None] * len_SolarPVsInfo
     self.p_pv_greedy = Array('d', [0.0] * len_SolarPVsInfo)
     self.q_pv_greedy = Array('d', [0.0] * len_SolarPVsInfo)
+
+    self.ts_last_opt = Array('i', [1704207000] * 1)
 
     # topic for sending out cooperation responses
     self.coop_publish_topic = service_input_topic('deconfliction.cooperation',
@@ -2465,7 +2485,7 @@ class CompetingApp(GridAPPSD):
 
         # process new measurements
         self.processMeasMessage(lastMeasMessage['measurements'])
-
+        self.ts_last_opt[0] = ts_unix
         # perform optimization
         self.optPerform(datetime.utcfromtimestamp(ts_unix))
 
