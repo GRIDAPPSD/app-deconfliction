@@ -197,8 +197,8 @@ class CompetingApp(GridAPPSD):
         self.clearSimQueue()
         self.simQueue.put(message['message'])
 
-        #self.clearCoopQueue()
-        #self.coopQueue.put(message['message'])
+        self.clearCoopQueue()
+        self.coopQueue.put(message['message'])
 
     else:
       # If doing non-real-time simulation remove the 5 second offset because
@@ -211,8 +211,8 @@ class CompetingApp(GridAPPSD):
         self.clearSimQueue()
         self.simQueue.put(message['message'])
 
-        #self.clearCoopQueue()
-        #self.coopQueue.put(message['message'])
+        self.clearCoopQueue()
+        self.coopQueue.put(message['message'])
 
 
   def OnSimLogMessage(self, header, message):
@@ -297,6 +297,7 @@ class CompetingApp(GridAPPSD):
         sleep(0.05)
 
       lastCoopMessage = None
+      lastMeasMessage = None
 
       #print('Cooperation queue check start', flush=True)
       while not self.coopQueue.empty():
@@ -312,11 +313,24 @@ class CompetingApp(GridAPPSD):
 
           return # done with all processing
 
+        elif 'measurements' in message: # simulation output message
+          if self.logMessagesFlag:
+            self.msglog('found simulation measurements message on coopQueue with timestamp: ' + str(message['timestamp']) + ', wall time: ' + str(datetime.utcfromtimestamp(int(message['timestamp'])).time()))
+          print('Simulation measurements message on coopQueue with timestamp: ' +
+                str(message['timestamp']), flush=True)
+          lastMeasMessage = message
+
         else:
-          ##print('Cooperation message on queue with series: ' +
-          ##      str(message['coop_series']), flush=True)
+          print('Cooperation message on coopQueue with series: ' +
+                str(message['coop_series']), flush=True)
           lastCoopMessage = message
       ##print('Cooperation queue check finish', flush=True)
+
+      if lastMeasMessage != None:
+        #ts_unix = int(lastMeasMessage['timestamp'])
+        #ts_time = datetime.utcfromtimestamp(ts_unix).time()
+        # process new measurements
+        self.processMeasMessage(lastMeasMessage['measurements'])
 
       if lastCoopMessage != None:
         if self.includeBatteriesFlag or self.includeRegulatorsFlag or \
@@ -2501,8 +2515,8 @@ class CompetingApp(GridAPPSD):
 
         if 'measurements' in message: # simulation output message
           if self.logMessagesFlag:
-            self.msglog('found simulation measurements message on queue with timestamp: ' + str(message['timestamp']) + ', wall time: ' + str(datetime.utcfromtimestamp(int(message['timestamp'])).time()))
-          print('Simulation measurements message on queue with timestamp: ' +
+            self.msglog('found simulation measurements message on simQueue with timestamp: ' + str(message['timestamp']) + ', wall time: ' + str(datetime.utcfromtimestamp(int(message['timestamp'])).time()))
+          print('Simulation measurements message on simQueue with timestamp: ' +
                 str(message['timestamp']), flush=True)
           lastMeasMessage = message
       print('Simulation queue check finish', flush=True)
