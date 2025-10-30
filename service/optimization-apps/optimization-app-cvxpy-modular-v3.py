@@ -961,6 +961,7 @@ class CompetingApp(GridAPPSD):
         for mrid in self.BatteriesInfo:
           idx = self.BatteriesInfo[mrid]['idx']
           if self.p_batt_proposed[idx] != None:
+            print('DEBUG COOPERATION PRE-OPTIMIZATION device: ' + self.BatteriesInfo[mrid]['name'] + ', greedy: ' + str(self.p_batt_greedy[idx]) + ', proposed: ' + str(self.p_batt_proposed[idx]), flush=True)
             self.Constraints.append(self.p_batt_diff_cp[idx] >=    (self.p_batt[idx] - self.p_batt_proposed[idx]))
             self.Constraints.append(self.p_batt_diff_cp[idx] >= -1*(self.p_batt[idx] - self.p_batt_proposed[idx]))
             self.Constraints.append(self.p_batt_diff_cp[idx] >= -1e6)
@@ -973,6 +974,8 @@ class CompetingApp(GridAPPSD):
         objective_pq_pv_diff =  0 
         for bus in self.SolarPVsInfo:
           idx = self.SolarPVsInfo[bus]['idx']
+          print('DEBUG COOPERATION PRE-OPTIMIZATION device: ' + self.SolarPVsInfo[bus]['name'] + ', greedy p: ' + str(self.p_pv_greedy[idx]) + ', proposed p: ' + str(self.pq_pv_proposed[idx].real), flush=True)
+          print('DEBUG COOPERATION PRE-OPTIMIZATION device: ' + self.SolarPVsInfo[bus]['name'] + ', greedy q: ' + str(self.q_pv_greedy[idx]) + ', proposed q: ' + str(self.pq_pv_proposed[idx].imag), flush=True)
           if 'A' in self.SolarPVsInfo[bus]['phase'] and self.pq_pv_proposed[idx] != None:
             self.Constraints.append(self.p_pv_A_diff[idx] >=    (self.p_pv_A[idx] - self.pq_pv_proposed[idx].real))
             self.Constraints.append(self.p_pv_A_diff[idx] >= -1*(self.p_pv_A[idx] - self.pq_pv_proposed[idx].real))
@@ -1029,6 +1032,11 @@ class CompetingApp(GridAPPSD):
         if self.includeRegulatorsFlag:
           len_RegulatorsInfo = len(self.RegulatorsInfo)
           
+          for reg in self.RegulatorsInfo:
+            idx = self.RegulatorsInfo[reg]['idx']
+            if self.reg_proposed[idx] != None:
+              print('DEBUG COOPERATION PRE-OPTIMIZATION device: ' + self.RegulatorsInfo[reg]['name'] + ', greedy: ' + str(self.reg_greedy[idx]) + ', proposed: ' + str(self.reg_proposed[idx]), flush=True)
+
           for idx in range(len_RegulatorsInfo):
             if self.reg_proposed[idx] != None:
               tap_proposed = self.reg_proposed[idx] + 16
