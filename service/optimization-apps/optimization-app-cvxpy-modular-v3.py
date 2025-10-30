@@ -197,7 +197,9 @@ class CompetingApp(GridAPPSD):
         self.clearSimQueue()
         self.simQueue.put(message['message'])
 
-        self.clearCoopQueue()
+        # allow multiple messages for coopQueue since both measurement and
+        # cooperation messages are on this queue
+        #self.clearCoopQueue()
         self.coopQueue.put(message['message'])
 
     else:
@@ -211,7 +213,9 @@ class CompetingApp(GridAPPSD):
         self.clearSimQueue()
         self.simQueue.put(message['message'])
 
-        self.clearCoopQueue()
+        # allow multiple messages for coopQueue since both measurement and
+        # cooperation messages are on this queue
+        #self.clearCoopQueue()
         self.coopQueue.put(message['message'])
 
 
@@ -249,8 +253,9 @@ class CompetingApp(GridAPPSD):
                   str(message['coop_msgid']) + '|series:' +
                   str(message['coop_series']) + '|delay:' + str(diff_sec))
 
-    # only permit a single message at a time to be queued to not fall behind
-    self.clearCoopQueue()
+    # allow multiple messages for coopQueue since both measurement and
+    # cooperation messages are on this queue
+    #self.clearCoopQueue()
     self.coopQueue.put(message)
 
 
@@ -316,8 +321,7 @@ class CompetingApp(GridAPPSD):
         elif 'measurements' in message: # simulation output message
           if self.logMessagesFlag:
             self.msglog('found simulation measurements message on coopQueue with timestamp: ' + str(message['timestamp']) + ', wall time: ' + str(datetime.utcfromtimestamp(int(message['timestamp'])).time()))
-          print('Simulation measurements message on coopQueue with timestamp: ' +
-                str(message['timestamp']), flush=True)
+          print('Simulation measurements message on coopQueue with timestamp: ' + str(message['timestamp']) + ', wall time: ' + str(datetime.utcfromtimestamp(int(message['timestamp'])).time()), flush=True)
           lastMeasMessage = message
 
         else:
@@ -966,7 +970,6 @@ class CompetingApp(GridAPPSD):
   
         objective_batt_diff =  sum(self.p_batt_diff_cp[idx] for i in range(len(self.BatteriesInfo))) / (len(self.BatteriesInfo) * 1000000)
 
-        '''
         objective_pq_pv_diff =  0 
         for bus in self.SolarPVsInfo:
           idx = self.SolarPVsInfo[bus]['idx']
@@ -1027,18 +1030,17 @@ class CompetingApp(GridAPPSD):
           len_RegulatorsInfo = len(self.RegulatorsInfo)
           
           for idx in range(len_RegulatorsInfo):
-              if self.reg_proposed[idx] != None:
-                tap_proposed = self.reg_proposed[idx] + 16
-                self.Constraints.append(self.reg_taps_diff[idx] >=    (self.reg_taps[(idx, tap_proposed)] -1))
-                self.Constraints.append(self.reg_taps_diff[idx] >= -1*(self.reg_taps[(idx, tap_proposed)] -1))
-                self.Constraints.append(self.reg_taps_diff[idx] >= -1)
-                self.Constraints.append(self.reg_taps_diff[idx] <=  1)
+            if self.reg_proposed[idx] != None:
+              tap_proposed = self.reg_proposed[idx] + 16
+              self.Constraints.append(self.reg_taps_diff[idx] >=    (self.reg_taps[(idx, tap_proposed)] -1))
+              self.Constraints.append(self.reg_taps_diff[idx] >= -1*(self.reg_taps[(idx, tap_proposed)] -1))
+              self.Constraints.append(self.reg_taps_diff[idx] >= -1)
+              self.Constraints.append(self.reg_taps_diff[idx] <=  1)
 
           objective_reg_diff = sum(self.reg_taps_diff[idx] for i in range(len_RegulatorsInfo)) / (len_RegulatorsInfo*32)
-        '''
 
-        objective += ((self.coopCounter+1)**2) * 2 * (objective_batt_diff)
-        #objective += ((self.coopCounter+1)**2) * 2 * (objective_pq_pv_diff + objective_batt_diff)
+        #objective += ((self.coopCounter+1)**2) * 2 * (objective_batt_diff)
+        objective += ((self.coopCounter+1)**2) * 2 * (objective_pq_pv_diff + objective_batt_diff + objective_reg_diff)
         # objective += (self.coopCounter+1) * 0.01 * (objective_pq_pv_diff + objective_batt_diff + objective_reg_diff)
 
     else:
@@ -1880,8 +1882,8 @@ class CompetingApp(GridAPPSD):
         if not cooperationFlag:
           # set reg_greedy with every optimization based on measurements
           self.reg_greedy[idx] = regtap
-        #else:
-        #  print('DEBUG COOPERATION OPTIMIZATION device: ' + name + ', greedy: ' + str(self.reg_greedy[idx]) + ', proposed: ' + str(self.reg_proposed[idx]) + ', compromise: ' + str(regtap), flush=True)
+        else:
+          print('DEBUG COOPERATION OPTIMIZATION device: ' + name + ', greedy: ' + str(self.reg_greedy[idx]) + ', proposed: ' + str(self.reg_proposed[idx]) + ', compromise: ' + str(regtap), flush=True)
 
       if not cooperationFlag:
         print(tabulate(regulator_taps, headers=['Regulator', 'Tap', 'b_i'],
@@ -1933,9 +1935,9 @@ class CompetingApp(GridAPPSD):
           # on measurements
           self.p_pv_greedy[idx] = total_p
           self.q_pv_greedy[idx] = total_q
-        #else:
-        #  print('DEBUG COOPERATION OPTIMIZATION device: ' + name + ', greedy p: ' + str(self.p_pv_greedy[idx]) + ', proposed p: ' + str(self.pq_pv_proposed[idx].real) + ', compromise: ' + str(total_p), flush=True)
-        #  print('DEBUG COOPERATION OPTIMIZATION device: ' + name + ', greedy q: ' + str(self.q_pv_greedy[idx]) + ', proposed q: ' + str(self.pq_pv_proposed[idx].imag) + ', compromise: ' + str(total_q), flush=True)
+        else:
+          print('DEBUG COOPERATION OPTIMIZATION device: ' + name + ', greedy p: ' + str(self.p_pv_greedy[idx]) + ', proposed p: ' + str(self.pq_pv_proposed[idx].real) + ', compromise: ' + str(total_p), flush=True)
+          print('DEBUG COOPERATION OPTIMIZATION device: ' + name + ', greedy q: ' + str(self.q_pv_greedy[idx]) + ', proposed q: ' + str(self.pq_pv_proposed[idx].imag) + ', compromise: ' + str(total_q), flush=True)
 
       if not cooperationFlag:
         print(tabulate(pq_pv_setpoints,headers=['SolarPV', 'bus','Total p (kW)',
@@ -2516,8 +2518,7 @@ class CompetingApp(GridAPPSD):
         if 'measurements' in message: # simulation output message
           if self.logMessagesFlag:
             self.msglog('found simulation measurements message on simQueue with timestamp: ' + str(message['timestamp']) + ', wall time: ' + str(datetime.utcfromtimestamp(int(message['timestamp'])).time()))
-          print('Simulation measurements message on simQueue with timestamp: ' +
-                str(message['timestamp']), flush=True)
+          print('Simulation measurements message on simQueue with timestamp: ' + str(message['timestamp']) + ', wall time: ' + str(datetime.utcfromtimestamp(int(message['timestamp'])).time()), flush=True)
           lastMeasMessage = message
       print('Simulation queue check finish', flush=True)
 
