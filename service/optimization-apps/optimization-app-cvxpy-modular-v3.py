@@ -197,6 +197,9 @@ class CompetingApp(GridAPPSD):
         self.clearSimQueue()
         self.simQueue.put(message['message'])
 
+        #self.clearCoopQueue()
+        #self.coopQueue.put(message['message'])
+
     else:
       # If doing non-real-time simulation remove the 5 second offset because
       # GridLAB-D outputs at even 60 second intervals
@@ -207,6 +210,9 @@ class CompetingApp(GridAPPSD):
         # only permit a single message at a time to be queued to not fall behind
         self.clearSimQueue()
         self.simQueue.put(message['message'])
+
+        #self.clearCoopQueue()
+        #self.coopQueue.put(message['message'])
 
 
   def OnSimLogMessage(self, header, message):
@@ -946,6 +952,7 @@ class CompetingApp(GridAPPSD):
   
         objective_batt_diff =  sum(self.p_batt_diff_cp[idx] for i in range(len(self.BatteriesInfo))) / (len(self.BatteriesInfo) * 1000000)
 
+        '''
         objective_pq_pv_diff =  0 
         for bus in self.SolarPVsInfo:
           idx = self.SolarPVsInfo[bus]['idx']
@@ -1014,9 +1021,10 @@ class CompetingApp(GridAPPSD):
                 self.Constraints.append(self.reg_taps_diff[idx] <=  1)
 
           objective_reg_diff = sum(self.reg_taps_diff[idx] for i in range(len_RegulatorsInfo)) / (len_RegulatorsInfo*32)
+        '''
 
-        #objective += ((self.coopCounter+1)**2) * 2 * (objective_batt_diff)
-        objective += ((self.coopCounter+1)**2) * 2 * (objective_pq_pv_diff + objective_batt_diff)
+        objective += ((self.coopCounter+1)**2) * 2 * (objective_batt_diff)
+        #objective += ((self.coopCounter+1)**2) * 2 * (objective_pq_pv_diff + objective_batt_diff)
         # objective += (self.coopCounter+1) * 0.01 * (objective_pq_pv_diff + objective_batt_diff + objective_reg_diff)
 
     else:
