@@ -2093,8 +2093,8 @@ class CompetingApp(GridAPPSD):
       exit()
 
     # flag for whether simulation is run in real-time
-    #self.realtimeFlag = True
-    self.realtimeFlag = False
+    self.realtimeFlag = True
+    #self.realtimeFlag = False
 
     self.simLogSubscribedFlag = True
     if not self.realtimeFlag:
