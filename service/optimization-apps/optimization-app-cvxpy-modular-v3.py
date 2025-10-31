@@ -450,7 +450,8 @@ class CompetingApp(GridAPPSD):
 
     # control whether cooperation responses are from an optimization or the
     # simple logic below
-    if False:
+    #if False:
+    if True:
       return
 
     # GDB 9/10/24: Here is the alternative support for cooperation via
@@ -1964,9 +1965,9 @@ class CompetingApp(GridAPPSD):
     '''
 
     # GDB 10/23/25: Bail now for cooperation so response isn't sent
-    if cooperationFlag:
-      self.difference_builder.clear()
-      return
+    #if cooperationFlag:
+    #  self.difference_builder.clear()
+    #  return
 
     if includeRegulatorsFlag or includeBatteriesFlag or includeSolarPVsPFlag:
       dispatch_message = self.difference_builder.get_message()
@@ -2093,8 +2094,8 @@ class CompetingApp(GridAPPSD):
       exit()
 
     # flag for whether simulation is run in real-time
-    self.realtimeFlag = True
-    #self.realtimeFlag = False
+    #self.realtimeFlag = True
+    self.realtimeFlag = False
 
     self.simLogSubscribedFlag = True
     if not self.realtimeFlag:
