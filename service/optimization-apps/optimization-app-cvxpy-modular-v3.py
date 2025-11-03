@@ -434,14 +434,7 @@ class CompetingApp(GridAPPSD):
 
     # Need to define the full optimization problem each time anything
     # changes for CVXPY to be happy
-    # GDB 9/9/24: Can't do a new optimization for cooperation because
-    # the objective function is non-linear/non-convex so we have an
-    # alternative workflow implementation for supporting cooperation in
-    # order to meet the FY24 deconfliction service deliverable
-    
-    print('BEFORE COOPERATION OPTIMIZATION', flush=True)
     self.optPerform(datetime.utcfromtimestamp(coopTime), cooperationFlag=True)
-    print('BACK FROM COOPERATION OPTIMIZATION', flush=True)
 
     # GDB 10/23/25: OLD COOPERATION RESPONSE CODE HERE THROUGH END OF FUNCTION
 
@@ -450,7 +443,6 @@ class CompetingApp(GridAPPSD):
 
     # control whether cooperation responses are from an optimization or the
     # simple logic below
-    #if False:
     if True:
       return
 
