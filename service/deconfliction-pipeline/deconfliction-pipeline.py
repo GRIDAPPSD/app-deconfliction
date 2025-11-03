@@ -2279,6 +2279,29 @@ class DeconflictionPipeline(GridAPPSD):
       self.coopCurrentSeries += 1
       self.coopCurrentFlag = True
 
+      # GDB 11/3/25: Only send proposed setpoints when there is a conflict
+      # between apps. This is breaking app cooperation optimizations without
+      # further work on the app side so for now comment this out and go with
+      # the full Resolution Vector as setup below.
+      '''
+      coopProposed = {}
+      for device, value in self.TargetResolutionVector.items():
+        # determine if there is conflict for this device
+        conflictFlag = False
+        setpoint = None
+        for app in self.ConflictMatrix[device]:
+          if setpoint!=None and setpoint!=self.ConflictMatrix[device][app][1]:
+            conflictFlag = True
+            break
+          setpoint = self.ConflictMatrix[device][app][1]
+
+        if conflictFlag:
+          if isinstance(value[1], complex):
+            coopProposed[device] = (value[0], (value[1].real, value[1].imag))
+          else:
+            coopProposed[device] = (value[0], value[1])
+      '''
+
       # can't serialize TargetResolutionVector that contains complex numbers
       # for SolarPV setpoints. Need to translate all of those to tuples
       coopProposed = copy.deepcopy(self.TargetResolutionVector)
