@@ -962,7 +962,6 @@ class CompetingApp(GridAPPSD):
         for mrid in self.BatteriesInfo:
           idx = self.BatteriesInfo[mrid]['idx']
           if self.p_batt_proposed[idx] != None:
-            print('DEBUG COOPERATION PRE-OPTIMIZATION device: ' + self.BatteriesInfo[mrid]['name'] + ', greedy: ' + str(self.p_batt_greedy[idx]) + ', proposed: ' + str(self.p_batt_proposed[idx]), flush=True)
             self.Constraints.append(self.p_batt_diff_cp[idx] >=    (self.p_batt[idx] - self.p_batt_proposed[idx]))
             self.Constraints.append(self.p_batt_diff_cp[idx] >= -1*(self.p_batt[idx] - self.p_batt_proposed[idx]))
             self.Constraints.append(self.p_batt_diff_cp[idx] >= -1e6)
@@ -975,8 +974,6 @@ class CompetingApp(GridAPPSD):
         objective_pq_pv_diff =  0 
         for bus in self.SolarPVsInfo:
           idx = self.SolarPVsInfo[bus]['idx']
-          print('DEBUG COOPERATION PRE-OPTIMIZATION device: ' + self.SolarPVsInfo[bus]['name'] + ', greedy p: ' + str(self.p_pv_greedy[idx]) + ', proposed p: ' + str(self.pq_pv_proposed[idx].real), flush=True)
-          print('DEBUG COOPERATION PRE-OPTIMIZATION device: ' + self.SolarPVsInfo[bus]['name'] + ', greedy q: ' + str(self.q_pv_greedy[idx]) + ', proposed q: ' + str(self.pq_pv_proposed[idx].imag), flush=True)
           if 'A' in self.SolarPVsInfo[bus]['phase'] and self.pq_pv_proposed[idx] != None:
             self.Constraints.append(self.p_pv_A_diff[idx] >=    (self.p_pv_A[idx] - self.pq_pv_proposed[idx].real))
             self.Constraints.append(self.p_pv_A_diff[idx] >= -1*(self.p_pv_A[idx] - self.pq_pv_proposed[idx].real))
@@ -1033,11 +1030,6 @@ class CompetingApp(GridAPPSD):
         if self.includeRegulatorsFlag:
           len_RegulatorsInfo = len(self.RegulatorsInfo)
           
-          for reg in self.RegulatorsInfo:
-            idx = self.RegulatorsInfo[reg]['idx']
-            if self.reg_proposed[idx] != None:
-              print('DEBUG COOPERATION PRE-OPTIMIZATION device: ' + self.RegulatorsInfo[reg]['name'] + ', greedy: ' + str(self.reg_greedy[idx]) + ', proposed: ' + str(self.reg_proposed[idx]), flush=True)
-
           for idx in range(len_RegulatorsInfo):
             if self.reg_proposed[idx] != None:
               tap_proposed = self.reg_proposed[idx] + 16
@@ -1048,7 +1040,6 @@ class CompetingApp(GridAPPSD):
 
           objective_reg_diff = sum(self.reg_taps_diff[idx] for i in range(len_RegulatorsInfo)) / (len_RegulatorsInfo*32)
 
-        #objective += ((self.coopCounter+1)**2) * 2 * (objective_batt_diff)
         objective += ((self.coopCounter+1)**2) * 2 * (objective_pq_pv_diff + objective_batt_diff + objective_reg_diff)
         # objective += (self.coopCounter+1) * 0.01 * (objective_pq_pv_diff + objective_batt_diff + objective_reg_diff)
 
@@ -1876,6 +1867,7 @@ class CompetingApp(GridAPPSD):
 
         if cooperationFlag:
           # make sure regtap falls within the greedy..proposed range
+          opttap = regtap
           mintap = min(self.reg_greedy[idx], self.reg_proposed[idx])
           maxtap = max(self.reg_greedy[idx], self.reg_proposed[idx])
           if regtap < mintap:
@@ -1892,7 +1884,7 @@ class CompetingApp(GridAPPSD):
           # set reg_greedy with every optimization based on measurements
           self.reg_greedy[idx] = regtap
         else:
-          print('DEBUG COOPERATION OPTIMIZATION device: ' + name + ', greedy: ' + str(self.reg_greedy[idx]) + ', proposed: ' + str(self.reg_proposed[idx]) + ', compromise: ' + str(regtap), flush=True)
+          print('COOPERATION OPTIMIZATION device: ' + name + ', greedy: ' + str(self.reg_greedy[idx]) + ', proposed: ' + str(self.reg_proposed[idx]) + ', optimized: '  + str(opttap) +', compromise: ' + str(regtap), flush=True)
 
       if not cooperationFlag:
         print(tabulate(regulator_taps, headers=['Regulator', 'Tap', 'b_i'],
@@ -1903,7 +1895,12 @@ class CompetingApp(GridAPPSD):
       for mrid in self.BatteriesInfo:
         idx = self.BatteriesInfo[mrid]['idx']
         name = self.BatteriesInfo[mrid]['name']
-        self.BatteriesInfo[mrid]['SoC'] = self.soc[idx].value
+
+        # GDB 11/3/25: Monish found this problemmatic line of code setting the
+        # Soc value to the optimized solution value. This breaks cooperation
+        # optimizations (infeasible solutions) and shouldn't be needed.
+        #self.BatteriesInfo[mrid]['SoC'] = self.soc[idx].value
+
         # new value before old value for DifferenceBuilder
         # note the optimized p_batt value is negated for the GridLAB-D
         # DifferenceBuilder message
@@ -1916,7 +1913,7 @@ class CompetingApp(GridAPPSD):
           # set p_batt_greedy with every optimization based on measurements
           self.p_batt_greedy[idx] = self.p_batt[idx].value
         else:
-          print('DEBUG COOPERATION OPTIMIZATION device: ' + name + ', greedy: ' + str(self.p_batt_greedy[idx]) + ', proposed: ' + str(self.p_batt_proposed[idx]) + ', compromise: ' + str(self.p_batt[idx].value), flush=True)
+          print('COOPERATION OPTIMIZATION device: ' + name + ', greedy: ' + str(self.p_batt_greedy[idx]) + ', proposed: ' + str(self.p_batt_proposed[idx]) + ', compromise: ' + str(self.p_batt[idx].value), flush=True)
 
       if not cooperationFlag:
         print(tabulate(p_batt_setpoints, headers=['Battery', 'P_batt (kW)', 'Target SoC'], tablefmt='psql'), flush=True)
@@ -1945,8 +1942,8 @@ class CompetingApp(GridAPPSD):
           self.p_pv_greedy[idx] = total_p
           self.q_pv_greedy[idx] = total_q
         else:
-          print('DEBUG COOPERATION OPTIMIZATION device: ' + name + ', greedy p: ' + str(self.p_pv_greedy[idx]) + ', proposed p: ' + str(self.pq_pv_proposed[idx].real) + ', compromise: ' + str(total_p), flush=True)
-          print('DEBUG COOPERATION OPTIMIZATION device: ' + name + ', greedy q: ' + str(self.q_pv_greedy[idx]) + ', proposed q: ' + str(self.pq_pv_proposed[idx].imag) + ', compromise: ' + str(total_q), flush=True)
+          print('COOPERATION OPTIMIZATION device: ' + name + ', greedy p: ' + str(self.p_pv_greedy[idx]) + ', proposed p: ' + str(self.pq_pv_proposed[idx].real) + ', compromise: ' + str(total_p), flush=True)
+          print('COOPERATION OPTIMIZATION device: ' + name + ', greedy q: ' + str(self.q_pv_greedy[idx]) + ', proposed q: ' + str(self.pq_pv_proposed[idx].imag) + ', compromise: ' + str(total_q), flush=True)
 
       if not cooperationFlag:
         print(tabulate(pq_pv_setpoints,headers=['SolarPV', 'bus','Total p (kW)',
