@@ -856,7 +856,7 @@ class CompetingApp(GridAPPSD):
     ts_datetime_lastopt = datetime.utcfromtimestamp(self.ts_last_opt[0])
 
     self.Constraints = []
-    print('Starting Problem Formulation for App consdering opt_time {}, last opt_time {}... '.format(ts_datetime, ts_datetime_lastopt), flush=True)
+    print('Starting Problem Formulation for App considering opt_time {}, last opt_time {}... '.format(ts_datetime, ts_datetime_lastopt), flush=True)
 
     if self.includeBatteriesFlag:
       self.optConstraintsDERWithBatteries(self.BatteriesInfo, self.deltaT,
@@ -1884,7 +1884,11 @@ class CompetingApp(GridAPPSD):
           # set reg_greedy with every optimization based on measurements
           self.reg_greedy[idx] = regtap
         else:
-          print('COOPERATION OPTIMIZATION device: ' + name + ', greedy: ' + str(self.reg_greedy[idx]) + ', proposed: ' + str(self.reg_proposed[idx]) + ', optimized: '  + str(opttap) +', compromise: ' + str(regtap), flush=True)
+          if opttap != self.reg_greedy[idx]:
+            print('COOPERATION YES device: ' + name + ', greedy: ' + str(self.reg_greedy[idx]) + ', proposed: ' + str(self.reg_proposed[idx]) + ', optimized: '  + str(opttap) +', compromise: ' + str(regtap), flush=True)
+          else:
+            print('COOPERATION NO device: ' + name + ', greedy: ' + str(self.reg_greedy[idx]) + ', proposed: ' + str(self.reg_proposed[idx]) + ', optimized: '  + str(opttap) +', compromise: ' + str(regtap), flush=True)
+
           # uncomment this if we want to match how the deconfliction service
           # handles cooperation responses regarding Conflict Matrix updates
           #self.reg_greedy[idx] = regtap
@@ -1916,7 +1920,10 @@ class CompetingApp(GridAPPSD):
           # set p_batt_greedy with every optimization based on measurements
           self.p_batt_greedy[idx] = self.p_batt[idx].value
         else:
-          print('COOPERATION OPTIMIZATION device: ' + name + ', greedy: ' + str(self.p_batt_greedy[idx]) + ', proposed: ' + str(self.p_batt_proposed[idx]) + ', compromise: ' + str(self.p_batt[idx].value), flush=True)
+          if abs(self.p_batt[idx].value - self.p_batt_greedy[idx]) > 1e-3:
+            print('COOPERATION YES device: ' + name + ', greedy: ' + str(self.p_batt_greedy[idx]) + ', proposed: ' + str(self.p_batt_proposed[idx]) + ', compromise: ' + str(self.p_batt[idx].value), flush=True)
+          else:
+            print('COOPERATION NO device: ' + name + ', greedy: ' + str(self.p_batt_greedy[idx]) + ', proposed: ' + str(self.p_batt_proposed[idx]) + ', compromise: ' + str(self.p_batt[idx].value), flush=True)
           # uncomment this if we want to match how the deconfliction service
           # handles cooperation responses regarding Conflict Matrix updates
           #self.p_batt_greedy[idx] = self.p_batt[idx].value
@@ -1948,8 +1955,16 @@ class CompetingApp(GridAPPSD):
           self.p_pv_greedy[idx] = total_p
           self.q_pv_greedy[idx] = total_q
         else:
-          print('COOPERATION OPTIMIZATION device: ' + name + ', greedy p: ' + str(self.p_pv_greedy[idx]) + ', proposed p: ' + str(self.pq_pv_proposed[idx].real) + ', compromise: ' + str(total_p), flush=True)
-          print('COOPERATION OPTIMIZATION device: ' + name + ', greedy q: ' + str(self.q_pv_greedy[idx]) + ', proposed q: ' + str(self.pq_pv_proposed[idx].imag) + ', compromise: ' + str(total_q), flush=True)
+          if abs(total_p - self.p_pv_greedy[idx]) > 1e-3:
+            print('COOPERATION YES device: ' + name + ', greedy p: ' + str(self.p_pv_greedy[idx]) + ', proposed p: ' + str(self.pq_pv_proposed[idx].real) + ', compromise: ' + str(total_p), flush=True)
+          else:
+            print('COOPERATION NO device: ' + name + ', greedy p: ' + str(self.p_pv_greedy[idx]) + ', proposed p: ' + str(self.pq_pv_proposed[idx].real) + ', compromise: ' + str(total_p), flush=True)
+
+          if abs(total_q - self.q_pv_greedy[idx]) > 1e-3:
+            print('COOPERATION YES device: ' + name + ', greedy q: ' + str(self.q_pv_greedy[idx]) + ', proposed q: ' + str(self.pq_pv_proposed[idx].imag) + ', compromise: ' + str(total_q), flush=True)
+          else:
+            print('COOPERATION NO device: ' + name + ', greedy q: ' + str(self.q_pv_greedy[idx]) + ', proposed q: ' + str(self.pq_pv_proposed[idx].imag) + ', compromise: ' + str(total_q), flush=True)
+
           # uncomment this if we want to match how the deconfliction service
           # handles cooperation responses regarding Conflict Matrix updates
           #self.p_pv_greedy[idx] = total_p
