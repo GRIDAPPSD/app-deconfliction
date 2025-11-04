@@ -1032,7 +1032,8 @@ class CompetingApp(GridAPPSD):
 
           objective_reg_diff = sum(self.reg_taps_diff[idx] for i in range(len_RegulatorsInfo)) / (len_RegulatorsInfo*32)
 
-        objective += ((self.coopCounter+1)**2) * 2 * (objective_pq_pv_diff + objective_batt_diff + objective_reg_diff)
+        objective += ((self.coopCounter+1)**2) * (objective_pq_pv_diff + objective_batt_diff + objective_reg_diff)
+        #objective += ((self.coopCounter+1)**2) * 2 * (objective_pq_pv_diff + objective_batt_diff + objective_reg_diff)
         # objective += (self.coopCounter+1) * 0.01 * (objective_pq_pv_diff + objective_batt_diff + objective_reg_diff)
 
     else:
