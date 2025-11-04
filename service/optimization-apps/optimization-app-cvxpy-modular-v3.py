@@ -290,6 +290,7 @@ class CompetingApp(GridAPPSD):
     # coopCounter allows diminishing cooperation with each succeeding
     # cooperation message solicitation within a series
     self.coopCounter = 0
+    self.lastMeasurements = None
 
     while True:
       while self.coopQueue.empty():
@@ -334,7 +335,11 @@ class CompetingApp(GridAPPSD):
         #ts_unix = int(lastMeasMessage['timestamp'])
         #ts_time = datetime.utcfromtimestamp(ts_unix).time()
         # process new measurements
-        self.processMeasMessage(lastMeasMessage['measurements'])
+        #self.processMeasMessage(lastMeasMessage['measurements'])
+        # GDB 11/4/25: defer updates based on new measurements until the
+        # cooperation series changes to avoid changing the underlying
+        # cooperation optmization problem
+        self.lastMeasurements = lastMeasMessage['measurements']
 
       if lastCoopMessage != None:
         if self.includeBatteriesFlag or self.includeRegulatorsFlag or \
@@ -350,6 +355,14 @@ class CompetingApp(GridAPPSD):
             else:
               self.coopSeries = checkSeries
               self.coopCounter = 0
+
+              # GDB 11/4/25: defer updates based on new measurements until the
+              # cooperation series changes to avoid changing the underlying
+              # cooperation optmization problem. Now is the spot the updates
+              # have been deferred to.
+              if self.lastMeasurements != None:
+                self.processMeasMessage(self.lastMeasurements)
+                self.lastMeasurements = None
 
             ##print('Processing Cooperation message with series: ' +
             ##      str(checkSeries), flush=True)
