@@ -948,8 +948,7 @@ class CompetingApp(GridAPPSD):
       ########### Cooperation Process ###########
       if cooperationFlag:
       #if False:
-        
-        print('Adding cooperation objectives at time {}, Cooperation Counter - {}'.format(ts_datetime, self.coopCounter+1),flush=True)
+        print('Adding cooperation objectives at time {}, Cooperation Counter - {}'.format(ts_datetime, self.coopCounter+1), flush=True)
         
         for mrid in self.BatteriesInfo:
           idx = self.BatteriesInfo[mrid]['idx']
@@ -962,6 +961,8 @@ class CompetingApp(GridAPPSD):
             self.Constraints.append(self.p_batt[idx] >= min(self.p_batt_greedy[idx], self.p_batt_proposed[idx]))
   
         objective_batt_diff =  sum(self.p_batt_diff_cp[idx] for i in range(len(self.BatteriesInfo))) / (len(self.BatteriesInfo) * 1000000)
+
+        objective_coop = objective_batt_diff
 
         objective_pq_pv_diff =  0 
         for bus in self.SolarPVsInfo:
@@ -1018,6 +1019,8 @@ class CompetingApp(GridAPPSD):
             objective_pq_pv_diff += self.p_pv_C_diff[idx] + self.q_pv_C_diff[idx]
 
         objective_pq_pv_diff = objective_pq_pv_diff / (len(self.SolarPVsInfo) * 1000000)
+
+        objective_coop += objective_pq_pv_diff
         
         if self.includeRegulatorsFlag:
           len_RegulatorsInfo = len(self.RegulatorsInfo)
@@ -1032,9 +1035,13 @@ class CompetingApp(GridAPPSD):
 
           objective_reg_diff = sum(self.reg_taps_diff[idx] for i in range(len_RegulatorsInfo)) / (len_RegulatorsInfo*32)
 
-        objective += ((self.coopCounter+1)**2) * (objective_pq_pv_diff + objective_batt_diff + objective_reg_diff)
-        #objective += ((self.coopCounter+1)**2) * 2 * (objective_pq_pv_diff + objective_batt_diff + objective_reg_diff)
-        # objective += (self.coopCounter+1) * 0.01 * (objective_pq_pv_diff + objective_batt_diff + objective_reg_diff)
+          objective_coop += objective_reg_diff
+
+        # use the objective with the coopCounter multiplier if the greedy
+        # setpoints aren't updated for cooperation responses in optDispatch
+        # and the objective without coopCounter if greedy setpoints are updated
+        objective += ((self.coopCounter+1)**2) * objective_coop
+        #objective += objective_coop
 
     else:
       if self.objectiveResilienceFlag:
@@ -1878,6 +1885,9 @@ class CompetingApp(GridAPPSD):
           self.reg_greedy[idx] = regtap
         else:
           print('COOPERATION OPTIMIZATION device: ' + name + ', greedy: ' + str(self.reg_greedy[idx]) + ', proposed: ' + str(self.reg_proposed[idx]) + ', optimized: '  + str(opttap) +', compromise: ' + str(regtap), flush=True)
+          # uncomment this if we want to match how the deconfliction service
+          # handles cooperation responses regarding Conflict Matrix updates
+          #self.reg_greedy[idx] = regtap
 
       if not cooperationFlag:
         print(tabulate(regulator_taps, headers=['Regulator', 'Tap', 'b_i'],
@@ -1907,6 +1917,9 @@ class CompetingApp(GridAPPSD):
           self.p_batt_greedy[idx] = self.p_batt[idx].value
         else:
           print('COOPERATION OPTIMIZATION device: ' + name + ', greedy: ' + str(self.p_batt_greedy[idx]) + ', proposed: ' + str(self.p_batt_proposed[idx]) + ', compromise: ' + str(self.p_batt[idx].value), flush=True)
+          # uncomment this if we want to match how the deconfliction service
+          # handles cooperation responses regarding Conflict Matrix updates
+          #self.p_batt_greedy[idx] = self.p_batt[idx].value
 
       if not cooperationFlag:
         print(tabulate(p_batt_setpoints, headers=['Battery', 'P_batt (kW)', 'Target SoC'], tablefmt='psql'), flush=True)
@@ -1937,6 +1950,10 @@ class CompetingApp(GridAPPSD):
         else:
           print('COOPERATION OPTIMIZATION device: ' + name + ', greedy p: ' + str(self.p_pv_greedy[idx]) + ', proposed p: ' + str(self.pq_pv_proposed[idx].real) + ', compromise: ' + str(total_p), flush=True)
           print('COOPERATION OPTIMIZATION device: ' + name + ', greedy q: ' + str(self.q_pv_greedy[idx]) + ', proposed q: ' + str(self.pq_pv_proposed[idx].imag) + ', compromise: ' + str(total_q), flush=True)
+          # uncomment this if we want to match how the deconfliction service
+          # handles cooperation responses regarding Conflict Matrix updates
+          #self.p_pv_greedy[idx] = total_p
+          #self.q_pv_greedy[idx] = total_q
 
       if not cooperationFlag:
         print(tabulate(pq_pv_setpoints,headers=['SolarPV', 'bus','Total p (kW)',
