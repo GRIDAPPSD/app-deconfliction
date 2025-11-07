@@ -409,10 +409,11 @@ class CompetingApp(GridAPPSD):
     # alternative workflow implementation for supporting cooperation in
     # order to meet the FY24 deconfliction service deliverable
 
+    '''
     print('BEFORE COOPERATION RESPONSE OPTIMIZATION', flush=True)
     self.optPerform(datetime.utcfromtimestamp(coopTime), cooperationFlag=True)
-    #sleep(5)
     print('AFTER COOPERATION RESPONSE OPTIMIZATION', flush=True)
+    '''
 
     #print('DECONFLICTOR COOPERATE p_batt_greedy: ' + str(self.p_batt_greedy), flush=True)
     #print('DECONFLICTOR COOPERATE p_batt_proposed: ' + str(self.p_batt_proposed), flush=True)
@@ -1905,8 +1906,8 @@ class CompetingApp(GridAPPSD):
       # so the optimization time is safely shorter than the time between
       # optimizations--otherwise the queue draining won't work right.
       #self.optIntervalSec = 1800
-      #self.optIntervalSec = 3600
-      self.optIntervalSec = 7200
+      self.optIntervalSec = 3600
+      #self.optIntervalSec = 7200
       simLagSec = 600
 
     if self.opt_type!='scalability' and interval!=None:
