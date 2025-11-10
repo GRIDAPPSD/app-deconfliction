@@ -1874,20 +1874,30 @@ class DeconflictionPipeline(GridAPPSD):
       return False
 
     if meas_msg_flag and self.coopCurrentFlag:
-      if self.coopTimestamp == timestamp:
+      # the situation here is that a measurement-based setpoint request has
+      # been received during active cooperation based on previous setpoint
+      # requests. This is going to start a new stage of cooperation, but
+      # the question is whether to conclude the current cooperation stage
+      # and dispatch setpoint requests to devices first or just ignore the
+      # current cooperation (by not dispatching) and move on to the new
+      # cooperation stage. It is tempting to base this on whether there have
+      # been any cooperation responses with the thinking this should mean better
+      # results. But, since you can never count on any cooperation by apps
+      # doing this could lead to never dispatching setpoints by always kicking
+      # the can down the road. One safe assumption though is that if the new
+      # measurement-based setpoint request comes from the same timestamp as
+      # the one that is being for cooperation, it is safe to start the next
+      # cooperation stage without a dispatch first.
+      if self.lastMeasTimestamp == timestamp:
         prlog('>>> ProcessSetpointsMessage--special case skipping device ' +
-              'dispatch for MEAS message with running COOPERATION initiated ' +
-              'for same timestamp: ' + str(timestamp))
+              'dispatch for MEAS message with running COOPERATION based on ' +
+              'the same timestamp: ' + str(timestamp))
 
       else:
-        # checking for coopTimestamp!=timestamp fixes a special case where we've
-        # already ended the last series of cooperation but then more meas
-        # messages arrive and we don't want to immediately do further dispatches
         prlog('>>> ProcessSetpointsMessage--conclude running COOPERATION ' +
-              'series with new MEAS message received, coopTimestamp: ' +
-              str(self.coopTimestamp))
+              'series with new MEAS message received since lastMeasTimestamp: '
+              + str(self.lastMeasTimestamp))
 
-        self.coopTimestamp = 0
         self.coopCurrentFlag = False
 
         # GDB 9/10/25: If we don't want to do the device dispatch if cooperation
@@ -1981,7 +1991,7 @@ class DeconflictionPipeline(GridAPPSD):
           self.pltFile.write(',AppCounts:' + str(self.AppCoopCount))
           self.pltFile.write(',Series:')
           self.pltFile.write(str(self.coopCurrentSeries))
-          self.pltFile.write(',Reason:New_Optimization_Setpoints')
+          self.pltFile.write(',Reason:New_Measurements_Based_Setpoints')
           self.pltFile.write('\n')
 
         # Published IEEE Access Foundational Paper Reference:
@@ -2018,6 +2028,9 @@ class DeconflictionPipeline(GridAPPSD):
         self.AppCoopCount[app_name] += 1
       else:
         self.AppCoopCount[app_name] = 1
+
+    if meas_msg_flag:
+      self.lastMeasTimestamp = timestamp
 
     # set_points are the forward_differences part of the DifferenceBuilder
     # message with keys of object, attribute, and value
@@ -2154,7 +2167,6 @@ class DeconflictionPipeline(GridAPPSD):
       self.ResolutionVector = newResolutionVector
 
       # zero the cooperation timestamp to indicate no active cooperation
-      self.coopTimestamp = 0
       self.coopCurrentFlag = False
       # reset running minimums for conflict metric and matrix
       self.minConflictMetric = 1.0
@@ -2325,7 +2337,6 @@ class DeconflictionPipeline(GridAPPSD):
       #self.logConflictPV('coop kickoff')
 
       # set the cooperation timestamp to indicate when cooperation was initiated
-      self.coopTimestamp = timestamp
       prlog('DeconflictSetpoints--finished processing, timestamp: ' +
             str(timestamp))
       return
@@ -2415,7 +2426,6 @@ class DeconflictionPipeline(GridAPPSD):
       return
 
     # zero the cooperation timestamp to indicate no active cooperation
-    self.coopTimestamp = 0
     self.coopCurrentFlag = False
 
     # flag for whether to conclude cooperation the first time the % conflict
@@ -2655,9 +2665,9 @@ class DeconflictionPipeline(GridAPPSD):
     else:
       # if attempting non-real-time, something like 1800 is reasonable so
       # apps can complete optimizations safely within that interval
+      # For service paper use 30 minutes. For scalability runs use 1 hour
       #optIntervalSec = 1800 # 30 minutes
       optIntervalSec = 3600 # 1 hour
-      #optIntervalSec = 7200 # 2 hour
       simLagSec = 600
 
     if interval!=None and interval!='scalability':
@@ -2699,7 +2709,7 @@ class DeconflictionPipeline(GridAPPSD):
     # initialize conflict metric
     self.conflictMetric = 0.0
     # initialize combination cooperation timestamp and control flag
-    self.coopTimestamp = 0
+    self.lastMeasTimestamp = 0
     self.coopResponseCounter = 0
     self.coopConflictFlag = False
     # initialize running cooperation minimums for conflict metric and matrix
