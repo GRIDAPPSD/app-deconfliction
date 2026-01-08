@@ -2761,7 +2761,7 @@ class DeconflictionPipeline(GridAPPSD):
     self.rulesBattTimeInterval = 60*15 # every 15 minutes
     # number of changes between charging and discharging, and vice versa,
     # allowed in the rolling time interval
-    self.rulesBattSwitchesAllowed = 1
+    self.rulesBattSwitchesAllowed = 10
     self.rulesRegOuterTimeInterval = 60*10 # every 10 minutes
     self.rulesRegOuterStepsAllowed = 16
     self.rulesRegInnerTimeInterval = 30
@@ -2770,7 +2770,7 @@ class DeconflictionPipeline(GridAPPSD):
     # assume a non-realtime simulation will be longer and adjust rules
     if not self.realtimeFlag:
       self.rulesBattTimeInterval = 60*60*4 # every 4 hours
-      self.rulesBattSwitchesAllowed = 1
+      self.rulesBattSwitchesAllowed = 10
       self.rulesRegOuterTimeInterval = 60*60*6 # every 6 hours
       self.rulesRegOuterStepsAllowed = 8
 
