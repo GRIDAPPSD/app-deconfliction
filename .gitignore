@@ -1,3 +1,6 @@
 __pycache__
 output
 log
+# pixi environments
+.pixi/*
+!.pixi/config.toml

@@ -1,0 +1,26 @@
+[project]
+authors = [{name = "Andrew R Fisher", email = "andrew.fisher@pnnl.gov"}]
+dependencies = [ "cvxpy[cbc,cvxopt,glop,glpk]>=1.7.5,<2", "cim-graph>=0.5.0a4,<0.6"]
+name = "app-deconfliction"
+requires-python = ">= 3.10"
+version = "0.1.0"
+
+[build-system]
+build-backend = "hatchling.build"
+requires = ["hatchling"]
+
+[tool.pixi.workspace]
+channels = ["conda-forge"]
+platforms = ["linux-64"]
+
+[tool.pixi.pypi-dependencies]
+app_deconfliction = { path = ".", editable = true }
+
+[tool.pixi.tasks]
+
+[tool.pixi.dependencies]
+python = "==3.10"
+numpy = ">=2.2.6,<3"
+tabulate = ">=0.10.0,<0.11"
+pulp = ">=2.8.0,<3"
+pandas = ">=2.3.3,<3"

@@ -2,6 +2,7 @@
 import math
 import numpy as np
 
+import cimgraph.data_profile.cimhub_2023 as cim
 import MethodUtil
 
 
@@ -26,32 +27,32 @@ class AppUtil:
     #prlog('regulator_query results bindings: ' + str(bindings), sparql_mgr.logFile)
     prlog('\nCount of Regulators: ' + str(len(bindings)), sparql_mgr.logFile)
     for obj in bindings:
-      devid = obj['rid']['value']
-      eqid = obj['pid']['value']
+      devid = obj['rid']
+      eqid = obj['pid']
       RegulatorMap[eqid] = devid
 
-      name = 'RatioTapChanger.' + obj['pname']['value']
+      name = 'RatioTapChanger.' + obj['pname']
       if 'tname' in obj:
-        eqid = obj['tid']['value']
-        name = 'RatioTapChanger.' + obj['tname']['value']
+        eqid = obj['tid']
+        name = 'RatioTapChanger.' + obj['tname']
       if 'phs' in obj:
-        phases = obj['phs']['value']
+        phases = obj['phs']
       else:
         phases = 'ABC'
 
       Regulators[devid] = {}
       Regulators[devid]['phase'] = phases
       Regulators[devid]['name'] = name
-      Regulators[devid]['step'] = int(obj['step']['value'])
-      Regulators[devid]['highStep'] = int(obj['highStep']['value'])
-      Regulators[devid]['lowStep'] = int(obj['lowStep']['value'])
-      Regulators[devid]['increment'] = float(obj['incr']['value'])
+      Regulators[devid]['step'] = int(obj['step'])
+      Regulators[devid]['highStep'] = int(obj['highStep'])
+      Regulators[devid]['lowStep'] = int(obj['lowStep'])
+      Regulators[devid]['increment'] = float(obj['incr'])
       prlog('Regulator devid: ' + devid + ', name: ' + name + ', phase: ' + Regulators[devid]['phase'] + ', step: ' + str(Regulators[devid]['step']), sparql_mgr.logFile)
       MethodUtil.DeviceToName[devid] = name
       MethodUtil.NameToDevice[name] = devid
 
     # Add measid key to Regulators for matching sim measurements
-    objs = sparql_mgr.obj_meas_export('PowerTransformer')
+    objs = sparql_mgr.obj_meas_export(cim.PowerTransformer)
     prlog('Count of PowerTransformer Meas: ' + str(len(objs)), sparql_mgr.logFile)
     matches = 0
     attempts = 0
@@ -65,6 +66,7 @@ class AppUtil:
         #  Regulators[RegulatorMap[item['eqid']]]['measid'] = item['measid']
         #  matches += 1
         nameToMatch = 'RatioTapChanger.' + item['eqname']
+        
         for devid in Regulators:
           shortName = Regulators[devid]['name'][:-1]
           if Regulators[devid]['name'] == nameToMatch:
@@ -91,16 +93,16 @@ class AppUtil:
     prlog('\nCount of Combine Regulators: ' + str(len(bindings)), sparql_mgr.logFile)
     reg_idx = 0
     for obj in bindings:
-      devid = obj['rid']['value']
-      pname = obj['pname']['value']
+      devid = obj['rid']
+      pname = obj['pname']
       if 'phs' in obj:
-        phases = obj['phs']['value']
+        phases = obj['phs']
       else:
         phases = 'ABC'
 
       if 'tname' in obj:
         #mrid = obj['tid']['value']
-        name = 'RatioTapChanger.' + obj['tname']['value']
+        name = 'RatioTapChanger.' + obj['tname']
       else:
         #mrid = obj['pid']['value']
         name = 'RatioTapChanger.' + pname
@@ -123,26 +125,26 @@ class AppUtil:
     BatteriesInfo = {}
     BatteriesBus = {}
     bindings = sparql_mgr.battery_query()
-    #prlog('battery_query results bindings: ' + str(bindings), sparql_mgr.logFile)
+    prlog('battery_query results bindings: ' + str(bindings), sparql_mgr.logFile)
     prlog('\nCount of Batteries: ' + str(len(bindings)), sparql_mgr.logFile)
     idx = 0
     for obj in bindings:
-      devid = obj['id']['value']
-      eqid = obj['pecid']['value']
+      devid = obj['id']
+      eqid = obj['pecid']
       BatteryMap[eqid] = devid
 
       BatteriesInfo[devid] = {}
-      name = 'BatteryUnit.' + obj['name']['value']
+      name = 'BatteryUnit.' + obj['name']
       BatteriesInfo[devid]['name'] = name
       BatteriesInfo[devid]['idx'] = idx
-      bus = obj['bus']['value']
+      bus = obj['bus']
       BatteriesInfo[devid]['bus'] = bus
-      phase = obj['phases']['value']
+      phase = obj['phases'][0]
       BatteriesInfo[devid]['phase'] = phase
-      BatteriesInfo[devid]['ratedkW'] = float(obj['ratedS']['value'])/1000.0
-      BatteriesInfo[devid]['prated'] = float(obj['ratedS']['value'])
-      BatteriesInfo[devid]['ratedE'] = float(obj['ratedE']['value'])
-      BatteriesInfo[devid]['SoC'] = float(obj['storedE']['value'])/float(obj['ratedE']['value'])
+      BatteriesInfo[devid]['ratedkW'] = float(obj['ratedS'])/1000.0
+      BatteriesInfo[devid]['prated'] = float(obj['ratedS'])
+      BatteriesInfo[devid]['ratedE'] = float(obj['ratedE'])
+      BatteriesInfo[devid]['SoC'] = float(obj['storedE'])/float(obj['ratedE'])
       # eff_c and eff_d don't come from the query, but they are used throughout
       # and this is a convenient point to assign them along with query results
       BatteriesInfo[devid]['eff'] = 0.975 * 0.86
@@ -159,13 +161,14 @@ class AppUtil:
       MethodUtil.NameToDevice[name] = devid
 
     # Add measid key to BatteriesInfo for matching sim measurements
-    objs = sparql_mgr.obj_meas_export('PowerElectronicsConnection')
-    for item in objs:
-      if item['eqid'] in BatteryMap:
-        if item['type'] == 'VA':
-          BatteriesInfo[BatteryMap[item['eqid']]]['P_batt_measid'] = item['measid']
-        elif item['type'] == 'SoC':
-          BatteriesInfo[BatteryMap[item['eqid']]]['SoC_measid'] = item['measid']
+    if len(bindings) > 0:
+        objs = sparql_mgr.obj_meas_export(cim.PowerElectronicsConnection)
+        for item in objs:
+            if item['eqid'] in BatteryMap:
+                if item['type'] == 'VA':
+                    BatteriesInfo[BatteryMap[item['eqid']]]['P_batt_measid'] = item['measid']
+                elif item['type'] == 'SoC':
+                    BatteriesInfo[BatteryMap[item['eqid']]]['SoC_measid'] = item['measid']
 
     return (BatteriesInfo, BatteriesBus)
 
@@ -208,7 +211,7 @@ class AppUtil:
         #feeder_power['q'][phases] += qval
 
     # Add measid key to EnergyConsumers for matching sim measurements
-    objs = sparql_mgr.obj_meas_export('EnergyConsumer')
+    objs = sparql_mgr.obj_meas_export(cim.EnergyConsumer)
     prlog('Count of EnergyConsumers Meas: ' + str(len(objs)), sparql_mgr.logFile)
     for item in objs:
       if item['type'] == 'VA':
@@ -224,16 +227,16 @@ class AppUtil:
     prlog('\nCount of SolarPV: ' + str(len(bindings)), sparql_mgr.logFile)
     idx = 0
     for obj in bindings:
-      name = 'PhotovoltaicUnit.' + obj['name']['value']
-      bus = obj['bus']['value'].upper()
-      devid = obj['id']['value']
-      #ratedU = float(obj['ratedU']['value'])
-      ratedS = float(obj['ratedS']['value'])
+      name = 'PhotovoltaicUnit.' + obj['name']
+      bus = obj['bus'].upper()
+      devid = obj['id']
+      #ratedU = float(obj['ratedU'])
+      ratedS = float(obj['ratedS'])
       SolarPVsInfo[bus] = {}
-      SolarPVsInfo[bus]['kW'] = float(obj['p']['value'])/1000.0
-      SolarPVsInfo[bus]['kVar'] = float(obj['q']['value'])/1000.0
-      SolarPVsInfo[bus]['p'] = float(obj['p']['value'])
-      SolarPVsInfo[bus]['phase'] = obj['phases']['value']
+      SolarPVsInfo[bus]['kW'] = float(obj['p'])/1000.0
+      SolarPVsInfo[bus]['kVar'] = float(obj['q'])/1000.0
+      SolarPVsInfo[bus]['p'] = float(obj['p'])
+      SolarPVsInfo[bus]['phase'] = obj['phases'][0]
       SolarPVsInfo[bus]['ratedS'] = ratedS
       SolarPVsInfo[bus]['mrid'] = devid
       SolarPVsInfo[bus]['name'] = name
@@ -248,7 +251,7 @@ class AppUtil:
       MethodUtil.NameToDevice[name] = devid
 
     # Add measid key to SolarPVsInfo for matching sim measurements
-    objs = sparql_mgr.obj_meas_export('PowerElectronicsConnection')
+    objs = sparql_mgr.obj_meas_export(cim.PowerElectronicsConnection)
     prlog('Count of PowerElectronicsConnections Meas: ' + str(len(objs)),
           sparql_mgr.logFile)
     for item in objs:

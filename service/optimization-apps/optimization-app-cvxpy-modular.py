@@ -2124,9 +2124,9 @@ class CompetingApp(GridAPPSD):
     bindings = sparql_mgr.tank_transformer_connectivity_query()
     print('\nCount of TankTransformers: ' + str(len(bindings)), flush=True)
     for obj in bindings:
-        name = obj['xfmr_name']['value']
-        bus = obj['bus']['value'].upper()
-        phase = obj['phase']['value']
+        name = obj['xfmr_name']
+        bus = obj['bus'].upper()
+        phase = obj['phase']
         print('TankTransformer name: ' + name + ', bus: ' + bus + ', phase: ' +
               phase, flush=True)
         #print(obj)
@@ -2357,7 +2357,7 @@ def _main():
   opts = parser.parse_args()
 
   sim_request = json.loads(opts.request.replace("\'",""))
-  feeder_mrid = sim_request["power_system_config"]["Line_name"]
+  feeder_mrid = sim_request["power_system_configs"][0]["Line_name"]
 
   os.environ['GRIDAPPSD_APPLICATION_ID'] = 'gridappsd-competing-app'
   os.environ['GRIDAPPSD_APPLICATION_STATUS'] = 'STARTED'
