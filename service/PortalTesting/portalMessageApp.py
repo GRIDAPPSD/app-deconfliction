@@ -52,11 +52,11 @@ class PortalMessenger(object):
         simObj.add_oncomplete_callback(self.simulationComplete)
         self.external_control_command = {
             "command": "update",
-            "priority_level": "HIGH",
-            "app_name": "entity_123",
+            "priority_level": "PARTICIPANT",
+            "app_name": "MGO",
             "local_topic": "local.agent.topic",
             "input": {    
-                "simulation_id": f"{self.simId}",
+                "simulation_id": "123453245",
                 "message": {
                     "timestamp": 1704207060,
                     "difference_mrid": "123a456b-789c-012d-345e-678f901a235c",
@@ -104,7 +104,7 @@ class PortalMessenger(object):
             }
         }
         self.recievedFirstMessage = False
-        self.externalMessageSent = False
+        self.internalMessageSent = False
         self.isSimulationComplete = False
         while not self.isSimulationComplete:
             time.sleep(1)
@@ -126,15 +126,15 @@ class PortalMessenger(object):
         if measurementValues != self.measurementValues:
             print(f"New measurement values for ratio tap changers: {json.dumps(measurementValues, indent=4, sort_keys=True)}")
             self.measurementValues = measurementValues
-        if self.recievedFirstMessage and not self.externalMessageSent and timestamp >= self.timeToSendExternalCommand:
-            self.externalMessageSent = True
+        if self.recievedFirstMessage and not self.internalMessageSent and timestamp >= self.timeToSendExternalCommand:
+            self.internalMessageSent = True
             self.external_control_command["input"]["message"]["timestamp"] = timestamp
-            self.gapps.send(t.simulation_input_topic(f"{self.simId}"), self.external_control_command)
+            self.gapps.send(t.simulation_input_topic(f"{self.simId}"), self.internal_control_command)
         if not self.recievedFirstMessage:
             self.recievedFirstMessage = True
             self.internal_control_command["input"]["message"]["timestamp"] = timestamp
             self.timeToSendExternalCommand = timestamp + 12
-            self.gapps.send(t.simulation_input_topic(f"{self.simId}"), self.internal_control_command)
+            self.gapps.send(t.simulation_input_topic(f"{self.simId}"), self.external_control_command)
 
 if __name__ == "__main__":
     messenger = PortalMessenger()

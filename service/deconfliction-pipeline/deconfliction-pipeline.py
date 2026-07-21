@@ -426,7 +426,7 @@ class DeconflictionPipeline(object):
             if self.deviceAccessLevelValues[entity_priority_level] == current_access_level:
                 if entity_priority_level == "LOW" or entity_priority_level == "HIGH":
                     self.ConflictMatrix[device] = {}
-                self.ConflicMatrix[device][app_name] = (timestamp, value, entity_priority_level)
+                self.ConflictMatrix[device][app_name] = (timestamp, value, entity_priority_level)
             if self.deviceAccessLevelValues[entity_priority_level] > current_access_level:
                 self.ConflictMatrix[device] = {}
                 self.ConflictMatrix[device][app_name] = (timestamp, value, entity_priority_level)

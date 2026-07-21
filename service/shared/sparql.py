@@ -11,6 +11,8 @@ from cimgraph.models import GraphModel, FeederModel
 import cimgraph.utils as cimUtils
 from gridappsd import GridAPPSD, topics, utils
 
+logger = logging.getLogger(__name__)
+
 class SPARQLManager:
     """Class for querying SPARQL in GridAPPS-D Toolbox tools/services
     """
@@ -128,12 +130,24 @@ class SPARQLManager:
             batteryDict['phases'] = []
             for pecp in batteryUnit.PowerElectronicsConnection.PowerElectronicsConnectionPhases:
                 batteryDict['phases'].append(pecp.phase.value)
-            if len(batteryDict['phases']) == 0: # implied 3 phase inverter
-                batteryDict['phases'] = ['A', 'B', 'C']
+            if len(batteryDict['phases']) == 0: # implied 3 phase inverter not handled by the apps so skipping 
+                logger.info(F"Battery {batteryUnit.name} is a 3 phase generating unit. the cooperation apps are not "
+                            "setup to handle these yet. Skipping.")
+                continue
             batteryDict['ratedS'] = batteryUnit.PowerElectronicsConnection.ratedS
             batteryDict['ratedE'] = batteryUnit.ratedE
             batteryDict['storedE'] = batteryUnit.storedE
-            bindings.append(batteryDict)
+            for measObj in batteryUnit.PowerElectronicsConnection.Measurements:
+                if measObj.measurementType == "VA":
+                    batteryDict['P_batt_measid'] = measObj.mRID
+                elif measObj.measurementType == "SoC":
+                    batteryDict["SoC_measid"] = measObj.mRID
+            if "P_batt_measid" in batteryDict.keys() and "SoC_measid" in batteryDict.keys():
+                bindings.append(batteryDict)
+            else:
+                logger.warning(F"Couldn't find the power and soc measurement for Battery {batteryUnit.name}."
+                               "Skipping adding this batteryUnit to the controllable batteries.")
+            
         bindingsSorted = sorted(bindings, key=itemgetter('name'))
         return bindingsSorted
 
@@ -179,11 +193,19 @@ class SPARQLManager:
             for pecp in pvUnit.PowerElectronicsConnection.PowerElectronicsConnectionPhases:
                 pvDict['phases'].append(pecp.phase.value)
             if len(pvDict['phases']) == 0: # implied 3 phase inverter
-                pvDict['phases'] = ['A', 'B', 'C']
+                logger.info("currently coop apps only handle single phase pv generation control. skipping this obj.")
+                continue
             pvDict['ratedS'] = pvUnit.PowerElectronicsConnection.ratedS
             pvDict['p'] = pvUnit.PowerElectronicsConnection.p
             pvDict['q'] = pvUnit.PowerElectronicsConnection.q
-            bindings.append(pvDict)
+            for measObj in pvUnit.PowerElectronicsConnection.Measurements:
+                if measObj.measurementType == "VA":
+                    pvDict['measid'] = measObj.mRID
+            if 'measid' in pvDict.keys():
+                bindings.append(pvDict)
+            else:
+                logger.warning(f"Couldn't find any VA measurements for PhotovoltaicUnit {pvDict['name']}. This unit "
+                               "can't be controled. Skipping.")
         bindingsSorted = sorted(bindings, key=itemgetter('name'))
         return bindingsSorted
 
@@ -242,16 +264,34 @@ class SPARQLManager:
             regDict['incr'] = ratioTapChanger.stepVoltageIncrement
             tEnd = ratioTapChanger.TransformerEnd
             if isinstance(tEnd, cim.PowerTransformerEnd):
+                powerTransformer = tEnd.PowerTransformer
                 regDict['pid'] = tEnd.PowerTransformer.mRID
                 regDict['pname'] = tEnd.PowerTransformer.name
+                phs = cim.OrderedPhaseCodeKind.ABC
+                regDict['phs'] = phs.value
             else:
+                powerTransformer = tEnd.TransformerTank.PowerTransformer
                 regDict['pid'] = tEnd.TransformerTank.PowerTransformer.mRID
                 regDict['pname'] = tEnd.TransformerTank.PowerTransformer.name
                 regDict['tid'] = tEnd.TransformerTank.mRID
                 regDict['tname'] = tEnd.TransformerTank.name
                 regDict['phs'] = tEnd.orderedPhases.value
             regDict['wnum'] = tEnd.endNumber
-            bindings.append(regDict)
+            # Find tap measurement for this RatioTapChanger.
+            for measObj in ratioTapChanger.Measurements:
+                if measObj.measurementType == "Pos" and measObj.phases.value[0] == regDict['phs'][0]:
+                    regDict['measid'] = measObj.mRID
+                    break
+            if "measid" not in regDict.keys():
+                for measObj in powerTransformer.Measurements:
+                    if measObj.measurementType == "Pos" and measObj.phases.value[0] == regDict['phs'][0]:
+                        regDict['measid'] = measObj.mRID
+                        break
+            if "measid" in regDict.keys():
+                bindings.append(regDict)
+            else:
+                logger.warning(f"Could not find tap measurement for RatioTapChanger {regDict['rname']}."
+                               "Skipping this regulator in the regulator query results.")
         bindingsSorted = sorted(bindings, key=lambda x:(x.get('pname', ""),
                                                         x.get('tname', ""),
                                                         x.get('rname', ""),
@@ -472,44 +512,63 @@ class SPARQLManager:
     def energyconsumer_query(self):
         """Get information on loads in the feeder."""
         # Perform the query.
-        LOAD_QUERY = """
-        PREFIX r:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-        PREFIX c:  <http://iec.ch/TC57/CIM100#>
-        SELECT ?name ?bus ?basev ?p ?q ?conn ?cnt ?pz ?qz ?pi ?qi ?pp ?qp ?pe ?qe ?fdrid (group_concat(distinct ?phs;separator="\\n") as ?phases) WHERE {
-        ?s r:type c:EnergyConsumer.
-        VALUES ?fdrid {"%s"}
-        ?s c:Equipment.EquipmentContainer ?fdr.
-        ?fdr c:IdentifiedObject.mRID ?fdrid.
-        ?s c:IdentifiedObject.name ?name.
-        ?s c:ConductingEquipment.BaseVoltage ?bv.
-        ?bv c:BaseVoltage.nominalVoltage ?basev.
-        ?s c:EnergyConsumer.customerCount ?cnt.
-        ?s c:EnergyConsumer.p ?p.
-        ?s c:EnergyConsumer.q ?q.
-        ?s c:EnergyConsumer.phaseConnection ?connraw.
-        bind(strafter(str(?connraw),"PhaseShuntConnectionKind.") as ?conn)
-        ?s c:EnergyConsumer.LoadResponse ?lr.
-        ?lr c:LoadResponseCharacteristic.pConstantImpedance ?pz.
-        ?lr c:LoadResponseCharacteristic.qConstantImpedance ?qz.
-        ?lr c:LoadResponseCharacteristic.pConstantCurrent ?pi.
-        ?lr c:LoadResponseCharacteristic.qConstantCurrent ?qi.
-        ?lr c:LoadResponseCharacteristic.pConstantPower ?pp.
-        ?lr c:LoadResponseCharacteristic.qConstantPower ?qp.
-        ?lr c:LoadResponseCharacteristic.pVoltageExponent ?pe.
-        ?lr c:LoadResponseCharacteristic.qVoltageExponent ?qe.
-        OPTIONAL {?ecp c:EnergyConsumerPhase.EnergyConsumer ?s.
-        ?ecp c:EnergyConsumerPhase.phase ?phsraw.
-        bind(strafter(str(?phsraw),"SinglePhaseKind.") as ?phs) }
-        ?t c:Terminal.ConductingEquipment ?s.
-        ?t c:Terminal.ConnectivityNode ?cn.
-        ?cn c:IdentifiedObject.name ?bus
-        }
-        GROUP BY ?name ?bus ?basev ?p ?q ?cnt ?conn ?pz ?qz ?pi ?qi ?pp ?qp ?pe ?qe ?fdrid
-        ORDER by ?name
-        """% self.feeder_mrid
+        # LOAD_QUERY = """
+        # PREFIX r:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+        # PREFIX c:  <http://iec.ch/TC57/CIM100#>
+        # SELECT ?name ?bus ?basev ?p ?q ?conn ?cnt ?pz ?qz ?pi ?qi ?pp ?qp ?pe ?qe ?fdrid (group_concat(distinct ?phs;separator="\\n") as ?phases) WHERE {
+        # ?s r:type c:EnergyConsumer.
+        # VALUES ?fdrid {"%s"}
+        # ?s c:Equipment.EquipmentContainer ?fdr.
+        # ?fdr c:IdentifiedObject.mRID ?fdrid.
+        # ?s c:IdentifiedObject.name ?name.
+        # ?s c:ConductingEquipment.BaseVoltage ?bv.
+        # ?bv c:BaseVoltage.nominalVoltage ?basev.
+        # ?s c:EnergyConsumer.customerCount ?cnt.
+        # ?s c:EnergyConsumer.p ?p.
+        # ?s c:EnergyConsumer.q ?q.
+        # ?s c:EnergyConsumer.phaseConnection ?connraw.
+        # bind(strafter(str(?connraw),"PhaseShuntConnectionKind.") as ?conn)
+        # ?s c:EnergyConsumer.LoadResponse ?lr.
+        # ?lr c:LoadResponseCharacteristic.pConstantImpedance ?pz.
+        # ?lr c:LoadResponseCharacteristic.qConstantImpedance ?qz.
+        # ?lr c:LoadResponseCharacteristic.pConstantCurrent ?pi.
+        # ?lr c:LoadResponseCharacteristic.qConstantCurrent ?qi.
+        # ?lr c:LoadResponseCharacteristic.pConstantPower ?pp.
+        # ?lr c:LoadResponseCharacteristic.qConstantPower ?qp.
+        # ?lr c:LoadResponseCharacteristic.pVoltageExponent ?pe.
+        # ?lr c:LoadResponseCharacteristic.qVoltageExponent ?qe.
+        # OPTIONAL {?ecp c:EnergyConsumerPhase.EnergyConsumer ?s.
+        # ?ecp c:EnergyConsumerPhase.phase ?phsraw.
+        # bind(strafter(str(?phsraw),"SinglePhaseKind.") as ?phs) }
+        # ?t c:Terminal.ConductingEquipment ?s.
+        # ?t c:Terminal.ConnectivityNode ?cn.
+        # ?cn c:IdentifiedObject.name ?bus
+        # }
+        # GROUP BY ?name ?bus ?basev ?p ?q ?cnt ?conn ?pz ?qz ?pi ?qi ?pp ?qp ?pe ?qe ?fdrid
+        # ORDER by ?name
+        # """% self.feeder_mrid
 
-        results = self.gad.query_data(LOAD_QUERY)
-        bindings = results['data']['results']['bindings']
+        # results = self.gad.query_data(LOAD_QUERY)
+        # bindings = results['data']['results']['bindings']
+        bindings = []
+        for energyConsumer in self.feederModel.graph.get(cim.PowerElectronicsConnection, {}):
+            energyConsumerDict = {}
+            energyConsumerDict["bus"] = energyConsumer.Terminals[0].ConnectivityNode.name
+            energyConsumerDict["p"] = energyConsumer.p
+            energyConsumerDict["q"] = energyConsumer.q
+            if len(energyConsumer.EnergyConsumerPhase) == 1:
+                energyConsumerDict["phase"] = energyConsumer.EnergyConsumerPhase[0].phase.value[0]
+            else:
+                energyConsumerDict["phase"] = ""
+            energyConsumerDict["measid"] = {}
+            for measObj in energyConsumer.Measurements:
+                if measObj.measurementType == "VA":
+                    energyConsumerDict["measid"][measObj.phases.value[0]] = measObj.mRID
+            if len(energyConsumerDict["measid"]) > 0:
+                bindings.append(energyConsumerDict)
+            else:
+                logger.warning(f"couldn't find any VA measurements for EnergyConsumer {energyConsumer.name}. Skipping "
+                               "this load.")
         return bindings
 
     def energysource_query(self):

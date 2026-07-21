@@ -47,41 +47,10 @@ class AppUtil:
       Regulators[devid]['highStep'] = int(obj['highStep'])
       Regulators[devid]['lowStep'] = int(obj['lowStep'])
       Regulators[devid]['increment'] = float(obj['incr'])
+      Regulators[devid]['measid'] = obj['measid']
       prlog('Regulator devid: ' + devid + ', name: ' + name + ', phase: ' + Regulators[devid]['phase'] + ', step: ' + str(Regulators[devid]['step']), sparql_mgr.logFile)
       MethodUtil.DeviceToName[devid] = name
       MethodUtil.NameToDevice[name] = devid
-
-    # Add measid key to Regulators for matching sim measurements
-    objs = sparql_mgr.obj_meas_export(cim.PowerTransformer)
-    prlog('Count of PowerTransformer Meas: ' + str(len(objs)), sparql_mgr.logFile)
-    matches = 0
-    attempts = 0
-    for item in objs:
-      if item['type']=='Pos':
-        #prlog('Attempting to match PowerTransformer measurement: ' + str(item), sparql_mgr.logFile)
-        attempts += 1
-        # GDB 6/25/24: This is ideally how matches should be done, but this
-        # doesn't work with our current regulator query so improvising...
-        #if item['eqid'] in Regulators:
-        #  Regulators[RegulatorMap[item['eqid']]]['measid'] = item['measid']
-        #  matches += 1
-        nameToMatch = 'RatioTapChanger.' + item['eqname']
-        
-        for devid in Regulators:
-          shortName = Regulators[devid]['name'][:-1]
-          if Regulators[devid]['name'] == nameToMatch:
-            Regulators[devid]['measid'] = item['measid']
-            matches += 1
-            #prlog('Matched full name Regulator dictionary item: ' + str(Regulators[devid]), sparql_mgr.logFile)
-            break
-          elif shortName==nameToMatch and \
-               Regulators[devid]['phase']==item['phases']:
-            Regulators[devid]['measid'] = item['measid']
-            matches += 1
-            #prlog('Matched short name Regulator dictionary item: ' + str(Regulators[devid]), sparql_mgr.logFile)
-            break
-
-    prlog('Matching Regulator measurement attempts: ' + str(attempts) + ', matches: ' + str(matches), sparql_mgr.logFile)
 
     return Regulators
 
@@ -145,6 +114,8 @@ class AppUtil:
       BatteriesInfo[devid]['prated'] = float(obj['ratedS'])
       BatteriesInfo[devid]['ratedE'] = float(obj['ratedE'])
       BatteriesInfo[devid]['SoC'] = float(obj['storedE'])/float(obj['ratedE'])
+      BatteriesInfo[devid]['P_bat_measid'] = obj["P_batt_measid"]
+      BatteriesInfo[devid]['SoC_measid'] = obj["SoC_batt_measid"]
       # eff_c and eff_d don't come from the query, but they are used throughout
       # and this is a convenient point to assign them along with query results
       BatteriesInfo[devid]['eff'] = 0.975 * 0.86
@@ -160,16 +131,6 @@ class AppUtil:
       MethodUtil.DeviceToName[devid] = name
       MethodUtil.NameToDevice[name] = devid
 
-    # Add measid key to BatteriesInfo for matching sim measurements
-    if len(bindings) > 0:
-        objs = sparql_mgr.obj_meas_export(cim.PowerElectronicsConnection)
-        for item in objs:
-            if item['eqid'] in BatteryMap:
-                if item['type'] == 'VA':
-                    BatteriesInfo[BatteryMap[item['eqid']]]['P_batt_measid'] = item['measid']
-                elif item['type'] == 'SoC':
-                    BatteriesInfo[BatteryMap[item['eqid']]]['SoC_measid'] = item['measid']
-
     return (BatteriesInfo, BatteriesBus)
 
 
@@ -179,17 +140,17 @@ class AppUtil:
     EnergyConsumers = {}
     bindings = sparql_mgr.energyconsumer_query()
     for obj in bindings:
-      bus = obj['bus']['value'].upper()
+      bus = obj['bus'].upper()
       if bus not in EnergyConsumers:
         EnergyConsumers[bus] = {}
         EnergyConsumers[bus]['kW'] = {}
         EnergyConsumers[bus]['kVar'] = {}
         EnergyConsumers[bus]['measid'] = {}
 
-      phases = obj['phases']['value']
+      phases = obj['phases']
       if phases == '':
-        pval = float(obj['p']['value']) / 3.0
-        qval = float(obj['q']['value']) / 3.0
+        pval = float(obj['p']) / 3.0
+        qval = float(obj['q']) / 3.0
         EnergyConsumers[bus]['kW']['A'] = pval
         EnergyConsumers[bus]['kW']['B'] = pval
         EnergyConsumers[bus]['kW']['C'] = pval
@@ -203,19 +164,14 @@ class AppUtil:
         #feeder_power['q']['B'] += qval
         #feeder_power['q']['C'] += qval
       else:
-        pval = float(obj['p']['value'])
-        qval = float(obj['q']['value'])
+        pval = float(obj['p'])
+        qval = float(obj['q'])
         EnergyConsumers[bus]['kW'][phases] = pval
         EnergyConsumers[bus]['kVar'][phases] = qval
         #feeder_power['p'][phases] += pval
         #feeder_power['q'][phases] += qval
 
-    # Add measid key to EnergyConsumers for matching sim measurements
-    objs = sparql_mgr.obj_meas_export(cim.EnergyConsumer)
-    prlog('Count of EnergyConsumers Meas: ' + str(len(objs)), sparql_mgr.logFile)
-    for item in objs:
-      if item['type'] == 'VA':
-        EnergyConsumers[item['bus']]['measid'][item['phases']] = item['measid']
+      EnergyConsumers[bus]['measid'] = obj['measid']
 
     return EnergyConsumers
 
@@ -249,15 +205,7 @@ class AppUtil:
       idx += 1
       MethodUtil.DeviceToName[devid] = name
       MethodUtil.NameToDevice[name] = devid
-
-    # Add measid key to SolarPVsInfo for matching sim measurements
-    objs = sparql_mgr.obj_meas_export(cim.PowerElectronicsConnection)
-    prlog('Count of PowerElectronicsConnections Meas: ' + str(len(objs)),
-          sparql_mgr.logFile)
-    for item in objs:
-      #prlog('DEBUG PVmeas items: ' + str(item), sparql_mgr.logFile)
-      if item['type']=='VA' and item['bus'] in SolarPVsInfo:
-        SolarPVsInfo[item['bus']]['measid'] = item['measid']
+      SolarPVsInfo[bus]['measid'] = obj['measid']
 
     return (SolarPVsInfo, SolarPVs)
 
