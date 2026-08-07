@@ -97,7 +97,9 @@ Python version 3.8 or newer is required (although not newer than 3.10 currently)
 </li>
 
 <li>
-The gridappsd-python package must be installed in Python and must be a version that is compatible with the v2023.07.0 platform version. To check if this package is already installed and the version, do a "pip list | grep gridappsd". If the pip command for managing Python packages is not installed, do a "sudo apt install python-pip3". The version of gridappsd-python that is packaged with the v2023.07.0 platform is 2023.5.1. If a newer version of gridappsd-python is installed, it must first be uninstalled with "pip uninstall gridappsd-python". To install this recommended version of gridappd-python (note that some slightly newer versions of gridappsd-python might work, but have not been tested and definitely anything later than early 2025 will not work) use the command "pip install gridappsd-python==2023.5.1". Note that sudo is not being used for these pip commands as updating just packages for the current user is recommended. If it is a "personal VM", it makes no difference and sudo can be used if desired.
+The gridappsd-python package must be installed in Python and must be a version that is compatible with the v2023.07.0 platform version. To check if this package is already installed and the version, do a "pip list | grep gridappsd". If the pip command for managing Python packages is not installed, do a "sudo apt install python-pip3".
+
+The version of gridappsd-python that is packaged with the v2023.07.0 platform is 2023.5.1. If a newer version of gridappsd-python is installed, it must first be uninstalled with "pip uninstall gridappsd-python". To install this recommended version of gridappd-python (note that some slightly newer versions of gridappsd-python might work, but have not been tested and definitely anything later than early 2025 will not work) use the command "pip install gridappsd-python==2023.5.1". Note that sudo is not being used for these pip commands as updating just packages for the current user is recommended. If it is a "personal VM", it makes no real difference and sudo can be used if desired.
 </li>
 
 <li>
@@ -107,7 +109,7 @@ Note that as long as docker containers are not cleared with the "./stop.sh -c" c
 </li>
 
 <li>
-Along with uploading the ieee123apps.xml file under Blazegraph, measurements for this model must be inserted. From ~/git do a git clone of https://github.com/GRIDAPPSD/CIMHub. Then from the app-deconfliction/service/sim-starter/123apps_model directory copy the two .py files to ~/git/CIMHub/src_python/cimhub and then copy the two .sh files to ~/git/CIMHub. Do "sudo pip3 install SPARQLWrapper" unless the SPARQLWrapper package has already been installed in python3. Change directory to ~/git/CIMHub and run "./list_measurements_123apps.sh" which will generate a number of .txt files with a prefix of "ieee123_app_deconfliction_". Finally, run "./insert_measurements_123apps.sh" to add the measurements defined in these .txt files.
+Along with uploading the ieee123apps.xml file under Blazegraph, measurements for this model must be inserted. From ~/git do a git clone of https://github.com/GRIDAPPSD/CIMHub. Then from the app-deconfliction/service/sim-starter/123apps_model directory copy the two .py files to ~/git/CIMHub/src_python/cimhub and then copy the two .sh files to ~/git/CIMHub. Do "pip install SPARQLWrapper" unless the SPARQLWrapper package has already been installed in Python. Change directory to ~/git/CIMHub and run "./list_measurements_123apps.sh" which will generate a number of .txt files with a prefix of "ieee123_app_deconfliction_". Finally, run "./insert_measurements_123apps.sh" to add the measurements defined in these .txt files.
 </li>
 
 <li>
