@@ -1,7 +1,7 @@
 # app-deconfliction/service
 
 Author: Gary Black <br>
-Last updated: July 2, 2025
+Last updated: August 7, 2026
 
 ## Purpose
 
@@ -89,7 +89,7 @@ Using the shared folder copy over the ~/.git-credentials file from an existing V
 </li>
 </ul>
 <li>
-You must have the dockerized GridAPPS-D platform running which is available at https://github.com/GRIDAPPSD/gridappsd-docker. Follow the documentation there if you are unfamiliar with running the platform. To get the run.sh script to run may need to do a "sudo apt install docker-compose" and "sudo rm /usr/local/bin/docker-compose". Also, note that app-deconfliction currently is not compatible with anything newer than the v2023.07.0 version of the platform. Definitely can't do "./run.sh -t develop" and have it work with app-deconfliction. There are about 850 lines of query code in the app-deconfliction/service/shared directory for instance that haven't been updated to work with CIM-graph. The proper command to start the GridAPPS-D platform for app-deconfliction compatibility is "./run.sh -nt v2023.07.0".
+You must have the dockerized GridAPPS-D platform running which is available at https://github.com/GRIDAPPSD/gridappsd-docker. Follow the documentation there if you are unfamiliar with running the platform. To get the run.sh script to run you may need to do a "sudo apt install docker-compose" and "sudo rm /usr/local/bin/docker-compose". Also, note that app-deconfliction currently (as of August 2026) is not compatible with anything newer than the v2023.07.0 version of the platform. Definitely can't do "./run.sh -nt develop" and have it work with app-deconfliction. There are about 850 lines of query code in the app-deconfliction/service/shared directory for instance that haven't been updated to work with CIM-graph. The proper command to start the GridAPPS-D platform for app-deconfliction compatibility is "./run.sh -nt v2023.07.0".
 </li>
 
 <li>
@@ -97,17 +97,11 @@ Python version 3.8 or newer is required (although not newer than 3.10 currently)
 </li>
 
 <li>
-The gridappsd-python package must be installed in Python and must be a version that is compatible with the v2023.07.0 platform version. To check if this package is already installed and the version:
-
-```` bash
-$ pip list | grep gridappsd
-````
-
-If the pip command for managing Python packages is not installed, do a "sudo apt install python-pip3". The version of gridappsd-python that is packaged with the v2023.07.0 platform is 2023.5.1. If a newer version is installed, it must first be uninstalled with "pip uninstall gridappsd-python". To install this recommended version of gridappd-python (note that some slightly newer versions of gridappsd-python might work, but have not been tested, definitely anything later than early 2025 will not work) use the command "pip install gridappsd-python==2023.5.1". Note that sudo is not being used for these pip commands as updating just packages for the current user is recommended.
+The gridappsd-python package must be installed in Python and must be a version that is compatible with the v2023.07.0 platform version. To check if this package is already installed and the version, do a "pip list | grep gridappsd". If the pip command for managing Python packages is not installed, do a "sudo apt install python-pip3". The version of gridappsd-python that is packaged with the v2023.07.0 platform is 2023.5.1. If a newer version of gridappsd-python is installed, it must first be uninstalled with "pip uninstall gridappsd-python". To install this recommended version of gridappd-python (note that some slightly newer versions of gridappsd-python might work, but have not been tested and definitely anything later than early 2025 will not work) use the command "pip install gridappsd-python==2023.5.1". Note that sudo is not being used for these pip commands as updating just packages for the current user is recommended. If it is a "personal VM", it makes no difference and sudo can be used if desired.
 </li>
 
 <li>
-An updated version of the IEEE 123-bus model defining batteries and solarPVs not yet included in the standard GridAPPS-D platform distribution must be loaded after starting the platform. The CIM model for this updated test feeder is exported to the sim-starter/123apps_model directory. Open the Blazegraph URL in the web browser and upload the file ieee123apps.xml using the "UPDATE" tab from http://localhost:8889/bigdata/#update (hit "Browse..." button to select file).
+An updated version of the IEEE 123-bus model defining batteries and solarPVs not included in the v2023.07.0 GridAPPS-D platform distribution must be loaded after starting the platform. The CIM model for this updated test feeder is exported to the service/sim-starter/123apps_model directory of the app-deconfliction repo. Open the Blazegraph URL in the web browser and upload the file ieee123apps.xml using the "UPDATE" tab from http://localhost:8889/bigdata/#update (hit "Browse..." button to select file).
 
 Note that as long as docker containers are not cleared with the "./stop.sh -c" command, it is possible to stop and start the platform repeatedly without reloading this updated 123-bus model.
 </li>
