@@ -101,7 +101,7 @@ The gridappsd-python package must be installed in Python and must be a version t
 </li>
 
 <li>
-An updated version of the IEEE 123-bus model defining batteries and solarPVs not included in the v2023.07.0 GridAPPS-D platform distribution must be loaded after starting the platform. The CIM model for this updated test feeder is exported to the service/sim-starter/123apps_model directory of the app-deconfliction repo. Open the Blazegraph URL in the web browser and upload the file ieee123apps.xml using the "UPDATE" tab from http://localhost:8889/bigdata/#update (hit "Browse..." button to select file).
+An updated version of the IEEE 123-bus model defining batteries and solarPVs not included in the v2023.07.0 GridAPPS-D platform distribution must be loaded after starting the platform. The CIM model for this updated test feeder is exported to the service/sim-starter/123apps_model directory of the app-deconfliction repo. Open the Blazegraph URL in the web browser (http://localhost:8889/bigdata) and upload the file ieee123apps.xml using the "UPDATE" tab (hit "Browse..." button to select file).
 
 Note that as long as docker containers are not cleared with the "./stop.sh -c" command, it is possible to stop and start the platform repeatedly without reloading this updated 123-bus model.
 </li>
