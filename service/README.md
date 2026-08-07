@@ -55,7 +55,7 @@ Note "..." indicates files similar to the one preceding and there are additional
 
 <ol>
 <li>
-Here are some practical hints for getting up and going with the deconfliction service that may be helpful especially if creating a new VirtualBox VM:
+Here are some practical hints for getting up and going with the deconfliction service that may be helpful especially if creating a new VirtualBox VM (August 2026 Note: use of VirtualBox is not recommended due to issues running VMs with Windows 11):
 <ul>
 <li>
 Use Ubuntu version 22.04 rather than anything newer including 24.04 as 22.04 includes Python 3.10 which is the newest Python3 that is compatible with GridAPPS-D.
@@ -89,7 +89,7 @@ Using the shared folder copy over the ~/.git-credentials file from an existing V
 </li>
 </ul>
 <li>
-You must have the dockerized GridAPPS-D platform running which is available at https://github.com/GRIDAPPSD/gridappsd-docker. Follow the documentation there if you are unfamiliar with running the platform. To get the run.sh script to run may need to do a "sudo apt install docker-compose" and "sudo rm /usr/local/bin/docker-compose". Also, note that app-deconfliction currently is not compatible with anything newer than the v2023.07.0 version of the platform. That's currently the default if a -t value is not given to run.sh, but that could change since the version in run.sh hasn't been updated in a couple years. Definitely can't do "./run.sh -t develop" and have it work with app-deconfliction. There are about 850 lines of query code in the app-deconfliction/service/shared directory for instance that haven't been updated to work with CIM-graph.
+You must have the dockerized GridAPPS-D platform running which is available at https://github.com/GRIDAPPSD/gridappsd-docker. Follow the documentation there if you are unfamiliar with running the platform. To get the run.sh script to run may need to do a "sudo apt install docker-compose" and "sudo rm /usr/local/bin/docker-compose". Also, note that app-deconfliction currently is not compatible with anything newer than the v2023.07.0 version of the platform. Definitely can't do "./run.sh -t develop" and have it work with app-deconfliction. There are about 850 lines of query code in the app-deconfliction/service/shared directory for instance that haven't been updated to work with CIM-graph. The proper command to start the GridAPPS-D platform for app-deconfliction compatibility is "./run.sh -nt v2023.07.0".
 </li>
 
 <li>
@@ -97,14 +97,13 @@ Python version 3.8 or newer is required (although not newer than 3.10 currently)
 </li>
 
 <li>
-The gridappsd-python package must be installed in Python. To check if this package is already installed:
+The gridappsd-python package must be installed in Python and must be a version that is compatible with the v2023.07.0 platform version. To check if this package is already installed and the version:
 
 ```` bash
-$ python
->>> import gridappsd
+$ pip list | grep gridappsd
 ````
 
-If the import returns an error message, see <https://github.com/GRIDAPPSD/gridappsd-python> for installation instructions. May need to do a "sudo apt install python-pip3" to be able to do the "sudo pip3 install gridappsd-python" needed to install this package.
+If the pip command for managing Python packages is not installed, do a "sudo apt install python-pip3". The version of gridappsd-python that is packaged with the v2023.07.0 platform is 2023.5.1. If a newer version is installed, it must first be uninstalled with "pip uninstall gridappsd-python". To install this recommended version of gridappd-python (note that some slightly newer versions of gridappsd-python might work, but have not been tested, definitely anything later than early 2025 will not work) use the command "pip install gridappsd-python==2023.5.1". Note that sudo is not being used for these pip commands as updating just packages for the current user is recommended.
 </li>
 
 <li>
