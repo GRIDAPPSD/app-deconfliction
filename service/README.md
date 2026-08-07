@@ -103,7 +103,7 @@ The version of gridappsd-python that is packaged with the v2023.07.0 platform is
 </li>
 
 <li>
-An updated version of the IEEE 123-bus model defining batteries and solarPVs not included in the v2023.07.0 GridAPPS-D platform distribution must be loaded after starting the platform. The CIM model for this updated test feeder is exported to the service/sim-starter/123apps_model directory of the app-deconfliction repo. Open the Blazegraph URL in the web browser (http://localhost:8889/bigdata) and upload the file ieee123apps.xml using the "UPDATE" tab (hit "Browse..." button to select file). After selecting the ieee123apps.xml file, make sure to hit the "Update" button below the Blazegraph query entry window to actually load the file.
+An updated version of the IEEE 123-bus model defining batteries and solarPVs not included in the v2023.07.0 GridAPPS-D platform distribution must be loaded after starting the platform. The CIM model for this updated test feeder is exported to the service/sim-starter/123apps_model directory of the app-deconfliction repo. Open the Blazegraph URL in the web browser (http://localhost:8889/bigdata) and upload the file ieee123apps.xml using the "UPDATE" tab (hit "Browse..." button to select file). After selecting the ieee123apps.xml file, make sure to hit the "Update" button below the Blazegraph text entry window to actually load the file.
 
 Note that as long as docker containers are not cleared with the "./stop.sh -c" command, it is possible to stop and start the platform repeatedly without reloading this updated 123-bus model.
 </li>
@@ -133,12 +133,12 @@ $ ./run-resilience.sh 123apps standalone pulp
 There is little to be gained from trying the max_local or cvr objectives in addition to resilience, but they also support the standalone argument. Modules likely to be missing for the competing apps include numpy, tabulate, pulp, and cvxpy. The following install commands may prove helpful based on failed imports:
 
 ```` bash
-$ sudo pip3 install numpy
-$ sudo pip3 install tabulate
+$ pip3 install numpy
+$ pip3 install tabulate
 $ sudo apt-get install glpk-utils
-$ sudo pip3 install pulp
-$ sudo pip3 install cvxpy[CBC,CVXOPT,GLOP,GLPK]
-$ sudo pip3 install pandas
+$ pip3 install pulp
+$ pip3 install cvxpy[CBC,CVXOPT,GLOP,GLPK]
+$ pip3 install pandas
 ````
 
 Note that glpk-utils is needed by the PuLP and CVXPY optmization packages and must be installed before installing the optimization packages.
