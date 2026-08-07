@@ -184,7 +184,7 @@ $ ./run-deconfliction.sh 123apps rmc
 $ ./run-deconfliction.sh 123apps rmc pulp
 ````
 
-In the first invocation, the resilience and max_local competing apps are run with a GridLAB-D simulation for the batteries-included IEEE 123 node model. In the second invocation, the CVR app is add in as well. In the third invocation, the PuLP optimization library is used for the competing apps instead of the default CVXPY library.
+In the first invocation, the resilience and max_local competing apps are run with a GridLAB-D simulation for the batteries-included IEEE 123 node model. In the second invocation, the CVR app is added in as well. In the third invocation, the PuLP optimization library is used for the competing apps instead of the default CVXPY library.
 
 The run-deconfliction.sh wrapper script normally only shows diagnostic log output for the deconfliction pipeline process in the terminal where the wrapper script is invoked. However, each of the processes produces a log file that can either be viewed during the run (typically via "tail -f") or afterwards. These files are written to a log subdirectory--optimization-apps/log for the competing apps and deconfliction-pipeline/log for the pipeline process. If you are interested in the briefest of workflow progress output such as for a simple demonstration a "grep" for the ">>>" pattern will do the job. For example, to tail this workflow overview during a running simulation, change directory to deconfliction-pipeline/log and issue the command: tail -f deconfliction-pipeline.log | grep ">>>"
 
