@@ -32,6 +32,7 @@ if [ "$OPTLIB" = "pulp" ] || [ "$OPTLIB" = "PuLP" ] || [ "$OPTLIB" = "PULP" ]; t
   python3 optimization-app-pulp.py cvr $SIMID "$SIMREQ" $INTERVAL 2>&1 | tee log/cvr-app.log
 else
   python3 optimization-app-cvxpy-modular.py cvr $SIMID "$SIMREQ" $INTERVAL 2>&1 | tee log/cvr-app.log
+  #python3 optimization-app-cvxpy-modular-v3.py cvr $SIMID "$SIMREQ" $INTERVAL 2>&1 | tee log/cvr-app.log
   #python3 optimization-app-cvxpy-noreact.py cvr $SIMID "$SIMREQ" $INTERVAL 2>&1 | tee log/cvr-app.log
   #NO LONGER RUNNABLE WITHOUT UPDATES python3 optimization-app-cvxpy.py cvr $SIMID "$SIMREQ" $INTERVAL 2>&1 | tee log/cvr-app.log
 fi

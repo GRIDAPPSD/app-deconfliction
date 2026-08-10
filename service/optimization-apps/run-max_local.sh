@@ -32,6 +32,7 @@ if [ "$OPTLIB" = "pulp" ] || [ "$OPTLIB" = "PuLP" ] || [ "$OPTLIB" = "PULP" ]; t
   python3 optimization-app-pulp.py max_local $SIMID "$SIMREQ" $INTERVAL 2>&1 | tee log/max_local-app.log
 else
   python3 optimization-app-cvxpy-modular.py max_local $SIMID "$SIMREQ" $INTERVAL 2>&1 | tee log/max_local-app.log
+  #python3 optimization-app-cvxpy-modular-v3.py max_local $SIMID "$SIMREQ" $INTERVAL 2>&1 | tee log/max_local-app.log
   #python3 optimization-app-cvxpy-noreact.py max_local $SIMID "$SIMREQ" $INTERVAL 2>&1 | tee log/max_local-app.log
   #NO LONGER RUNNABLE WITHOUT UPDATES python3 optimization-app-cvxpy.py max_local $SIMID "$SIMREQ" $INTERVAL 2>&1 | tee log/max_local-app.log
 fi
