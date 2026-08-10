@@ -1,7 +1,7 @@
 # app-deconfliction/service
 
 Author: Gary Black <br>
-Last updated: August 7, 2026
+Last updated: August 10, 2026
 
 ## Purpose
 
@@ -55,7 +55,7 @@ Note "..." indicates files similar to the one preceding and there are additional
 
 <ol>
 <li>
-Here are some practical hints for getting up and going with the deconfliction service that may be helpful especially if creating a new VirtualBox VM (August 2026 Note: use of VirtualBox is not recommended due to issues running VMs with Windows 11):
+Here are some practical hints for getting up and going with the deconfliction service that may be helpful especially if creating a new VirtualBox VM (August 2026 Note: use of VirtualBox is not recommended due to persistent crash issues running VMs with the latest VBox 7.2.10 in Windows 11--PNNL IT no longer allows running older/stable VBox 6):
 <ul>
 <li>
 Use Ubuntu version 22.04 rather than anything newer including 24.04 as 22.04 includes Python 3.10 which is the newest Python3 that is compatible with GridAPPS-D.
@@ -189,6 +189,12 @@ In the first invocation, the resilience and max_local competing apps are run wit
 The run-deconfliction.sh wrapper script normally only shows diagnostic log output for the deconfliction pipeline process in the terminal where the wrapper script is invoked. However, each of the processes produces a log file that can either be viewed during the run (typically via "tail -f") or afterwards. These files are written to a log subdirectory--optimization-apps/log for the competing apps and deconfliction-pipeline/log for the pipeline process. If you are interested in the briefest of workflow progress output such as for a simple demonstration a "grep" for the ">>>" pattern will do the job. For example, to tail this workflow overview during a running simulation, change directory to deconfliction-pipeline/log and issue the command: tail -f deconfliction-pipeline.log | grep ">>>"
 
 Although the run-deconfliction.sh wrapper script starts a number of processes, some of them as background jobs, there is special logic that "traps" ctrl-C exits from the script and properly terminates all jobs associated with the deconfliction service such as competing apps. Note that in the case of a ctrl-C exit from the wrapper script that a GridLAB-D simulation that has been started will not be terminated and instead run to completion.
+
+August 2026 Note 1: The PuLP apps implemented with optimization-app-pulp.py is no longer compatible with the deconfliction pipeline due to some changes made late in FY25 and there not being a compelling reason to update this given that the paper and scalability task exclusively used CVXPY. Therefore the PuLP apps can only be run standalone currently. Neither optimization-app-cvxpy.py or optimization-app-csvxy-noreact.py are likely compatible either, just optimization-app-cvxpy-modular.py. Wrapper scripts though should only invoke the latter.
+
+August 2026 Note 2: It is easy to get caught by incompatible settings of realtime vs. non-realtime simulations between the JSON simulation config file and the self.realtimeFlag in the deconfliction pipeline and optimization app code. These must be consistent for the apps and pipeline to work. The Python code to update to change the self.realtimeFlag values are deconfliction-pipeline.py, optimization-app-cvxpy-modular.py, and optimizatoin-app-pulp.py (the latter only for running standalone since it doesn't work with the platform).
+
+August 2026 Note 3: The start_time setting in JSON simulation config files has be deliberately chosen to be properly divisible by the interval between optimizations given by self.optIntervalSec. For realtime simulations there is also a strange 5 second "offset" issue. Search for self.optIntervalSec in the optimization Python code for details regarding that.
 
 ## App Scalability Task
 
