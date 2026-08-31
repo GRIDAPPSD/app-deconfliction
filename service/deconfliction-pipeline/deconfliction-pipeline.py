@@ -2693,7 +2693,7 @@ class DeconflictionPipeline(GridAPPSD):
       simLagSec = 600
       # GDB 8/31/26: time elapsed for dropping stale setpoint requests--don't
       # drop requests if set to None
-      self.timeDropStale = 7200
+      self.timeDropStale = 14400
       #self.timeDropStale = None
 
     if interval!=None and interval!='scalability':
