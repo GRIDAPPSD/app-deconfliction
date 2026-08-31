@@ -290,6 +290,13 @@ class DeconflictionPipeline(GridAPPSD):
         if app_name in self.ConflictMatrix[device]:
           self.ConflictMatrix[device].pop(app_name)
 
+        if self.timeDropStale != None:
+          # GDB 8/31/26: Drop any setpoints older than timeDropStale from timestamp
+          timeDropBefore = timestamp - self.timeDropStale
+          for app in self.ConflictMatrix[device]:
+            if self.ConflictMatrix[device][app][0] < timeDropBefore:
+              self.ConflictMatrix[device].pop(app)
+
       if self.pltFlag:
         self.pltFile.write(app_name)
         self.pltFile.write(',')
@@ -1348,6 +1355,10 @@ class DeconflictionPipeline(GridAPPSD):
   def Optimization(self, timestamp, ConflictMatrix):
     ResolutionVector = {}
 
+    # GDB 8/31/26: initialize stale timestamp weighting factor for when
+    # timeDropStale is not set
+    staleWeight = 1.0
+
     # This should work whether the conflict matrix setpoint values are
     # scalars as with batteries and regulators or complex numbers as with
     # solarPVs. Storing those solarPV p,q values as complex numbers pays
@@ -1360,19 +1371,24 @@ class DeconflictionPipeline(GridAPPSD):
       for app in ConflictMatrix[device]:
         optTimestamp = max(optTimestamp, ConflictMatrix[device][app][0])
 
+        # GDB 8/31/26: stale timestamp weighting factor
+        if self.timeDropStale != None:
+          staleWeight = (self.timeDropStale - (timestamp -
+                         ConflictMatrix[device][app][0]))/self.timeDropStale
+
         if app in self.OptDevWeights and device in self.OptDevWeights[app]:
           optNumerator += ConflictMatrix[device][app][1] * \
-                          self.OptDevWeights[app][device]
-          optDenominator += self.OptDevWeights[app][device]
+                          self.OptDevWeights[app][device] * staleWeight
+          optDenominator += self.OptDevWeights[app][device] * staleWeight
 
         elif app in self.OptAppWeights:
           optNumerator += ConflictMatrix[device][app][1] * \
-                          self.OptAppWeights[app]
-          optDenominator += self.OptAppWeights[app]
+                          self.OptAppWeights[app] * staleWeight
+          optDenominator += self.OptAppWeights[app] * staleWeight
 
         else:
-          optNumerator += ConflictMatrix[device][app][1]
-          optDenominator += 1.0
+          optNumerator += ConflictMatrix[device][app][1] * staleWeight
+          optDenominator += 1.0 * staleWeight
 
       if optDenominator > 0.0:
         name = MethodUtil.DeviceToName[device]
@@ -1386,6 +1402,7 @@ class DeconflictionPipeline(GridAPPSD):
     return ResolutionVector
 
 
+  '''
   def CoopOptimization(self, timestamp, ConflictMatrix):
     TargetResolutionVector = {}
     CoopProposed = {}
@@ -1453,6 +1470,7 @@ class DeconflictionPipeline(GridAPPSD):
           CoopProposed[device] = value
 
     return TargetResolutionVector, CoopProposed
+  '''
 
 
   def DeviceDispatcher(self, timestamp, newResolutionVector,
@@ -2662,6 +2680,10 @@ class DeconflictionPipeline(GridAPPSD):
       # 15 seconds is a good number for a real-time simulation
       optIntervalSec = 15
       simLagSec = 0
+      # GDB 8/31/26: time elapsed for dropping stale setpoint requests--don't
+      # drop requests if set to None
+      self.timeDropStale = 120
+      #self.timeDropStale = None
     else:
       # if attempting non-real-time, something like 1800 is reasonable so
       # apps can complete optimizations safely within that interval
@@ -2669,6 +2691,10 @@ class DeconflictionPipeline(GridAPPSD):
       optIntervalSec = 1800 # 30 minutes
       #optIntervalSec = 3600 # 1 hour
       simLagSec = 600
+      # GDB 8/31/26: time elapsed for dropping stale setpoint requests--don't
+      # drop requests if set to None
+      self.timeDropStale = 7200
+      #self.timeDropStale = None
 
     if interval!=None and interval!='scalability':
       optIntervalSec = int(interval)
