@@ -1571,7 +1571,7 @@ class CompetingApp(GridAPPSD):
                                     q_flow_C[sub_flow_idx])
 
     ####### simplified implementation of power factor #######
-    objective = (Qsub_mod + Psub_mod) / 2000000
+    objective = (Qsub_mod - Psub_mod) / 2000000
     return objective
 
 
@@ -1593,9 +1593,9 @@ class CompetingApp(GridAPPSD):
       idx = SolarPVsInfo[bus]['idx']
       if 'A' in SolarPVsInfo[bus]['phase']:
         objective_pv += p_pv_A[idx]
-      if 'A' in SolarPVsInfo[bus]['phase']:
-        objective_pv += p_pv_B[idx]
       if 'B' in SolarPVsInfo[bus]['phase']:
+        objective_pv += p_pv_B[idx]
+      if 'C' in SolarPVsInfo[bus]['phase']:
         objective_pv += p_pv_C[idx]
 
     objective_pv = -1 * cost_now * objective_pv /1000
