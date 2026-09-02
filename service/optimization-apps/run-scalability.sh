@@ -20,6 +20,10 @@ APPNAME=`echo $LINE | cut -f1 -d,`
 
 trap - SIGINT SIGTERM EXIT
 
-#python3 optimization-app-cvxpy-modular.py scalability $SIMID "$SIMREQ" "$LINE" 2>&1 | tee log/$APPNAME-app.log
-python3 optimization-app-cvxpy-modular-v3.py scalability $SIMID "$SIMREQ" "$LINE" 2>&1 | tee log/$APPNAME-app.log
+# v3 uses optimization-based cooperation responses. This is incredibly slow
+# though so it does not work for non-realtime simulations that need quick
+# responses for cooperation to finish before new setpoint requests from apps
+# based on new simulation measurement messages.
+python3 optimization-app-cvxpy-modular.py scalability $SIMID "$SIMREQ" "$LINE" 2>&1 | tee log/$APPNAME-app.log
+#python3 optimization-app-cvxpy-modular-v3.py scalability $SIMID "$SIMREQ" "$LINE" 2>&1 | tee log/$APPNAME-app.log
 
