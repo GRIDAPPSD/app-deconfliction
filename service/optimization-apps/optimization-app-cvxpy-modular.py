@@ -1571,7 +1571,11 @@ class CompetingApp(GridAPPSD):
                                     q_flow_C[sub_flow_idx])
 
     ####### simplified implementation of power factor #######
+    # GDB 9/2/26: Monish changed this from plus to minus in v3 version. I have
+    # seen this optimization crash with the minus, but not sure if it's related
+    # to that and it doesn't consistently crash.
     objective = (Qsub_mod - Psub_mod) / 2000000
+    #objective = (Qsub_mod + Psub_mod) / 2000000
     return objective
 
 
