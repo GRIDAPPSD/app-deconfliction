@@ -2034,8 +2034,6 @@ class DeconflictionPipeline(GridAPPSD):
 
         # reset running minimums for conflict metric and matrix
         self.minConflictMetric = 1.0
-        # reset running counts for cooperation messages
-        self.AppCoopCount.clear()
 
     # if this is a cooperation response and we are in a cooperation series
     # we need to increment the counters
@@ -2188,8 +2186,6 @@ class DeconflictionPipeline(GridAPPSD):
       self.coopCurrentFlag = False
       # reset running minimums for conflict metric and matrix
       self.minConflictMetric = 1.0
-      # reset running counts for cooperation messages
-      self.AppCoopCount.clear()
       prlog('DeconflictSetpoints--finished processing, timestamp: ' +
             str(timestamp))
       return
@@ -2308,6 +2304,13 @@ class DeconflictionPipeline(GridAPPSD):
       self.coopConflictFlag = False
       self.coopCurrentSeries += 1
       self.coopCurrentFlag = True
+      # GDB 9/3/26: I was clearing this app cooperation counts in multiple
+      # other places, but it was not always consistent with coopResponseCounter.
+      # Rather than tracking that down, makes more sense to always reset them
+      # in the same spot and since coopResponseCounter was the lesser value
+      # and only reset in one spot, it made the most sense to do it in that
+      # single spot
+      self.AppCoopCount.clear()
 
       # GDB 11/3/25: Only send proposed setpoints when there is a conflict
       # between apps. This is breaking app cooperation optimizations without
@@ -2571,8 +2574,6 @@ class DeconflictionPipeline(GridAPPSD):
 
     # reset running minimum for conflict metric
     self.minConflictMetric = 1.0
-    # reset running counts for cooperation messages
-    self.AppCoopCount.clear()
     prlog('DeconflictSetpoints--finished processing, timestamp: ' +
           str(timestamp))
 
