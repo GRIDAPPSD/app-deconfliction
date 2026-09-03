@@ -1479,6 +1479,10 @@ class DeconflictionPipeline(GridAPPSD):
     # different values
     diffCount = 0
 
+    # GDB 9/3/26: Track asset health for reporting
+    self.batteryCycleCount = 0
+    self.tapPositionCount = 0
+
     for device, value in newResolutionVector.items():
       name = MethodUtil.DeviceToName[device]
       if name.startswith('BatteryUnit.'):
@@ -1492,8 +1496,10 @@ class DeconflictionPipeline(GridAPPSD):
           switchStr = ''
           if value[1]>0 and self.BatteriesInfo[device]['P_batt_inv']<0:
             switchStr = ' (SWITCH from discharging to charging)'
+            self.batteryCycleCount += 1
           elif value[1]<0 and self.BatteriesInfo[device]['P_batt_inv']>0:
             switchStr = ' (SWITCH from charging to discharging)'
+            self.batteryCycleCount += 1
 
           if printAllDispatchesFlag:
             prlog('DeviceDispatcher--battery device: ' + name +
@@ -1582,6 +1588,8 @@ class DeconflictionPipeline(GridAPPSD):
           self.difference_builder.add_difference(device,
                    'TapChanger.step', value[1], self.Regulators[device]['step'])
           diffCount += 1
+
+          self.tapPositionCount += abs(self.Regulators[device]['step'] - value[1])
 
           if printAllDispatchesFlag:
             prlog('DeviceDispatcher--regulator device: ' + name +
@@ -1824,7 +1832,7 @@ class DeconflictionPipeline(GridAPPSD):
               ', PQ_pv_inv: ' + str(self.SolarPVs[device]['PQ_pv_inv']))
 
 
-  def PlotDispatch(self, reason, timestamp, newResolutionVector):
+  def PlotDispatch(self, reason, timestamp, newResolutionVector, dispatchCount):
     if self.pltFlag:
       now = datetime.now()
       timerRunning = (now - self.pltTZero).total_seconds()
@@ -1834,8 +1842,10 @@ class DeconflictionPipeline(GridAPPSD):
         deltaDispatch = (now - self.timerDispatch).total_seconds()
       self.timerDispatch = now
 
-      self.pltFile.write('device_dispatch,reason:' + reason + ',timestamp:' + str(timestamp) + ',runningTime:' + str(timerRunning) + ',dispatchTime:' + str(deltaDispatch) + ',rulesTime:' + str(self.timerRules) + ',coopTime:' + str(self.timerCoop) + ',optTime:' + str(self.timerOpt))
+      self.pltFile.write('device_dispatch,reason:' + reason + ',timestamp:' + str(timestamp) + ',runningTime:' + str(timerRunning) + ',dispatchTime:' + str(deltaDispatch) + ',rulesTime:' + str(self.timerRules) + ',coopTime:' + str(self.timerCoop) + ',optTime:' + str(self.timerOpt) + ",batteryCycles:" + str(self.batteryCycleCount) + ",tapPositions:" + str(self.tapPositionCount) + ",dispatchCount:" + str(dispatchCount))
 
+      # first version goes in ResolutionVector order while the second goes
+      # in device order
       '''
       for device, value in newResolutionVector.items():
         name = MethodUtil.DeviceToName[device]
@@ -2015,13 +2025,13 @@ class DeconflictionPipeline(GridAPPSD):
         # Published IEEE Access Foundational Paper Reference:
         #   Step 5--Device Dispatcher
         # start dispatch triggered by new setpoints interrupting cooperation
-        # logging for scalability testing
-        self.PlotDispatch('CooperationInterrupted', timestamp,
-                          newResolutionVector)
         dispatchCount = self.DeviceDispatcher(timestamp, newResolutionVector,
                                               self.printAllDispatchesFlag)
         prlog('>>> ProcessSetpointsMessage--invoked device dispatch for ' +
               'running COOPERATION, # devices dispatched: ' +str(dispatchCount))
+        # logging for scalability testing
+        self.PlotDispatch('CooperationInterrupted', timestamp,
+                          newResolutionVector, dispatchCount)
 
         # update the current resolution to the new resolution to be ready for
         # the next dispatch
@@ -2560,12 +2570,13 @@ class DeconflictionPipeline(GridAPPSD):
     # Published IEEE Access Foundational Paper Reference:
     #   Step 5--Device Dispatcher
     # start dispatch triggered by cooperation concluding
-    # logging for scalability testing
-    self.PlotDispatch('CooperationFinished', timestamp, newResolutionVector)
     dispatchCount = self.DeviceDispatcher(timestamp, newResolutionVector,
                                           self.printAllDispatchesFlag)
     prlog('>>> DeconflictSetpoints--invoked device dispatch, # ' +
           'devices dispatched: ' +str(dispatchCount))
+    # logging for scalability testing
+    self.PlotDispatch('CooperationFinished', timestamp, newResolutionVector,
+                      dispatchCount)
 
     # update the current resolution to the new resolution to be ready for the
     # next dispatch
