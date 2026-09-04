@@ -2015,6 +2015,7 @@ class DeconflictionPipeline(GridAPPSD):
           self.pltFile.write(str(self.conflictMetric))
           self.pltFile.write(',')
           self.pltFile.write('Delta:N/A')
+          self.pltFile.write(',Requests:' + str(self.coopRequestCounter))
           self.pltFile.write(',Responses:' + str(self.coopResponseCounter))
           self.pltFile.write(',AppCounts:' + str(self.AppCoopCount))
           self.pltFile.write(',Series:')
@@ -2311,6 +2312,7 @@ class DeconflictionPipeline(GridAPPSD):
       # publish this target resolution vector to the cooperation topic for
       # competing apps that support cooperation to respond to
       self.coopResponseCounter = 0
+      self.coopRequestCounter = 0
       self.coopConflictFlag = False
       self.coopCurrentSeries += 1
       self.coopCurrentFlag = True
@@ -2358,6 +2360,7 @@ class DeconflictionPipeline(GridAPPSD):
                      'coop_series': self.coopCurrentSeries,
                      'coop_proposed': coopProposed}
       self.gapps.send(self.coop_topic, json.dumps(coopMessage))
+      self.coopRequestCounter += 1
       if self.logMessagesFlag:
         msglog('requesting initial cooperation|msgid:' + str(self.coopMsgID) +
                '|series:' + str(self.coopCurrentSeries))
@@ -2449,6 +2452,7 @@ class DeconflictionPipeline(GridAPPSD):
                      'coop_series': self.coopCurrentSeries,
                      'coop_proposed': coopProposed}
       self.gapps.send(self.coop_topic, json.dumps(coopMessage))
+      self.coopRequestCounter += 1
       if self.logMessagesFlag:
         msglog('requesting more cooperation|msgid:' + str(self.coopMsgID) +
                '|series:' + str(self.coopCurrentSeries))
@@ -2559,6 +2563,7 @@ class DeconflictionPipeline(GridAPPSD):
       self.pltFile.write(',')
       self.pltFile.write('Delta:')
       self.pltFile.write(str(perConflictDelta))
+      self.pltFile.write(',Requests:' + str(self.coopRequestCounter))
       self.pltFile.write(',Responses:' + str(self.coopResponseCounter))
       self.pltFile.write(',AppCounts:' + str(self.AppCoopCount))
       self.pltFile.write(',Series:')
@@ -2749,6 +2754,7 @@ class DeconflictionPipeline(GridAPPSD):
     # initialize combination cooperation timestamp and control flag
     self.lastMeasTimestamp = 0
     self.coopResponseCounter = 0
+    self.coopRequestCounter = 0
     self.coopConflictFlag = False
     # initialize running cooperation minimums for conflict metric and matrix
     self.minConflictMetric = 1.0
