@@ -1556,7 +1556,10 @@ class CompetingApp(GridAPPSD):
     self.Constraints.append(Qsub_mod >= Qsub)
     self.Constraints.append(Qsub_mod >= -Qsub)
 
-    flow_min, flow_max = -5e6, 5e6
+    # GDB 9/9/26: per Monish, loosen constraints a bit to hopefully reduce crashes
+    # that started when changing the sign in the objective function below
+    #flow_min, flow_max = -5e6, 5e6
+    flow_min, flow_max = -1e7, 1e7
     self.Constraints.append(Psub >= flow_min)
     self.Constraints.append(Psub <= flow_max)
     self.Constraints.append(Psub_mod >= flow_min)
