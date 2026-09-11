@@ -2730,20 +2730,22 @@ class DeconflictionPipeline(GridAPPSD):
     # note that driving more cooperation means more time needed, which
     # may impact scalability
 
-    # 1) Drive minimum cooperation:
-    #self.coopMessagesThreshold = 5
-    #self.conflictPercentThreshold = 0.2
-    #self.conflictValueThreshold = 0.20
+    # GDB 9/11/26: This is our cooperation baseline
+    # 1) Drive maximum cooperation:
+    self.coopMessagesThreshold = 15
+    self.conflictPercentThreshold = 0.05
+    self.conflictValueThreshold = 0.05
 
     # 2) Drive mid-level cooperation:
     #self.coopMessagesThreshold = 10
     #self.conflictPercentThreshold = 0.1
     #self.conflictValueThreshold = 0.10
 
-    # 3) Drive maximum cooperation:
-    self.coopMessagesThreshold = 15
-    self.conflictPercentThreshold = 0.05
-    self.conflictValueThreshold = 0.05
+    # GDB 9/11/26: This is our cooperation comparison run (less cooperation)
+    # 3) Drive minimum cooperation:
+    #self.coopMessagesThreshold = 5
+    #self.conflictPercentThreshold = 0.2
+    #self.conflictValueThreshold = 0.20
 
     # multiple cooperation responses are required with a value > 1
     self.coopMinResponses = 2
