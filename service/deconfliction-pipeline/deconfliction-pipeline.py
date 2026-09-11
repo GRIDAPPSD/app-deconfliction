@@ -2813,10 +2813,27 @@ class DeconflictionPipeline(GridAPPSD):
 
     # assume a non-realtime simulation will be longer and adjust rules
     if not self.realtimeFlag:
-      self.rulesBattTimeInterval = 60*60*4 # every 4 hours
-      self.rulesBattSwitchesAllowed = 10
+      # GDB 9/11/26: Here is what I used to use for rules
+      #self.rulesBattTimeInterval = 60*60*4 # every 4 hours
+      #self.rulesBattSwitchesAllowed = 10
+      #self.rulesRegOuterTimeInterval = 60*60*6 # every 6 hours
+      #self.rulesRegOuterStepsAllowed = 8
+
+      # GDB 9/11/26: Here is what we use after reviewer feedback for the baseline
+      self.rulesBattTimeInterval = 60*60*6 # every 6 hours
+      self.rulesBattSwitchesAllowed = 6
+      self.rulesRegInnerTimeInterval = 60*30 # every 30 minutes
+      self.rulesRegInnerStepsAllowed = 2
       self.rulesRegOuterTimeInterval = 60*60*6 # every 6 hours
-      self.rulesRegOuterStepsAllowed = 8
+      self.rulesRegOuterStepsAllowed = 12
+
+      # GDB 9/11/26: Here are the more restrictive rules for the comparison run
+      #self.rulesBattTimeInterval = 60*60*6 # every 6 hours
+      #self.rulesBattSwitchesAllowed = 3
+      #self.rulesRegInnerTimeInterval = 60*30 # every 30 minutes
+      #self.rulesRegInnerStepsAllowed = 1
+      #self.rulesRegOuterTimeInterval = 60*60*6 # every 6 hours
+      #self.rulesRegOuterStepsAllowed = 6
 
     # for SHIVA conflict metric testing
     #self.TimeConflictMatrix = {}
