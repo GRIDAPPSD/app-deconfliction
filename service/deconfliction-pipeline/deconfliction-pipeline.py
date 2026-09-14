@@ -376,41 +376,41 @@ class DeconflictionPipeline(GridAPPSD):
           if value < MinSetpoints[device]:
             prlog('SetpointProcessor--app: ' + app_name + ', device: ' +
                   MethodUtil.DeviceToName[device] +
-                  '--cooperation setpoint below min to prevent backtracking: ' +
-                  str(value) + ', reset to: ' + str(MinSetpoints[device]))
+                  '--cooperation setpoint below ConflictMatrix minimum: ' +
+                  str(value) + ', reset to minimum: ' + str(MinSetpoints[device]))
             value = MinSetpoints[device]
           elif value > MaxSetpoints[device]:
             prlog('SetpointProcessor--app: ' + app_name + ', device: ' +
                   MethodUtil.DeviceToName[device] +
-                  '--cooperation setpoint above max to prevent backtracking: ' +
-                  str(value) + ', reset to: ' + str(MaxSetpoints[device]))
+                  '--cooperation setpoint above ConflictMatrix maximum: ' +
+                  str(value) + ', reset to maximum: ' + str(MaxSetpoints[device]))
             value = MaxSetpoints[device]
 
         elif device in MinSetpointsReal:
           if value.real < MinSetpointsReal[device]:
             prlog('SetpointProcessor--app: ' + app_name + ', device: ' +
                   MethodUtil.DeviceToName[device] + '--cooperation setpoint ' +
-                  '(real) below min to prevent backtracking: ' +
-                  str(value) + ', reset to: ' + str(MinSetpointsReal[device]))
+                  '(real) below ConflictMatrix minimum: ' + str(value) +
+                  ', reset to miniumum: ' + str(MinSetpointsReal[device]))
             value = complex(MinSetpointsReal[device], value.imag)
           elif value.real > MaxSetpointsReal[device]:
             prlog('SetpointProcessor--app: ' + app_name + ', device: ' +
                   MethodUtil.DeviceToName[device] + '--cooperation setpoint ' +
-                  '(real) above max to prevent backtracking: ' +
-                  str(value) + ', reset to: ' + str(MaxSetpointsReal[device]))
+                  '(real) above ConflictMatrix maximum: ' + str(value) +
+                  ', reset to maximum: ' + str(MaxSetpointsReal[device]))
             value = complex(MaxSetpointsReal[device], value.imag)
 
           if value.imag < MinSetpointsImag[device]:
             prlog('SetpointProcessor--app: ' + app_name + ', device: ' +
                   MethodUtil.DeviceToName[device] + '--cooperation setpoint ' +
-                  '(imag) below min to prevent backtracking: ' +
-                  str(value) + ', reset to: ' + str(MinSetpointsImag[device]))
+                  '(imag) below ConflictMatrix minimum: ' + str(value) +
+                  ', reset to minimum: ' + str(MinSetpointsImag[device]))
             value = complex(value.real, MinSetpointsImag[device])
           elif value.imag > MaxSetpointsImag[device]:
             prlog('SetpointProcessor--app: ' + app_name + ', device: ' +
                   MethodUtil.DeviceToName[device] + '--cooperation setpoint ' +
-                  '(imag) above max to prevent backtracking: ' +
-                  str(value) + ', reset to: ' + str(MaxSetpointsImag[device]))
+                  '(imag) above ConflictMatrix maximum: ' + str(value) +
+                  ', reset to maximum: ' + str(MaxSetpointsImag[device]))
             value = complex(value.real, MaxSetpointsImag[device])
 
       self.ConflictMatrix[device][app_name] = (timestamp, value)
