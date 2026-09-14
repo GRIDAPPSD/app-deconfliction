@@ -2822,20 +2822,21 @@ class DeconflictionPipeline(GridAPPSD):
       #self.rulesRegOuterStepsAllowed = 8
 
       # GDB 9/11/26: Here is what we use after reviewer feedback for the baseline
+      # giving realistic rules for preserving asset health
       self.rulesBattTimeInterval = 60*60*6 # every 6 hours
-      self.rulesBattSwitchesAllowed = 6
+      self.rulesBattSwitchesAllowed = 3
       self.rulesRegInnerTimeInterval = 60*30 # every 30 minutes
-      self.rulesRegInnerStepsAllowed = 2
+      self.rulesRegInnerStepsAllowed = 1
       self.rulesRegOuterTimeInterval = 60*60*6 # every 6 hours
-      self.rulesRegOuterStepsAllowed = 12
+      self.rulesRegOuterStepsAllowed = 6
 
-      # GDB 9/11/26: Here are the more restrictive rules for the comparison run
+      # GDB 9/11/26: Here are the less restrictive rules for the comparison run
       #self.rulesBattTimeInterval = 60*60*6 # every 6 hours
-      #self.rulesBattSwitchesAllowed = 3
+      #self.rulesBattSwitchesAllowed = 6
       #self.rulesRegInnerTimeInterval = 60*30 # every 30 minutes
-      #self.rulesRegInnerStepsAllowed = 1
+      #self.rulesRegInnerStepsAllowed = 2
       #self.rulesRegOuterTimeInterval = 60*60*6 # every 6 hours
-      #self.rulesRegOuterStepsAllowed = 6
+      #self.rulesRegOuterStepsAllowed = 12
 
     # for SHIVA conflict metric testing
     #self.TimeConflictMatrix = {}
