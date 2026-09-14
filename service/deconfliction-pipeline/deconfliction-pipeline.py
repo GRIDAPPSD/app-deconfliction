@@ -390,26 +390,26 @@ class DeconflictionPipeline(GridAPPSD):
           if value.real < MinSetpointsReal[device]:
             prlog('SetpointProcessor--app: ' + app_name + ', device: ' +
                   MethodUtil.DeviceToName[device] + '--cooperation setpoint ' +
-                  '(real) below ConflictMatrix minimum: ' + str(value) +
+                  '(real) below ConflictMatrix minimum: ' + str(value.real) +
                   ', reset to miniumum: ' + str(MinSetpointsReal[device]))
             value = complex(MinSetpointsReal[device], value.imag)
           elif value.real > MaxSetpointsReal[device]:
             prlog('SetpointProcessor--app: ' + app_name + ', device: ' +
                   MethodUtil.DeviceToName[device] + '--cooperation setpoint ' +
-                  '(real) above ConflictMatrix maximum: ' + str(value) +
+                  '(real) above ConflictMatrix maximum: ' + str(value.real) +
                   ', reset to maximum: ' + str(MaxSetpointsReal[device]))
             value = complex(MaxSetpointsReal[device], value.imag)
 
           if value.imag < MinSetpointsImag[device]:
             prlog('SetpointProcessor--app: ' + app_name + ', device: ' +
                   MethodUtil.DeviceToName[device] + '--cooperation setpoint ' +
-                  '(imag) below ConflictMatrix minimum: ' + str(value) +
+                  '(imag) below ConflictMatrix minimum: ' + str(value.imag) +
                   ', reset to minimum: ' + str(MinSetpointsImag[device]))
             value = complex(value.real, MinSetpointsImag[device])
           elif value.imag > MaxSetpointsImag[device]:
             prlog('SetpointProcessor--app: ' + app_name + ', device: ' +
                   MethodUtil.DeviceToName[device] + '--cooperation setpoint ' +
-                  '(imag) above ConflictMatrix maximum: ' + str(value) +
+                  '(imag) above ConflictMatrix maximum: ' + str(value.imag) +
                   ', reset to maximum: ' + str(MaxSetpointsImag[device]))
             value = complex(value.real, MaxSetpointsImag[device])
 
