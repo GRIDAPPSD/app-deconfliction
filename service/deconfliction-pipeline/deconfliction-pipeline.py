@@ -234,6 +234,18 @@ class DeconflictionPipeline(GridAPPSD):
       msglog('received new measurement setpoints|app:' + message['app_name'] +
              '|delay:' + str(diff_sec))
 
+    # GDB 9/18/26: Irregular app schedule setup for dropping out app4 between
+    # 9am and 3pm and completely losing app5 at noon for the rest of the day.
+    # Comment this out to use a regular schedule
+    #if message['app_name']=='app4-app' and self.simTimestamp>=1704110400: # stop at noon
+    #  if self.logMessagesFlag:
+    #    msglog('ignoring measurement setpoints per app schedule|app:' + message['app_name'] + '|timestamp:' + str(self.simTimestamp))
+    #  return
+    #elif message['app_name']=='app5-app' and self.simTimestamp>=1704099600 and self.simTimestamp<=1704121200: # drop out from 9am until 3pm
+    #  if self.logMessagesFlag:
+    #    msglog('ignoring measurement setpoints per app schedule|app:' + message['app_name'] + '|timestamp:' + str(self.simTimestamp))
+    #  return
+
     # GDB 10/2/25: delays over a second seem to be common for these messages
     # so for now don't check and just put those on the queue
     '''
@@ -264,6 +276,18 @@ class DeconflictionPipeline(GridAPPSD):
               '|msgid:' + str(message['coop_msgid']) + '|series:' +
               str(message['coop_series']) + '|delay:' + str(diff_sec))
 
+    # GDB 9/18/26: Irregular app schedule setup for dropping out app4 between
+    # 9am and 3pm and completely losing app5 at noon for the rest of the day.
+    # Comment this out to use a regular schedule
+    #if message['app_name']=='app4-app' and self.simTimestamp>=1704110400: # stop at noon
+    #  if self.logMessagesFlag:
+    #    msglog('ignoring cooperation response per app schedule|app:' + message['app_name'] + '|timestamp:' + str(self.simTimestamp))
+    #  return
+    #elif message['app_name']=='app5-app' and self.simTimestamp>=1704099600 and self.simTimestamp<=1704121200: # drop out from 9am until 3pm
+    #  if self.logMessagesFlag:
+    #    msglog('ignoring cooperation response per app schedule|app:' + message['app_name'] + '|timestamp:' + str(self.simTimestamp))
+    #  return
+
     if diff_sec < 5.0:
       self.messageQueue.put((message['app_name'], message['coop_series'],
                              self.simTimestamp, message['input']['message']))
@@ -293,9 +317,14 @@ class DeconflictionPipeline(GridAPPSD):
         if self.timeDropStale != None:
           # GDB 8/31/26: Drop any setpoints older than timeDropStale from timestamp
           timeDropBefore = timestamp - self.timeDropStale
+          pop_list = []
           for app in self.ConflictMatrix[device]:
             if self.ConflictMatrix[device][app][0] < timeDropBefore:
-              self.ConflictMatrix[device].pop(app)
+              pop_list.append(app)
+
+          # GDB 9/18/26: Can't pop while iterating over ConflictMatrix
+          for app in pop_list:
+            self.ConflictMatrix[device].pop(app)
 
       if self.pltFlag:
         self.pltFile.write(app_name)
