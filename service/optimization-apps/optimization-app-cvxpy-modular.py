@@ -676,6 +676,7 @@ class CompetingApp(GridAPPSD):
             flush=True)
       #print('Sending Cooperation DifferenceBuilder message: ' +
       #      json.dumps(dispatch_message), flush=True)
+
       self.coop_gapps.send(self.coop_publish_topic, json.dumps(dispatch_message))
       if self.logMessagesFlag:
         self.msglog('sending cooperation response|msgid:' + str(self.coopMsgID) + '|series:' + str(self.coopSeries))
@@ -1929,6 +1930,16 @@ class CompetingApp(GridAPPSD):
     if self.opt_type == 'scalability':
       # the interval value is actually the app_setup.csv line
       self.optPrelimScalability(interval)
+
+      # GDB 9/18/26: Irregular app schedule--comment out when all apps
+      # are on the same schedule
+      # self.app_name is now set so I can use that for setting up irregular
+      # request schedule
+      #if self.app_name == 'app2-app':
+      #  self.optIntervalSec = 3600 # 1 hour schedule
+      #elif self.app_name == 'app3-app':
+      #  self.optIntervalSec = 7200 # 2 hour schedule
+
     else:
       self.optPrelimClassic()
 
@@ -2017,11 +2028,17 @@ class CompetingApp(GridAPPSD):
     # GDB 8/25/25: Set as service just to send to simulation for debugging
     # outside of running deconfliction pipeline
     #deconflictionAsServiceFlag = True
+
     if deconflictionAsServiceFlag:
       self.sim_publish_topic = simulation_input_topic(simulation_id)
     else:
       self.sim_publish_topic = service_input_topic('deconfliction.measurements',
                                                    simulation_id)
+
+    # GDB 9/18/26: Uncomment the following and comment out the if/else logic
+    # above to bypass all deconfliction with apps sending setpoint requests
+    # directly to the simulation
+    #self.sim_publish_topic = simulation_input_topic(simulation_id)
 
     # create DifferenceBuilder once and reuse it throughout the simulation
     self.difference_builder = DifferenceBuilder(simulation_id)
