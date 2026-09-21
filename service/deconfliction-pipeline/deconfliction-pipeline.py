@@ -1871,7 +1871,10 @@ class DeconflictionPipeline(GridAPPSD):
         deltaDispatch = (now - self.timerDispatch).total_seconds()
       self.timerDispatch = now
 
-      self.pltFile.write('device_dispatch,reason:' + reason + ',timestamp:' + str(timestamp) + ',runningTime:' + str(timerRunning) + ',dispatchTime:' + str(deltaDispatch) + ',rulesTime:' + str(self.timerRules) + ',coopTime:' + str(self.timerCoop) + ',optTime:' + str(self.timerOpt) + ",batteryCycles:" + str(self.batteryCycleCount) + ",tapPositions:" + str(self.tapPositionCount) + ",dispatchCount:" + str(dispatchCount))
+      if self.shortCircuitFlag:
+        self.pltFile.write('device_dispatch,reason:' + reason + ',timestamp:' + str(timestamp) + ',runningTime:' + str(timerRunning) + ',dispatchTime:' + str(deltaDispatch) + ',rulesTime:NA,coopTime:NA,optTime:NA,batteryCycles:' + str(self.batteryCycleCount) + ',tapPositions:' + str(self.tapPositionCount) + ',dispatchCount:' + str(dispatchCount))
+      else:
+        self.pltFile.write('device_dispatch,reason:' + reason + ',timestamp:' + str(timestamp) + ',runningTime:' + str(timerRunning) + ',dispatchTime:' + str(deltaDispatch) + ',rulesTime:' + str(self.timerRules) + ',coopTime:' + str(self.timerCoop) + ',optTime:' + str(self.timerOpt) + ',batteryCycles:' + str(self.batteryCycleCount) + ',tapPositions:' + str(self.tapPositionCount) + ',dispatchCount:' + str(dispatchCount))
 
       # first version goes in ResolutionVector order while the second goes
       # in device order
@@ -2091,6 +2094,31 @@ class DeconflictionPipeline(GridAPPSD):
     # set_points are the forward_differences part of the DifferenceBuilder
     # message with keys of object, attribute, and value
     set_points = message['forward_differences']
+
+    # GDB 9/21/26: Short circuit all deconfliction and pass the requested setpoints
+    # directly to device dispatcher
+    if self.shortCircuitFlag:
+      newResolutionVector = {}
+      for point in set_points:
+        device = point['object']
+        value = point['value']
+
+        if device not in newResolutionVector:
+          newResolutionVector[device] = (timestamp, value)
+        elif not isinstance(newResolutionVector[device][1], complex):
+          # this assumes the p value for the SolarPV was processed first
+          # so this will add the q value
+          newResolutionVector[device] = (timestamp, complex(newResolutionVector[device][1], value))
+
+      dispatchCount = self.DeviceDispatcher(timestamp, newResolutionVector,
+                                            self.printAllDispatchesFlag)
+      prlog('>>> ProcessSetpointsMessage--invoked device dispatch for ' +
+            'NO deconfliction, # devices dispatched: ' +str(dispatchCount))
+      self.PlotDispatch('NoDeconflictionForApp:'+app_name, timestamp,
+                        newResolutionVector, dispatchCount)
+
+      # return False to indicate there is no deconfliction to do
+      return False
 
     # Published IEEE Access Foundational Paper Reference:
     #   Step 1--Setpoint Processor
@@ -2916,6 +2944,12 @@ class DeconflictionPipeline(GridAPPSD):
     self.bypassDeconflictionFlag = False
     #self.bypassDeconflictionFlag = True
     self.instantSetpointUpdateFlag = False
+
+    # GDB 9/21/26: short circuit all deconfliction and pass the requested setpoints
+    # directly to device dispatcher for a test case that shows the chaos when the
+    # apps are in complete control.
+    self.shortCircuitFlag = False
+    #self.shortCircuitFlag = True
 
     prlog('\nInitialization--finished, waiting for messages...\n')
 
