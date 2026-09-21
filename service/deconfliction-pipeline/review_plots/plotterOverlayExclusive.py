@@ -61,10 +61,17 @@ plotDPI = 200
 labelSize = 16
 legendSize = 14
 tickSize = 12
+app1Name = 'App1'
+app2Name = 'App2'
+app3Name = 'App3'
+app4Name = 'App4'
+app5Name = 'App5'
 simColor = 'black'
 app1Color = 'red'
 app2Color = 'green'
 app3Color = 'blue'
+app4Color = 'orange'
+app5Color = 'purple'
 legendLoc = 'lower right'
 legendProp = {'weight': 'bold', 'size': legendSize}
 
@@ -72,7 +79,7 @@ def to_datetime(time):
   return datetime(1966, 8, 1, (int(time)-1)//4, 15*((int(time)-1) % 4), 0)
 
 
-def make_p_batt_plots(title, prefix, Batteries, t_plot_1, p_batt_plot_1, t_plot_2, p_batt_plot_2, t_plot_3, p_batt_plot_3):
+def make_p_batt_plots(title, prefix, Batteries, t_plot_1, p_batt_plot_1, t_plot_2, p_batt_plot_2, t_plot_3, p_batt_plot_3, t_plot_4, p_batt_plot_4, t_plot_5, p_batt_plot_5):
   for name in Batteries:
     if len(t_plot_1) != len(p_batt_plot_1[name]):
       print('*** Mismatched data points for app1 plot ' + title + ' P_batt ' + name + ', time len: ' + str(len(t_plot_1)) + ', p_batt len: ' + str(len(p_batt_plot_1[name])), flush=True)
@@ -82,6 +89,12 @@ def make_p_batt_plots(title, prefix, Batteries, t_plot_1, p_batt_plot_1, t_plot_
 
     if len(t_plot_3) != len(p_batt_plot_3[name]):
       print('*** Mismatched data points for app3 plot ' + title + ' P_batt ' + name + ', time len: ' + str(len(t_plot_3)) + ', p_batt len: ' + str(len(p_batt_plot_3[name])), flush=True)
+
+    if len(t_plot_4) != len(p_batt_plot_4[name]):
+      print('*** Mismatched data points for app4 plot ' + title + ' P_batt ' + name + ', time len: ' + str(len(t_plot_4)) + ', p_batt len: ' + str(len(p_batt_plot_4[name])), flush=True)
+
+    if len(t_plot_5) != len(p_batt_plot_5[name]):
+      print('*** Mismatched data points for app5 plot ' + title + ' P_batt ' + name + ', time len: ' + str(len(t_plot_5)) + ', p_batt len: ' + str(len(p_batt_plot_5[name])), flush=True)
 
     batname = name[12:] # extract just the name for tidier plots
     plt.figure(dpi=plotDPI)
@@ -99,9 +112,11 @@ def make_p_batt_plots(title, prefix, Batteries, t_plot_1, p_batt_plot_1, t_plot_
 
     plt.yticks(fontweight='bold', fontsize=tickSize)
     plt.ylabel('BESS Output (kW)', fontweight='bold', fontsize=labelSize)
-    plt.plot(t_plot_1[:len(p_batt_plot_1[name])], p_batt_plot_1[name], color=app1Color, label='App1')
-    plt.plot(t_plot_2[:len(p_batt_plot_2[name])], p_batt_plot_2[name], color=app2Color, label='App2')
-    plt.plot(t_plot_3[:len(p_batt_plot_3[name])], p_batt_plot_3[name], color=app3Color, label='App3')
+    plt.plot(t_plot_1[:len(p_batt_plot_1[name])], p_batt_plot_1[name], color=app1Color, label=app1Name)
+    plt.plot(t_plot_2[:len(p_batt_plot_2[name])], p_batt_plot_2[name], color=app2Color, label=app2Name)
+    plt.plot(t_plot_3[:len(p_batt_plot_3[name])], p_batt_plot_3[name], color=app3Color, label=app3Name)
+    plt.plot(t_plot_4[:len(p_batt_plot_4[name])], p_batt_plot_4[name], color=app4Color, label=app4Name)
+    plt.plot(t_plot_5[:len(p_batt_plot_5[name])], p_batt_plot_5[name], color=app5Color, label=app5Name)
     plt.legend(prop=legendProp, loc=legendLoc)
     plt.grid(True)
     plt.tight_layout()
@@ -110,7 +125,7 @@ def make_p_batt_plots(title, prefix, Batteries, t_plot_1, p_batt_plot_1, t_plot_
     plt.close()
 
 
-def make_soc_plots(title, prefix, Batteries, t_plot_1, soc_plot_1, t_plot_2, soc_plot_2, t_plot_3, soc_plot_3):
+def make_soc_plots(title, prefix, Batteries, t_plot_1, soc_plot_1, t_plot_2, soc_plot_2, t_plot_3, soc_plot_3, t_plot_4, soc_plot_4, t_plot_5, soc_plot_5):
   for name in Batteries:
     if len(t_plot_1) != len(soc_plot_1[name]):
       print('*** Mismatched data points for app1 plot ' + title + ' SoC ' + name + ', time len: ' + str(len(t_plot_1)) + ', soc len: ' + str(len(soc_plot_1[name])), flush=True)
@@ -120,6 +135,12 @@ def make_soc_plots(title, prefix, Batteries, t_plot_1, soc_plot_1, t_plot_2, soc
 
     if len(t_plot_3) != len(soc_plot_3[name]):
       print('*** Mismatched data points for app3 plot ' + title + ' SoC ' + name + ', time len: ' + str(len(t_plot_3)) + ', soc len: ' + str(len(soc_plot_3[name])), flush=True)
+
+    if len(t_plot_4) != len(soc_plot_4[name]):
+      print('*** Mismatched data points for app4 plot ' + title + ' SoC ' + name + ', time len: ' + str(len(t_plot_4)) + ', soc len: ' + str(len(soc_plot_4[name])), flush=True)
+
+    if len(t_plot_5) != len(soc_plot_5[name]):
+      print('*** Mismatched data points for app5 plot ' + title + ' SoC ' + name + ', time len: ' + str(len(t_plot_5)) + ', soc len: ' + str(len(soc_plot_5[name])), flush=True)
 
     batname = name[12:] # extract just the name for tidier plots
     plt.figure(dpi=plotDPI)
@@ -138,9 +159,11 @@ def make_soc_plots(title, prefix, Batteries, t_plot_1, soc_plot_1, t_plot_2, soc
     plt.ylim([0.0, 1.0])
     plt.yticks([0.0, 0.2, 0.4, 0.6, 0.8, 1.0], fontweight='bold', fontsize=tickSize)
     plt.ylabel('BESS Output (SoC)', fontweight='bold', fontsize=labelSize)
-    plt.plot(t_plot_1[:len(soc_plot_1[name])], soc_plot_1[name], color=app1Color, label='App1')
-    plt.plot(t_plot_2[:len(soc_plot_2[name])], soc_plot_2[name], color=app2Color, label='App2')
-    plt.plot(t_plot_3[:len(soc_plot_3[name])], soc_plot_3[name], color=app3Color, label='App3')
+    plt.plot(t_plot_1[:len(soc_plot_1[name])], soc_plot_1[name], color=app1Color, label=app1Name)
+    plt.plot(t_plot_2[:len(soc_plot_2[name])], soc_plot_2[name], color=app2Color, label=app2Name)
+    plt.plot(t_plot_3[:len(soc_plot_3[name])], soc_plot_3[name], color=app3Color, label=app3Name)
+    plt.plot(t_plot_4[:len(soc_plot_4[name])], soc_plot_4[name], color=app4Color, label=app4Name)
+    plt.plot(t_plot_5[:len(soc_plot_5[name])], soc_plot_5[name], color=app5Color, label=app5Name)
     plt.legend(prop=legendProp, loc=legendLoc)
     plt.grid(True)
     plt.tight_layout()
@@ -149,7 +172,7 @@ def make_soc_plots(title, prefix, Batteries, t_plot_1, soc_plot_1, t_plot_2, soc
     plt.close()
 
 
-def make_reg_plots(title, prefix, Regulators, t_plot_1, reg_plot_1, t_plot_2, reg_plot_2, t_plot_3, reg_plot_3):
+def make_reg_plots(title, prefix, Regulators, t_plot_1, reg_plot_1, t_plot_2, reg_plot_2, t_plot_3, reg_plot_3, t_plot_4, reg_plot_4, t_plot_5, reg_plot_5):
   for name in Regulators:
     if len(t_plot_1) != len(reg_plot_1[name]):
       print('*** Mismatched data points for app1 plot ' + title + ' ' + name + ', time len: ' + str(len(t_plot_1)) + ', reg len: ' + str(len(reg_plot_1[name])), flush=True)
@@ -159,6 +182,12 @@ def make_reg_plots(title, prefix, Regulators, t_plot_1, reg_plot_1, t_plot_2, re
 
     if len(t_plot_3) != len(reg_plot_3[name]):
       print('*** Mismatched data points for app3 plot ' + title + ' ' + name + ', time len: ' + str(len(t_plot_3)) + ', reg len: ' + str(len(reg_plot_3[name])), flush=True)
+
+    if len(t_plot_4) != len(reg_plot_4[name]):
+      print('*** Mismatched data points for app4 plot ' + title + ' ' + name + ', time len: ' + str(len(t_plot_4)) + ', reg len: ' + str(len(reg_plot_4[name])), flush=True)
+
+    if len(t_plot_5) != len(reg_plot_5[name]):
+      print('*** Mismatched data points for app5 plot ' + title + ' ' + name + ', time len: ' + str(len(t_plot_5)) + ', reg len: ' + str(len(reg_plot_5[name])), flush=True)
 
     regname = name[16:] # extract just the name for tidier plots
     plt.figure(dpi=plotDPI)
@@ -178,9 +207,11 @@ def make_reg_plots(title, prefix, Regulators, t_plot_1, reg_plot_1, t_plot_2, re
     plt.ylim([-16, 16])
     plt.yticks([-16, -12, -8, -4, 0, 4, 8, 12, 16], fontweight='bold', fontsize=tickSize)
     plt.ylabel('Regulator Taps', fontweight='bold', fontsize=labelSize)
-    plt.plot(t_plot_1[:len(reg_plot_1[name])], reg_plot_1[name], color=app1Color, label='App1')
-    plt.plot(t_plot_2[:len(reg_plot_2[name])], reg_plot_2[name], color=app2Color, label='App2')
-    plt.plot(t_plot_3[:len(reg_plot_3[name])], reg_plot_3[name], color=app3Color, label='App3')
+    plt.plot(t_plot_1[:len(reg_plot_1[name])], reg_plot_1[name], color=app1Color, label=app1Name)
+    plt.plot(t_plot_2[:len(reg_plot_2[name])], reg_plot_2[name], color=app2Color, label=app2Name)
+    plt.plot(t_plot_3[:len(reg_plot_3[name])], reg_plot_3[name], color=app3Color, label=app3Name)
+    plt.plot(t_plot_4[:len(reg_plot_4[name])], reg_plot_4[name], color=app4Color, label=app4Name)
+    plt.plot(t_plot_5[:len(reg_plot_5[name])], reg_plot_5[name], color=app5Color, label=app5Name)
     plt.legend(prop=legendProp, loc=legendLoc)
     plt.grid(True)
     plt.tight_layout()
@@ -189,7 +220,7 @@ def make_reg_plots(title, prefix, Regulators, t_plot_1, reg_plot_1, t_plot_2, re
     plt.close()
 
 
-def make_p_pv_plots(title, prefix, SolarPVs, t_plot_1, p_pv_plot_1, t_plot_2, p_pv_plot_2, t_plot_3, p_pv_plot_3):
+def make_p_pv_plots(title, prefix, SolarPVs, t_plot_1, p_pv_plot_1, t_plot_2, p_pv_plot_2, t_plot_3, p_pv_plot_3, t_plot_4, p_pv_plot_4, t_plot_5, p_pv_plot_5):
   for name in SolarPVs:
     # just bail if there is no SolarPV data
     if len(p_pv_plot_1[name]) == 0:
@@ -203,6 +234,12 @@ def make_p_pv_plots(title, prefix, SolarPVs, t_plot_1, p_pv_plot_1, t_plot_2, p_
 
     if len(t_plot_3) != len(p_pv_plot_3[name]):
       print('*** Mismatched data points for app3 plot ' + title + ' p_pv ' + name + ', time len: ' + str(len(t_plot_3)) + ', p_pv len: ' + str(len(p_pv_plot_3[name])), flush=True)
+
+    if len(t_plot_4) != len(p_pv_plot_4[name]):
+      print('*** Mismatched data points for app4 plot ' + title + ' p_pv ' + name + ', time len: ' + str(len(t_plot_4)) + ', p_pv len: ' + str(len(p_pv_plot_4[name])), flush=True)
+
+    if len(t_plot_5) != len(p_pv_plot_5[name]):
+      print('*** Mismatched data points for app5 plot ' + title + ' p_pv ' + name + ', time len: ' + str(len(t_plot_5)) + ', p_pv len: ' + str(len(p_pv_plot_5[name])), flush=True)
 
     pvname = name[17:] # extract just the name for tidier plots
     plt.figure(dpi=plotDPI)
@@ -220,9 +257,11 @@ def make_p_pv_plots(title, prefix, SolarPVs, t_plot_1, p_pv_plot_1, t_plot_2, p_
 
     plt.yticks(fontweight='bold', fontsize=tickSize)
     plt.ylabel('PV Output (kW)', fontweight='bold', fontsize=labelSize)
-    plt.plot(t_plot_1[:len(p_pv_plot_1[name])], p_pv_plot_1[name], color=app1Color, label='App1')
-    plt.plot(t_plot_2[:len(p_pv_plot_2[name])], p_pv_plot_2[name], color=app2Color, label='App2')
-    plt.plot(t_plot_3[:len(p_pv_plot_3[name])], p_pv_plot_3[name], color=app3Color, label='App3')
+    plt.plot(t_plot_1[:len(p_pv_plot_1[name])], p_pv_plot_1[name], color=app1Color, label=app1Name)
+    plt.plot(t_plot_2[:len(p_pv_plot_2[name])], p_pv_plot_2[name], color=app2Color, label=app2Name)
+    plt.plot(t_plot_3[:len(p_pv_plot_3[name])], p_pv_plot_3[name], color=app3Color, label=app3Name)
+    plt.plot(t_plot_4[:len(p_pv_plot_4[name])], p_pv_plot_4[name], color=app4Color, label=app4Name)
+    plt.plot(t_plot_5[:len(p_pv_plot_5[name])], p_pv_plot_5[name], color=app5Color, label=app5Name)
     plt.legend(prop=legendProp, loc=legendLoc)
     plt.grid(True)
     plt.tight_layout()
@@ -231,7 +270,7 @@ def make_p_pv_plots(title, prefix, SolarPVs, t_plot_1, p_pv_plot_1, t_plot_2, p_
     plt.close()
 
 
-def make_q_pv_plots(title, prefix, SolarPVs, t_plot_1, q_pv_plot_1, t_plot_2, q_pv_plot_2, t_plot_3, q_pv_plot_3):
+def make_q_pv_plots(title, prefix, SolarPVs, t_plot_1, q_pv_plot_1, t_plot_2, q_pv_plot_2, t_plot_3, q_pv_plot_3, t_plot_4, q_pv_plot_4, t_plot_5, q_pv_plot_5):
   for name in SolarPVs:
     # just bail if there is no SolarPV data
     if len(q_pv_plot_1[name]) == 0:
@@ -245,6 +284,12 @@ def make_q_pv_plots(title, prefix, SolarPVs, t_plot_1, q_pv_plot_1, t_plot_2, q_
 
     if len(t_plot_3) != len(q_pv_plot_3[name]):
       print('*** Mismatched data points for app3 plot ' + title + ' q_pv ' + name + ', time len: ' + str(len(t_plot_3)) + ', q_pv len: ' + str(len(q_pv_plot_3[name])), flush=True)
+
+    if len(t_plot_4) != len(q_pv_plot_4[name]):
+      print('*** Mismatched data points for app4 plot ' + title + ' q_pv ' + name + ', time len: ' + str(len(t_plot_4)) + ', q_pv len: ' + str(len(q_pv_plot_4[name])), flush=True)
+
+    if len(t_plot_5) != len(q_pv_plot_5[name]):
+      print('*** Mismatched data points for app5 plot ' + title + ' q_pv ' + name + ', time len: ' + str(len(t_plot_5)) + ', q_pv len: ' + str(len(q_pv_plot_5[name])), flush=True)
 
     pvname = name[17:] # extract just the name for tidier plots
     plt.figure(dpi=plotDPI)
@@ -262,9 +307,11 @@ def make_q_pv_plots(title, prefix, SolarPVs, t_plot_1, q_pv_plot_1, t_plot_2, q_
 
     plt.yticks(fontweight='bold', fontsize=tickSize)
     plt.ylabel('PV Output (kVAR)', fontweight='bold', fontsize=labelSize)
-    plt.plot(t_plot_1[:len(q_pv_plot_1[name])], q_pv_plot_1[name], color=app1Color, label='App1')
-    plt.plot(t_plot_2[:len(q_pv_plot_2[name])], q_pv_plot_2[name], color=app2Color, label='App2')
-    plt.plot(t_plot_3[:len(q_pv_plot_3[name])], q_pv_plot_3[name], color=app3Color, label='App3')
+    plt.plot(t_plot_1[:len(q_pv_plot_1[name])], q_pv_plot_1[name], color=app1Color, label=app1Name)
+    plt.plot(t_plot_2[:len(q_pv_plot_2[name])], q_pv_plot_2[name], color=app2Color, label=app2Name)
+    plt.plot(t_plot_3[:len(q_pv_plot_3[name])], q_pv_plot_3[name], color=app3Color, label=app3Name)
+    plt.plot(t_plot_4[:len(q_pv_plot_4[name])], q_pv_plot_4[name], color=app4Color, label=app4Name)
+    plt.plot(t_plot_5[:len(q_pv_plot_5[name])], q_pv_plot_5[name], color=app5Color, label=app5Name)
     plt.legend(prop=legendProp, loc=legendLoc)
     plt.grid(True)
     plt.tight_layout()
@@ -305,6 +352,20 @@ def _main():
   p_pv_plot_3 = {}
   q_pv_plot_3 = {}
 
+  t_plot_4 = []
+  p_batt_plot_4 = {}
+  soc_plot_4 = {}
+  reg_plot_4 = {}
+  p_pv_plot_4 = {}
+  q_pv_plot_4 = {}
+
+  t_plot_5 = []
+  p_batt_plot_5 = {}
+  soc_plot_5 = {}
+  reg_plot_5 = {}
+  p_pv_plot_5 = {}
+  q_pv_plot_5 = {}
+
   for batt in Batteries:
     p_batt_plot_1[batt] = []
     soc_plot_1[batt] = []
@@ -312,11 +373,17 @@ def _main():
     soc_plot_2[batt] = []
     p_batt_plot_3[batt] = []
     soc_plot_3[batt] = []
+    p_batt_plot_4[batt] = []
+    soc_plot_4[batt] = []
+    p_batt_plot_5[batt] = []
+    soc_plot_5[batt] = []
 
   for reg in Regulators:
     reg_plot_1[reg] = []
     reg_plot_2[reg] = []
     reg_plot_3[reg] = []
+    reg_plot_4[reg] = []
+    reg_plot_5[reg] = []
 
   for pv in SolarPVs:
     p_pv_plot_1[pv] = []
@@ -325,6 +392,10 @@ def _main():
     q_pv_plot_2[pv] = []
     p_pv_plot_3[pv] = []
     q_pv_plot_3[pv] = []
+    p_pv_plot_4[pv] = []
+    q_pv_plot_4[pv] = []
+    p_pv_plot_5[pv] = []
+    q_pv_plot_5[pv] = []
 
   # Jan 1, midnight timestamp:
   timex_start = 1704067200.0
@@ -425,17 +496,81 @@ def _main():
 
   print(app + ' app3 hits: ' + str(simhits), flush=True)
 
+  simhits = 0
+  with open('../review_runs/excl_app4/plot_data.csv', 'r') as file:
+    for line in file:
+      tokens = line.split(',')
+      if tokens[0] == app:
+        simhits += 1
+        t_plot_4.append((float(tokens[2]) - timex_start)/3600.0)
+
+        start = 3
+        finish = start + len(Batteries)*3
+        for it in range(start, finish, 3):
+          batt = tokens[it]
+          p_batt_plot_4[batt].append(float(tokens[it+1])/1000.0)
+          soc_plot_4[batt].append(float(tokens[it+2]))
+
+        start = finish
+        finish = start + len(Regulators)*2
+        for it in range(start, finish, 2):
+          reg = tokens[it]
+          reg_plot_4[reg].append(int(tokens[it+1]))
+
+        start = finish
+        finish = start + len(SolarPVs)*2
+        for it in range(start, finish, 2):
+          pv = tokens[it]
+          cmplx = complex(tokens[it+1])/1000.0
+          p_pv_plot_4[pv].append(cmplx.real)
+          q_pv_plot_4[pv].append(cmplx.imag)
+
+  print(app + ' app4 hits: ' + str(simhits), flush=True)
+
+  simhits = 0
+  with open('../review_runs/excl_app5/plot_data.csv', 'r') as file:
+    for line in file:
+      tokens = line.split(',')
+      if tokens[0] == app:
+        simhits += 1
+        t_plot_5.append((float(tokens[2]) - timex_start)/3600.0)
+
+        start = 3
+        finish = start + len(Batteries)*3
+        for it in range(start, finish, 3):
+          batt = tokens[it]
+          p_batt_plot_5[batt].append(float(tokens[it+1])/1000.0)
+          soc_plot_5[batt].append(float(tokens[it+2]))
+
+        start = finish
+        finish = start + len(Regulators)*2
+        for it in range(start, finish, 2):
+          reg = tokens[it]
+          reg_plot_5[reg].append(int(tokens[it+1]))
+
+        start = finish
+        finish = start + len(SolarPVs)*2
+        for it in range(start, finish, 2):
+          pv = tokens[it]
+          cmplx = complex(tokens[it+1])/1000.0
+          p_pv_plot_5[pv].append(cmplx.real)
+          q_pv_plot_5[pv].append(cmplx.imag)
+
+  print(app + ' app5 hits: ' + str(simhits), flush=True)
+
   app = 'Simulation'
 
-  make_p_batt_plots(app, prefix, Batteries, t_plot_1, p_batt_plot_1, t_plot_2, p_batt_plot_2, t_plot_3, p_batt_plot_3)
-  make_soc_plots(app, prefix, Batteries, t_plot_1, soc_plot_1, t_plot_2, soc_plot_2, t_plot_3, soc_plot_3)
-  make_reg_plots(app, prefix, Regulators, t_plot_1, reg_plot_1, t_plot_2, reg_plot_2, t_plot_3, reg_plot_3)
-  make_p_pv_plots(app, prefix, SolarPVs, t_plot_1, p_pv_plot_1, t_plot_2, p_pv_plot_2, t_plot_3, p_pv_plot_3)
-  make_q_pv_plots(app, prefix, SolarPVs, t_plot_1, q_pv_plot_1, t_plot_2, q_pv_plot_2, t_plot_3, q_pv_plot_3)
+  make_p_batt_plots(app, prefix, Batteries, t_plot_1, p_batt_plot_1, t_plot_2, p_batt_plot_2, t_plot_3, p_batt_plot_3, t_plot_4, p_batt_plot_4, t_plot_5, p_batt_plot_5)
+  make_soc_plots(app, prefix, Batteries, t_plot_1, soc_plot_1, t_plot_2, soc_plot_2, t_plot_3, soc_plot_3, t_plot_4, soc_plot_4, t_plot_5, soc_plot_5)
+  make_reg_plots(app, prefix, Regulators, t_plot_1, reg_plot_1, t_plot_2, reg_plot_2, t_plot_3, reg_plot_3, t_plot_4, reg_plot_4, t_plot_5, reg_plot_5)
+  make_p_pv_plots(app, prefix, SolarPVs, t_plot_1, p_pv_plot_1, t_plot_2, p_pv_plot_2, t_plot_3, p_pv_plot_3, t_plot_4, p_pv_plot_4, t_plot_5, p_pv_plot_5)
+  make_q_pv_plots(app, prefix, SolarPVs, t_plot_1, q_pv_plot_1, t_plot_2, q_pv_plot_2, t_plot_3, q_pv_plot_3, t_plot_4, q_pv_plot_4, t_plot_5, q_pv_plot_5)
 
   t_plot_1.clear()
   t_plot_2.clear()
   t_plot_3.clear()
+  t_plot_4.clear()
+  t_plot_4.clear()
 
   for batt in Batteries:
     p_batt_plot_1[batt].clear()
@@ -444,11 +579,17 @@ def _main():
     soc_plot_2[batt].clear()
     p_batt_plot_3[batt].clear()
     soc_plot_3[batt].clear()
+    p_batt_plot_4[batt].clear()
+    soc_plot_4[batt].clear()
+    p_batt_plot_5[batt].clear()
+    soc_plot_5[batt].clear()
 
   for reg in Regulators:
     reg_plot_1[reg].clear()
     reg_plot_2[reg].clear()
     reg_plot_3[reg].clear()
+    reg_plot_4[reg].clear()
+    reg_plot_5[reg].clear()
 
   for pv in SolarPVs:
     p_pv_plot_1[pv].clear()
@@ -457,6 +598,10 @@ def _main():
     q_pv_plot_2[pv].clear()
     p_pv_plot_3[pv].clear()
     q_pv_plot_3[pv].clear()
+    p_pv_plot_4[pv].clear()
+    q_pv_plot_4[pv].clear()
+    p_pv_plot_5[pv].clear()
+    q_pv_plot_5[pv].clear()
 
   print('Goodbye!')
 
