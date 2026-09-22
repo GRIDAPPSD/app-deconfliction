@@ -258,6 +258,7 @@ def _main():
   plotPrefix = 'lessrules'
   #plotPrefix = 'lesscoop'
   #plotPrefix = 'nocoop'
+  #plotPrefix = 'twocoop'
   #plotPrefix = 'irregular'
   #plotPrefix = 'nodecon'
 
@@ -265,13 +266,15 @@ def _main():
   overlayFiles['lessrules'] = '../review_runs/less_rules/plot_data.csv'
   overlayFiles['lesscoop'] = '../review_runs/less_coop/plot_data.csv'
   overlayFiles['nocoop'] = '../review_runs/no_coop/plot_data.csv'
+  overlayFiles['twocoop'] = '../review_runs/two_coop/plot_data.csv'
   overlayFiles['irregular'] = '../review_runs/irregular/plot_data.csv'
   overlayFiles['nodecon'] = '../review_runs/no_decon/plot_data.csv'
 
   overlayLabels = {}
   overlayLabels['lessrules'] = 'Less Restrictive Rules'
-  overlayLabels['lesscoop'] = 'Less Cooperation'
+  overlayLabels['lesscoop'] = 'Lower Cooperation Thresholds'
   overlayLabels['nocoop'] = 'No Cooperation'
+  overlayLabels['twocoop'] = 'Limited Cooperation Participation'
   overlayLabels['irregular'] = 'Irregular Schedule'
   overlayLabels['nodecon'] = 'No Deconfliction'
 
