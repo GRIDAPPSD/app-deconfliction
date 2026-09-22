@@ -70,13 +70,13 @@ def to_datetime(time):
   return datetime(1966, 8, 1, (int(time)-1)//4, 15*((int(time)-1) % 4), 0)
 
 
-def make_p_batt_plots(title, prefix, Batteries, t_plot_b, p_batt_plot_b, t_plot_o, p_batt_plot_o):
+def make_p_batt_plots(title, prefix, label, Batteries, t_plot_b, p_batt_plot_b, t_plot_o, p_batt_plot_o):
   for name in Batteries:
     if len(t_plot_b) != len(p_batt_plot_b[name]):
       print('*** Mismatched data points for baseline plot ' + title + ' P_batt ' + name + ', time len: ' + str(len(t_plot_b)) + ', p_batt len: ' + str(len(p_batt_plot_b[name])), flush=True)
 
     if len(t_plot_o) != len(p_batt_plot_o[name]):
-      print('*** Mismatched data points for overlay plot ' + title + ' P_batt ' + name + ', time len: ' + str(len(t_plot_o)) + ', p_batt len: ' + str(len(p_batt_plot_o[name])), flush=True)
+      print('*** Mismatched data points for ' + prefix + ' plot ' + title + ' P_batt ' + name + ', time len: ' + str(len(t_plot_o)) + ', p_batt len: ' + str(len(p_batt_plot_o[name])), flush=True)
 
     batname = name[12:] # extract just the name for tidier plots
     plt.figure(dpi=plotDPI)
@@ -95,22 +95,22 @@ def make_p_batt_plots(title, prefix, Batteries, t_plot_b, p_batt_plot_b, t_plot_
     plt.yticks(fontweight='bold', fontsize=tickSize)
     plt.ylabel('BESS Output (kW)', fontweight='bold', fontsize=labelSize)
     plt.plot(t_plot_b[:len(p_batt_plot_b[name])], p_batt_plot_b[name], color=baselineColor, label='Baseline')
-    plt.plot(t_plot_o[:len(p_batt_plot_o[name])], p_batt_plot_o[name], color=overlayColor, label='Overlay')
+    plt.plot(t_plot_o[:len(p_batt_plot_o[name])], p_batt_plot_o[name], color=overlayColor, label=label)
     plt.legend(prop=legendProp, loc=legendLoc)
     plt.grid(True)
     plt.tight_layout()
-    plt.savefig('overlay_plots/' + prefix + '_p_batt_' + batname + '.png')
+    plt.savefig(prefix + '_plots/' + prefix + '_p_batt_' + batname + '.png')
     #plot.show()
     plt.close()
 
 
-def make_soc_plots(title, prefix, Batteries, t_plot_b, soc_plot_b, t_plot_o, soc_plot_o):
+def make_soc_plots(title, prefix, label, Batteries, t_plot_b, soc_plot_b, t_plot_o, soc_plot_o):
   for name in Batteries:
     if len(t_plot_b) != len(soc_plot_b[name]):
       print('*** Mismatched data points for baseline plot ' + title + ' SoC ' + name + ', time len: ' + str(len(t_plot_b)) + ', soc len: ' + str(len(soc_plot_b[name])), flush=True)
 
     if len(t_plot_o) != len(soc_plot_o[name]):
-      print('*** Mismatched data points for overlay plot ' + title + ' SoC ' + name + ', time len: ' + str(len(t_plot_o)) + ', soc len: ' + str(len(soc_plot_o[name])), flush=True)
+      print('*** Mismatched data points for ' + prefix + ' plot ' + title + ' SoC ' + name + ', time len: ' + str(len(t_plot_o)) + ', soc len: ' + str(len(soc_plot_o[name])), flush=True)
 
     batname = name[12:] # extract just the name for tidier plots
     plt.figure(dpi=plotDPI)
@@ -130,22 +130,22 @@ def make_soc_plots(title, prefix, Batteries, t_plot_b, soc_plot_b, t_plot_o, soc
     plt.yticks([0.0, 0.2, 0.4, 0.6, 0.8, 1.0], fontweight='bold', fontsize=tickSize)
     plt.ylabel('BESS Output (SoC)', fontweight='bold', fontsize=labelSize)
     plt.plot(t_plot_b[:len(soc_plot_b[name])], soc_plot_b[name], color=baselineColor, label='Baseline')
-    plt.plot(t_plot_o[:len(soc_plot_o[name])], soc_plot_o[name], color=overlayColor, label='Overlay')
+    plt.plot(t_plot_o[:len(soc_plot_o[name])], soc_plot_o[name], color=overlayColor, label=label)
     plt.legend(prop=legendProp, loc=legendLoc)
     plt.grid(True)
     plt.tight_layout()
-    plt.savefig('overlay_plots/' + prefix + '_soc_' + batname + '.png')
+    plt.savefig(prefix + '_plots/' + prefix + '_soc_' + batname + '.png')
     #plot.show()
     plt.close()
 
 
-def make_reg_plots(title, prefix, Regulators, t_plot_b, reg_plot_b, t_plot_o, reg_plot_o):
+def make_reg_plots(title, prefix, label, Regulators, t_plot_b, reg_plot_b, t_plot_o, reg_plot_o):
   for name in Regulators:
     if len(t_plot_b) != len(reg_plot_b[name]):
       print('*** Mismatched data points for baseline plot ' + title + ' ' + name + ', time len: ' + str(len(t_plot_b)) + ', reg len: ' + str(len(reg_plot_b[name])), flush=True)
 
     if len(t_plot_o) != len(reg_plot_o[name]):
-      print('*** Mismatched data points for overlay plot ' + title + ' ' + name + ', time len: ' + str(len(t_plot_o)) + ', reg len: ' + str(len(reg_plot_o[name])), flush=True)
+      print('*** Mismatched data points for ' + prefix + ' plot ' + title + ' ' + name + ', time len: ' + str(len(t_plot_o)) + ', reg len: ' + str(len(reg_plot_o[name])), flush=True)
 
     regname = name[16:] # extract just the name for tidier plots
     plt.figure(dpi=plotDPI)
@@ -166,16 +166,16 @@ def make_reg_plots(title, prefix, Regulators, t_plot_b, reg_plot_b, t_plot_o, re
     plt.yticks([-16, -12, -8, -4, 0, 4, 8, 12, 16], fontweight='bold', fontsize=tickSize)
     plt.ylabel('Regulator Taps', fontweight='bold', fontsize=labelSize)
     plt.plot(t_plot_b[:len(reg_plot_b[name])], reg_plot_b[name], color=baselineColor, label='Baseline')
-    plt.plot(t_plot_o[:len(reg_plot_o[name])], reg_plot_o[name], color=overlayColor, label='Overlay')
+    plt.plot(t_plot_o[:len(reg_plot_o[name])], reg_plot_o[name], color=overlayColor, label=label)
     plt.legend(prop=legendProp, loc=legendLoc)
     plt.grid(True)
     plt.tight_layout()
-    plt.savefig('overlay_plots/' + prefix + '_tap_' + regname + '.png')
+    plt.savefig(prefix + '_plots/' + prefix + '_tap_' + regname + '.png')
     #plot.show()
     plt.close()
 
 
-def make_p_pv_plots(title, prefix, SolarPVs, t_plot_b, p_pv_plot_b, t_plot_o, p_pv_plot_o):
+def make_p_pv_plots(title, prefix, label, SolarPVs, t_plot_b, p_pv_plot_b, t_plot_o, p_pv_plot_o):
   for name in SolarPVs:
     # just bail if there is no SolarPV data
     if len(p_pv_plot_b[name]) == 0:
@@ -185,7 +185,7 @@ def make_p_pv_plots(title, prefix, SolarPVs, t_plot_b, p_pv_plot_b, t_plot_o, p_
       print('*** Mismatched data points for baseline plot ' + title + ' p_pv ' + name + ', time len: ' + str(len(t_plot_b)) + ', p_pv len: ' + str(len(p_pv_plot_b[name])), flush=True)
 
     if len(t_plot_o) != len(p_pv_plot_o[name]):
-      print('*** Mismatched data points for overlay plot ' + title + ' p_pv ' + name + ', time len: ' + str(len(t_plot_o)) + ', p_pv len: ' + str(len(p_pv_plot_o[name])), flush=True)
+      print('*** Mismatched data points for ' + prefix + ' plot ' + title + ' p_pv ' + name + ', time len: ' + str(len(t_plot_o)) + ', p_pv len: ' + str(len(p_pv_plot_o[name])), flush=True)
 
     pvname = name[17:] # extract just the name for tidier plots
     plt.figure(dpi=plotDPI)
@@ -204,16 +204,16 @@ def make_p_pv_plots(title, prefix, SolarPVs, t_plot_b, p_pv_plot_b, t_plot_o, p_
     plt.yticks(fontweight='bold', fontsize=tickSize)
     plt.ylabel('PV Output (kW)', fontweight='bold', fontsize=labelSize)
     plt.plot(t_plot_b[:len(p_pv_plot_b[name])], p_pv_plot_b[name], color=baselineColor, label='Baseline')
-    plt.plot(t_plot_o[:len(p_pv_plot_o[name])], p_pv_plot_o[name], color=overlayColor, label='Overlay')
+    plt.plot(t_plot_o[:len(p_pv_plot_o[name])], p_pv_plot_o[name], color=overlayColor, label=label)
     plt.legend(prop=legendProp, loc=legendLoc)
     plt.grid(True)
     plt.tight_layout()
-    plt.savefig('overlay_plots/' + prefix + '_p_pv_' + pvname + '.png')
+    plt.savefig(prefix + '_plots/' + prefix + '_p_pv_' + pvname + '.png')
     #plot.show()
     plt.close()
 
 
-def make_q_pv_plots(title, prefix, SolarPVs, t_plot_b, q_pv_plot_b, t_plot_o, q_pv_plot_o):
+def make_q_pv_plots(title, prefix, label, SolarPVs, t_plot_b, q_pv_plot_b, t_plot_o, q_pv_plot_o):
   for name in SolarPVs:
     # just bail if there is no SolarPV data
     if len(q_pv_plot_b[name]) == 0:
@@ -223,7 +223,7 @@ def make_q_pv_plots(title, prefix, SolarPVs, t_plot_b, q_pv_plot_b, t_plot_o, q_
       print('*** Mismatched data points for baseline plot ' + title + ' q_pv ' + name + ', time len: ' + str(len(t_plot_b)) + ', q_pv len: ' + str(len(q_pv_plot_b[name])), flush=True)
 
     if len(t_plot_o) != len(q_pv_plot_o[name]):
-      print('*** Mismatched data points for overlay plot ' + title + ' q_pv ' + name + ', time len: ' + str(len(t_plot_o)) + ', q_pv len: ' + str(len(q_pv_plot_o[name])), flush=True)
+      print('*** Mismatched data points for ' + prefix + ' plot ' + title + ' q_pv ' + name + ', time len: ' + str(len(t_plot_o)) + ', q_pv len: ' + str(len(q_pv_plot_o[name])), flush=True)
 
     pvname = name[17:] # extract just the name for tidier plots
     plt.figure(dpi=plotDPI)
@@ -242,17 +242,38 @@ def make_q_pv_plots(title, prefix, SolarPVs, t_plot_b, q_pv_plot_b, t_plot_o, q_
     plt.yticks(fontweight='bold', fontsize=tickSize)
     plt.ylabel('PV Output (kVAR)', fontweight='bold', fontsize=labelSize)
     plt.plot(t_plot_b[:len(q_pv_plot_b[name])], q_pv_plot_b[name], color=baselineColor, label='Baseline')
-    plt.plot(t_plot_o[:len(q_pv_plot_o[name])], q_pv_plot_o[name], color=overlayColor, label='Overlay')
+    plt.plot(t_plot_o[:len(q_pv_plot_o[name])], q_pv_plot_o[name], color=overlayColor, label=label)
     plt.legend(prop=legendProp, loc=legendLoc)
     plt.grid(True)
     plt.tight_layout()
-    plt.savefig('overlay_plots/' + prefix + '_q_pv_' + pvname + '.png')
+    plt.savefig(prefix + '_plots/' + prefix + '_q_pv_' + pvname + '.png')
     #plot.show()
     plt.close()
 
 
 def _main():
   print('Starting plotter...', flush=True)
+
+  # GDB 9/22/26: Choose one of these and comment out the rest
+  plotPrefix = 'lessrules'
+  #plotPrefix = 'lesscoop'
+  #plotPrefix = 'nocoop'
+  #plotPrefix = 'irregular'
+  #plotPrefix = 'nodecon'
+
+  overlayFiles = {}
+  overlayFiles['lessrules'] = '../review_runs/less_rules/plot_data.csv'
+  overlayFiles['lesscoop'] = '../review_runs/less_coop/plot_data.csv'
+  overlayFiles['nocoop'] = '../review_runs/no_coop/plot_data.csv'
+  overlayFiles['irregular'] = '../review_runs/irregular/plot_data.csv'
+  overlayFiles['nodecon'] = '../review_runs/no_decon/plot_data.csv'
+
+  overlayLabels = {}
+  overlayLabels['lessrules'] = 'Less Restrictive Rules'
+  overlayLabels['lesscoop'] = 'Less Cooperation'
+  overlayLabels['nocoop'] = 'No Cooperation'
+  overlayLabels['irregular'] = 'Irregular Schedule'
+  overlayLabels['nodecon'] = 'No Deconfliction'
 
   matplotlib.use('agg')
 
@@ -297,7 +318,6 @@ def _main():
   timex_start = 1704067200.0
 
   app = 'SIMULATION'
-  prefix = 'concurrent'
 
   simhits = 0
   with open('../review_runs/baseline/plot_data.csv', 'r') as file:
@@ -331,7 +351,7 @@ def _main():
   print(app + ' with baseline hits: ' + str(simhits), flush=True)
 
   simhits = 0
-  with open('../review_runs/less_rules/plot_data.csv', 'r') as file:
+  with open(overlayFiles[plotPrefix], 'r') as file:
     for line in file:
       tokens = line.split(',')
       if tokens[0] == app:
@@ -359,15 +379,15 @@ def _main():
           p_pv_plot_o[pv].append(cmplx.real)
           q_pv_plot_o[pv].append(cmplx.imag)
 
-  print(app + ' overlay hits: ' + str(simhits), flush=True)
+  print(app + ' ' + plotPrefix + ' hits: ' + str(simhits), flush=True)
 
   app = 'Simulation'
 
-  make_p_batt_plots(app, prefix, Batteries, t_plot_b, p_batt_plot_b, t_plot_o, p_batt_plot_o)
-  make_soc_plots(app, prefix, Batteries, t_plot_b, soc_plot_b, t_plot_o, soc_plot_o)
-  make_reg_plots(app, prefix, Regulators, t_plot_b, reg_plot_b, t_plot_o, reg_plot_o)
-  make_p_pv_plots(app, prefix, SolarPVs, t_plot_b, p_pv_plot_b, t_plot_o, p_pv_plot_o)
-  make_q_pv_plots(app, prefix, SolarPVs, t_plot_b, q_pv_plot_b, t_plot_o, q_pv_plot_o)
+  make_p_batt_plots(app, plotPrefix, overlayLabels[plotPrefix], Batteries, t_plot_b, p_batt_plot_b, t_plot_o, p_batt_plot_o)
+  make_soc_plots(app, plotPrefix, overlayLabels[plotPrefix], Batteries, t_plot_b, soc_plot_b, t_plot_o, soc_plot_o)
+  make_reg_plots(app, plotPrefix, overlayLabels[plotPrefix], Regulators, t_plot_b, reg_plot_b, t_plot_o, reg_plot_o)
+  make_p_pv_plots(app, plotPrefix, overlayLabels[plotPrefix], SolarPVs, t_plot_b, p_pv_plot_b, t_plot_o, p_pv_plot_o)
+  make_q_pv_plots(app, plotPrefix, overlayLabels[plotPrefix], SolarPVs, t_plot_b, q_pv_plot_b, t_plot_o, q_pv_plot_o)
 
   t_plot_b.clear()
   t_plot_o.clear()
