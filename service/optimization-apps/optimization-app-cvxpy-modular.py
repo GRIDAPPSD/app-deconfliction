@@ -352,10 +352,10 @@ class CompetingApp(GridAPPSD):
     #coopLevel = 2 # medium-low cooperation
     #coopLevel = 1 # low cooperation
 
-    #coopRatioDenom = 2.0 # for coopLevel 3
+    #coopRatioDenom = 2.0 # what I used to use for coopLevel 3
     coopRatioDenom = 3.0 # for coopLevel 3
     if coopLevel == 1:
-      coopRatioDenom = 1.0
+      coopRatioDenom = 0.5
     elif coopLevel == 2:
       coopRatioDenom = 2.0
 
@@ -488,12 +488,12 @@ class CompetingApp(GridAPPSD):
             ratio = (self.p_batt_proposed[i] - self.p_batt_greedy[i])/ \
                     float(fcoop + self.coopCounter)
 
-            greedy_start = self.p_batt_greedy[i] # for percent calculation
+            #greedy_start = self.p_batt_greedy[i] # for percent calculation
             self.p_batt_greedy[i] += ratio
             #p_batt_denom.append((fcoop, self.coopCounter))
 
-            percent = 100.0 * (self.p_batt_greedy[i] - greedy_start) / (self.p_batt_proposed[i] - greedy_start)
-            print('COOPCHECK battery index: ' + str(i) + ', starting greedy: ' + str(greedy_start) + ', proposed: ' + str(self.p_batt_proposed[i]) + ', response greedy: ' + str(self.p_batt_greedy[i]) + ', ic: ' + str(ic) + ', coopCounter: ' + str(self.coopCounter) + ', fcoop: ' + str(fcoop) + ', percent: ' + str(round(percent)), flush=True)
+            #percent = 100.0 * (self.p_batt_greedy[i] - greedy_start) / (self.p_batt_proposed[i] - greedy_start)
+            #print('COOPCHECK battery index: ' + str(i) + ', starting greedy: ' + str(greedy_start) + ', proposed: ' + str(self.p_batt_proposed[i]) + ', response greedy: ' + str(self.p_batt_greedy[i]) + ', ic: ' + str(ic) + ', coopCounter: ' + str(self.coopCounter) + ', fcoop: ' + str(fcoop) + ', percent: ' + str(round(percent)), flush=True)
           #else:
           #  p_batt_denom.append(None)
 
