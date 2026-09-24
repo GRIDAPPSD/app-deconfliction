@@ -67,7 +67,7 @@ legendProp = {'weight': 'bold', 'size': legendSize}
 def to_datetime(time):
   return datetime(1966, 8, 1, (int(time)-1)//4, 15*((int(time)-1) % 4), 0)
 
-def make_batt_plot(disp_t_plot_b, disp_val_plot_b, disp_t_plot_o, disp_val_plot_o):
+def make_batt_plot(disp_t_plot_b, disp_val_plot_b, disp_t_plot_l, disp_val_plot_l, disp_t_plot_n, disp_val_plot_n):
   plt.figure(figsize=(8,4), dpi=plotDPI)
   #plt.title('Conflict Metric', pad=15.0)
 
@@ -86,7 +86,8 @@ def make_batt_plot(disp_t_plot_b, disp_val_plot_b, disp_t_plot_o, disp_val_plot_
   #plt.yticks([0.0, 0.2, 0.4, 0.6, 0.8, 1.0], fontweight='bold', fontsize=tickSize)
   plt.ylabel('Battery State Reversals', fontweight='bold', fontsize=labelSize)
   plt.plot(disp_t_plot_b, disp_val_plot_b, color='cyan', label='Baseline')
-  plt.plot(disp_t_plot_o, disp_val_plot_o, color='magenta', label='Less Restrictive Rules')
+  plt.plot(disp_t_plot_l, disp_val_plot_l, color='magenta', label='Less Restrictive Rules')
+  plt.plot(disp_t_plot_n, disp_val_plot_n, color='green', label='Less Restrictive Rules')
 
   #plt.legend(prop=legendProp, loc=legendLoc)
   plt.legend(prop=legendProp, loc='upper left')
@@ -103,8 +104,10 @@ def _main():
 
   disp_t_plot_b = []
   disp_val_plot_b = []
-  disp_t_plot_o = []
-  disp_val_plot_o = []
+  disp_t_plot_l = []
+  disp_val_plot_l = []
+  disp_t_plot_n = []
+  disp_val_plot_n = []
 
   # Jan 1, midnight timestamp:
   timex_start = 1704067200.0
@@ -127,7 +130,7 @@ def _main():
   print('baseline reversals/dispatch: ' + str(float(baseline_reversals/disphits)), flush=True)
 
   disphits = 0
-  overlay_reversals = 0
+  lessrules_reversals = 0
   with open('../review_runs/less_rules/plot_data.csv', 'r') as file:
     for line in file:
       tokens = line.split(',')
@@ -135,20 +138,39 @@ def _main():
         disphits += 1
         reversals = int(tokens[8].split(':')[1])
         if reversals > 0:
-          overlay_reversals += reversals
-          disp_t_plot_o.append((float(tokens[2].split(':')[1]) - timex_start)/3600.0)
-          disp_val_plot_o.append(reversals)
+          lessrules_reversals += reversals
+          disp_t_plot_l.append((float(tokens[2].split(':')[1]) - timex_start)/3600.0)
+          disp_val_plot_l.append(reversals)
 
-  print('\noverlay device_dispatch hits: ' + str(disphits), flush=True)
-  print('overlay total reversals: ' + str(overlay_reversals), flush=True)
-  print('overlay reversals/dispatch: ' + str(float(overlay_reversals/disphits)), flush=True)
+  print('\nlessrules device_dispatch hits: ' + str(disphits), flush=True)
+  print('lessrules total reversals: ' + str(lessrules_reversals), flush=True)
+  print('lessrules reversals/dispatch: ' + str(float(lessrules_reversals/disphits)), flush=True)
 
-  make_batt_plot(disp_t_plot_b, disp_val_plot_b, disp_t_plot_o, disp_val_plot_o)
+  disphits = 0
+  nodecon_reversals = 0
+  with open('../review_runs/no_decon/plot_data.csv', 'r') as file:
+    for line in file:
+      tokens = line.split(',')
+      if tokens[0] == 'device_dispatch':
+        disphits += 1
+        reversals = int(tokens[8].split(':')[1])
+        if reversals > 0:
+          nodecon_reversals += reversals
+          disp_t_plot_n.append((float(tokens[2].split(':')[1]) - timex_start)/3600.0)
+          disp_val_plot_n.append(reversals)
+
+  print('\nnodecon device_dispatch hits: ' + str(disphits), flush=True)
+  print('nodecon total reversals: ' + str(nodecon_reversals), flush=True)
+  print('nodecon reversals/dispatch: ' + str(float(nodecon_reversals/disphits)), flush=True)
+
+  make_batt_plot(disp_t_plot_b, disp_val_plot_b, disp_t_plot_l, disp_val_plot_l, disp_t_plot_n, disp_val_plot_n)
 
   disp_t_plot_b.clear()
   disp_val_plot_b.clear()
-  disp_t_plot_o.clear()
-  disp_val_plot_o.clear()
+  disp_t_plot_l.clear()
+  disp_val_plot_l.clear()
+  disp_t_plot_n.clear()
+  disp_val_plot_n.clear()
 
   print('Goodbye!')
 
