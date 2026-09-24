@@ -67,7 +67,7 @@ legendProp = {'weight': 'bold', 'size': legendSize}
 def to_datetime(time):
   return datetime(1966, 8, 1, (int(time)-1)//4, 15*((int(time)-1) % 4), 0)
 
-def make_tap_plot(disp_t_plot_b, disp_val_plot_b, disp_t_plot_o, disp_val_plot_o):
+def make_tap_plot(disp_t_plot_b, disp_val_plot_b, disp_t_plot_l, disp_val_plot_l, disp_t_plot_n, disp_val_plot_n):
   plt.figure(figsize=(8,4), dpi=plotDPI)
   #plt.title('Conflict Metric', pad=15.0)
 
@@ -86,7 +86,8 @@ def make_tap_plot(disp_t_plot_b, disp_val_plot_b, disp_t_plot_o, disp_val_plot_o
   #plt.yticks([0.0, 0.2, 0.4, 0.6, 0.8, 1.0], fontweight='bold', fontsize=tickSize)
   plt.ylabel('Tap Position Changes', fontweight='bold', fontsize=labelSize)
   plt.plot(disp_t_plot_b, disp_val_plot_b, color='cyan', label='Baseline')
-  plt.plot(disp_t_plot_o, disp_val_plot_o, color='magenta', label='Less Restrictive Rules')
+  plt.plot(disp_t_plot_l, disp_val_plot_l, color='magenta', label='Less Restrictive Rules')
+  plt.plot(disp_t_plot_n, disp_val_plot_n, color='green', label='No Deconfliction')
 
   #plt.legend(prop=legendProp, loc=legendLoc)
   plt.legend(prop=legendProp, loc='upper left')
@@ -103,8 +104,10 @@ def _main():
 
   disp_t_plot_b = []
   disp_val_plot_b = []
-  disp_t_plot_o = []
-  disp_val_plot_o = []
+  disp_t_plot_l = []
+  disp_val_plot_l = []
+  disp_t_plot_n = []
+  disp_val_plot_n = []
 
   # Jan 1, midnight timestamp:
   timex_start = 1704067200.0
@@ -127,7 +130,7 @@ def _main():
   print('baseline changes/dispatch: ' + str(float(baseline_taps/disphits)), flush=True)
 
   disphits = 0
-  overlay_taps = 0
+  lessrules_taps = 0
   with open('../review_runs/less_rules/plot_data.csv', 'r') as file:
     for line in file:
       tokens = line.split(',')
@@ -135,20 +138,39 @@ def _main():
         disphits += 1
         taps = int(tokens[9].split(':')[1])
         if taps > 0:
-          overlay_taps += taps
-          disp_t_plot_o.append((float(tokens[2].split(':')[1]) - timex_start)/3600.0)
-          disp_val_plot_o.append(taps)
+          lessrules_taps += taps
+          disp_t_plot_l.append((float(tokens[2].split(':')[1]) - timex_start)/3600.0)
+          disp_val_plot_l.append(taps)
 
-  print('\noverlay device_dispatch hits: ' + str(disphits), flush=True)
-  print('overlay total tap changes: ' + str(overlay_taps), flush=True)
-  print('overlay changes/dispatch: ' + str(float(overlay_taps/disphits)), flush=True)
+  print('\nlessrules device_dispatch hits: ' + str(disphits), flush=True)
+  print('lessrules total tap changes: ' + str(lessrules_taps), flush=True)
+  print('lessrules changes/dispatch: ' + str(float(lessrules_taps/disphits)), flush=True)
 
-  make_tap_plot(disp_t_plot_b, disp_val_plot_b, disp_t_plot_o, disp_val_plot_o)
+  disphits = 0
+  nodecon_taps = 0
+  with open('../review_runs/no_decon/plot_data.csv', 'r') as file:
+    for line in file:
+      tokens = line.split(',')
+      if tokens[0] == 'device_dispatch':
+        disphits += 1
+        taps = int(tokens[9].split(':')[1])
+        if taps > 0:
+          nodecon_taps += taps
+          disp_t_plot_n.append((float(tokens[2].split(':')[1]) - timex_start)/3600.0)
+          disp_val_plot_n.append(taps)
+
+  print('\nnodecon device_dispatch hits: ' + str(disphits), flush=True)
+  print('nodecon total tap changes: ' + str(nodecon_taps), flush=True)
+  print('nodecon changes/dispatch: ' + str(float(nodecon_taps/disphits)), flush=True)
+
+  make_tap_plot(disp_t_plot_b, disp_val_plot_b, disp_t_plot_l, disp_val_plot_l, disp_t_plot_n, disp_val_plot_n)
 
   disp_t_plot_b.clear()
   disp_val_plot_b.clear()
-  disp_t_plot_o.clear()
-  disp_val_plot_o.clear()
+  disp_t_plot_l.clear()
+  disp_val_plot_l.clear()
+  disp_t_plot_n.clear()
+  disp_val_plot_n.clear()
 
   print('Goodbye!')
 
