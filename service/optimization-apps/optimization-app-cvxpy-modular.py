@@ -344,18 +344,20 @@ class CompetingApp(GridAPPSD):
 
 
   def processCoopMessage(self, message):
+    # CONFIG COOPERATION
     # choose the desired level of app cooperation by uncommenting one of
     # the coopLevel settings
-    #coopLevel = 4 # high cooperation
+    #coopLevel = 4 # high cooperation (full cooperation for half of devices)
     coopLevel = 3 # medium-high cooperation
     #coopLevel = 2 # medium-low cooperation
     #coopLevel = 1 # low cooperation
 
-    coopRatioDenom = 2.0 # for coopLevel 3
+    #coopRatioDenom = 2.0 # for coopLevel 3
+    coopRatioDenom = 3.0 # for coopLevel 3
     if coopLevel == 1:
       coopRatioDenom = 1.0
     elif coopLevel == 2:
-      coopRatioDenom = 1.5
+      coopRatioDenom = 2.0
 
     # message consists of a proposed dictionary with device mrid keys and
     # proposed set-point values
@@ -467,7 +469,7 @@ class CompetingApp(GridAPPSD):
         #print('DECONFLICTOR COOPERATE p_batt_coop: ' + str(self.p_batt_greedy), flush=True)
 
       else:
-        p_batt_denom = [] # just for diagnostic logging
+        #p_batt_denom = [] # just for diagnostic logging
         for i in range(len_BatteriesInfo):
           # check if this is a "cooperating" battery
           if p_batt_diff[i]!=None and p_batt_diff[i]>0 and \
@@ -485,10 +487,15 @@ class CompetingApp(GridAPPSD):
 
             ratio = (self.p_batt_proposed[i] - self.p_batt_greedy[i])/ \
                     float(fcoop + self.coopCounter)
+
+            greedy_start = self.p_batt_greedy[i] # for percent calculation
             self.p_batt_greedy[i] += ratio
-            p_batt_denom.append((fcoop, self.coopCounter))
-          else:
-            p_batt_denom.append(None)
+            #p_batt_denom.append((fcoop, self.coopCounter))
+
+            percent = 100.0 * (self.p_batt_greedy[i] - greedy_start) / (self.p_batt_proposed[i] - greedy_start)
+            print('COOPCHECK battery index: ' + str(i) + ', starting greedy: ' + str(greedy_start) + ', proposed: ' + str(self.p_batt_proposed[i]) + ', response greedy: ' + str(self.p_batt_greedy[i]) + ', ic: ' + str(ic) + ', coopCounter: ' + str(self.coopCounter) + ', fcoop: ' + str(fcoop) + ', percent: ' + str(round(percent)), flush=True)
+          #else:
+          #  p_batt_denom.append(None)
 
         #print('DECONFLICTOR COOPERATE p_batt_coop: ' + str(self.p_batt_greedy), flush=True)
         #print('DECONFLICTOR COOPERATE p_batt_denom: ' + str(p_batt_denom), flush=True)
@@ -549,7 +556,7 @@ class CompetingApp(GridAPPSD):
         #print('DECONFLICTOR COOPERATE q_pv_coop: ' + str(self.q_pv_greedy), flush=True)
 
       else:
-        pq_pv_denom = [] # just for diagnostic logging
+        #pq_pv_denom = [] # just for diagnostic logging
         for i in range(len_SolarPVsInfo):
           # check if this is a "cooperating" solarPV
           if pq_pv_diff[i]!=None and pq_pv_diff[i]>0 and pq_pv_diff[i]<=diffMax:
@@ -574,9 +581,9 @@ class CompetingApp(GridAPPSD):
                     float(fcoop + self.coopCounter)
             self.p_pv_greedy[i] += ratio.real
             self.q_pv_greedy[i] += ratio.imag
-            pq_pv_denom.append((fcoop, self.coopCounter))
-          else:
-            pq_pv_denom.append(None)
+            #pq_pv_denom.append((fcoop, self.coopCounter))
+          #else:
+          #  pq_pv_denom.append(None)
 
         #print('DECONFLICTOR COOPERATE p_pv_coop: ' + str(self.p_pv_greedy), flush=True)
         #print('DECONFLICTOR COOPERATE q_pv_coop: ' + str(self.q_pv_greedy), flush=True)
@@ -637,7 +644,7 @@ class CompetingApp(GridAPPSD):
         #print('DECONFLICTOR COOPERATE reg_coop: ' + str(self.reg_greedy), flush=True)
 
       else:
-        reg_denom = [] # just for diagnostic logging
+        #reg_denom = [] # just for diagnostic logging
         for i in range(len_RegulatorsInfo):
           # check if this is a "cooperating" regulator
           if reg_diff[i]!=None and reg_diff[i]>0 and reg_diff[i]<=diffMax:
@@ -655,9 +662,9 @@ class CompetingApp(GridAPPSD):
             ratio = int((self.reg_proposed[i] - self.reg_greedy[i])/ \
                         (fcoop + self.coopCounter))
             self.reg_greedy[i] += ratio
-            reg_denom.append((fcoop, self.coopCounter))
-          else:
-            reg_denom.append(None)
+            #reg_denom.append((fcoop, self.coopCounter))
+          #else:
+          #  reg_denom.append(None)
 
         #print('DECONFLICTOR COOPERATE reg_coop: ' + str(self.reg_greedy), flush=True)
         #print('DECONFLICTOR COOPERATE reg_denom: ' + str(reg_denom), flush=True)
