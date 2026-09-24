@@ -2801,7 +2801,6 @@ class DeconflictionPipeline(GridAPPSD):
     # GDB 9/11/26: This is our cooperation comparison run (less cooperation)
     # 3) Drive minimum cooperation:
     #self.coopMessagesThreshold = 3
-    ##self.conflictPercentThreshold = 5.0
     #self.conflictPercentThreshold = 10.0
     #self.conflictValueThreshold = 0.30
 
