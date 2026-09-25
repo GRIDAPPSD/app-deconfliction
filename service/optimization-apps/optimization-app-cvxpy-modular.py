@@ -352,7 +352,6 @@ class CompetingApp(GridAPPSD):
     #coopLevel = 2 # medium-low cooperation
     #coopLevel = 1 # low cooperation
 
-    #coopRatioDenom = 2.0 # what I used to use for coopLevel 3
     coopRatioDenom = 3.0 # for coopLevel 3
     if coopLevel == 1:
       coopRatioDenom = 0.5
@@ -449,7 +448,10 @@ class CompetingApp(GridAPPSD):
       # GDB 3/25/25: Handle the case of only proposed == greedy
       diffMax = 0
       if len(p_batt_sort) > 0:
-        coopCount = max(1, -(len(p_batt_sort)//-2)) # integer "ceiling" division
+        # determine the number of batteries that will "cooperate"
+        #coopCount = max(1, -(len(p_batt_sort)//-2)) # cooperate with 1/2 of devices
+        coopCount = max(1, int(-(len(p_batt_sort)//-1.5))) # cooperate with 2/3
+        #coopCount = len(p_batt_sort) # cooperate with all devices
 
         # find the value associated with the last "cooperating" battery
         diffMax = p_batt_sort[coopCount-1]
@@ -535,7 +537,10 @@ class CompetingApp(GridAPPSD):
       # handle the case of only proposed == greedy
       diffMax = 0
       if len(pq_pv_sort) > 0:
-        coopCount = max(1, -(len(pq_pv_sort)//-2)) # integer "ceiling" division
+        # determine the number of PVs that will "cooperate"
+        #coopCount = max(1, -(len(pq_pv_sort)//-2)) # cooperate with 1/2 of devices
+        coopCount = max(1, int(-(len(pq_pv_sort)//-1.5))) # cooperate with 2/3
+        #coopCount = len(pq_pv_sort) # cooperate with all devices
 
         # find the value associated with the last "cooperating" battery
         diffMax = pq_pv_sort[coopCount-1]
@@ -625,7 +630,9 @@ class CompetingApp(GridAPPSD):
       diffMax = 0
       if len(reg_sort) > 0:
         # determine the number of regulators that will "cooperate"
-        coopCount = max(1, -(len(reg_sort)//-2)) # integer "ceiling" division
+        #coopCount = max(1, -(len(reg_sort)//-2)) # cooperate with 1/2 of devices
+        coopCount = max(1, int(-(len(reg_sort)//-1.5))) # cooperate with 2/3
+        #coopCount = len(reg_sort) # cooperate with all devices
 
         # find the value associated with the last "cooperating" regulator
         diffMax = reg_sort[coopCount-1]
