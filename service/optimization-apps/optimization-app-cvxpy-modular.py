@@ -354,7 +354,7 @@ class CompetingApp(GridAPPSD):
 
     coopRatioDenom = 3.0 # for coopLevel 3
     if coopLevel == 1:
-      coopRatioDenom = 0.5
+      coopRatioDenom = 1.0
     elif coopLevel == 2:
       coopRatioDenom = 2.0
 
