@@ -2878,8 +2878,8 @@ class DeconflictionPipeline(GridAPPSD):
       #self.rulesRegOuterTimeInterval = 60*60*6 # every 6 hours
       #self.rulesRegOuterStepsAllowed = 8
 
-      # GDB 9/11/26: Here is what we use after reviewer feedback for the baseline
-      # giving realistic rules for preserving asset health
+      # GDB 9/11/26: Here is what we use after reviewer feedback for the
+      # baseline giving realistic rules for preserving asset health
       self.rulesBattTimeInterval = 60*60*6 # every 6 hours
       self.rulesBattSwitchesAllowed = 3
       self.rulesRegInnerTimeInterval = 60*30 # every 30 minutes
