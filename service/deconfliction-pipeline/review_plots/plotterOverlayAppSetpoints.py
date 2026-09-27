@@ -461,6 +461,50 @@ def _main():
             q_pv_plot_3[dev].append(cmplx.imag)
   print(app + ' hits: ' + str(hits), flush=True)
 
+  app = 'app4-app'
+  hits = 0
+  with open('../review_runs/baseline/plot_data.csv', 'r') as file:
+    for line in file:
+      tokens = line.split(',')
+      if tokens[0] == app:
+        hits += 1
+        t_plot_4.append((float(tokens[2]) - timex_start)/3600.0)
+
+        numdev = len(tokens)
+        for it in range(3, numdev, 2):
+          dev = tokens[it]
+          if dev.startswith('BatteryUnit.'):
+            p_batt_plot_4[dev].append(float(tokens[it+1])/1000.0)
+          elif dev.startswith('RatioTapChanger.'):
+            reg_plot_4[dev].append(int(tokens[it+1]))
+          elif dev.startswith('PhotovoltaicUnit.'):
+            cmplx = complex(tokens[it+1])/1000.0
+            p_pv_plot_4[dev].append(cmplx.real)
+            q_pv_plot_4[dev].append(cmplx.imag)
+  print(app + ' hits: ' + str(hits), flush=True)
+
+  app = 'app5-app'
+  hits = 0
+  with open('../review_runs/baseline/plot_data.csv', 'r') as file:
+    for line in file:
+      tokens = line.split(',')
+      if tokens[0] == app:
+        hits += 1
+        t_plot_5.append((float(tokens[2]) - timex_start)/3600.0)
+
+        numdev = len(tokens)
+        for it in range(3, numdev, 2):
+          dev = tokens[it]
+          if dev.startswith('BatteryUnit.'):
+            p_batt_plot_5[dev].append(float(tokens[it+1])/1000.0)
+          elif dev.startswith('RatioTapChanger.'):
+            reg_plot_5[dev].append(int(tokens[it+1]))
+          elif dev.startswith('PhotovoltaicUnit.'):
+            cmplx = complex(tokens[it+1])/1000.0
+            p_pv_plot_5[dev].append(cmplx.real)
+            q_pv_plot_5[dev].append(cmplx.imag)
+  print(app + ' hits: ' + str(hits), flush=True)
+
   make_p_batt_plots(Batteries, t_plot_s, p_batt_plot_s, t_plot_1, p_batt_plot_1, t_plot_2, p_batt_plot_2, t_plot_3, p_batt_plot_3, t_plot_4, p_batt_plot_4, t_plot_5, p_batt_plot_5)
   make_reg_plots(Regulators, t_plot_s, reg_plot_s, t_plot_1, reg_plot_1, t_plot_2, reg_plot_2, t_plot_3, reg_plot_3, t_plot_4, reg_plot_4, t_plot_5, reg_plot_5)
   make_p_pv_plots(SolarPVs, t_plot_s, p_pv_plot_s, t_plot_1, p_pv_plot_1, t_plot_2, p_pv_plot_2, t_plot_3, p_pv_plot_3, t_plot_4, p_pv_plot_4, t_plot_5, p_pv_plot_5)
