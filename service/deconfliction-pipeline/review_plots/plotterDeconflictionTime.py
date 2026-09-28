@@ -84,7 +84,7 @@ def make_decontime_plot(disp_t_plot_b, disp_val_plot_b, disp_t_plot_l, disp_val_
 
   #plt.ylim([-0.05, 1.0])
   #plt.yticks([0.0, 0.2, 0.4, 0.6, 0.8, 1.0], fontweight='bold', fontsize=tickSize)
-  plt.ylabel('Total Deconfliction Time (sec)', fontweight='bold', fontsize=labelSize)
+  plt.ylabel('Deconfliction Time (sec)', fontweight='bold', fontsize=labelSize)
   plt.plot(disp_t_plot_b, disp_val_plot_b, color='cyan', label='Baseline')
   plt.plot(disp_t_plot_l, disp_val_plot_l, color='magenta', label='Lower Cooperation Thresholds')
   plt.plot(disp_t_plot_n, disp_val_plot_n, color='green', label='No Cooperation')
