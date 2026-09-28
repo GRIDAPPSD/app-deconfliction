@@ -1873,8 +1873,13 @@ class DeconflictionPipeline(GridAPPSD):
 
       if self.shortCircuitFlag:
         self.pltFile.write('device_dispatch,reason:' + reason + ',timestamp:' + str(timestamp) + ',runningTime:' + str(timerRunning) + ',dispatchTime:' + str(deltaDispatch) + ',rulesTime:NA,coopTime:NA,optTime:NA,batteryCycles:' + str(self.batteryCycleCount) + ',tapPositions:' + str(self.tapPositionCount) + ',dispatchCount:' + str(dispatchCount))
-      else:
+      elif self.coopStageFlag:
         self.pltFile.write('device_dispatch,reason:' + reason + ',timestamp:' + str(timestamp) + ',runningTime:' + str(timerRunning) + ',dispatchTime:' + str(deltaDispatch) + ',rulesTime:' + str(self.timerRules) + ',coopTime:' + str(self.timerCoop) + ',optTime:' + str(self.timerOpt) + ',batteryCycles:' + str(self.batteryCycleCount) + ',tapPositions:' + str(self.tapPositionCount) + ',dispatchCount:' + str(dispatchCount))
+      else:
+        # GDB 9/28/26: Note optTime not being computed when there is no
+        # cooperation, but if there was a use for it separate from the dispatch
+        # time it could be computed
+        self.pltFile.write('device_dispatch,reason:' + reason + ',timestamp:' + str(timestamp) + ',runningTime:' + str(timerRunning) + ',dispatchTime:' + str(deltaDispatch) + ',rulesTime:' + str(self.timerRules) + ',coopTime:NA,optTime:NA,batteryCycles:' + str(self.batteryCycleCount) + ',tapPositions:' + str(self.tapPositionCount) + ',dispatchCount:' + str(dispatchCount))
 
       # first version goes in ResolutionVector order while the second goes
       # in device order
@@ -2333,6 +2338,8 @@ class DeconflictionPipeline(GridAPPSD):
                                               self.printAllDispatchesFlag)
         prlog('>>> DeconflictSetpoints--invoked device dispatch, # ' +
               'devices dispatched: ' +str(dispatchCount))
+        self.PlotDispatch('CooperationBypassed', timestamp,
+                          self.TargetResolutionVector, dispatchCount)
 
         # update the current resolution to the new resolution to be ready for
         # the next dispatch
