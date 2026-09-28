@@ -98,6 +98,9 @@ def make_disptime_plot(disp_t_plot_b, disp_val_plot_b, disp_t_plot_l, disp_val_p
   plt.close()
 
 def _main():
+  print('WARNING: Not used as dispatch times include overhead unrelated to deconfliction!', flush=True)
+  exit(0)
+
   print('Starting plotter...', flush=True)
 
   matplotlib.use('agg')
