@@ -99,7 +99,7 @@ def make_cm_plot(cm_t_plot, cm_start_plot, cm_rules_plot, cm_coop_plot):
   plt.legend(prop=legendProp, loc='upper left')
   plt.grid(True)
   plt.tight_layout()
-  plt.savefig('conflict_plots/conflict_metric.png')
+  plt.savefig('conflict_plots/conflict_stages.png')
   #plot.show()
   plt.close()
 
