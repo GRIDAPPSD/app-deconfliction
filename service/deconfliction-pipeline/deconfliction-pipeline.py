@@ -1873,13 +1873,8 @@ class DeconflictionPipeline(GridAPPSD):
 
       if self.shortCircuitFlag:
         self.pltFile.write('device_dispatch,reason:' + reason + ',timestamp:' + str(timestamp) + ',runningTime:' + str(timerRunning) + ',dispatchTime:' + str(deltaDispatch) + ',rulesTime:NA,coopTime:NA,optTime:NA,batteryCycles:' + str(self.batteryCycleCount) + ',tapPositions:' + str(self.tapPositionCount) + ',dispatchCount:' + str(dispatchCount))
-      elif self.coopStageFlag:
-        self.pltFile.write('device_dispatch,reason:' + reason + ',timestamp:' + str(timestamp) + ',runningTime:' + str(timerRunning) + ',dispatchTime:' + str(deltaDispatch) + ',rulesTime:' + str(self.timerRules) + ',coopTime:' + str(self.timerCoop) + ',optTime:' + str(self.timerOpt) + ',batteryCycles:' + str(self.batteryCycleCount) + ',tapPositions:' + str(self.tapPositionCount) + ',dispatchCount:' + str(dispatchCount))
       else:
-        # GDB 9/28/26: Note optTime not being computed when there is no
-        # cooperation, but if there was a use for it separate from the dispatch
-        # time it could be computed
-        self.pltFile.write('device_dispatch,reason:' + reason + ',timestamp:' + str(timestamp) + ',runningTime:' + str(timerRunning) + ',dispatchTime:' + str(deltaDispatch) + ',rulesTime:' + str(self.timerRules) + ',coopTime:NA,optTime:NA,batteryCycles:' + str(self.batteryCycleCount) + ',tapPositions:' + str(self.tapPositionCount) + ',dispatchCount:' + str(dispatchCount))
+        self.pltFile.write('device_dispatch,reason:' + reason + ',timestamp:' + str(timestamp) + ',runningTime:' + str(timerRunning) + ',dispatchTime:' + str(deltaDispatch) + ',rulesTime:' + str(self.timerRules) + ',coopTime:' + str(self.timerCoop) + ',optTime:' + str(self.timerOpt) + ',batteryCycles:' + str(self.batteryCycleCount) + ',tapPositions:' + str(self.tapPositionCount) + ',dispatchCount:' + str(dispatchCount))
 
       # first version goes in ResolutionVector order while the second goes
       # in device order
@@ -2271,12 +2266,19 @@ class DeconflictionPipeline(GridAPPSD):
       # GDB 9/10/25: something broken with CoopOptimization so don't call it
       #self.TargetResolutionVector, coopProposed = self.CoopOptimization(
       #                                          timestamp, self.ConflictMatrix)
+      optStart = datetime.now()
       self.TargetResolutionVector = self.Optimization(timestamp,
                                                       self.ConflictMatrix)
 
       # if we are not performing cooperation state deconfliction, use the
       # target resolution vector as the final one and proceed to dispatch
       if not self.coopStageFlag:
+        # GDB 9/28/26: Need optimization time when bypassing cooperation
+        # for logging in PlotDispatch call. Also hardwire cooperation time
+        # to zero so I can always add up rules+coop+opt to get total
+        # deconfliction time
+        self.timerCoop = 0.0
+        self.timerOpt = (datetime.now() - optStart).total_seconds()
         prlog('>>> DeconflictSetpoints--bypassing COOPERATION stage')
 
         # Published IEEE Access Foundational Paper Reference:
