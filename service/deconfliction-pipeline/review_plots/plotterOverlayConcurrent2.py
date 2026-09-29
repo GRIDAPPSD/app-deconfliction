@@ -63,7 +63,7 @@ legendSize = 14
 tickSize = 12
 baselineColor = 'cyan'
 overlayColor1 = 'magenta'
-overlayColor2 = 'green'
+overlayColor2 = 'red'
 legendLoc = 'lower right'
 legendProp = {'weight': 'bold', 'size': legendSize}
 
@@ -101,7 +101,8 @@ def make_p_batt_plots(title, prefix1, label1, prefix2, label2, Batteries, t_plot
     plt.plot(t_plot_b[:len(p_batt_plot_b[name])], p_batt_plot_b[name], color=baselineColor, label='Baseline')
     plt.plot(t_plot_o1[:len(p_batt_plot_o1[name])], p_batt_plot_o1[name], color=overlayColor1, label=label1)
     plt.plot(t_plot_o2[:len(p_batt_plot_o2[name])], p_batt_plot_o2[name], color=overlayColor2, label=label2)
-    plt.legend(prop=legendProp, loc=legendLoc)
+    #plt.legend(prop=legendProp, loc=legendLoc)
+    plt.legend(prop=legendProp, loc='best')
     plt.grid(True)
     plt.tight_layout()
     plt.savefig('gary_plots/overlay_p_batt_' + batname + '.png')
@@ -140,7 +141,8 @@ def make_soc_plots(title, prefix1, label1, prefix2, label2, Batteries, t_plot_b,
     plt.plot(t_plot_b[:len(soc_plot_b[name])], soc_plot_b[name], color=baselineColor, label='Baseline')
     plt.plot(t_plot_o1[:len(soc_plot_o1[name])], soc_plot_o1[name], color=overlayColor1, label=label1)
     plt.plot(t_plot_o2[:len(soc_plot_o2[name])], soc_plot_o2[name], color=overlayColor2, label=label2)
-    plt.legend(prop=legendProp, loc=legendLoc)
+    #plt.legend(prop=legendProp, loc=legendLoc)
+    plt.legend(prop=legendProp, loc='best')
     plt.grid(True)
     plt.tight_layout()
     plt.savefig('gary_plots/overlay_soc_' + batname + '.png')
@@ -180,7 +182,8 @@ def make_reg_plots(title, prefix1, label1, prefix2, label2, Regulators, t_plot_b
     plt.plot(t_plot_b[:len(reg_plot_b[name])], reg_plot_b[name], color=baselineColor, label='Baseline')
     plt.plot(t_plot_o1[:len(reg_plot_o1[name])], reg_plot_o1[name], color=overlayColor1, label=label1)
     plt.plot(t_plot_o2[:len(reg_plot_o2[name])], reg_plot_o2[name], color=overlayColor2, label=label2)
-    plt.legend(prop=legendProp, loc=legendLoc)
+    #plt.legend(prop=legendProp, loc=legendLoc)
+    plt.legend(prop=legendProp, loc='best')
     plt.grid(True)
     plt.tight_layout()
     plt.savefig('gary_plots/overlay_tap_' + regname + '.png')
@@ -222,7 +225,8 @@ def make_p_pv_plots(title, prefix1, label1, prefix2, label2, SolarPVs, t_plot_b,
     plt.plot(t_plot_b[:len(p_pv_plot_b[name])], p_pv_plot_b[name], color=baselineColor, label='Baseline')
     plt.plot(t_plot_o1[:len(p_pv_plot_o1[name])], p_pv_plot_o1[name], color=overlayColor1, label=label1)
     plt.plot(t_plot_o2[:len(p_pv_plot_o2[name])], p_pv_plot_o2[name], color=overlayColor2, label=label2)
-    plt.legend(prop=legendProp, loc=legendLoc)
+    #plt.legend(prop=legendProp, loc=legendLoc)
+    plt.legend(prop=legendProp, loc='best')
     plt.grid(True)
     plt.tight_layout()
     plt.savefig('gary_plots/overlay_p_pv_' + pvname + '.png')
@@ -264,7 +268,8 @@ def make_q_pv_plots(title, prefix1, label1, prefix2, label2, SolarPVs, t_plot_b,
     plt.plot(t_plot_b[:len(q_pv_plot_b[name])], q_pv_plot_b[name], color=baselineColor, label='Baseline')
     plt.plot(t_plot_o1[:len(q_pv_plot_o1[name])], q_pv_plot_o1[name], color=overlayColor1, label=label1)
     plt.plot(t_plot_o2[:len(q_pv_plot_o2[name])], q_pv_plot_o2[name], color=overlayColor2, label=label2)
-    plt.legend(prop=legendProp, loc=legendLoc)
+    #plt.legend(prop=legendProp, loc=legendLoc)
+    plt.legend(prop=legendProp, loc='best')
     plt.grid(True)
     plt.tight_layout()
     plt.savefig('gary_plots/overlay_q_pv_' + pvname + '.png')
@@ -276,12 +281,12 @@ def _main():
   print('Starting plotter...', flush=True)
 
   # GDB 9/22/26: Choose one of these and comment out the rest
-  #plotPrefix = 'lessrules'
-  plotPrefix1 = 'lesscoop'
-  plotPrefix2 = 'nocoop'
+  plotPrefix1 = 'lessrules'
+  #plotPrefix = 'lesscoop'
+  #plotPrefix = 'nocoop'
   #plotPrefix = 'twocoop'
   #plotPrefix = 'irregular'
-  #plotPrefix = 'nodecon'
+  plotPrefix2 = 'nodecon'
 
   overlayFiles = {}
   overlayFiles['lessrules'] = '../review_runs/less_rules/plot_data.csv'
