@@ -61,9 +61,9 @@ plotDPI = 200
 labelSize = 16
 legendSize = 14
 tickSize = 12
-baselineColor = 'cyan'
-overlayColor1 = 'magenta'
-overlayColor2 = 'red'
+baselineColor = 'blue'
+overlayColor1 = 'red'
+overlayColor2 = 'orange'
 legendLoc = 'lower right'
 legendProp = {'weight': 'bold', 'size': legendSize}
 
