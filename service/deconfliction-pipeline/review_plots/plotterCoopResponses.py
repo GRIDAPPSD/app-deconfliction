@@ -67,7 +67,7 @@ legendProp = {'weight': 'bold', 'size': legendSize}
 def to_datetime(time):
   return datetime(1966, 8, 1, (int(time)-1)//4, 15*((int(time)-1) % 4), 0)
 
-def make_resp_plot(disp_t_plot_b, disp_val_plot_b, disp_t_plot_l, disp_val_plot_l, disp_t_plot_2, disp_val_plot_2):
+def make_resp_plot(disp_t_plot_b, disp_val_plot_b, disp_t_plot_l, disp_val_plot_l, disp_t_plot_2, disp_val_plot_2, disp_t_plot_i, disp_val_plot_i):
   plt.figure(figsize=(8,4), dpi=plotDPI)
   #plt.title('Conflict Metric', pad=15.0)
 
@@ -88,6 +88,7 @@ def make_resp_plot(disp_t_plot_b, disp_val_plot_b, disp_t_plot_l, disp_val_plot_
   plt.plot(disp_t_plot_b, disp_val_plot_b, color='cyan', label='5 Apps Baseline')
   plt.plot(disp_t_plot_l, disp_val_plot_l, color='magenta', label='5 Apps Lower Thresholds')
   plt.plot(disp_t_plot_2, disp_val_plot_2, color='green', label='2 Apps Baseline')
+  plt.plot(disp_t_plot_i, disp_val_plot_i, color='orange', label='5 Apps Irregular Schedule')
 
   #plt.legend(prop=legendProp, loc=legendLoc)
   plt.legend(prop=legendProp, loc='upper left')
@@ -108,6 +109,8 @@ def _main():
   disp_val_plot_l = []
   disp_t_plot_2 = []
   disp_val_plot_2 = []
+  disp_t_plot_i = []
+  disp_val_plot_i = []
 
   # Jan 1, midnight timestamp:
   timex_start = 1704067200.0
@@ -163,7 +166,24 @@ def _main():
   print('twoapps total cooperation responses: ' + str(twoapps_resps), flush=True)
   print('twoapps responses/dispatch: ' + str(float(twoapps_resps/cmhits)), flush=True)
 
-  make_resp_plot(disp_t_plot_b, disp_val_plot_b, disp_t_plot_l, disp_val_plot_l, disp_t_plot_2, disp_val_plot_2)
+  cmhits = 0
+  irregular_resps = 0
+  with open('../review_runs/irregular/plot_data.csv', 'r') as file:
+    for line in file:
+      tokens = line.split(',')
+      if tokens[0] == 'conflict_metric':
+        cmhits += 1
+        resps = int(tokens[8].split(':')[1])
+        if resps > 0:
+          irregular_resps += resps
+          disp_t_plot_i.append((float(tokens[2]) - timex_start)/3600.0)
+          disp_val_plot_i.append(resps)
+
+  print('\nirregular conflict_metric hits: ' + str(cmhits), flush=True)
+  print('irregular total cooperation responses: ' + str(irregular_resps), flush=True)
+  print('irregular responses/dispatch: ' + str(float(irregular_resps/cmhits)), flush=True)
+
+  make_resp_plot(disp_t_plot_b, disp_val_plot_b, disp_t_plot_l, disp_val_plot_l, disp_t_plot_2, disp_val_plot_2, disp_t_plot_i, disp_val_plot_i)
 
   disp_t_plot_b.clear()
   disp_val_plot_b.clear()
@@ -171,6 +191,8 @@ def _main():
   disp_val_plot_l.clear()
   disp_t_plot_2.clear()
   disp_val_plot_2.clear()
+  disp_t_plot_i.clear()
+  disp_val_plot_i.clear()
 
   print('Goodbye!')
 
