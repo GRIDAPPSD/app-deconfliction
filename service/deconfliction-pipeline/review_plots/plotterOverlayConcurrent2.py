@@ -118,7 +118,7 @@ def make_soc_plots(title, prefix1, label1, prefix2, label2, Batteries, t_plot_b,
       print('*** Mismatched data points for ' + prefix1 + ' plot ' + title + ' SoC ' + name + ', time len: ' + str(len(t_plot_o1)) + ', soc len: ' + str(len(soc_plot_o1[name])), flush=True)
 
     if len(t_plot_o2) != len(soc_plot_o2[name]):
-      print('*** Mismatched data points for ' + prefix1 + ' plot ' + title + ' SoC ' + name + ', time len: ' + str(len(t_plot_o2)) + ', soc len: ' + str(len(soc_plot_o2[name])), flush=True)
+      print('*** Mismatched data points for ' + prefix2 + ' plot ' + title + ' SoC ' + name + ', time len: ' + str(len(t_plot_o2)) + ', soc len: ' + str(len(soc_plot_o2[name])), flush=True)
 
     batname = name[12:] # extract just the name for tidier plots
     plt.figure(dpi=plotDPI)
