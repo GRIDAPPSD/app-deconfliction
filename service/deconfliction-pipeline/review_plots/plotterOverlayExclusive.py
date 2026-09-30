@@ -70,7 +70,7 @@ app1Color = 'red'
 app2Color = 'green'
 app3Color = 'blue'
 app4Color = 'orange'
-app5Color = 'purple'
+app5Color = 'magenta'
 legendLoc = 'lower right'
 legendProp = {'weight': 'bold', 'size': legendSize}
 
@@ -116,7 +116,8 @@ def make_p_batt_plots(title, prefix, Batteries, t_plot_1, p_batt_plot_1, t_plot_
     plt.plot(t_plot_3[:len(p_batt_plot_3[name])], p_batt_plot_3[name], color=app3Color, label=app3Name)
     plt.plot(t_plot_4[:len(p_batt_plot_4[name])], p_batt_plot_4[name], color=app4Color, label=app4Name)
     plt.plot(t_plot_5[:len(p_batt_plot_5[name])], p_batt_plot_5[name], color=app5Color, label=app5Name)
-    plt.legend(prop=legendProp, loc=legendLoc)
+    #plt.legend(prop=legendProp, loc=legendLoc)
+    plt.legend(prop=legendProp, loc='best')
     plt.grid(True)
     plt.tight_layout()
     plt.savefig('excl_plots/' + prefix + '_p_batt_' + batname + '.png')
@@ -163,7 +164,8 @@ def make_soc_plots(title, prefix, Batteries, t_plot_1, soc_plot_1, t_plot_2, soc
     plt.plot(t_plot_3[:len(soc_plot_3[name])], soc_plot_3[name], color=app3Color, label=app3Name)
     plt.plot(t_plot_4[:len(soc_plot_4[name])], soc_plot_4[name], color=app4Color, label=app4Name)
     plt.plot(t_plot_5[:len(soc_plot_5[name])], soc_plot_5[name], color=app5Color, label=app5Name)
-    plt.legend(prop=legendProp, loc=legendLoc)
+    #plt.legend(prop=legendProp, loc=legendLoc)
+    plt.legend(prop=legendProp, loc='best')
     plt.grid(True)
     plt.tight_layout()
     plt.savefig('excl_plots/' + prefix + '_soc_' + batname + '.png')
@@ -211,7 +213,8 @@ def make_reg_plots(title, prefix, Regulators, t_plot_1, reg_plot_1, t_plot_2, re
     plt.plot(t_plot_3[:len(reg_plot_3[name])], reg_plot_3[name], color=app3Color, label=app3Name)
     plt.plot(t_plot_4[:len(reg_plot_4[name])], reg_plot_4[name], color=app4Color, label=app4Name)
     plt.plot(t_plot_5[:len(reg_plot_5[name])], reg_plot_5[name], color=app5Color, label=app5Name)
-    plt.legend(prop=legendProp, loc=legendLoc)
+    #plt.legend(prop=legendProp, loc=legendLoc)
+    plt.legend(prop=legendProp, loc='best')
     plt.grid(True)
     plt.tight_layout()
     plt.savefig('excl_plots/' + prefix + '_tap_' + regname + '.png')
@@ -261,7 +264,8 @@ def make_p_pv_plots(title, prefix, SolarPVs, t_plot_1, p_pv_plot_1, t_plot_2, p_
     plt.plot(t_plot_3[:len(p_pv_plot_3[name])], p_pv_plot_3[name], color=app3Color, label=app3Name)
     plt.plot(t_plot_4[:len(p_pv_plot_4[name])], p_pv_plot_4[name], color=app4Color, label=app4Name)
     plt.plot(t_plot_5[:len(p_pv_plot_5[name])], p_pv_plot_5[name], color=app5Color, label=app5Name)
-    plt.legend(prop=legendProp, loc=legendLoc)
+    #plt.legend(prop=legendProp, loc=legendLoc)
+    plt.legend(prop=legendProp, loc='best')
     plt.grid(True)
     plt.tight_layout()
     plt.savefig('excl_plots/' + prefix + '_p_pv_' + pvname + '.png')
@@ -311,7 +315,8 @@ def make_q_pv_plots(title, prefix, SolarPVs, t_plot_1, q_pv_plot_1, t_plot_2, q_
     plt.plot(t_plot_3[:len(q_pv_plot_3[name])], q_pv_plot_3[name], color=app3Color, label=app3Name)
     plt.plot(t_plot_4[:len(q_pv_plot_4[name])], q_pv_plot_4[name], color=app4Color, label=app4Name)
     plt.plot(t_plot_5[:len(q_pv_plot_5[name])], q_pv_plot_5[name], color=app5Color, label=app5Name)
-    plt.legend(prop=legendProp, loc=legendLoc)
+    #plt.legend(prop=legendProp, loc=legendLoc)
+    plt.legend(prop=legendProp, loc='best')
     plt.grid(True)
     plt.tight_layout()
     plt.savefig('excl_plots/' + prefix + '_q_pv_' + pvname + '.png')
