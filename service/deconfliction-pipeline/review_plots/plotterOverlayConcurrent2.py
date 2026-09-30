@@ -61,8 +61,8 @@ plotDPI = 200
 labelSize = 16
 legendSize = 14
 tickSize = 12
-baselineColor = 'blue'
-overlayColor1 = 'red'
+baselineColor = 'cyan'
+overlayColor1 = 'green'
 overlayColor2 = 'orange'
 legendLoc = 'lower right'
 legendProp = {'weight': 'bold', 'size': legendSize}
@@ -100,7 +100,7 @@ def make_p_batt_plots(title, prefix1, label1, prefix2, label2, Batteries, t_plot
     plt.ylabel('BESS Output (kW)', fontweight='bold', fontsize=labelSize)
     plt.plot(t_plot_b[:len(p_batt_plot_b[name])], p_batt_plot_b[name], color=baselineColor, label='Baseline')
     plt.plot(t_plot_o1[:len(p_batt_plot_o1[name])], p_batt_plot_o1[name], color=overlayColor1, label=label1)
-    plt.plot(t_plot_o2[:len(p_batt_plot_o2[name])], p_batt_plot_o2[name], color=overlayColor2, label=label2)
+    plt.plot(t_plot_o2[:len(p_batt_plot_o2[name])], p_batt_plot_o2[name], color=overlayColor2, label=label2, linestyle=':')
     #plt.legend(prop=legendProp, loc=legendLoc)
     plt.legend(prop=legendProp, loc='best')
     plt.grid(True)
@@ -140,7 +140,7 @@ def make_soc_plots(title, prefix1, label1, prefix2, label2, Batteries, t_plot_b,
     plt.ylabel('BESS Output (SoC)', fontweight='bold', fontsize=labelSize)
     plt.plot(t_plot_b[:len(soc_plot_b[name])], soc_plot_b[name], color=baselineColor, label='Baseline')
     plt.plot(t_plot_o1[:len(soc_plot_o1[name])], soc_plot_o1[name], color=overlayColor1, label=label1)
-    plt.plot(t_plot_o2[:len(soc_plot_o2[name])], soc_plot_o2[name], color=overlayColor2, label=label2)
+    plt.plot(t_plot_o2[:len(soc_plot_o2[name])], soc_plot_o2[name], color=overlayColor2, label=label2, linestyle=':')
     #plt.legend(prop=legendProp, loc=legendLoc)
     plt.legend(prop=legendProp, loc='best')
     plt.grid(True)
@@ -181,7 +181,7 @@ def make_reg_plots(title, prefix1, label1, prefix2, label2, Regulators, t_plot_b
     plt.ylabel('Regulator Taps', fontweight='bold', fontsize=labelSize)
     plt.plot(t_plot_b[:len(reg_plot_b[name])], reg_plot_b[name], color=baselineColor, label='Baseline')
     plt.plot(t_plot_o1[:len(reg_plot_o1[name])], reg_plot_o1[name], color=overlayColor1, label=label1)
-    plt.plot(t_plot_o2[:len(reg_plot_o2[name])], reg_plot_o2[name], color=overlayColor2, label=label2)
+    plt.plot(t_plot_o2[:len(reg_plot_o2[name])], reg_plot_o2[name], color=overlayColor2, label=label2, linestyle=':')
     #plt.legend(prop=legendProp, loc=legendLoc)
     plt.legend(prop=legendProp, loc='best')
     plt.grid(True)
@@ -224,7 +224,7 @@ def make_p_pv_plots(title, prefix1, label1, prefix2, label2, SolarPVs, t_plot_b,
     plt.ylabel('PV Output (kW)', fontweight='bold', fontsize=labelSize)
     plt.plot(t_plot_b[:len(p_pv_plot_b[name])], p_pv_plot_b[name], color=baselineColor, label='Baseline')
     plt.plot(t_plot_o1[:len(p_pv_plot_o1[name])], p_pv_plot_o1[name], color=overlayColor1, label=label1)
-    plt.plot(t_plot_o2[:len(p_pv_plot_o2[name])], p_pv_plot_o2[name], color=overlayColor2, label=label2)
+    plt.plot(t_plot_o2[:len(p_pv_plot_o2[name])], p_pv_plot_o2[name], color=overlayColor2, label=label2, linestyle=':')
     #plt.legend(prop=legendProp, loc=legendLoc)
     plt.legend(prop=legendProp, loc='best')
     plt.grid(True)
@@ -267,7 +267,7 @@ def make_q_pv_plots(title, prefix1, label1, prefix2, label2, SolarPVs, t_plot_b,
     plt.ylabel('PV Output (kVAR)', fontweight='bold', fontsize=labelSize)
     plt.plot(t_plot_b[:len(q_pv_plot_b[name])], q_pv_plot_b[name], color=baselineColor, label='Baseline')
     plt.plot(t_plot_o1[:len(q_pv_plot_o1[name])], q_pv_plot_o1[name], color=overlayColor1, label=label1)
-    plt.plot(t_plot_o2[:len(q_pv_plot_o2[name])], q_pv_plot_o2[name], color=overlayColor2, label=label2)
+    plt.plot(t_plot_o2[:len(q_pv_plot_o2[name])], q_pv_plot_o2[name], color=overlayColor2, label=label2, linestyle=':')
     #plt.legend(prop=legendProp, loc=legendLoc)
     plt.legend(prop=legendProp, loc='best')
     plt.grid(True)

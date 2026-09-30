@@ -64,7 +64,7 @@ tickSize = 12
 baselineColor = 'cyan'
 overlayColor1 = 'magenta'
 overlayColor2 = 'green'
-overlayColor3 = 'red'
+overlayColor3 = 'orange'
 legendLoc = 'lower right'
 legendProp = {'weight': 'bold', 'size': legendSize}
 
