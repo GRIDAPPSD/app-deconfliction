@@ -115,7 +115,7 @@ def make_p_batt_plots(Batteries, t_plot_s, p_batt_plot_s, t_plot_1, p_batt_plot_
 
     plt.yticks(fontweight='bold', fontsize=tickSize)
     plt.ylabel('BESS Output (kW)', fontweight='bold', fontsize=labelSize)
-    plt.plot(t_plot_s[:len(p_batt_plot_s[name])], p_batt_plot_s[name], color=simColor, linewidth=2, label='Simulation')
+    plt.plot(t_plot_s[:len(p_batt_plot_s[name])], p_batt_plot_s[name], color=simColor, linewidth=3, label='Simulation')
     plt.plot(t_plot_1[:len(p_batt_plot_1[name])], p_batt_plot_1[name], color=app1Color, label=app1Name)
     plt.plot(t_plot_2[:len(p_batt_plot_2[name])], p_batt_plot_2[name], color=app2Color, label=app2Name)
     plt.plot(t_plot_3[:len(p_batt_plot_3[name])], p_batt_plot_3[name], color=app3Color, label=app3Name)
@@ -169,7 +169,7 @@ def make_reg_plots(Regulators, t_plot_s, reg_plot_s, t_plot_1, reg_plot_1, t_plo
     plt.ylim([-16, 16])
     plt.yticks([-16, -12, -8, -4, 0, 4, 8, 12, 16], fontweight='bold', fontsize=tickSize)
     plt.ylabel('Regulator Taps', fontweight='bold', fontsize=labelSize)
-    plt.plot(t_plot_s[:len(reg_plot_s[name])], reg_plot_s[name], color=simColor, linewidth=2, label='Simulation')
+    plt.plot(t_plot_s[:len(reg_plot_s[name])], reg_plot_s[name], color=simColor, linewidth=3, label='Simulation')
     plt.plot(t_plot_1[:len(reg_plot_1[name])], reg_plot_1[name], color=app1Color, label=app1Name)
     plt.plot(t_plot_2[:len(reg_plot_2[name])], reg_plot_2[name], color=app2Color, label=app2Name)
     plt.plot(t_plot_3[:len(reg_plot_3[name])], reg_plot_3[name], color=app3Color, label=app3Name)
@@ -224,7 +224,7 @@ def make_p_pv_plots(SolarPVs, t_plot_s, p_pv_plot_s, t_plot_1, p_pv_plot_1, t_pl
 
     plt.yticks(fontweight='bold', fontsize=tickSize)
     plt.ylabel('PV Output (kW)', fontweight='bold', fontsize=labelSize)
-    plt.plot(t_plot_s[:len(p_pv_plot_s[name])], p_pv_plot_s[name], color=simColor, label='Simulation', linewidth=2)
+    plt.plot(t_plot_s[:len(p_pv_plot_s[name])], p_pv_plot_s[name], color=simColor, label='Simulation', linewidth=3)
     plt.plot(t_plot_1[:len(p_pv_plot_1[name])], p_pv_plot_1[name], color=app1Color, label=app1Name)
     plt.plot(t_plot_2[:len(p_pv_plot_2[name])], p_pv_plot_2[name], color=app2Color, label=app2Name)
     plt.plot(t_plot_3[:len(p_pv_plot_3[name])], p_pv_plot_3[name], color=app3Color, label=app3Name)
@@ -279,7 +279,7 @@ def make_q_pv_plots(SolarPVs, t_plot_s, q_pv_plot_s, t_plot_1, q_pv_plot_1, t_pl
 
     plt.yticks(fontweight='bold', fontsize=tickSize)
     plt.ylabel('PV Output (kW)', fontweight='bold', fontsize=labelSize)
-    plt.plot(t_plot_s[:len(q_pv_plot_s[name])], q_pv_plot_s[name], color=simColor, label='Simulation', linewidth=2)
+    plt.plot(t_plot_s[:len(q_pv_plot_s[name])], q_pv_plot_s[name], color=simColor, label='Simulation', linewidth=3)
     plt.plot(t_plot_1[:len(q_pv_plot_1[name])], q_pv_plot_1[name], color=app1Color, label=app1Name)
     plt.plot(t_plot_2[:len(q_pv_plot_2[name])], q_pv_plot_2[name], color=app2Color, label=app2Name)
     plt.plot(t_plot_3[:len(q_pv_plot_3[name])], q_pv_plot_3[name], color=app3Color, label=app3Name)
