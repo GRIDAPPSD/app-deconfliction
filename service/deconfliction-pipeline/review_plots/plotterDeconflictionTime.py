@@ -87,7 +87,7 @@ def make_decontime_plot(disp_t_plot_b, disp_val_plot_b, disp_t_plot_l, disp_val_
   plt.ylabel('Deconfliction Time (sec)', fontweight='bold', fontsize=labelSize)
   plt.plot(disp_t_plot_b, disp_val_plot_b, color='cyan', label='5 Apps Baseline')
   plt.plot(disp_t_plot_l, disp_val_plot_l, color='magenta', label='5 Apps Lower Thresholds')
-  plt.plot(disp_t_plot_n, disp_val_plot_n, color='red', label='5 Apps No Cooperation')
+  plt.plot(disp_t_plot_n, disp_val_plot_n, color='orange', label='5 Apps No Cooperation')
   plt.plot(disp_t_plot_2, disp_val_plot_2, color='green', label='2 Apps Baseline')
 
   #plt.legend(prop=legendProp, loc=legendLoc)
