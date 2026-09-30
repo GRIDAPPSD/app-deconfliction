@@ -86,14 +86,14 @@ def make_cm_plot(cm_t_plot, cm_start_plot, cm_rules_plot, cm_coop_plot):
   plt.ylim([-0.05, 1.0])
   plt.yticks([0.0, 0.2, 0.4, 0.6, 0.8, 1.0], fontweight='bold', fontsize=tickSize)
   plt.ylabel('Conflict Metric', fontweight='bold', fontsize=labelSize)
-  plt.plot(cm_t_plot, cm_start_plot, color='orange', label='Starting Metric')
-  plt.plot(cm_t_plot, cm_rules_plot, color='magenta', label='Post Rules')
+  plt.plot(cm_t_plot, cm_start_plot, color='orange', label='Before Deconfliction')
+  plt.plot(cm_t_plot, cm_rules_plot, color='magenta', label='After Rules Stage')
   if len(cm_coop_plot) > 0:
-    plt.plot(cm_t_plot, cm_coop_plot, color='cyan', label='Post Cooperation')
+    plt.plot(cm_t_plot, cm_coop_plot, color='cyan', label='After Cooperation Stage')
 
   cm_topt_plot = [2.5, 23.8]
   cm_opt_plot = [0.0, 0.0]
-  plt.plot(cm_topt_plot, cm_opt_plot, color='lime', label='Post Optimization')
+  plt.plot(cm_topt_plot, cm_opt_plot, color='lime', label='After Optimization Stage')
 
   #plt.legend(prop=legendProp, loc=legendLoc)
   plt.legend(prop=legendProp, loc='upper left')
