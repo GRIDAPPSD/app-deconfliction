@@ -2677,7 +2677,8 @@ class DeconflictionPipeline(GridAPPSD):
       self.simTimestampStart = None
       # match duration with simulation configuration
       # for some reason final expected timestamp isn't sent so subtract 2 off
-      self.simDuration = 86400-120
+      #self.simDuration = 86400-120 # 24 hr simulation
+      self.simDuration = 172800-120 # 48 hr simulation
 
     # flag for whether to log cooperation messages in a file
     self.logMessagesFlag = True
