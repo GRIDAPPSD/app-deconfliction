@@ -243,7 +243,7 @@ class CompetingApp(GridAPPSD):
                   str(message['coop_series']) + '|delay:' + str(diff_sec))
 
     # GDB 9/22/26: Selective cooperation participation. Comment out when all apps
-    # are participating in cooperation.
+    # are participating in cooperation. two_coop
     #if self.app_name=='app1-app' or self.app_name=='app2-app' or self.app_name=='app3-app':
     #  self.msglog('discarding cooperation request|app:' + self.app_name)
     #  return
@@ -1956,9 +1956,9 @@ class CompetingApp(GridAPPSD):
       # self.app_name is now set so I can use that for setting up irregular
       # request schedule
       #if self.app_name == 'app2-app':
-      #  self.optIntervalSec = 3600 # 1 hour schedule
-      #elif self.app_name == 'app3-app':
       #  self.optIntervalSec = 7200 # 2 hour schedule
+      #elif self.app_name == 'app3-app':
+      #  self.optIntervalSec = 10800 # 3 hour schedule
 
     else:
       self.optPrelimClassic()

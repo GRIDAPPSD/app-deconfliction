@@ -234,7 +234,7 @@ class DeconflictionPipeline(GridAPPSD):
       msglog('received new measurement setpoints|app:' + message['app_name'] +
              '|delay:' + str(diff_sec))
 
-    # GDB 9/18/26: Irregular app schedule setup for dropping out app4 between
+    # GDB 9/18/26: irregular app schedule setup for dropping out app4 between
     # 9am and 3pm and completely losing app5 at noon for the rest of the day.
     # Comment this out to use a regular schedule
     #if message['app_name']=='app4-app' and self.simTimestamp>=1704110400: # stop at noon
@@ -276,7 +276,7 @@ class DeconflictionPipeline(GridAPPSD):
               '|msgid:' + str(message['coop_msgid']) + '|series:' +
               str(message['coop_series']) + '|delay:' + str(diff_sec))
 
-    # GDB 9/18/26: Irregular app schedule setup for dropping out app4 between
+    # GDB 9/18/26: irregular app schedule setup for dropping out app4 between
     # 9am and 3pm and completely losing app5 at noon for the rest of the day.
     # Comment this out to use a regular schedule
     #if message['app_name']=='app4-app' and self.simTimestamp>=1704110400: # stop at noon
@@ -2798,7 +2798,7 @@ class DeconflictionPipeline(GridAPPSD):
     # may impact scalability
 
     # GDB 9/11/26: This is our cooperation baseline
-    # 1) Drive maximum cooperation:
+    # 1) Drive maximum cooperation: baseline
     self.coopMessagesThreshold = 15
     self.conflictPercentThreshold = 0.05
     self.conflictValueThreshold = 0.05
@@ -2809,7 +2809,7 @@ class DeconflictionPipeline(GridAPPSD):
     #self.conflictValueThreshold = 0.10
 
     # GDB 9/11/26: This is our cooperation comparison run (less cooperation)
-    # 3) Drive minimum cooperation:
+    # 3) Drive minimum cooperation: less_coop
     #self.coopMessagesThreshold = 5
     #self.conflictPercentThreshold = 5.0
     #self.conflictValueThreshold = 0.20
@@ -2851,7 +2851,7 @@ class DeconflictionPipeline(GridAPPSD):
     self.rulesStageLastFlag = False
     self.noValidatorRulesFlag = True
 
-    # controls where cooperation stage deconfliction is done
+    # no_coop: controls where cooperation stage deconfliction is done
     self.coopStageFlag = True
 
     # APP SCALABILITY: to streamline the deconfliction workflow when focused
@@ -2897,7 +2897,7 @@ class DeconflictionPipeline(GridAPPSD):
       self.rulesRegOuterTimeInterval = 60*60*6 # every 6 hours
       self.rulesRegOuterStepsAllowed = 6
 
-      # GDB 9/11/26: Here are the less restrictive rules for the comparison run
+      # GDB 9/11/26: Here is the less restrictive less_rules comparison run
       #self.rulesBattTimeInterval = 60*60*6 # every 6 hours
       #self.rulesBattSwitchesAllowed = 6
       #self.rulesRegInnerTimeInterval = 60*30 # every 30 minutes
