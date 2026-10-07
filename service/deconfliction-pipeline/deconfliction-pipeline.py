@@ -2955,9 +2955,9 @@ class DeconflictionPipeline(GridAPPSD):
     #self.bypassDeconflictionFlag = True
     self.instantSetpointUpdateFlag = False
 
-    # GDB 9/21/26: short circuit all deconfliction and pass the requested setpoints
-    # directly to device dispatcher for a test case that shows the chaos when the
-    # apps are in complete control.
+    # GDB 9/21/26: short circuit all deconfliction and pass the requested
+    # setpoints directly to device dispatcher for a test case that shows the
+    # chaos when the apps are in complete control: no_decon
     self.shortCircuitFlag = False
     #self.shortCircuitFlag = True
 
