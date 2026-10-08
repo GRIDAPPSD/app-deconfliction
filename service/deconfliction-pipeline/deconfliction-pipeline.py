@@ -235,13 +235,14 @@ class DeconflictionPipeline(GridAPPSD):
              '|delay:' + str(diff_sec))
 
     # GDB 9/18/26: irregular app schedule setup for dropping out app4 between
-    # 9am and 3pm and completely losing app5 at noon for the rest of the day.
+    # 9am and 3pm each day and completely losing app5 at midnight after the
+    # first day.
     # Comment this out to use a regular schedule
-    #if message['app_name']=='app4-app' and self.simTimestamp>=1704110400: # stop at noon
+    #if message['app_name']=='app4-app' and self.simTimestamp>=1704153600: # stop after midnight
     #  if self.logMessagesFlag:
     #    msglog('ignoring measurement setpoints per app schedule|app:' + message['app_name'] + '|timestamp:' + str(self.simTimestamp))
     #  return
-    #elif message['app_name']=='app5-app' and self.simTimestamp>=1704099600 and self.simTimestamp<=1704121200: # drop out from 9am until 3pm
+    #elif message['app_name']=='app5-app' and ((self.simTimestamp>=1704099600 and self.simTimestamp<=1704121200) or (self.simTimestamp>=1704186000 and self.simTimestamp<=1704207600)): # drop out from 9am until 3pm each day
     #  if self.logMessagesFlag:
     #    msglog('ignoring measurement setpoints per app schedule|app:' + message['app_name'] + '|timestamp:' + str(self.simTimestamp))
     #  return
@@ -277,13 +278,14 @@ class DeconflictionPipeline(GridAPPSD):
               str(message['coop_series']) + '|delay:' + str(diff_sec))
 
     # GDB 9/18/26: irregular app schedule setup for dropping out app4 between
-    # 9am and 3pm and completely losing app5 at noon for the rest of the day.
+    # 9am and 3pm each day and completely losing app5 at midnight after the
+    # first day.
     # Comment this out to use a regular schedule
-    #if message['app_name']=='app4-app' and self.simTimestamp>=1704110400: # stop at noon
+    #if message['app_name']=='app4-app' and self.simTimestamp>=1704153600: # stop after midnight
     #  if self.logMessagesFlag:
     #    msglog('ignoring cooperation response per app schedule|app:' + message['app_name'] + '|timestamp:' + str(self.simTimestamp))
     #  return
-    #elif message['app_name']=='app5-app' and self.simTimestamp>=1704099600 and self.simTimestamp<=1704121200: # drop out from 9am until 3pm
+    #elif message['app_name']=='app5-app' and ((self.simTimestamp>=1704099600 and self.simTimestamp<=1704121200) or (self.simTimestamp>=1704186000 and self.simTimestamp<=1704207600)): # drop out from 9am until 3pm each day
     #  if self.logMessagesFlag:
     #    msglog('ignoring cooperation response per app schedule|app:' + message['app_name'] + '|timestamp:' + str(self.simTimestamp))
     #  return
