@@ -85,9 +85,9 @@ def make_batt_plot(disp_t_plot_b, disp_val_plot_b, disp_t_plot_l, disp_val_plot_
   #plt.ylim([-0.05, 1.0])
   #plt.yticks([0.0, 0.2, 0.4, 0.6, 0.8, 1.0], fontweight='bold', fontsize=tickSize)
   plt.ylabel('Battery State Reversals', fontweight='bold', fontsize=labelSize)
-  plt.plot(disp_t_plot_b, disp_val_plot_b, color='cyan', label='Baseline')
-  plt.plot(disp_t_plot_l, disp_val_plot_l, color='magenta', label='Less Restrictive Rules')
-  plt.plot(disp_t_plot_n, disp_val_plot_n, color='green', label='No Deconfliction')
+  plt.plot(disp_t_plot_b, disp_val_plot_b, color='cyan', label='Baseline', linewidth=2)
+  plt.plot(disp_t_plot_l, disp_val_plot_l, color='magenta', label='Less Restrictive Rules', linewidth=2)
+  plt.plot(disp_t_plot_n, disp_val_plot_n, color='green', label='No Deconfliction', linewidth=2)
 
   #plt.legend(prop=legendProp, loc=legendLoc)
   plt.legend(prop=legendProp, loc='upper left')

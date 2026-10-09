@@ -85,7 +85,7 @@ def make_cm_plot(plotRulesFlag, cm_t_plot_b, cm_val_plot_b, cm_t_plot_o, cm_val_
   plt.ylim([-0.05, 1.0])
   plt.yticks([0.0, 0.2, 0.4, 0.6, 0.8, 1.0], fontweight='bold', fontsize=tickSize)
   plt.ylabel('Conflict Metric', fontweight='bold', fontsize=labelSize)
-  plt.plot(cm_t_plot_b, cm_val_plot_b, color='cyan', label='Baseline')
+  plt.plot(cm_t_plot_b, cm_val_plot_b, color='cyan', label='Baseline', linewidth=2)
 
   if plotRulesFlag:
     label = 'Less Restrictive Rules'
@@ -94,7 +94,7 @@ def make_cm_plot(plotRulesFlag, cm_t_plot_b, cm_val_plot_b, cm_t_plot_o, cm_val_
     label = 'Lower Cooperation Thresholds'
     plotFile = 'conflict_plots/conflict_coop.png'
 
-  plt.plot(cm_t_plot_o, cm_val_plot_o, color='magenta', label=label)
+  plt.plot(cm_t_plot_o, cm_val_plot_o, color='magenta', label=label, linewidth=2)
 
   #plt.legend(prop=legendProp, loc=legendLoc)
   plt.legend(prop=legendProp, loc='upper left')
