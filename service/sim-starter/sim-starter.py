@@ -105,6 +105,8 @@ Optional command line arguments:
         sim_id = sim.simulation_id
         print('SIM_STARTER simulation started with id: ' + sim_id, file=sys.stderr, flush=True)
         print(sim_id, flush=True)
+    else:
+        print(sys.argv[2], flush=True)
 
     # need to dump sim_config before passing it on to downstream modules
     # in order to convert single quotes to double quotes
