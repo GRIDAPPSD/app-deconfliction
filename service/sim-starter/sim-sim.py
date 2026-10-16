@@ -106,7 +106,8 @@ Optional command line arguments:
         gapps.send(publish_topic, message)
 
         # sleep between each measurements message
-        time.sleep(1)
+        #time.sleep(1)
+        time.sleep(0.75)
 
     gapps.disconnect()
 
