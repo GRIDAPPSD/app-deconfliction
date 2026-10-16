@@ -142,7 +142,12 @@ class DeconflictionPipeline(GridAPPSD):
     assert gapps.connected
 
     # subscribe to simulation log and output messages
-    out_id = gapps.subscribe(simulation_output_topic(simulation_id),
+    # GDB 10/16/26: Comment out the subscribe to simulation_output_topic and
+    # uncomment the subscribe to the sim-sim topic to use sim-sim.py for
+    # supplying simulation measurements. SIM-SIM
+    #out_id = gapps.subscribe(simulation_output_topic(simulation_id),
+    #                         self.OnSimOutputMessage)
+    out_id = gapps.subscribe(service_output_topic('sim-sim', simulation_id),
                              self.OnSimOutputMessage)
 
     if self.simLogSubscribedFlag:
@@ -188,6 +193,12 @@ class DeconflictionPipeline(GridAPPSD):
     #prlog('OnSimOutputMessage--received message: ' + str(message))
     if not self.keepLoopingFlag:
       return
+
+    # GDB 10/16/26: Uncomment the following 3 lines to create a sim_meas
+    # file for sim-sim.py processing. SIM-SIM
+    #simFile = open(logDir + 'sim_meas_9999.jsonl', 'a')
+    #simFile.write(json.dumps(message) + '\n')
+    #simFile.close()
 
     self.simTimestamp = int(message['message']['timestamp'])
 
