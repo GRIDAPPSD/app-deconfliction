@@ -1951,6 +1951,8 @@ class DeconflictionPipeline(GridAPPSD):
       return False
 
     if meas_msg_flag and self.coopCurrentFlag:
+      self.coopCurrentFlag = False
+
       # the situation here is that a measurement-based setpoint request has
       # been received during active cooperation based on previous setpoint
       # requests. This is going to start a new stage of cooperation, but
@@ -1970,12 +1972,16 @@ class DeconflictionPipeline(GridAPPSD):
               'dispatch for MEAS message with running COOPERATION based on ' +
               'the same timestamp: ' + str(timestamp))
 
+      elif self.coopMustFinishFlag:
+        prlog('>>> ProcessSetpointsMessage--special case skipping device ' +
+              'dispatch for MEAS message with running COOPERATION based on ' +
+              'coopMustFinishFlag for timestamp: ' + str(timestamp) +
+              ', lastMeasTimestamp: ' + str(self.lastMeasTimestamp))
+
       else:
         prlog('>>> ProcessSetpointsMessage--conclude running COOPERATION ' +
               'series with new MEAS message received since lastMeasTimestamp: '
               + str(self.lastMeasTimestamp))
-
-        self.coopCurrentFlag = False
 
         # GDB 9/10/25: If we don't want to do the device dispatch if cooperation
         # was interrupted by a new measurements based setpoints request, comment
@@ -1990,6 +1996,10 @@ class DeconflictionPipeline(GridAPPSD):
 
         # replace running ConflictMatrix with the minimum conflict version and
         # we'll roll with that from this point on
+        prlog('>>> ProcessSetpointsMessage--conclude running COOPERATION ' +
+              'series with new MEAS message received since lastMeasTimestamp: '
+              + str(self.lastMeasTimestamp))
+
         self.ConflictMatrix = copy.deepcopy(self.MinConflictMatrix)
 
         # set the final conflict metric value to the minimum achieved to
@@ -2092,8 +2102,8 @@ class DeconflictionPipeline(GridAPPSD):
         # when a cooperation series is interrupted by a new measurements based
         # setpoint message
 
-        # reset running minimums for conflict metric and matrix
-        self.minConflictMetric = 1.0
+      # reset running minimums for conflict metric and matrix
+      self.minConflictMetric = 1.0
 
     # if this is a cooperation response and we are in a cooperation series
     # we need to increment the counters
@@ -2108,12 +2118,19 @@ class DeconflictionPipeline(GridAPPSD):
     if meas_msg_flag:
       self.lastMeasTimestamp = timestamp
 
+      if self.coopMustFinishFlag:
+        # delete existing ConflictMarix
+        # comment out to let garbage collection do this
+        #self.ConflictMatrix.clear()
+        # copy SetpointsMatrix to ConflictMatrix
+        self.ConflictMatrix = copy.deepcopy(self.SetpointsMatrix)
+
     # set_points are the forward_differences part of the DifferenceBuilder
     # message with keys of object, attribute, and value
     set_points = message['forward_differences']
 
-    # GDB 9/21/26: Short circuit all deconfliction and pass the requested setpoints
-    # directly to device dispatcher
+    # GDB 9/21/26: Short circuit all deconfliction and pass the requested
+    # setpoints directly to device dispatcher
     if self.shortCircuitFlag:
       newResolutionVector = {}
       for point in set_points:
@@ -2144,6 +2161,13 @@ class DeconflictionPipeline(GridAPPSD):
                            printAllConflictsResolutionsFlag)
 
     self.logConflictTest('after SetpointProcessor with new setpoints')
+
+    if meas_msg_flag and self.coopMustFinishFlag:
+      # delete existing SetpointsMatrix
+      # comment out to let garbage collection do this
+      #self.SetpointsMatrix.clear()
+      # copy ConflictMatrix to SetpointsMatrix
+      self.SetpointsMatrix = copy.deepcopy(self.ConflictMatrix)
 
     return True
 
@@ -2807,6 +2831,11 @@ class DeconflictionPipeline(GridAPPSD):
     self.ConflictMatrix = {}
     self.ResolutionVector = {}
     self.TargetResolutionVector = {}
+
+    # GDB 10/18/26: Define SetpointsMatrix if coopMustFinish is set
+    self.coopMustFinishFlag = True
+    if self.coopMustFinishFlag:
+      self.SetpointsMatrix = {}
 
     # thresholds for concluding cooperation series
     # choose one of these groups of settings depending on  the desired
