@@ -88,7 +88,7 @@ Optional command line arguments:
     gapps = GridAPPSD()
 
     cwd = dirname(abspath(getsourcefile(lambda:0))) # magic to get current dir
-    sim_meas_file = cwd + '/sim_meas_' + sim_id + '.jsonl'
+    sim_meas_file = cwd + '/sim_meas.' + sim_id + '.jsonl'
 
     if not isfile(sim_meas_file):
       print('SIM_SIM exit due to not finding simulation measurements file: ' + sim_meas_file, file=sys.stderr, flush=True)
