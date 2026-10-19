@@ -91,7 +91,7 @@ def make_cm_plot(cm_t_plot, cm_start_plot, cm_rules_plot, cm_coop_plot):
   if len(cm_coop_plot) > 0:
     plt.plot(cm_t_plot, cm_coop_plot, color='cyan', label='After Cooperation Stage', linewidth=2)
 
-  cm_topt_plot = [2.5, 23.8]
+  cm_topt_plot = [1.2, 23.8]
   cm_opt_plot = [0.0, 0.0]
   plt.plot(cm_topt_plot, cm_opt_plot, color='lime', label='After Optimization Stage', linewidth=2)
 
