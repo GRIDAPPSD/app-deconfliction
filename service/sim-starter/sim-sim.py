@@ -71,7 +71,7 @@ class SimSim:
       time.sleep(60) # sleep to allow apps to initialize
 
     # sleep between sending each measurements message
-    time.sleep(0.75)
+    time.sleep(1.0)
 
     self.gapps.send(self.publish_topic, json.dumps(message))
 
