@@ -51,22 +51,57 @@ import sys
 import time
 import json
 import os
-from inspect import getsourcefile
-from os.path import abspath, dirname, isfile
 
 # gridappsd-python module
 from gridappsd import GridAPPSD
-from gridappsd.topics import service_output_topic
+from gridappsd.topics import service_output_topic, simulation_output_topic
 
-# global variables
-gapps = None
-appName = None
-sim_id = None
+class SimSim:
+
+  def OnSimOutputMessage(self, header, message):
+    #print('header: ' + str(header), flush=True)
+    #print('message: ' + str(message), flush=True)
+    if not self.keepLoopingFlag:
+      return
+
+    # sleep between sending each measurements message
+    time.sleep(0.5)
+
+    self.gapps.send(self.publish_topic, json.dumps(message))
+
+    simTimestamp = int(message['message']['timestamp'])
+    #print('sim-sim published timestamp: ' + str(simTimestamp), flush=True)
+
+    if self.simTimestampStart == None:
+      self.simTimestampStart = simTimestamp
+
+    if (simTimestamp - self.simTimestampStart) >= self.simDuration:
+      self.keepLoopingFlag = False
+
+
+  def __init__(self, sim_id):
+    self.simTimestampStart = None
+    self.simDuration = 86400-120
+
+    self.gapps = GridAPPSD()
+
+    self.publish_topic = service_output_topic('sim-sim', sim_id)
+
+    self.keepLoopingFlag = True
+
+    out_id = self.gapps.subscribe(simulation_output_topic(sim_id),
+                                  self.OnSimOutputMessage)
+
+    while self.keepLoopingFlag:
+      time.sleep(0.05)
+
+    #print('sim-sim finished', flush=True)
+
+    self.gapps.unsubscribe(out_id)
+    self.gapps.disconnect()
 
 
 def _main():
-    global appName, sim_id, gapps
-
     if len(sys.argv)<2 or '-help' in sys.argv:
         usestr =  '\nUsage: ' + sys.argv[0] + ' simid\n'
         usestr += '''
@@ -76,40 +111,15 @@ Optional command line arguments:
         print(usestr, file=sys.stderr, flush=True)
         exit()
 
-    appName = sys.argv[0]
-    sim_id = sys.argv[1]
-
     # authenticate with GridAPPS-D Platform
     os.environ['GRIDAPPSD_APPLICATION_ID'] = 'gridappsd-sim-sim'
     os.environ['GRIDAPPSD_APPLICATION_STATUS'] = 'STARTED'
     os.environ['GRIDAPPSD_USER'] = 'app_user'
     os.environ['GRIDAPPSD_PASSWORD'] = '1234App'
 
-    gapps = GridAPPSD()
+    sim_id = sys.argv[1]
 
-    cwd = dirname(abspath(getsourcefile(lambda:0))) # magic to get current dir
-    sim_meas_file = cwd + '/sim_meas.' + sim_id + '.jsonl'
-
-    if not isfile(sim_meas_file):
-      print('SIM_SIM exit due to not finding simulation measurements file: ' + sim_meas_file, file=sys.stderr, flush=True)
-      exit()
-
-    publish_topic = service_output_topic('sim-sim', sim_id)
-
-    # sleep for 60 seconds to allow apps to initialize so they are ready
-    # to go when the first measurements message is sent
-    time.sleep(60)
-
-    with open(sim_meas_file) as meas_fp:
-      for line in meas_fp:
-        message = line.rstrip('\n')
-        gapps.send(publish_topic, message)
-
-        # sleep between each measurements message
-        #time.sleep(1)
-        time.sleep(0.75)
-
-    gapps.disconnect()
+    sim_sim = SimSim(sim_id)
 
 
 if __name__ == '__main__':
