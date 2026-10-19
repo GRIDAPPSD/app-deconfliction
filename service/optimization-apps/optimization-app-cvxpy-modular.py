@@ -129,10 +129,10 @@ class CompetingApp(GridAPPSD):
     # GDB 10/16/26: Comment out the subscribe to simulation_output_topic and
     # uncomment the subscribe to the sim-sim topic to use sim-sim.py to supply
     # simulation measurements from a file. SIM-SIM
-    #out_id = self.msg_gapps.subscribe(simulation_output_topic(simulation_id),
-    #                                  self.OnSimOutputMessage)
-    out_id = self.msg_gapps.subscribe(service_output_topic('sim-sim',
-                                      simulation_id), self.OnSimOutputMessage)
+    out_id = self.msg_gapps.subscribe(simulation_output_topic(simulation_id),
+                                      self.OnSimOutputMessage)
+    #out_id = self.msg_gapps.subscribe(service_output_topic('sim-sim',
+    #                                  simulation_id), self.OnSimOutputMessage)
 
     if self.simLogSubscribedFlag:
       log_id = self.msg_gapps.subscribe(simulation_log_topic(simulation_id),
@@ -1939,8 +1939,8 @@ class CompetingApp(GridAPPSD):
       # so the optimization time is safely shorter than the time between
       # optimizations--otherwise the queue draining won't work right.
       # For service paper use 30 minutes. For scalability runs use 1 hour
-      self.optIntervalSec = 1800 # 30 minute request schedule
-      #self.optIntervalSec = 3600 # 1 hour request schedule
+      #self.optIntervalSec = 1800 # 30 minute request schedule
+      self.optIntervalSec = 3600 # 1 hour request schedule
       simLagSec = 600
 
     if self.opt_type!='scalability' and interval!=None:

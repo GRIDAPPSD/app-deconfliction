@@ -145,10 +145,10 @@ class DeconflictionPipeline(GridAPPSD):
     # GDB 10/16/26: Comment out the subscribe to simulation_output_topic and
     # uncomment the subscribe to the sim-sim topic to use sim-sim.py for
     # supplying simulation measurements. SIM-SIM
-    #out_id = gapps.subscribe(simulation_output_topic(simulation_id),
-    #                         self.OnSimOutputMessage)
-    out_id = gapps.subscribe(service_output_topic('sim-sim', simulation_id),
+    out_id = gapps.subscribe(simulation_output_topic(simulation_id),
                              self.OnSimOutputMessage)
+    #out_id = gapps.subscribe(service_output_topic('sim-sim', simulation_id),
+    #                         self.OnSimOutputMessage)
 
     if self.simLogSubscribedFlag:
       log_id = gapps.subscribe(simulation_log_topic(simulation_id),
