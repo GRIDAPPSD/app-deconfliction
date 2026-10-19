@@ -89,12 +89,12 @@ trap "trap - SIGTERM && kill -- -$$" SIGINT SIGTERM EXIT
 # fire off GridLAB-D simulation
 cd sim-starter
 
-# GDB 10/16/26: Comment out the following line and uncomment the two after that
-# in order to fake a simulation and feed measurements from a file using
-# sim-sim.py instead. This allows the time between measurements to be tweaked
-# so optimization apps don't fall behind. SIM-SIM
-#read -d "\n" SIMID SIMREQ <<< $(./sim-starter.py $MODEL)
-read -d "\n" SIMID SIMREQ <<< $(./sim-starter.py $MODEL 9999)
+read -d "\n" SIMID SIMREQ <<< $(./sim-starter.py $MODEL)
+
+# GDB 10/16/26: Uncomment the following line in order to insert a process in
+# the workflow that delays sending out measurement messages. This prevents
+# optimization apps from falling behind non-real-time simulation measurements.
+# SIM-SIM
 ./sim-sim.py $SIMID &
 
 # only optimization apps (not workflow) are supported for decon service
