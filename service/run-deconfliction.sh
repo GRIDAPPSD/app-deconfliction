@@ -94,8 +94,11 @@ read -d "\n" SIMID SIMREQ <<< $(./sim-starter.py $MODEL)
 # GDB 10/16/26: Uncomment the following line in order to insert a process in
 # the workflow that delays sending out measurement messages. This prevents
 # optimization apps from falling behind non-real-time simulation measurements.
-# SIM-SIM
-./sim-sim.py $SIMID &
+# The problem with this design is that the DifferenceBuilder commands sent
+# by the apps will be way behind the current state of the simulation so I
+# think it would need to be the simulation itself that is slowed down, not
+# message delivery. SIM-SIM
+#./sim-sim.py $SIMID &
 
 # only optimization apps (not workflow) are supported for decon service
 cd ../optimization-apps
