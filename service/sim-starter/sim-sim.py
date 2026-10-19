@@ -64,16 +64,18 @@ class SimSim:
     if not self.keepLoopingFlag:
       return
 
-    # sleep between sending each measurements message
-    time.sleep(0.5)
-
-    self.gapps.send(self.publish_topic, json.dumps(message))
-
     simTimestamp = int(message['message']['timestamp'])
-    #print('sim-sim published timestamp: ' + str(simTimestamp), flush=True)
 
     if self.simTimestampStart == None:
       self.simTimestampStart = simTimestamp
+      time.sleep(60) # sleep to allow apps to initialize
+
+    # sleep between sending each measurements message
+    time.sleep(0.75)
+
+    self.gapps.send(self.publish_topic, json.dumps(message))
+
+    #print('sim-sim published timestamp: ' + str(simTimestamp), flush=True)
 
     if (simTimestamp - self.simTimestampStart) >= self.simDuration:
       self.keepLoopingFlag = False
