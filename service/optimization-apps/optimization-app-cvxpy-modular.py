@@ -1693,15 +1693,25 @@ class CompetingApp(GridAPPSD):
     startTime = datetime.now()
     #problem.solve(solver=cp.MOSEK, verbose=True) # commercial solver
     #problem.solve(solver=cp.CBC, verbose=False)
-    # GDB 9/19/25: Set 15 second time limit before bailing because sometimes
-    # it really gets stuck and falls so far behind that the results are
-    # useless by the time they are computed and then the app is way behind
-    # in missing all the data while it was stuck.
 
-    problem.solve(solver=cp.GLPK_MI, abstol=1e-3, kktsolver='chol',
-                  feastol=1e-3, max_iters=100, tm_lim=15000, verbose=False)
+    # GDB 10/21/26: Gemini AI helped me come up with these options to
+    # speed optimizations
+    glpk_opts = {
+      "mip_gap": 0.02,
+      "presolve": True,
+      "scale": 3,
+      "tol_bnd": 1e-6,
+      "br_tech": 3
+    }
+    problem.solve(solver=cp.GLPK_MI, ignore_dpp=True, solver_specific_opts=glpk_opts,
+                  verbose=False)
 
-    
+    # GDB 10/21/26: This is a faster solver, but gives infeasible for CVR
+    #scip_opts = {
+    #  "limits/gap": 0.02
+    #}
+    #problem.solve(solver=cp.SCIP, ignore_dpp=True, verbose=False, **scip_opts)
+
     # problem.solve(solver=cp.MOSEK, mosek_params={'MSK_DPAR_MIO_TOL_REL_GAP': 2e-2, 'MSK_IPAR_INTPNT_MAX_ITERATIONS': 100, 
     #                                       'MSK_DPAR_MIO_TOL_ABS_RELAX_INT': 1e-2, 'MSK_DPAR_OPTIMIZER_MAX_TIME': 15000},  verbose=False)
 
