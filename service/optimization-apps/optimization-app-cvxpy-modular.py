@@ -1939,8 +1939,8 @@ class CompetingApp(GridAPPSD):
       # so the optimization time is safely shorter than the time between
       # optimizations--otherwise the queue draining won't work right.
       # For service paper use 30 minutes. For scalability runs use 1 hour
-      self.optIntervalSec = 1800 # 30 minute request schedule
-      #self.optIntervalSec = 3600 # 1 hour request schedule
+      #self.optIntervalSec = 1800 # 30 minute request schedule
+      self.optIntervalSec = 3600 # 1 hour request schedule
       simLagSec = 600
 
     if self.opt_type!='scalability' and interval!=None:

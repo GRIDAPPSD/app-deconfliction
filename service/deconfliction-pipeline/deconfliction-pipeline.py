@@ -2813,8 +2813,8 @@ class DeconflictionPipeline(GridAPPSD):
       # if attempting non-real-time, something like 1800 is reasonable so
       # apps can complete optimizations safely within that interval
       # For service paper use 30 minutes. For scalability runs use 1 hour
-      optIntervalSec = 1800 # 30 minutes
-      #optIntervalSec = 3600 # 1 hour
+      #optIntervalSec = 1800 # 30 minutes
+      optIntervalSec = 3600 # 1 hour
       simLagSec = 600
       # GDB 8/31/26: time elapsed for dropping stale setpoint requests--don't
       # drop requests if set to None
