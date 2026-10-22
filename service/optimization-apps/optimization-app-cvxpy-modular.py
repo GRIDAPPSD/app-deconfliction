@@ -1694,17 +1694,21 @@ class CompetingApp(GridAPPSD):
     #problem.solve(solver=cp.MOSEK, verbose=True) # commercial solver
     #problem.solve(solver=cp.CBC, verbose=False)
 
+    problem.solve(solver=cp.GLPK_MI, ignore_dpp=True, abstol=1e-3, kktsolver='chol',
+                  feastol=1e-3, max_iters=100, tm_lim=15000, verbose=False)
+
     # GDB 10/21/26: Gemini AI helped me come up with these options to
-    # speed optimizations
-    glpk_opts = {
-      "mip_gap": 0.02,
-      "presolve": True,
-      "scale": 3,
-      "tol_bnd": 1e-6,
-      "br_tech": 3
-    }
-    problem.solve(solver=cp.GLPK_MI, ignore_dpp=True, solver_specific_opts=glpk_opts,
-                  verbose=False)
+    # speed optimizations. However, they cause Peak Load to fail so
+    # going back to the original solve call is the path forward.
+    #glpk_opts = {
+    #  "mip_gap": 0.02,
+    #  "presolve": True,
+    #  "scale": 3,
+    #  "tol_bnd": 1e-6,
+    #  "br_tech": 3
+    #}
+    #problem.solve(solver=cp.GLPK_MI, ignore_dpp=True, solver_specific_opts=glpk_opts,
+    #              verbose=False)
 
     # GDB 10/21/26: This is a faster solver, but gives infeasible for CVR
     #scip_opts = {
