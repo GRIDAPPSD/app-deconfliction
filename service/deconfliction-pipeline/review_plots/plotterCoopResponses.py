@@ -167,6 +167,21 @@ def _main():
   print('twoapps responses/dispatch: ' + str(float(twoapps_resps/cmhits)), flush=True)
 
   cmhits = 0
+  tenapps_resps = 0
+  with open('../review_runs/ten_apps/plot_data.csv', 'r') as file:
+    for line in file:
+      tokens = line.split(',')
+      if tokens[0] == 'conflict_metric':
+        cmhits += 1
+        resps = int(tokens[8].split(':')[1])
+        if resps > 0:
+          tenapps_resps += resps
+
+  print('\ntenapps conflict_metric hits: ' + str(cmhits), flush=True)
+  print('tenapps total cooperation responses: ' + str(tenapps_resps), flush=True)
+  print('tenapps responses/dispatch: ' + str(float(tenapps_resps/cmhits)), flush=True)
+
+  cmhits = 0
   irregular_resps = 0
   with open('../review_runs/irregular/plot_data.csv', 'r') as file:
     for line in file:

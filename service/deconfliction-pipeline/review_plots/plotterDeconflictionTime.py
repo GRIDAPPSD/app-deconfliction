@@ -179,6 +179,20 @@ def _main():
   print('twoapp total decon_time: ' + str(twoapp_time), flush=True)
   print('twoapp decon_time/dispatch: ' + str(twoapp_time/disphits), flush=True)
 
+  disphits = 0
+  tenapp_time = 0
+  with open('../review_runs/ten_apps/plot_data.csv', 'r') as file:
+    for line in file:
+      tokens = line.split(',')
+      if tokens[0] == 'device_dispatch':
+        disphits += 1
+        decontime = float(tokens[5].split(':')[1]) + float(tokens[6].split(':')[1]) + float(tokens[7].split(':')[1])
+        tenapp_time += decontime
+
+  print('\ntenapp device_dispatch hits: ' + str(disphits), flush=True)
+  print('tenapp total decon_time: ' + str(tenapp_time), flush=True)
+  print('tenapp decon_time/dispatch: ' + str(tenapp_time/disphits), flush=True)
+
   make_decontime_plot(disp_t_plot_b, disp_val_plot_b, disp_t_plot_l, disp_val_plot_l, disp_t_plot_n, disp_val_plot_n, disp_t_plot_2, disp_val_plot_2)
 
   disp_t_plot_b.clear()
