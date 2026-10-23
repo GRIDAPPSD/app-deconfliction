@@ -1888,7 +1888,7 @@ class DeconflictionPipeline(GridAPPSD):
         deltaDispatch = (now - self.timerDispatch).total_seconds()
       self.timerDispatch = now
 
-      if self.shortCircuitFlag:
+      if self.shortCircuitFlag or reason=='NoConflict':
         self.pltFile.write('device_dispatch,reason:' + reason + ',timestamp:' + str(timestamp) + ',runningTime:' + str(timerRunning) + ',dispatchTime:' + str(deltaDispatch) + ',rulesTime:NA,coopTime:NA,optTime:NA,batteryCycles:' + str(self.batteryCycleCount) + ',tapPositions:' + str(self.tapPositionCount) + ',dispatchCount:' + str(dispatchCount))
       else:
         self.pltFile.write('device_dispatch,reason:' + reason + ',timestamp:' + str(timestamp) + ',runningTime:' + str(timerRunning) + ',dispatchTime:' + str(deltaDispatch) + ',rulesTime:' + str(self.timerRules) + ',coopTime:' + str(self.timerCoop) + ',optTime:' + str(self.timerOpt) + ',batteryCycles:' + str(self.batteryCycleCount) + ',tapPositions:' + str(self.tapPositionCount) + ',dispatchCount:' + str(dispatchCount))
@@ -2285,6 +2285,8 @@ class DeconflictionPipeline(GridAPPSD):
                                             self.printAllDispatchesFlag)
       prlog('>>> DeconflictSetpoints--invoked device dispatch, # ' +
             'devices dispatched: ' +str(dispatchCount))
+      self.PlotDispatch('NoConflict', timestamp,
+                        newResolutionVector, dispatchCount)
 
       # update the current resolution to the new resolution to be ready for the
       # next dispatch
