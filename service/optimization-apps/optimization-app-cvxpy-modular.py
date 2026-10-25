@@ -1975,9 +1975,11 @@ class CompetingApp(GridAPPSD):
       # self.app_name is now set so I can use that for setting up irregular
       # request schedule
       #if self.app_name == 'app2-app':
-      #  self.optIntervalSec = 7200 # 2-hour schedule
+      #  self.optIntervalSec = 3600 # 30-minute setpoint request schedule
+      ##  self.optIntervalSec = 7200 # 1-hour setpoint request schedule
       #elif self.app_name == 'app3-app':
-      #  self.optIntervalSec = 10800 # 3-hour schedule
+      #  self.optIntervalSec = 7200 # 30-minute setpoint request schedule
+      ##  self.optIntervalSec = 10800 # 1-hour setpoint request schedule
 
     else:
       self.optPrelimClassic()
