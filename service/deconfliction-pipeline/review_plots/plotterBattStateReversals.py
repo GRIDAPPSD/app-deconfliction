@@ -114,6 +114,12 @@ def _main():
 
   disphits = 0
   baseline_reversals = 0
+  # DBG_RULES
+  #baseline_reversals1 = 0
+  #baseline_reversals2 = 0
+  #baseline_reversals3 = 0
+  #baseline_reversals4 = 0
+  #baseline_reversals5 = 0
   with open('../review_runs/baseline/plot_data.csv', 'r') as file:
     for line in file:
       tokens = line.split(',')
@@ -124,10 +130,22 @@ def _main():
           baseline_reversals += reversals
           disp_t_plot_b.append((float(tokens[2].split(':')[1]) - timex_start)/3600.0)
           disp_val_plot_b.append(reversals)
+        # DBG_RULES
+        #baseline_reversals1 += int(tokens[9].split(':')[1])
+        #baseline_reversals2 += int(tokens[10].split(':')[1])
+        #baseline_reversals3 += int(tokens[11].split(':')[1])
+        #baseline_reversals4 += int(tokens[12].split(':')[1])
+        #baseline_reversals5 += int(tokens[13].split(':')[1])
 
   print('baseline device_dispatch hits: ' + str(disphits), flush=True)
   print('baseline total reversals: ' + str(baseline_reversals), flush=True)
   print('baseline reversals/dispatch: ' + str(float(baseline_reversals/disphits)), flush=True)
+  # DBG_RULES
+  #print('baseline reversals1: ' + str(baseline_reversals1), flush=True)
+  #print('baseline reversals2: ' + str(baseline_reversals2), flush=True)
+  #print('baseline reversals3: ' + str(baseline_reversals3), flush=True)
+  #print('baseline reversals4: ' + str(baseline_reversals4), flush=True)
+  #print('baseline reversals5: ' + str(baseline_reversals5), flush=True)
 
   disphits = 0
   lessrules_reversals = 0
