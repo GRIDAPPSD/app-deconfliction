@@ -121,11 +121,13 @@ def _main():
     for line in file:
       tokens = line.split(',')
       if tokens[0] == 'device_dispatch':
-        disphits += 1
-        decontime = float(tokens[5].split(':')[1]) + float(tokens[6].split(':')[1]) + float(tokens[7].split(':')[1])
-        baseline_time += decontime
-        disp_t_plot_b.append((float(tokens[2].split(':')[1]) - timex_start)/3600.0)
-        disp_val_plot_b.append(decontime)
+        timestr = tokens[5].split(':')[1]
+        if timestr != 'NA':
+          disphits += 1
+          decontime = float(tokens[5].split(':')[1]) + float(tokens[6].split(':')[1]) + float(tokens[7].split(':')[1])
+          baseline_time += decontime
+          disp_t_plot_b.append((float(tokens[2].split(':')[1]) - timex_start)/3600.0)
+          disp_val_plot_b.append(decontime)
 
   print('baseline device_dispatch hits: ' + str(disphits), flush=True)
   print('baseline total decon_time: ' + str(baseline_time), flush=True)
@@ -137,11 +139,13 @@ def _main():
     for line in file:
       tokens = line.split(',')
       if tokens[0] == 'device_dispatch':
-        disphits += 1
-        decontime = float(tokens[5].split(':')[1]) + float(tokens[6].split(':')[1]) + float(tokens[7].split(':')[1])
-        lesscoop_time += decontime
-        disp_t_plot_l.append((float(tokens[2].split(':')[1]) - timex_start)/3600.0)
-        disp_val_plot_l.append(decontime)
+        timestr = tokens[5].split(':')[1]
+        if timestr != 'NA':
+          disphits += 1
+          decontime = float(tokens[5].split(':')[1]) + float(tokens[6].split(':')[1]) + float(tokens[7].split(':')[1])
+          lesscoop_time += decontime
+          disp_t_plot_l.append((float(tokens[2].split(':')[1]) - timex_start)/3600.0)
+          disp_val_plot_l.append(decontime)
 
   print('\nlesscoop device_dispatch hits: ' + str(disphits), flush=True)
   print('lesscoop total decon_time: ' + str(lesscoop_time), flush=True)
@@ -153,11 +157,13 @@ def _main():
     for line in file:
       tokens = line.split(',')
       if tokens[0] == 'device_dispatch':
-        disphits += 1
-        decontime = float(tokens[5].split(':')[1]) + float(tokens[6].split(':')[1]) + float(tokens[7].split(':')[1])
-        nocoop_time += decontime
-        disp_t_plot_n.append((float(tokens[2].split(':')[1]) - timex_start)/3600.0)
-        disp_val_plot_n.append(decontime)
+        timestr = tokens[5].split(':')[1]
+        if timestr != 'NA':
+          disphits += 1
+          decontime = float(tokens[5].split(':')[1]) + float(tokens[6].split(':')[1]) + float(tokens[7].split(':')[1])
+          nocoop_time += decontime
+          disp_t_plot_n.append((float(tokens[2].split(':')[1]) - timex_start)/3600.0)
+          disp_val_plot_n.append(decontime)
 
   print('\nnocoop device_dispatch hits: ' + str(disphits), flush=True)
   print('nocoop total decon_time: ' + str(nocoop_time), flush=True)
@@ -169,11 +175,13 @@ def _main():
     for line in file:
       tokens = line.split(',')
       if tokens[0] == 'device_dispatch':
-        disphits += 1
-        decontime = float(tokens[5].split(':')[1]) + float(tokens[6].split(':')[1]) + float(tokens[7].split(':')[1])
-        twoapp_time += decontime
-        disp_t_plot_2.append((float(tokens[2].split(':')[1]) - timex_start)/3600.0)
-        disp_val_plot_2.append(decontime)
+        timestr = tokens[5].split(':')[1]
+        if timestr != 'NA':
+          disphits += 1
+          decontime = float(tokens[5].split(':')[1]) + float(tokens[6].split(':')[1]) + float(tokens[7].split(':')[1])
+          twoapp_time += decontime
+          disp_t_plot_2.append((float(tokens[2].split(':')[1]) - timex_start)/3600.0)
+          disp_val_plot_2.append(decontime)
 
   print('\ntwoapp device_dispatch hits: ' + str(disphits), flush=True)
   print('twoapp total decon_time: ' + str(twoapp_time), flush=True)
@@ -185,9 +193,11 @@ def _main():
     for line in file:
       tokens = line.split(',')
       if tokens[0] == 'device_dispatch':
-        disphits += 1
-        decontime = float(tokens[5].split(':')[1]) + float(tokens[6].split(':')[1]) + float(tokens[7].split(':')[1])
-        tenapp_time += decontime
+        timestr = tokens[5].split(':')[1]
+        if timestr != 'NA':
+          disphits += 1
+          decontime = float(tokens[5].split(':')[1]) + float(tokens[6].split(':')[1]) + float(tokens[7].split(':')[1])
+          tenapp_time += decontime
 
   print('\ntenapp device_dispatch hits: ' + str(disphits), flush=True)
   print('tenapp total decon_time: ' + str(tenapp_time), flush=True)
