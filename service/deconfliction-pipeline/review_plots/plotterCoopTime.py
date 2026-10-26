@@ -121,11 +121,13 @@ def _main():
     for line in file:
       tokens = line.split(',')
       if tokens[0] == 'device_dispatch':
-        disphits += 1
-        cooptime = float(tokens[6].split(':')[1])
-        baseline_time += cooptime
-        disp_t_plot_b.append((float(tokens[2].split(':')[1]) - timex_start)/3600.0)
-        disp_val_plot_b.append(cooptime)
+        timestr = tokens[6].split(':')[1]
+        if timestr != 'NA':
+          disphits += 1
+          cooptime = float(timestr)
+          baseline_time += cooptime
+          disp_t_plot_b.append((float(tokens[2].split(':')[1]) - timex_start)/3600.0)
+          disp_val_plot_b.append(cooptime)
 
   print('baseline device_dispatch hits: ' + str(disphits), flush=True)
   print('baseline total coop_time: ' + str(baseline_time), flush=True)
@@ -137,11 +139,13 @@ def _main():
     for line in file:
       tokens = line.split(',')
       if tokens[0] == 'device_dispatch':
-        disphits += 1
-        cooptime = float(tokens[6].split(':')[1])
-        lesscoop_time += cooptime
-        disp_t_plot_l.append((float(tokens[2].split(':')[1]) - timex_start)/3600.0)
-        disp_val_plot_l.append(cooptime)
+        timestr = tokens[6].split(':')[1]
+        if timestr != 'NA':
+          disphits += 1
+          cooptime = float(tokens[6].split(':')[1])
+          lesscoop_time += cooptime
+          disp_t_plot_l.append((float(tokens[2].split(':')[1]) - timex_start)/3600.0)
+          disp_val_plot_l.append(cooptime)
 
   print('\nlesscoop device_dispatch hits: ' + str(disphits), flush=True)
   print('lesscoop total coop_time: ' + str(lesscoop_time), flush=True)
@@ -153,11 +157,13 @@ def _main():
     for line in file:
       tokens = line.split(',')
       if tokens[0] == 'device_dispatch':
-        disphits += 1
-        cooptime = float(tokens[6].split(':')[1])
-        twoapp_time += cooptime
-        disp_t_plot_2.append((float(tokens[2].split(':')[1]) - timex_start)/3600.0)
-        disp_val_plot_2.append(cooptime)
+        timestr = tokens[6].split(':')[1]
+        if timestr != 'NA':
+          disphits += 1
+          cooptime = float(tokens[6].split(':')[1])
+          twoapp_time += cooptime
+          disp_t_plot_2.append((float(tokens[2].split(':')[1]) - timex_start)/3600.0)
+          disp_val_plot_2.append(cooptime)
 
   print('\ntwoapp device_dispatch hits: ' + str(disphits), flush=True)
   print('twoapp total coop_time: ' + str(twoapp_time), flush=True)
@@ -169,11 +175,13 @@ def _main():
     for line in file:
       tokens = line.split(',')
       if tokens[0] == 'device_dispatch':
-        disphits += 1
-        cooptime = float(tokens[6].split(':')[1])
-        irregular_time += cooptime
-        disp_t_plot_i.append((float(tokens[2].split(':')[1]) - timex_start)/3600.0)
-        disp_val_plot_i.append(cooptime)
+        timestr = tokens[6].split(':')[1]
+        if timestr != 'NA':
+          disphits += 1
+          cooptime = float(tokens[6].split(':')[1])
+          irregular_time += cooptime
+          disp_t_plot_i.append((float(tokens[2].split(':')[1]) - timex_start)/3600.0)
+          disp_val_plot_i.append(cooptime)
 
   print('\nirregular device_dispatch hits: ' + str(disphits), flush=True)
   print('irregular total coop_time: ' + str(irregular_time), flush=True)
