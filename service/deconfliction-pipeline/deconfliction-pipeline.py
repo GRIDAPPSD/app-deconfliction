@@ -1024,12 +1024,6 @@ class DeconflictionPipeline(GridAPPSD):
               ', rolling charge/discharge switches: ' + str(rollingSwitchCount)+
               ', vs. allowed: ' + str(self.rulesBattSwitchesAllowed))
 
-      # DBG_RULES
-      #if MethodUtil.DeviceToName[device] == 'BatteryUnit.battery3':
-      #  prlog('DBG battery3 rules rolling charge/discharge switches: ' +
-      #        str(rollingSwitchCount) + ', vs. allowed: ' +
-      #        str(self.rulesBattSwitchesAllowed))
-
       if rollingSwitchCount >= self.rulesBattSwitchesAllowed:
         # save the final P_batt_inv in the history list since we need to make
         # sure not to allow the opposite direction in any setpoint requests
@@ -1054,17 +1048,6 @@ class DeconflictionPipeline(GridAPPSD):
                      'charge/discharge state: ' +
                      str(self.ConflictMatrix[device][app][1]) +
                      ', P_batt setpoint reset to zero')
-
-              # DBG_RULES
-              #if MethodUtil.DeviceToName[device] == 'BatteryUnit.battery3':
-              #  timestamp = self.BatteriesInfo[device]['timestamp']
-              #  ts_time = datetime.utcfromtimestamp(timestamp).time()
-              #  prlog('DBG battery3 rules violated for app: ' + app +
-              #        ', at wall time: ' + str(ts_time) +
-              #        ', P_batt setpoint attempted to reverse state: ' +
-              #        str(self.ConflictMatrix[device][app][1]) +
-              #        ', from previous P_batt: ' + str(prev_P_batt_inv) +
-              #        ', P_batt setpoint reset to zero')
 
               # this is pretty harsh to force the setpoint request back to zero
               # to avoid a possible change in charge/discharge state, but no
@@ -1547,22 +1530,11 @@ class DeconflictionPipeline(GridAPPSD):
     # GDB 9/3/26: Track asset health for reporting
     self.batteryCycleCount = 0
     self.tapPositionCount = 0
-    # DBG_RULES
-    #self.batteryCycleCount1 = 0
-    #self.batteryCycleCount2 = 0
-    #self.batteryCycleCount3 = 0
-    #self.batteryCycleCount4 = 0
-    #self.batteryCycleCount5 = 0
 
     for device, value in newResolutionVector.items():
       name = MethodUtil.DeviceToName[device]
       if name.startswith('BatteryUnit.'):
         if value[1] != self.BatteriesInfo[device]['P_batt_inv']:
-          # DBG_RULES
-          #if not name.endswith('battery3'):
-          #  prlog('DBG discarding device dispatch for all but battery3:'+name)
-          #  continue
-
           #new value before old value for DifferenceBuilder
           self.difference_builder.add_difference(device,
                                        'PowerElectronicsConnection.p', value[1],
@@ -1573,31 +1545,9 @@ class DeconflictionPipeline(GridAPPSD):
           if value[1]>0 and self.BatteriesInfo[device]['P_batt_inv']<0:
             switchStr = ' (SWITCH from discharging to charging)'
             self.batteryCycleCount += 1
-            # DBG_RULES
-            #if name.endswith('battery1'):
-            #  self.batteryCycleCount1 += 1
-            #elif name.endswith('battery2'):
-            #  self.batteryCycleCount2 += 1
-            #elif name.endswith('battery3'):
-            #  self.batteryCycleCount3 += 1
-            #elif name.endswith('battery4'):
-            #  self.batteryCycleCount4 += 1
-            #elif name.endswith('battery5'):
-            #  self.batteryCycleCount5 += 1
           elif value[1]<0 and self.BatteriesInfo[device]['P_batt_inv']>0:
             switchStr = ' (SWITCH from charging to discharging)'
             self.batteryCycleCount += 1
-            # DBG_RULES
-            #if name.endswith('battery1'):
-            #  self.batteryCycleCount1 += 1
-            #elif name.endswith('battery2'):
-            #  self.batteryCycleCount2 += 1
-            #elif name.endswith('battery3'):
-            #  self.batteryCycleCount3 += 1
-            #elif name.endswith('battery4'):
-            #  self.batteryCycleCount4 += 1
-            #elif name.endswith('battery5'):
-            #  self.batteryCycleCount5 += 1
 
           if printAllDispatchesFlag:
             prlog('DeviceDispatcher--battery device: ' + name +
@@ -1610,14 +1560,6 @@ class DeconflictionPipeline(GridAPPSD):
                   ', device: ' + name + ', timestamp: ' + str(timestamp) +
                   ', new value: ' + str(value[1]) + ', old value: ' +
                   str(self.BatteriesInfo[device]['P_batt_inv']) + switchStr)
-
-          # DBG_RULES
-          #if name.endswith('battery3') and switchStr!='':
-          #  ts_time = datetime.utcfromtimestamp(timestamp).time()
-          #  prlog('DBG battery3 dispatch at timestamp: ' + str(timestamp) +
-          #        ', wall time: ' + str(ts_time) +
-          #        ', new value: ' + str(value[1]) + ', old value: ' +
-          #        str(self.BatteriesInfo[device]['P_batt_inv']) + switchStr)
 
           if self.instantSetpointUpdateFlag:
             self.BatteriesInfo[device]['P_batt_inv'] = value[1]
@@ -1830,11 +1772,6 @@ class DeconflictionPipeline(GridAPPSD):
             prlog('ProcessSimulationMessage--BatteryHistory match, device: ' +
                   self.BatteriesInfo[device]['name'] +
                   ', history: ' + str(self.BatteryHistory[device]))
-            # DBG_RULES
-            #if self.BatteriesInfo[device]['name'] == 'BatteryUnit.battery3':
-            #  ts_time = datetime.utcfromtimestamp(timestamp).time()
-            #  prlog('DBG battery3 history add at wall time: ' + str(ts_time) +
-            #        ', history: ' + str(self.BatteryHistory[device]))
 
         # I think for BatteryHistory there is no need to get a starting point
         # like there is for regulators since we are just tracking changes from
@@ -1964,12 +1901,8 @@ class DeconflictionPipeline(GridAPPSD):
 
       if self.shortCircuitFlag or reason=='NoConflict':
         self.pltFile.write('device_dispatch,reason:' + reason + ',timestamp:' + str(timestamp) + ',runningTime:' + str(timerRunning) + ',dispatchTime:' + str(deltaDispatch) + ',rulesTime:NA,coopTime:NA,optTime:NA,batteryCycles:' + str(self.batteryCycleCount) + ',tapPositions:' + str(self.tapPositionCount) + ',dispatchCount:' + str(dispatchCount))
-        # DBG_RULES
-        #self.pltFile.write('device_dispatch,reason:' + reason + ',timestamp:' + str(timestamp) + ',runningTime:' + str(timerRunning) + ',dispatchTime:' + str(deltaDispatch) + ',rulesTime:NA,coopTime:NA,optTime:NA,batteryCycles:' + str(self.batteryCycleCount) + ',batteryCycles1:' + str(self.batteryCycleCount1) + ',batteryCycles2:' + str(self.batteryCycleCount2) + ',batteryCycles3:' + str(self.batteryCycleCount3) + ',batteryCycles4:' + str(self.batteryCycleCount4) + ',batteryCycles5:' + str(self.batteryCycleCount5) + ',tapPositions:' + str(self.tapPositionCount) + ',dispatchCount:' + str(dispatchCount))
       else:
         self.pltFile.write('device_dispatch,reason:' + reason + ',timestamp:' + str(timestamp) + ',runningTime:' + str(timerRunning) + ',dispatchTime:' + str(deltaDispatch) + ',rulesTime:' + str(self.timerRules) + ',coopTime:' + str(self.timerCoop) + ',optTime:' + str(self.timerOpt) + ',batteryCycles:' + str(self.batteryCycleCount) + ',tapPositions:' + str(self.tapPositionCount) + ',dispatchCount:' + str(dispatchCount))
-        # DBG_RULES
-        #self.pltFile.write('device_dispatch,reason:' + reason + ',timestamp:' + str(timestamp) + ',runningTime:' + str(timerRunning) + ',dispatchTime:' + str(deltaDispatch) + ',rulesTime:' + str(self.timerRules) + ',coopTime:' + str(self.timerCoop) + ',optTime:' + str(self.timerOpt) + ',batteryCycles:' + str(self.batteryCycleCount) + ',batteryCycles1:' + str(self.batteryCycleCount1) + ',batteryCycles2:' + str(self.batteryCycleCount2) + ',batteryCycles3:' + str(self.batteryCycleCount3) + ',batteryCycles4:' + str(self.batteryCycleCount4) + ',batteryCycles5:' + str(self.batteryCycleCount5) + ',tapPositions:' + str(self.tapPositionCount) + ',dispatchCount:' + str(dispatchCount))
 
       # first version goes in ResolutionVector order while the second goes
       # in device order
